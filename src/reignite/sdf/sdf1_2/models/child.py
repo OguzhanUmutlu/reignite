@@ -1,0 +1,24 @@
+from __future__ import annotations
+
+from xml.etree import ElementTree as ET
+
+from ..model import Model
+from ...sdf1_0.models.child import Child as _PrevChild
+
+
+class Child(_PrevChild):
+    def __init__(self, child: str = "__default__"):
+        super().__init__()
+        self.child = child
+
+    def to_sdf(self) -> ET.Element:
+        el = super().to_sdf()
+        if self.child is not None:
+            el.text = self.child
+        return el
+
+    @classmethod
+    def from_sdf(cls, el: ET.Element) -> "Child":
+        _text = el.text or "__default__"
+        _child = _text
+        return cls(child=_child)

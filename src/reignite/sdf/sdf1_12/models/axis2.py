@@ -1,0 +1,30 @@
+from __future__ import annotations
+
+from xml.etree import ElementTree as ET
+
+from ..model import Model
+from ...sdf1_11.models.axis2 import Axis2 as _PrevAxis2
+from .mimic import Mimic
+from .xyz import Xyz
+from .dynamics import Dynamics
+from .limit import Limit
+
+
+class Axis2(_PrevAxis2):
+    def __init__(
+        self,
+        mimic: "Mimic" = None,
+        xyz: "Xyz" = None,
+        dynamics: "Dynamics" = None,
+        limit: "Limit" = None
+    ):
+        super().__init__(mimic=mimic, xyz=xyz, dynamics=dynamics, limit=limit)
+
+    def to_sdf(self) -> ET.Element:
+        el = super().to_sdf()
+        return el
+
+    @classmethod
+    def from_sdf(cls, el: ET.Element) -> "Axis2":
+        _base = _PrevAxis2.from_sdf(el)
+        return cls(mimic=_base.mimic, xyz=_base.xyz, dynamics=_base.dynamics, limit=_base.limit)
