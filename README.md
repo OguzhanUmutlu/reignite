@@ -11,9 +11,3 @@ from reignite import read_sdf
 
 world = read_sdf("path/to/world.sdf")
 ```
-
-## Tests
-
-```bash
-./scripts/run_tests.sh
-```

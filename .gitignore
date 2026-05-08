@@ -8,3 +8,4 @@ __pycache__
 scripts/sdformat
 reignite.egg-info
 reignite-*
+dist
