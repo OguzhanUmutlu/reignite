@@ -192,17 +192,25 @@ def parse_element(el: ET.Element, version_files: dict[str, str]) -> dict:
         fname = inc.get("filename", "")
         if not fname:
             continue
+
         includes_seen.append(fname)
+
+        child_name = fname.replace(".sdf", "")
+        child_schema = {
+            "_is_include": True,
+            "_required": inc.get("required", "0")
+        }
+
         if fname in version_files:
             try:
                 inc_root = ET.fromstring(version_files[fname])
-                child_name = inc_root.get("name", fname.replace(".sdf", ""))
-                child_schema = parse_element(inc_root, version_files)
-                child_schema["_required"] = inc.get("required", "0")
-                if child_name not in out:
-                    out[child_name] = child_schema
+                child_name = inc_root.get("name", child_name)
+                parsed = parse_element(inc_root, version_files)
+                child_schema.update(parsed)
             except ET.ParseError:
                 pass
+
+        out[child_name] = child_schema
 
     if includes_seen:
         out["_includes"] = includes_seen
@@ -224,7 +232,7 @@ def union_schema(base: dict, new: dict, version: str):
                     base["_required_history"][BASE_VERSION] = base["_required"]
             base["_required_history"][version] = new["_required"]
 
-    for k in ("_description", "_type", "_default", "_required"):
+    for k in ("_description", "_type", "_default", "_required", "_is_include"):
         if k in new and k not in base:
             base[k] = new[k]
 
@@ -455,7 +463,10 @@ def _collect_classes(
         defined: dict[str, str],
         all_convert_ops: dict[str, list[dict]],
         parent_name: str = None,
+        external_imports: set[str] = None
 ) -> str:
+    if external_imports is None:
+        external_imports = set()
     base_class_name = _to_classname(name)
     class_name = base_class_name
     node_hash = get_node_hash(node)
@@ -491,7 +502,12 @@ def _collect_classes(
 
     child_class_names: dict[str, str] = {}
     for cname, cnode in child_items.items():
-        child_cls = _collect_classes(cname, cnode, class_specs, defined, all_convert_ops, parent_name=name)
+        if cnode.get("_is_include"):
+            child_cls = _to_classname(cname)
+            external_imports.add(cname)
+        else:
+            child_cls = _collect_classes(cname, cnode, class_specs, defined, all_convert_ops,
+                                         parent_name=name, external_imports=external_imports)
         child_class_names[cname] = child_cls
 
     params: list[tuple] = []
@@ -664,6 +680,7 @@ def _collect_classes(
         "type_imports": type_imports,
         "needs_int_helpers": needs_int_helpers,
         "needs_float_helpers": needs_float_helpers,
+        "external_imports": external_imports,
         "child_class_names": child_class_names,
     })
 
@@ -1103,7 +1120,9 @@ def generate_element_file(
 ) -> str:
     class_specs: list[dict] = []
     defined: dict[str, str] = {}
-    _collect_classes(element_name, node, class_specs, defined, convert_ops)
+    external_imports: set[str] = set()
+
+    _collect_classes(element_name, node, class_specs, defined, convert_ops, external_imports=external_imports)
 
     all_type_imports: dict[str, str] = {}
     needs_list = False
@@ -1144,6 +1163,15 @@ def generate_element_file(
         lines.append("from ..utils.migration import apply_migrations")
 
     lines.append("")
+
+    if external_imports:
+        for ext in sorted(external_imports):
+            if ext == element_name:
+                continue
+            module = _module_name_for(ext)
+            cls = _to_classname(ext)
+            lines.append(f"from .{module} import {cls}")
+        lines.append("")
 
     if needs_helpers:
         lines.append("")
