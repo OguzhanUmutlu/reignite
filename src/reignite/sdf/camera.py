@@ -1,10 +1,11 @@
+### THIS FILE WAS AUTO-GENERATED ###
 from __future__ import annotations
 
 from xml.etree import ElementTree as ET
 
 from typing import List
 
-from ._base import Model
+from ..utils.model import Model
 from ..utils.pose import Pose
 from ..utils.vector2d import Vector2d
 from ..utils.version import cmp_version

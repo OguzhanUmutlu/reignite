@@ -1,8 +1,9 @@
+### THIS FILE WAS AUTO-GENERATED ###
 from __future__ import annotations
 
 from xml.etree import ElementTree as ET
 
-from ._base import Model
+from ..utils.model import Model
 from ..utils.pose import Pose
 from ..utils.version import cmp_version
 from ..utils.migration import apply_migrations

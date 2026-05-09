@@ -371,26 +371,6 @@ def parse_convert_file(version: str) -> list[dict]:
     return ops
 
 
-MODEL_PY = """\
-from __future__ import annotations
-
-from xml.etree import ElementTree as ET
-
-
-class Model:
-    __version__: str = ""
-
-    def to_sdf(self, version: str) -> ET.Element:
-        raise NotImplementedError
-
-    @classmethod
-    def from_sdf(cls, el: ET.Element, version: str) -> "Model":
-        raise NotImplementedError
-"""
-
-BASE_CLASS_FILE = "_base.py"
-
-
 def _collect_classes(
         name: str,
         node: dict,
@@ -868,7 +848,7 @@ def generate_element_file(
         lines.append("from typing import List")
         lines.append("")
 
-    lines.append("from ._base import Model")
+    lines.append("from ..utils.model import Model")
 
     for mod, cls in sorted(all_type_imports.items()):
         lines.append(f"from ..utils.{mod} import {cls}")
@@ -960,10 +940,6 @@ def main():
             elif child.is_file() and child.suffix == ".py" and child.name != "__init__.py":
                 child.unlink()
     SDF_SRC_DIR.mkdir(parents=True, exist_ok=True)
-
-    base_path = SDF_SRC_DIR / BASE_CLASS_FILE
-    base_path.write_text(MODEL_PY, encoding="utf-8")
-    print(f"  Wrote {base_path}")
 
     element_names: list[str] = []
     for element_name, node in sorted(base_schema.items()):
