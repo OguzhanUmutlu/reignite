@@ -660,7 +660,7 @@ def _collect_classes(
         "migrations": formatted_migrations,
         "class_name": class_name,
         "element_name": name,
-        "params": params,
+        "params": sorted(params, key=lambda p: p[0]),
         "type_imports": type_imports,
         "needs_int_helpers": needs_int_helpers,
         "needs_float_helpers": needs_float_helpers,
@@ -1151,7 +1151,7 @@ def generate_element_file(
 
     lines.append("")
 
-    for spec in class_specs:
+    for spec in sorted(class_specs, key=lambda s: s["class_name"]):
         lines.append(_render_class(spec))
         lines.append("")
 
