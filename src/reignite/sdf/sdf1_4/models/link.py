@@ -1,24 +1,22 @@
 from __future__ import annotations
 
+from typing import List
 from xml.etree import ElementTree as ET
 
-from typing import List
-
-from ..model import Model
-from ...sdf1_3.models.gravity import Gravity as _PrevGravity
-from ...sdf1_3.models.link import Link as _PrevLink
-from .inertial import Inertial
-from .collision import Collision
-from .visual import Visual
-from .sensor import Sensor
-from .projector import Projector
 from .audio_sink import AudioSink
 from .audio_source import AudioSource
-from .self_collide import SelfCollide
+from .collision import Collision
+from .inertial import Inertial
 from .kinematic import Kinematic
-from .pose import Pose
 from .must_be_base_link import MustBeBaseLink
+from .pose import Pose
+from .projector import Projector
+from .self_collide import SelfCollide
+from .sensor import Sensor
 from .velocity_decay import VelocityDecay
+from .visual import Visual
+from ...sdf1_3.models.gravity import Gravity as _PrevGravity
+from ...sdf1_3.models.link import Link as _PrevLink
 
 
 class Gravity(_PrevGravity):
@@ -37,23 +35,25 @@ class Gravity(_PrevGravity):
 
 class Link(_PrevLink):
     def __init__(
-        self,
-        name: str = "__default__",
-        inertial: "Inertial" = None,
-        collision: List["Collision"] = None,
-        visual: List["Visual"] = None,
-        sensor: List["Sensor"] = None,
-        projector: List["Projector"] = None,
-        audio_sink: List["AudioSink"] = None,
-        audio_source: List["AudioSource"] = None,
-        gravity: "Gravity" = None,
-        self_collide: "SelfCollide" = None,
-        kinematic: "Kinematic" = None,
-        pose: "Pose" = None,
-        must_be_base_link: "MustBeBaseLink" = None,
-        velocity_decay: "VelocityDecay" = None
+            self,
+            name: str = "__default__",
+            inertial: "Inertial" = None,
+            collision: List["Collision"] = None,
+            visual: List["Visual"] = None,
+            sensor: List["Sensor"] = None,
+            projector: List["Projector"] = None,
+            audio_sink: List["AudioSink"] = None,
+            audio_source: List["AudioSource"] = None,
+            gravity: "Gravity" = None,
+            self_collide: "SelfCollide" = None,
+            kinematic: "Kinematic" = None,
+            pose: "Pose" = None,
+            must_be_base_link: "MustBeBaseLink" = None,
+            velocity_decay: "VelocityDecay" = None
     ):
-        super().__init__(name=name, inertial=inertial, collision=collision, visual=visual, sensor=sensor, projector=projector, gravity=gravity, self_collide=self_collide, kinematic=kinematic, pose=pose, velocity_decay=velocity_decay)
+        super().__init__(name=name, inertial=inertial, collision=collision, visual=visual, sensor=sensor,
+                         projector=projector, gravity=gravity, self_collide=self_collide, kinematic=kinematic,
+                         pose=pose, velocity_decay=velocity_decay)
         self.audio_sink = audio_sink or []
         self.audio_source = audio_source or []
         self.must_be_base_link = must_be_base_link
@@ -75,4 +75,7 @@ class Link(_PrevLink):
         _audio_source = [AudioSource.from_sdf(c) for c in el.findall("audio_source")]
         _c_must_be_base_link = el.find("must_be_base_link")
         _must_be_base_link = MustBeBaseLink.from_sdf(_c_must_be_base_link) if _c_must_be_base_link is not None else None
-        return cls(name=_base.name, inertial=_base.inertial, collision=_base.collision, visual=_base.visual, sensor=_base.sensor, projector=_base.projector, audio_sink=_audio_sink, audio_source=_audio_source, gravity=_base.gravity, self_collide=_base.self_collide, kinematic=_base.kinematic, pose=_base.pose, must_be_base_link=_must_be_base_link, velocity_decay=_base.velocity_decay)
+        return cls(name=_base.name, inertial=_base.inertial, collision=_base.collision, visual=_base.visual,
+                   sensor=_base.sensor, projector=_base.projector, audio_sink=_audio_sink, audio_source=_audio_source,
+                   gravity=_base.gravity, self_collide=_base.self_collide, kinematic=_base.kinematic, pose=_base.pose,
+                   must_be_base_link=_must_be_base_link, velocity_decay=_base.velocity_decay)

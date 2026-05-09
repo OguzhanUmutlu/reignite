@@ -2,9 +2,8 @@ from __future__ import annotations
 
 from xml.etree import ElementTree as ET
 
-from ..model import Model
-from ...sdf1_8.models.ellipsoid import Ellipsoid as _PrevEllipsoid
 from .radii import Radii
+from ...sdf1_8.models.ellipsoid import Ellipsoid as _PrevEllipsoid
 
 
 class Ellipsoid(_PrevEllipsoid):

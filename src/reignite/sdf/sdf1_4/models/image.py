@@ -2,13 +2,12 @@ from __future__ import annotations
 
 from xml.etree import ElementTree as ET
 
-from ..model import Model
-from ...sdf1_3.models.uri import Uri as _PrevUri
-from ...sdf1_3.models.image import Image as _PrevImage
+from .granularity import Granularity
+from .height import Height
 from .scale import Scale
 from .threshold import Threshold
-from .height import Height
-from .granularity import Granularity
+from ...sdf1_3.models.image import Image as _PrevImage
+from ...sdf1_3.models.uri import Uri as _PrevUri
 
 
 class Uri(_PrevUri):
@@ -27,12 +26,12 @@ class Uri(_PrevUri):
 
 class Image(_PrevImage):
     def __init__(
-        self,
-        uri: "Uri" = None,
-        scale: "Scale" = None,
-        threshold: "Threshold" = None,
-        height: "Height" = None,
-        granularity: "Granularity" = None
+            self,
+            uri: "Uri" = None,
+            scale: "Scale" = None,
+            threshold: "Threshold" = None,
+            height: "Height" = None,
+            granularity: "Granularity" = None
     ):
         super().__init__(height=height)
         self.uri = uri

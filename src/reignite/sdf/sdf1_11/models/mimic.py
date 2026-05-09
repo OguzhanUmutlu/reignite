@@ -2,20 +2,20 @@ from __future__ import annotations
 
 from xml.etree import ElementTree as ET
 
-from ..model import Model
 from .multiplier import Multiplier
 from .offset import Offset
 from .reference import Reference
+from ..model import Model
 
 
 class Mimic(Model):
     def __init__(
-        self,
-        joint: str = "",
-        axis: str = "axis",
-        multiplier: "Multiplier" = None,
-        offset: "Offset" = None,
-        reference: "Reference" = None
+            self,
+            joint: str = "",
+            axis: str = "axis",
+            multiplier: "Multiplier" = None,
+            offset: "Offset" = None,
+            reference: "Reference" = None
     ):
         self.joint = joint
         self.axis = axis

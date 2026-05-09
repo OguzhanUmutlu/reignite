@@ -1,12 +1,10 @@
 from __future__ import annotations
 
+import math
 from xml.etree import ElementTree as ET
 
 from ..model import Model
 
-
-import math
-import sys
 
 def _parse_int32(raw: str) -> int:
     v = int(raw)
@@ -29,14 +27,13 @@ def _parse_double(raw: str) -> float:
     return v
 
 
-
 class Animation(Model):
     def __init__(
-        self,
-        name: str = "__default__",
-        filename: str = "__default__",
-        scale: float = 1.0,
-        interpolate_x: bool = False
+            self,
+            name: str = "__default__",
+            filename: str = "__default__",
+            scale: float = 1.0,
+            interpolate_x: bool = False
     ):
         self.name = name
         self.filename = filename

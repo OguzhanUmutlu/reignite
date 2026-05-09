@@ -2,9 +2,8 @@ from __future__ import annotations
 
 from xml.etree import ElementTree as ET
 
-from ..model import Model
-from ...sdf1_11.models.vertical import Vertical as _PrevVertical
 from .noise import Noise
+from ...sdf1_11.models.vertical import Vertical as _PrevVertical
 
 
 class Vertical(_PrevVertical):

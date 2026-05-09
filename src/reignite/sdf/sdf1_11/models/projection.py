@@ -2,25 +2,24 @@ from __future__ import annotations
 
 from xml.etree import ElementTree as ET
 
-from ..model import Model
-from ...sdf1_10.models.projection import Projection as _PrevProjection
-from .p_fx import PFx
-from .p_fy import PFy
 from .p_cx import PCx
 from .p_cy import PCy
+from .p_fx import PFx
+from .p_fy import PFy
 from .tx import Tx
 from .ty import Ty
+from ...sdf1_10.models.projection import Projection as _PrevProjection
 
 
 class Projection(_PrevProjection):
     def __init__(
-        self,
-        p_fx: "PFx" = None,
-        p_fy: "PFy" = None,
-        p_cx: "PCx" = None,
-        p_cy: "PCy" = None,
-        tx: "Tx" = None,
-        ty: "Ty" = None
+            self,
+            p_fx: "PFx" = None,
+            p_fy: "PFy" = None,
+            p_cx: "PCx" = None,
+            p_cy: "PCy" = None,
+            tx: "Tx" = None,
+            ty: "Ty" = None
     ):
         super().__init__(p_fx=p_fx, p_fy=p_fy, p_cx=p_cx, p_cy=p_cy, tx=tx, ty=ty)
 

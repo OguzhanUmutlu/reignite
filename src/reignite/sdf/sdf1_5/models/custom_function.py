@@ -2,22 +2,22 @@ from __future__ import annotations
 
 from xml.etree import ElementTree as ET
 
-from ..model import Model
 from .c1 import C1
 from .c2 import C2
 from .c3 import C3
 from .f import F
 from .fun import Fun
+from ..model import Model
 
 
 class CustomFunction(Model):
     def __init__(
-        self,
-        c1: "C1" = None,
-        c2: "C2" = None,
-        c3: "C3" = None,
-        f: "F" = None,
-        fun: "Fun" = None
+            self,
+            c1: "C1" = None,
+            c2: "C2" = None,
+            c3: "C3" = None,
+            f: "F" = None,
+            fun: "Fun" = None
     ):
         self.c1 = c1
         self.c2 = c2

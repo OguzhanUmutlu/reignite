@@ -2,31 +2,30 @@ from __future__ import annotations
 
 from xml.etree import ElementTree as ET
 
-from ..model import Model
-from ...sdf1_6.models.geometry import Geometry as _PrevGeometry
 from .box import Box
 from .cylinder import Cylinder
+from .empty import Empty
 from .heightmap import Heightmap
 from .image import Image
 from .mesh import Mesh
 from .plane import Plane
 from .polyline import Polyline
 from .sphere import Sphere
-from .empty import Empty
+from ...sdf1_6.models.geometry import Geometry as _PrevGeometry
 
 
 class Geometry(_PrevGeometry):
     def __init__(
-        self,
-        box: "Box" = None,
-        cylinder: "Cylinder" = None,
-        heightmap: "Heightmap" = None,
-        image: "Image" = None,
-        mesh: "Mesh" = None,
-        plane: "Plane" = None,
-        polyline: "Polyline" = None,
-        sphere: "Sphere" = None,
-        empty: "Empty" = None
+            self,
+            box: "Box" = None,
+            cylinder: "Cylinder" = None,
+            heightmap: "Heightmap" = None,
+            image: "Image" = None,
+            mesh: "Mesh" = None,
+            plane: "Plane" = None,
+            polyline: "Polyline" = None,
+            sphere: "Sphere" = None,
+            empty: "Empty" = None
     ):
         super().__init__()
         self.box = box
@@ -81,4 +80,5 @@ class Geometry(_PrevGeometry):
         _sphere = Sphere.from_sdf(_c_sphere) if _c_sphere is not None else None
         _c_empty = el.find("empty")
         _empty = Empty.from_sdf(_c_empty) if _c_empty is not None else None
-        return cls(box=_box, cylinder=_cylinder, heightmap=_heightmap, image=_image, mesh=_mesh, plane=_plane, polyline=_polyline, sphere=_sphere, empty=_empty)
+        return cls(box=_box, cylinder=_cylinder, heightmap=_heightmap, image=_image, mesh=_mesh, plane=_plane,
+                   polyline=_polyline, sphere=_sphere, empty=_empty)

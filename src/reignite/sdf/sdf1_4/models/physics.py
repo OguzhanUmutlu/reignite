@@ -2,10 +2,10 @@ from __future__ import annotations
 
 from xml.etree import ElementTree as ET
 
+from .provide_feedback import ProvideFeedback
 from ..model import Model
 from ...sdf1_3.models.ode import Ode as _PrevOde
 from ...sdf1_3.models.physics import Physics as _PrevPhysics
-from .provide_feedback import ProvideFeedback
 
 
 class Simbody(Model):
@@ -21,18 +21,19 @@ class Simbody(Model):
     @classmethod
     def from_sdf(cls, el: ET.Element) -> "Simbody":
         _c_must_be_loop_joint = el.find("must_be_loop_joint")
-        _must_be_loop_joint = MustBeLoopJoint.from_sdf(_c_must_be_loop_joint) if _c_must_be_loop_joint is not None else None
+        _must_be_loop_joint = MustBeLoopJoint.from_sdf(
+            _c_must_be_loop_joint) if _c_must_be_loop_joint is not None else None
         return cls(must_be_loop_joint=_must_be_loop_joint)
 
 
 class Ode(_PrevOde):
     def __init__(
-        self,
-        mu: "Mu" = None,
-        mu2: "Mu2" = None,
-        fdir1: "Fdir1" = None,
-        slip1: "Slip1" = None,
-        slip2: "Slip2" = None
+            self,
+            mu: "Mu" = None,
+            mu2: "Mu2" = None,
+            fdir1: "Fdir1" = None,
+            slip1: "Slip1" = None,
+            slip2: "Slip2" = None
     ):
         super().__init__()
         self.mu = mu
@@ -72,10 +73,10 @@ class Ode(_PrevOde):
 
 class Physics(_PrevPhysics):
     def __init__(
-        self,
-        simbody: "Simbody" = None,
-        ode: "Ode" = None,
-        provide_feedback: "ProvideFeedback" = None
+            self,
+            simbody: "Simbody" = None,
+            ode: "Ode" = None,
+            provide_feedback: "ProvideFeedback" = None
     ):
         super().__init__(ode=ode)
         self.simbody = simbody

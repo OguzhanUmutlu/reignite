@@ -2,10 +2,9 @@ from __future__ import annotations
 
 from xml.etree import ElementTree as ET
 
-from ..model import Model
-from ...sdf1_5.models.force_torque import ForceTorque as _PrevForceTorque
 from .frame import Frame
 from .measure_direction import MeasureDirection
+from ...sdf1_5.models.force_torque import ForceTorque as _PrevForceTorque
 
 
 class ForceTorque(_PrevForceTorque):

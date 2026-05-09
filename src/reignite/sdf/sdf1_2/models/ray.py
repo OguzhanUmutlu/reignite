@@ -2,10 +2,9 @@ from __future__ import annotations
 
 from xml.etree import ElementTree as ET
 
-from ..model import Model
-from ...sdf1_0.models.ray import Ray as _PrevRay
-from .scan import Scan
 from .range import Range
+from .scan import Scan
+from ...sdf1_0.models.ray import Ray as _PrevRay
 
 
 class Ray(_PrevRay):

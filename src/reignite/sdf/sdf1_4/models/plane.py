@@ -2,10 +2,9 @@ from __future__ import annotations
 
 from xml.etree import ElementTree as ET
 
-from ..model import Model
 from ...sdf1_3.models.normal import Normal as _PrevNormal
-from ...sdf1_3.models.size import Size as _PrevSize
 from ...sdf1_3.models.plane import Plane as _PrevPlane
+from ...sdf1_3.models.size import Size as _PrevSize
 from ....utils.vector3 import Vector3
 
 

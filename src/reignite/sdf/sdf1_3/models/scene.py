@@ -2,13 +2,13 @@ from __future__ import annotations
 
 from xml.etree import ElementTree as ET
 
-from ..model import Model
-from ....utils.color import Color
 from .background import Background
-from .sky import Sky
-from .shadows import Shadows
 from .fog import Fog
 from .grid import Grid
+from .shadows import Shadows
+from .sky import Sky
+from ..model import Model
+from ....utils.color import Color
 
 
 class Ambient(Model):
@@ -32,13 +32,13 @@ class Ambient(Model):
 
 class Scene(Model):
     def __init__(
-        self,
-        ambient: "Ambient" = None,
-        background: "Background" = None,
-        sky: "Sky" = None,
-        shadows: "Shadows" = None,
-        fog: "Fog" = None,
-        grid: "Grid" = None
+            self,
+            ambient: "Ambient" = None,
+            background: "Background" = None,
+            sky: "Sky" = None,
+            shadows: "Shadows" = None,
+            fog: "Fog" = None,
+            grid: "Grid" = None
     ):
         self.ambient = ambient
         self.background = background

@@ -2,7 +2,6 @@ from __future__ import annotations
 
 from xml.etree import ElementTree as ET
 
-from ..model import Model
 from ...sdf1_8.models.grav_dir_x import GravDirX as _PrevGravDirX
 from ....utils.vector3 import Vector3
 

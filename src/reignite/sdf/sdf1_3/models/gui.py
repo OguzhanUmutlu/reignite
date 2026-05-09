@@ -27,11 +27,11 @@ class Pose(Model):
 
 class Camera(Model):
     def __init__(
-        self,
-        name: str = "user_camera",
-        view_controller: "ViewController" = None,
-        pose: "Pose" = None,
-        track_visual: "TrackVisual" = None
+            self,
+            name: str = "user_camera",
+            view_controller: "ViewController" = None,
+            pose: "Pose" = None,
+            track_visual: "TrackVisual" = None
     ):
         self.name = name
         self.view_controller = view_controller

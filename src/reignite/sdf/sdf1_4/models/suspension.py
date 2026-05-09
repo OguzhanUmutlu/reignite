@@ -2,10 +2,9 @@ from __future__ import annotations
 
 from xml.etree import ElementTree as ET
 
-from ..model import Model
-from ...sdf1_3.models.suspension import Suspension as _PrevSuspension
 from .cfm import Cfm
 from .erp import Erp
+from ...sdf1_3.models.suspension import Suspension as _PrevSuspension
 
 
 class Suspension(_PrevSuspension):

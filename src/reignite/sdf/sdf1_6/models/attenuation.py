@@ -2,20 +2,20 @@ from __future__ import annotations
 
 from xml.etree import ElementTree as ET
 
-from ..model import Model
-from .range import Range
-from .linear import Linear
 from .constant import Constant
+from .linear import Linear
 from .quadratic import Quadratic
+from .range import Range
+from ..model import Model
 
 
 class Attenuation(Model):
     def __init__(
-        self,
-        range: "Range" = None,
-        linear: "Linear" = None,
-        constant: "Constant" = None,
-        quadratic: "Quadratic" = None
+            self,
+            range: "Range" = None,
+            linear: "Linear" = None,
+            constant: "Constant" = None,
+            quadratic: "Quadratic" = None
     ):
         self.range = range
         self.linear = linear

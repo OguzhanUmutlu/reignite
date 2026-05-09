@@ -2,26 +2,26 @@ from __future__ import annotations
 
 from xml.etree import ElementTree as ET
 
-from ..model import Model
 from .essid import Essid
 from .frequency import Frequency
-from .min_frequency import MinFrequency
-from .max_frequency import MaxFrequency
 from .gain import Gain
+from .max_frequency import MaxFrequency
+from .min_frequency import MinFrequency
 from .power import Power
 from .sensitivity import Sensitivity
+from ..model import Model
 
 
 class Transceiver(Model):
     def __init__(
-        self,
-        essid: "Essid" = None,
-        frequency: "Frequency" = None,
-        min_frequency: "MinFrequency" = None,
-        max_frequency: "MaxFrequency" = None,
-        gain: "Gain" = None,
-        power: "Power" = None,
-        sensitivity: "Sensitivity" = None
+            self,
+            essid: "Essid" = None,
+            frequency: "Frequency" = None,
+            min_frequency: "MinFrequency" = None,
+            max_frequency: "MaxFrequency" = None,
+            gain: "Gain" = None,
+            power: "Power" = None,
+            sensitivity: "Sensitivity" = None
     ):
         self.essid = essid
         self.frequency = frequency
@@ -65,4 +65,5 @@ class Transceiver(Model):
         _power = Power.from_sdf(_c_power) if _c_power is not None else None
         _c_sensitivity = el.find("sensitivity")
         _sensitivity = Sensitivity.from_sdf(_c_sensitivity) if _c_sensitivity is not None else None
-        return cls(essid=_essid, frequency=_frequency, min_frequency=_min_frequency, max_frequency=_max_frequency, gain=_gain, power=_power, sensitivity=_sensitivity)
+        return cls(essid=_essid, frequency=_frequency, min_frequency=_min_frequency, max_frequency=_max_frequency,
+                   gain=_gain, power=_power, sensitivity=_sensitivity)

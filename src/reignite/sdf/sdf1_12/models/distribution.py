@@ -2,21 +2,20 @@ from __future__ import annotations
 
 from xml.etree import ElementTree as ET
 
-from ..model import Model
-from ...sdf1_11.models.distribution import Distribution as _PrevDistribution
-from .type import Type
-from .rows import Rows
 from .cols import Cols
+from .rows import Rows
 from .step import Step
+from .type import Type
+from ...sdf1_11.models.distribution import Distribution as _PrevDistribution
 
 
 class Distribution(_PrevDistribution):
     def __init__(
-        self,
-        type: "Type" = None,
-        rows: "Rows" = None,
-        cols: "Cols" = None,
-        step: "Step" = None
+            self,
+            type: "Type" = None,
+            rows: "Rows" = None,
+            cols: "Cols" = None,
+            step: "Step" = None
     ):
         super().__init__(type=type, rows=rows, cols=cols, step=step)
 

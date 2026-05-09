@@ -2,7 +2,6 @@ from __future__ import annotations
 
 from xml.etree import ElementTree as ET
 
-from ..model import Model
 from ...sdf1_10.models.triggered import Triggered as _PrevTriggered
 
 

@@ -1,22 +1,20 @@
 from __future__ import annotations
 
+from typing import List
 from xml.etree import ElementTree as ET
 
-from typing import List
-
-from ..model import Model
+from .actor import Actor
+from .gui import Gui
+from .joint import Joint
+from .light import Light
+from .model import Model
+from .plugin import Plugin
+from .road import Road
+from .scene import Scene
+from .state import State
 from ...sdf1_0.models.ode import Ode as _PrevOde
 from ...sdf1_0.models.physics import Physics as _PrevPhysics
 from ...sdf1_0.models.world import World as _PrevWorld
-from .gui import Gui
-from .scene import Scene
-from .light import Light
-from .model import Model
-from .actor import Actor
-from .plugin import Plugin
-from .joint import Joint
-from .road import Road
-from .state import State
 
 
 class Ode(_PrevOde):
@@ -44,13 +42,13 @@ class Ode(_PrevOde):
 
 class Physics(_PrevPhysics):
     def __init__(
-        self,
-        type: str = "ode",
-        update_rate: "UpdateRate" = None,
-        max_contacts: "MaxContacts" = None,
-        gravity: "Gravity" = None,
-        bullet: "Bullet" = None,
-        ode: "Ode" = None
+            self,
+            type: str = "ode",
+            update_rate: "UpdateRate" = None,
+            max_contacts: "MaxContacts" = None,
+            gravity: "Gravity" = None,
+            bullet: "Bullet" = None,
+            ode: "Ode" = None
     ):
         super().__init__(ode=ode)
         self.type = type
@@ -85,25 +83,27 @@ class Physics(_PrevPhysics):
         _gravity = Gravity.from_sdf(_c_gravity) if _c_gravity is not None else None
         _c_bullet = el.find("bullet")
         _bullet = Bullet.from_sdf(_c_bullet) if _c_bullet is not None else None
-        return cls(type=_type, update_rate=_update_rate, max_contacts=_max_contacts, gravity=_gravity, bullet=_bullet, ode=_base.ode)
+        return cls(type=_type, update_rate=_update_rate, max_contacts=_max_contacts, gravity=_gravity, bullet=_bullet,
+                   ode=_base.ode)
 
 
 class World(_PrevWorld):
     def __init__(
-        self,
-        name: str = "__default__",
-        gui: "Gui" = None,
-        physics: "Physics" = None,
-        scene: "Scene" = None,
-        light: List["Light"] = None,
-        model: List["Model"] = None,
-        actor: List["Actor"] = None,
-        plugin: List["Plugin"] = None,
-        joint: List["Joint"] = None,
-        road: List["Road"] = None,
-        state: List["State"] = None
+            self,
+            name: str = "__default__",
+            gui: "Gui" = None,
+            physics: "Physics" = None,
+            scene: "Scene" = None,
+            light: List["Light"] = None,
+            model: List["Model"] = None,
+            actor: List["Actor"] = None,
+            plugin: List["Plugin"] = None,
+            joint: List["Joint"] = None,
+            road: List["Road"] = None,
+            state: List["State"] = None
     ):
-        super().__init__(name=name, gui=gui, physics=physics, scene=scene, light=light, model=model, actor=actor, plugin=plugin, joint=joint, road=road, state=state)
+        super().__init__(name=name, gui=gui, physics=physics, scene=scene, light=light, model=model, actor=actor,
+                         plugin=plugin, joint=joint, road=road, state=state)
 
     def to_sdf(self) -> ET.Element:
         el = super().to_sdf()
@@ -112,4 +112,6 @@ class World(_PrevWorld):
     @classmethod
     def from_sdf(cls, el: ET.Element) -> "World":
         _base = _PrevWorld.from_sdf(el)
-        return cls(name=_base.name, gui=_base.gui, physics=_base.physics, scene=_base.scene, light=_base.light, model=_base.model, actor=_base.actor, plugin=_base.plugin, joint=_base.joint, road=_base.road, state=_base.state)
+        return cls(name=_base.name, gui=_base.gui, physics=_base.physics, scene=_base.scene, light=_base.light,
+                   model=_base.model, actor=_base.actor, plugin=_base.plugin, joint=_base.joint, road=_base.road,
+                   state=_base.state)

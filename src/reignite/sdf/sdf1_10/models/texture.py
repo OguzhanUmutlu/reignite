@@ -2,11 +2,10 @@ from __future__ import annotations
 
 from xml.etree import ElementTree as ET
 
-from ..model import Model
-from ...sdf1_9.models.texture import Texture as _PrevTexture
-from .size import Size
 from .diffuse import Diffuse
 from .normal import Normal
+from .size import Size
+from ...sdf1_9.models.texture import Texture as _PrevTexture
 
 
 class Texture(_PrevTexture):

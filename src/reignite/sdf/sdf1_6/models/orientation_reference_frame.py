@@ -2,18 +2,18 @@ from __future__ import annotations
 
 from xml.etree import ElementTree as ET
 
-from ..model import Model
-from .localization import Localization
 from .custom_rpy import CustomRpy
 from .grav_dir_x import GravDirX
+from .localization import Localization
+from ..model import Model
 
 
 class OrientationReferenceFrame(Model):
     def __init__(
-        self,
-        localization: "Localization" = None,
-        custom_rpy: "CustomRpy" = None,
-        grav_dir_x: "GravDirX" = None
+            self,
+            localization: "Localization" = None,
+            custom_rpy: "CustomRpy" = None,
+            grav_dir_x: "GravDirX" = None
     ):
         self.localization = localization
         self.custom_rpy = custom_rpy

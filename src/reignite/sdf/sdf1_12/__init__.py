@@ -68,7 +68,14 @@ Transceiver = _models.Transceiver
 Visual = _models.Visual
 World = _models.World
 
-TAG_NAMES: list[str] = ["actor", "air_pressure", "air_speed", "altimeter", "atmosphere", "audio_sink", "audio_source", "battery", "box", "camera", "capsule", "collision", "cone", "contact", "cylinder", "ellipsoid", "force_torque", "frame", "geometry", "gps", "gripper", "gui", "heightmap", "image", "imu", "inertial", "joint", "joint_state", "lidar", "light", "light_state", "link", "link_state", "logical_camera", "magnetometer", "material", "mesh", "mimic", "model", "model_state", "navsat", "noise", "particle_emitter", "physics", "plane", "plugin", "polyline", "population", "pose", "projector", "ray", "rfid", "rfidtag", "road", "scene", "sdf", "sensor", "sonar", "sphere", "spherical_coordinates", "state", "surface", "transceiver", "visual", "world"]
+TAG_NAMES: list[str] = ["actor", "air_pressure", "air_speed", "altimeter", "atmosphere", "audio_sink", "audio_source",
+                        "battery", "box", "camera", "capsule", "collision", "cone", "contact", "cylinder", "ellipsoid",
+                        "force_torque", "frame", "geometry", "gps", "gripper", "gui", "heightmap", "image", "imu",
+                        "inertial", "joint", "joint_state", "lidar", "light", "light_state", "link", "link_state",
+                        "logical_camera", "magnetometer", "material", "mesh", "mimic", "model", "model_state", "navsat",
+                        "noise", "particle_emitter", "physics", "plane", "plugin", "polyline", "population", "pose",
+                        "projector", "ray", "rfid", "rfidtag", "road", "scene", "sdf", "sensor", "sonar", "sphere",
+                        "spherical_coordinates", "state", "surface", "transceiver", "visual", "world"]
 TAG_CLASS_MAP: dict[str, type] = {
     "actor": Actor,
     "air_pressure": AirPressure,
@@ -136,6 +143,7 @@ TAG_CLASS_MAP: dict[str, type] = {
     "visual": Visual,
     "world": World,
 }
+
 
 def get_tag_class(tag: str) -> type | None:
     return TAG_CLASS_MAP.get(tag)

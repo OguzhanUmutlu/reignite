@@ -1,27 +1,26 @@
 from __future__ import annotations
 
+from typing import List
 from xml.etree import ElementTree as ET
 
-from typing import List
-
-from ..model import Model
-from .link import Link
-from .joint import Joint
-from .plugin import Plugin
 from .gripper import Gripper
+from .joint import Joint
+from .link import Link
 from .origin import Origin
+from .plugin import Plugin
+from ..model import Model
 
 
 class Model(Model):
     def __init__(
-        self,
-        name: str = "__default__",
-        static: bool = False,
-        link: List["Link"] = None,
-        joint: List["Joint"] = None,
-        plugin: List["Plugin"] = None,
-        gripper: List["Gripper"] = None,
-        origin: "Origin" = None
+            self,
+            name: str = "__default__",
+            static: bool = False,
+            link: List["Link"] = None,
+            joint: List["Joint"] = None,
+            plugin: List["Plugin"] = None,
+            gripper: List["Gripper"] = None,
+            origin: "Origin" = None
     ):
         self.name = name
         self.static = static
@@ -59,4 +58,5 @@ class Model(Model):
         _gripper = [Gripper.from_sdf(c) for c in el.findall("gripper")]
         _c_origin = el.find("origin")
         _origin = Origin.from_sdf(_c_origin) if _c_origin is not None else None
-        return cls(name=_name, static=_static, link=_link, joint=_joint, plugin=_plugin, gripper=_gripper, origin=_origin)
+        return cls(name=_name, static=_static, link=_link, joint=_joint, plugin=_plugin, gripper=_gripper,
+                   origin=_origin)

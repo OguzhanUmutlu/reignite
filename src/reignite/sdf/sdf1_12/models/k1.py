@@ -1,13 +1,10 @@
 from __future__ import annotations
 
+import math
 from xml.etree import ElementTree as ET
 
-from ..model import Model
 from ...sdf1_11.models.k1 import K1 as _PrevK1
 
-
-import math
-import sys
 
 def _parse_int32(raw: str) -> int:
     v = int(raw)
@@ -28,7 +25,6 @@ def _parse_double(raw: str) -> float:
     if not math.isfinite(v) or abs(v) > 1.7976931348623157e+308:
         raise ValueError(f"double out of range: {raw}")
     return v
-
 
 
 class K1(_PrevK1):

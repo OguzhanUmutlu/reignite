@@ -1,16 +1,14 @@
 from __future__ import annotations
 
+import math
 from xml.etree import ElementTree as ET
 
-from ..model import Model
 from .geometry import Geometry
-from .surface import Surface
 from .mass import Mass
 from .origin import Origin
+from .surface import Surface
+from ..model import Model
 
-
-import math
-import sys
 
 def _parse_int32(raw: str) -> int:
     v = int(raw)
@@ -33,7 +31,6 @@ def _parse_double(raw: str) -> float:
     return v
 
 
-
 class MaxContacts(Model):
     def __init__(self, max_contacts: int = 10):
         self.max_contacts = max_contacts
@@ -53,14 +50,14 @@ class MaxContacts(Model):
 
 class Collision(Model):
     def __init__(
-        self,
-        name: str = "__default__",
-        laser_retro: float = 0,
-        geometry: "Geometry" = None,
-        surface: "Surface" = None,
-        max_contacts: "MaxContacts" = None,
-        mass: "Mass" = None,
-        origin: "Origin" = None
+            self,
+            name: str = "__default__",
+            laser_retro: float = 0,
+            geometry: "Geometry" = None,
+            surface: "Surface" = None,
+            max_contacts: "MaxContacts" = None,
+            mass: "Mass" = None,
+            origin: "Origin" = None
     ):
         self.name = name
         self.laser_retro = laser_retro
@@ -102,4 +99,5 @@ class Collision(Model):
         _mass = Mass.from_sdf(_c_mass) if _c_mass is not None else None
         _c_origin = el.find("origin")
         _origin = Origin.from_sdf(_c_origin) if _c_origin is not None else None
-        return cls(name=_name, laser_retro=_laser_retro, geometry=_geometry, surface=_surface, max_contacts=_max_contacts, mass=_mass, origin=_origin)
+        return cls(name=_name, laser_retro=_laser_retro, geometry=_geometry, surface=_surface,
+                   max_contacts=_max_contacts, mass=_mass, origin=_origin)

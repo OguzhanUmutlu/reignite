@@ -2,9 +2,8 @@ from __future__ import annotations
 
 from xml.etree import ElementTree as ET
 
-from ..model import Model
-from ...sdf1_5.models.audio import Audio as _PrevAudio
 from .device import Device
+from ...sdf1_5.models.audio import Audio as _PrevAudio
 
 
 class Audio(_PrevAudio):

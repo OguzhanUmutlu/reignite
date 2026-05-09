@@ -2,10 +2,9 @@ from __future__ import annotations
 
 from xml.etree import ElementTree as ET
 
-from ..model import Model
-from ...sdf1_3.models.dynamics import Dynamics as _PrevDynamics
 from .damping import Damping
 from .friction import Friction
+from ...sdf1_3.models.dynamics import Dynamics as _PrevDynamics
 
 
 class Dynamics(_PrevDynamics):

@@ -2,10 +2,9 @@ from __future__ import annotations
 
 from xml.etree import ElementTree as ET
 
-from ..model import Model
-from ...sdf1_9.models.plane import Plane as _PrevPlane
 from .normal import Normal
 from .size import Size
+from ...sdf1_9.models.plane import Plane as _PrevPlane
 
 
 class Plane(_PrevPlane):

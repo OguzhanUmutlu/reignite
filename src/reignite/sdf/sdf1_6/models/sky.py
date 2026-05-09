@@ -2,21 +2,20 @@ from __future__ import annotations
 
 from xml.etree import ElementTree as ET
 
-from ..model import Model
-from ...sdf1_5.models.sky import Sky as _PrevSky
-from .time import Time
+from .clouds import Clouds
 from .sunrise import Sunrise
 from .sunset import Sunset
-from .clouds import Clouds
+from .time import Time
+from ...sdf1_5.models.sky import Sky as _PrevSky
 
 
 class Sky(_PrevSky):
     def __init__(
-        self,
-        time: "Time" = None,
-        sunrise: "Sunrise" = None,
-        sunset: "Sunset" = None,
-        clouds: "Clouds" = None
+            self,
+            time: "Time" = None,
+            sunrise: "Sunrise" = None,
+            sunset: "Sunset" = None,
+            clouds: "Clouds" = None
     ):
         super().__init__(time=time, sunrise=sunrise, sunset=sunset, clouds=clouds)
 

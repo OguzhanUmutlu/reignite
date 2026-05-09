@@ -2,22 +2,22 @@ from __future__ import annotations
 
 from xml.etree import ElementTree as ET
 
-from ..model import Model
-from .surface_model import SurfaceModel
-from .latitude_deg import LatitudeDeg
-from .longitude_deg import LongitudeDeg
 from .elevation import Elevation
 from .heading_deg import HeadingDeg
+from .latitude_deg import LatitudeDeg
+from .longitude_deg import LongitudeDeg
+from .surface_model import SurfaceModel
+from ..model import Model
 
 
 class SphericalCoordinates(Model):
     def __init__(
-        self,
-        surface_model: "SurfaceModel" = None,
-        latitude_deg: "LatitudeDeg" = None,
-        longitude_deg: "LongitudeDeg" = None,
-        elevation: "Elevation" = None,
-        heading_deg: "HeadingDeg" = None
+            self,
+            surface_model: "SurfaceModel" = None,
+            latitude_deg: "LatitudeDeg" = None,
+            longitude_deg: "LongitudeDeg" = None,
+            elevation: "Elevation" = None,
+            heading_deg: "HeadingDeg" = None
     ):
         self.surface_model = surface_model
         self.latitude_deg = latitude_deg
@@ -51,4 +51,5 @@ class SphericalCoordinates(Model):
         _elevation = Elevation.from_sdf(_c_elevation) if _c_elevation is not None else None
         _c_heading_deg = el.find("heading_deg")
         _heading_deg = HeadingDeg.from_sdf(_c_heading_deg) if _c_heading_deg is not None else None
-        return cls(surface_model=_surface_model, latitude_deg=_latitude_deg, longitude_deg=_longitude_deg, elevation=_elevation, heading_deg=_heading_deg)
+        return cls(surface_model=_surface_model, latitude_deg=_latitude_deg, longitude_deg=_longitude_deg,
+                   elevation=_elevation, heading_deg=_heading_deg)

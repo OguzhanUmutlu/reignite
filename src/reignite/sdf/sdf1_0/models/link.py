@@ -1,33 +1,32 @@
 from __future__ import annotations
 
+from typing import List
 from xml.etree import ElementTree as ET
 
-from typing import List
-
-from ..model import Model
-from .inertial import Inertial
 from .collision import Collision
-from .visual import Visual
-from .sensor import Sensor
-from .projector import Projector
-from .origin import Origin
 from .damping import Damping
+from .inertial import Inertial
+from .origin import Origin
+from .projector import Projector
+from .sensor import Sensor
+from .visual import Visual
+from ..model import Model
 
 
 class Link(Model):
     def __init__(
-        self,
-        name: str = "__default__",
-        gravity: bool = True,
-        self_collide: bool = False,
-        kinematic: bool = False,
-        inertial: "Inertial" = None,
-        collision: List["Collision"] = None,
-        visual: List["Visual"] = None,
-        sensor: List["Sensor"] = None,
-        projector: List["Projector"] = None,
-        origin: "Origin" = None,
-        damping: "Damping" = None
+            self,
+            name: str = "__default__",
+            gravity: bool = True,
+            self_collide: bool = False,
+            kinematic: bool = False,
+            inertial: "Inertial" = None,
+            collision: List["Collision"] = None,
+            visual: List["Visual"] = None,
+            sensor: List["Sensor"] = None,
+            projector: List["Projector"] = None,
+            origin: "Origin" = None,
+            damping: "Damping" = None
     ):
         self.name = name
         self.gravity = gravity
@@ -83,4 +82,6 @@ class Link(Model):
         _origin = Origin.from_sdf(_c_origin) if _c_origin is not None else None
         _c_damping = el.find("damping")
         _damping = Damping.from_sdf(_c_damping) if _c_damping is not None else None
-        return cls(name=_name, gravity=_gravity, self_collide=_self_collide, kinematic=_kinematic, inertial=_inertial, collision=_collision, visual=_visual, sensor=_sensor, projector=_projector, origin=_origin, damping=_damping)
+        return cls(name=_name, gravity=_gravity, self_collide=_self_collide, kinematic=_kinematic, inertial=_inertial,
+                   collision=_collision, visual=_visual, sensor=_sensor, projector=_projector, origin=_origin,
+                   damping=_damping)

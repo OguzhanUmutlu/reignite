@@ -2,23 +2,22 @@ from __future__ import annotations
 
 from xml.etree import ElementTree as ET
 
-from ..model import Model
-from ...sdf1_0.models.solver import Solver as _PrevSolver
-from .type import Type
 from .dt import Dt
 from .iters import Iters
 from .precon_iters import PreconIters
 from .sor import Sor
+from .type import Type
+from ...sdf1_0.models.solver import Solver as _PrevSolver
 
 
 class Solver(_PrevSolver):
     def __init__(
-        self,
-        type: "Type" = None,
-        dt: "Dt" = None,
-        iters: "Iters" = None,
-        precon_iters: "PreconIters" = None,
-        sor: "Sor" = None
+            self,
+            type: "Type" = None,
+            dt: "Dt" = None,
+            iters: "Iters" = None,
+            precon_iters: "PreconIters" = None,
+            sor: "Sor" = None
     ):
         super().__init__(type=type, dt=dt, iters=iters, precon_iters=precon_iters, sor=sor)
 

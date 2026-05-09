@@ -1,20 +1,18 @@
 from __future__ import annotations
 
+from typing import List
 from xml.etree import ElementTree as ET
 
-from typing import List
-
-from ..model import Model
-from ...sdf1_4.models.cast_shadows import CastShadows as _PrevCastShadows
-from ...sdf1_4.models.diffuse import Diffuse as _PrevDiffuse
-from ...sdf1_4.models.specular import Specular as _PrevSpecular
-from ...sdf1_4.models.light import Light as _PrevLight
-from ....utils.color import Color
-from .frame import Frame
-from .pose import Pose
 from .attenuation import Attenuation
 from .direction import Direction
+from .frame import Frame
+from .pose import Pose
 from .spot import Spot
+from ...sdf1_4.models.cast_shadows import CastShadows as _PrevCastShadows
+from ...sdf1_4.models.diffuse import Diffuse as _PrevDiffuse
+from ...sdf1_4.models.light import Light as _PrevLight
+from ...sdf1_4.models.specular import Specular as _PrevSpecular
+from ....utils.color import Color
 
 
 class CastShadows(_PrevCastShadows):
@@ -65,19 +63,20 @@ class Specular(_PrevSpecular):
 
 class Light(_PrevLight):
     def __init__(
-        self,
-        name: str = "__default__",
-        type: str = "point",
-        frame: List["Frame"] = None,
-        pose: "Pose" = None,
-        cast_shadows: "CastShadows" = None,
-        diffuse: "Diffuse" = None,
-        specular: "Specular" = None,
-        attenuation: "Attenuation" = None,
-        direction: "Direction" = None,
-        spot: "Spot" = None
+            self,
+            name: str = "__default__",
+            type: str = "point",
+            frame: List["Frame"] = None,
+            pose: "Pose" = None,
+            cast_shadows: "CastShadows" = None,
+            diffuse: "Diffuse" = None,
+            specular: "Specular" = None,
+            attenuation: "Attenuation" = None,
+            direction: "Direction" = None,
+            spot: "Spot" = None
     ):
-        super().__init__(name=name, type=type, pose=pose, cast_shadows=cast_shadows, diffuse=diffuse, specular=specular, attenuation=attenuation, direction=direction, spot=spot)
+        super().__init__(name=name, type=type, pose=pose, cast_shadows=cast_shadows, diffuse=diffuse, specular=specular,
+                         attenuation=attenuation, direction=direction, spot=spot)
         self.frame = frame or []
 
     def to_sdf(self) -> ET.Element:
@@ -90,4 +89,6 @@ class Light(_PrevLight):
     def from_sdf(cls, el: ET.Element) -> "Light":
         _base = _PrevLight.from_sdf(el)
         _frame = [Frame.from_sdf(c) for c in el.findall("frame")]
-        return cls(name=_base.name, type=_base.type, frame=_frame, pose=_base.pose, cast_shadows=_base.cast_shadows, diffuse=_base.diffuse, specular=_base.specular, attenuation=_base.attenuation, direction=_base.direction, spot=_base.spot)
+        return cls(name=_base.name, type=_base.type, frame=_frame, pose=_base.pose, cast_shadows=_base.cast_shadows,
+                   diffuse=_base.diffuse, specular=_base.specular, attenuation=_base.attenuation,
+                   direction=_base.direction, spot=_base.spot)

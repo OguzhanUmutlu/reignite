@@ -1,28 +1,26 @@
 from __future__ import annotations
 
+from typing import List
 from xml.etree import ElementTree as ET
 
-from typing import List
-
-from ..model import Model
+from .deletions import Deletions
+from .insertions import Insertions
+from .model import Model
+from .real_time import RealTime
 from .sim_time import SimTime
 from .wall_time import WallTime
-from .real_time import RealTime
-from .insertions import Insertions
-from .deletions import Deletions
-from .model import Model
 
 
 class State(Model):
     def __init__(
-        self,
-        world_name: str = "__default__",
-        sim_time: "SimTime" = None,
-        wall_time: "WallTime" = None,
-        real_time: "RealTime" = None,
-        insertions: "Insertions" = None,
-        deletions: "Deletions" = None,
-        model: List["Model"] = None
+            self,
+            world_name: str = "__default__",
+            sim_time: "SimTime" = None,
+            wall_time: "WallTime" = None,
+            real_time: "RealTime" = None,
+            insertions: "Insertions" = None,
+            deletions: "Deletions" = None,
+            model: List["Model"] = None
     ):
         self.world_name = world_name
         self.sim_time = sim_time
@@ -64,4 +62,5 @@ class State(Model):
         _c_deletions = el.find("deletions")
         _deletions = Deletions.from_sdf(_c_deletions) if _c_deletions is not None else None
         _model = [Model.from_sdf(c) for c in el.findall("model")]
-        return cls(world_name=_world_name, sim_time=_sim_time, wall_time=_wall_time, real_time=_real_time, insertions=_insertions, deletions=_deletions, model=_model)
+        return cls(world_name=_world_name, sim_time=_sim_time, wall_time=_wall_time, real_time=_real_time,
+                   insertions=_insertions, deletions=_deletions, model=_model)

@@ -1,12 +1,10 @@
 from __future__ import annotations
 
+from typing import List
 from xml.etree import ElementTree as ET
 
-from typing import List
-
-from ..model import Model
-from ...sdf1_3.models.deletions import Deletions as _PrevDeletions
 from .name import Name
+from ...sdf1_3.models.deletions import Deletions as _PrevDeletions
 
 
 class Deletions(_PrevDeletions):

@@ -7,11 +7,11 @@ from ..model import Model
 
 class Camera(Model):
     def __init__(
-        self,
-        name: str = "user_camera",
-        view_controller: "ViewController" = None,
-        origin: "Origin" = None,
-        track_visual: "TrackVisual" = None
+            self,
+            name: str = "user_camera",
+            view_controller: "ViewController" = None,
+            origin: "Origin" = None,
+            track_visual: "TrackVisual" = None
     ):
         self.name = name
         self.view_controller = view_controller

@@ -2,11 +2,10 @@ from __future__ import annotations
 
 from xml.etree import ElementTree as ET
 
-from ..model import Model
-from ...sdf1_0.models.mesh import Mesh as _PrevMesh
 from .filename import Filename
-from .uri import Uri
 from .scale import Scale
+from .uri import Uri
+from ...sdf1_0.models.mesh import Mesh as _PrevMesh
 
 
 class Mesh(_PrevMesh):

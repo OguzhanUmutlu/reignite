@@ -2,7 +2,6 @@ from __future__ import annotations
 
 from xml.etree import ElementTree as ET
 
-from ..model import Model
 from ...sdf1_8.models.format import Format as _PrevFormat
 
 

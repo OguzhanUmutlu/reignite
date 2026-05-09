@@ -2,21 +2,20 @@ from __future__ import annotations
 
 from xml.etree import ElementTree as ET
 
-from ..model import Model
-from ...sdf1_6.models.axis2 import Axis2 as _PrevAxis2
-from .initial_position import InitialPosition
-from .xyz import Xyz
 from .dynamics import Dynamics
+from .initial_position import InitialPosition
 from .limit import Limit
+from .xyz import Xyz
+from ...sdf1_6.models.axis2 import Axis2 as _PrevAxis2
 
 
 class Axis2(_PrevAxis2):
     def __init__(
-        self,
-        initial_position: "InitialPosition" = None,
-        xyz: "Xyz" = None,
-        dynamics: "Dynamics" = None,
-        limit: "Limit" = None
+            self,
+            initial_position: "InitialPosition" = None,
+            xyz: "Xyz" = None,
+            dynamics: "Dynamics" = None,
+            limit: "Limit" = None
     ):
         super().__init__(initial_position=initial_position, xyz=xyz, dynamics=dynamics, limit=limit)
 

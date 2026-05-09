@@ -1,20 +1,17 @@
 from __future__ import annotations
 
+import math
 from xml.etree import ElementTree as ET
 
-from ..model import Model
-from ...sdf1_11.models.max_contacts import MaxContacts as _PrevMaxContacts
-from ...sdf1_11.models.collision import Collision as _PrevCollision
-from .pose import Pose
-from .geometry import Geometry
-from .surface import Surface
-from .laser_retro import LaserRetro
-from .density import Density
 from .auto_inertia_params import AutoInertiaParams
+from .density import Density
+from .geometry import Geometry
+from .laser_retro import LaserRetro
+from .pose import Pose
+from .surface import Surface
+from ...sdf1_11.models.collision import Collision as _PrevCollision
+from ...sdf1_11.models.max_contacts import MaxContacts as _PrevMaxContacts
 
-
-import math
-import sys
 
 def _parse_int32(raw: str) -> int:
     v = int(raw)
@@ -37,7 +34,6 @@ def _parse_double(raw: str) -> float:
     return v
 
 
-
 class MaxContacts(_PrevMaxContacts):
     def __init__(self, max_contacts: int = 10):
         super().__init__(max_contacts=max_contacts)
@@ -54,15 +50,15 @@ class MaxContacts(_PrevMaxContacts):
 
 class Collision(_PrevCollision):
     def __init__(
-        self,
-        name: str = "__default__",
-        pose: "Pose" = None,
-        geometry: "Geometry" = None,
-        surface: "Surface" = None,
-        laser_retro: "LaserRetro" = None,
-        max_contacts: "MaxContacts" = None,
-        density: "Density" = None,
-        auto_inertia_params: "AutoInertiaParams" = None
+            self,
+            name: str = "__default__",
+            pose: "Pose" = None,
+            geometry: "Geometry" = None,
+            surface: "Surface" = None,
+            laser_retro: "LaserRetro" = None,
+            max_contacts: "MaxContacts" = None,
+            density: "Density" = None,
+            auto_inertia_params: "AutoInertiaParams" = None
     ):
         super().__init__()
         self.name = name
@@ -110,5 +106,7 @@ class Collision(_PrevCollision):
         _c_density = el.find("density")
         _density = Density.from_sdf(_c_density) if _c_density is not None else None
         _c_auto_inertia_params = el.find("auto_inertia_params")
-        _auto_inertia_params = AutoInertiaParams.from_sdf(_c_auto_inertia_params) if _c_auto_inertia_params is not None else None
-        return cls(name=_name, pose=_pose, geometry=_geometry, surface=_surface, laser_retro=_laser_retro, max_contacts=_max_contacts, density=_density, auto_inertia_params=_auto_inertia_params)
+        _auto_inertia_params = AutoInertiaParams.from_sdf(
+            _c_auto_inertia_params) if _c_auto_inertia_params is not None else None
+        return cls(name=_name, pose=_pose, geometry=_geometry, surface=_surface, laser_retro=_laser_retro,
+                   max_contacts=_max_contacts, density=_density, auto_inertia_params=_auto_inertia_params)

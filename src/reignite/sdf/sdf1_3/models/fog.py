@@ -2,11 +2,11 @@ from __future__ import annotations
 
 from xml.etree import ElementTree as ET
 
-from ..model import Model
 from .color import Color
-from .start import Start
-from .end import End
 from .density import Density
+from .end import End
+from .start import Start
+from ..model import Model
 
 
 class Type(Model):
@@ -28,12 +28,12 @@ class Type(Model):
 
 class Fog(Model):
     def __init__(
-        self,
-        color: "Color" = None,
-        type: "Type" = None,
-        start: "Start" = None,
-        end: "End" = None,
-        density: "Density" = None
+            self,
+            color: "Color" = None,
+            type: "Type" = None,
+            start: "Start" = None,
+            end: "End" = None,
+            density: "Density" = None
     ):
         self.color = color
         self.type = type

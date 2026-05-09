@@ -2,16 +2,16 @@ from __future__ import annotations
 
 from xml.etree import ElementTree as ET
 
-from ..model import Model
 from .position_sensing import PositionSensing
 from .velocity_sensing import VelocitySensing
+from ..model import Model
 
 
 class Gps(Model):
     def __init__(
-        self,
-        position_sensing: "PositionSensing" = None,
-        velocity_sensing: "VelocitySensing" = None
+            self,
+            position_sensing: "PositionSensing" = None,
+            velocity_sensing: "VelocitySensing" = None
     ):
         self.position_sensing = position_sensing
         self.velocity_sensing = velocity_sensing

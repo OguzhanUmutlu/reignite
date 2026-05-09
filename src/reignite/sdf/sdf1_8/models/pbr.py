@@ -2,10 +2,9 @@ from __future__ import annotations
 
 from xml.etree import ElementTree as ET
 
-from ..model import Model
-from ...sdf1_7.models.pbr import Pbr as _PrevPbr
 from .metal import Metal
 from .specular import Specular
+from ...sdf1_7.models.pbr import Pbr as _PrevPbr
 
 
 class Pbr(_PrevPbr):

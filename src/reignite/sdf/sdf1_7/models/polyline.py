@@ -1,13 +1,11 @@
 from __future__ import annotations
 
+from typing import List
 from xml.etree import ElementTree as ET
 
-from typing import List
-
-from ..model import Model
-from ...sdf1_6.models.polyline import Polyline as _PrevPolyline
-from .point import Point
 from .height import Height
+from .point import Point
+from ...sdf1_6.models.polyline import Polyline as _PrevPolyline
 
 
 class Polyline(_PrevPolyline):

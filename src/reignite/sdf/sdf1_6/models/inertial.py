@@ -1,24 +1,22 @@
 from __future__ import annotations
 
+from typing import List
 from xml.etree import ElementTree as ET
 
-from typing import List
-
-from ..model import Model
-from ...sdf1_5.models.inertial import Inertial as _PrevInertial
 from .frame import Frame
-from .pose import Pose
-from .mass import Mass
 from .inertia import Inertia
+from .mass import Mass
+from .pose import Pose
+from ...sdf1_5.models.inertial import Inertial as _PrevInertial
 
 
 class Inertial(_PrevInertial):
     def __init__(
-        self,
-        frame: List["Frame"] = None,
-        pose: "Pose" = None,
-        mass: "Mass" = None,
-        inertia: "Inertia" = None
+            self,
+            frame: List["Frame"] = None,
+            pose: "Pose" = None,
+            mass: "Mass" = None,
+            inertia: "Inertia" = None
     ):
         super().__init__(frame=frame, pose=pose, mass=mass, inertia=inertia)
 

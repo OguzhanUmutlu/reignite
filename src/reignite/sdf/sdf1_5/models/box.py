@@ -2,9 +2,8 @@ from __future__ import annotations
 
 from xml.etree import ElementTree as ET
 
-from ..model import Model
-from ...sdf1_4.models.box import Box as _PrevBox
 from .size import Size
+from ...sdf1_4.models.box import Box as _PrevBox
 
 
 class Box(_PrevBox):

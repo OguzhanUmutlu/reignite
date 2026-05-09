@@ -1,15 +1,12 @@
 from __future__ import annotations
 
+import math
+from typing import List
 from xml.etree import ElementTree as ET
 
-from typing import List
-
-from ..model import Model
 from .trajectory import Trajectory
+from ..model import Model
 
-
-import math
-import sys
 
 def _parse_int32(raw: str) -> int:
     v = int(raw)
@@ -32,14 +29,13 @@ def _parse_double(raw: str) -> float:
     return v
 
 
-
 class Script(Model):
     def __init__(
-        self,
-        loop: bool = True,
-        delay_start: float = 0.0,
-        auto_start: bool = True,
-        trajectory: List["Trajectory"] = None
+            self,
+            loop: bool = True,
+            delay_start: float = 0.0,
+            auto_start: bool = True,
+            trajectory: List["Trajectory"] = None
     ):
         self.loop = loop
         self.delay_start = delay_start

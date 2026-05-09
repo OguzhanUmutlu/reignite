@@ -2,22 +2,22 @@ from __future__ import annotations
 
 from xml.etree import ElementTree as ET
 
-from ..model import Model
+from .clip import Clip
+from .depth_camera import DepthCamera
 from .horizontal_fov import HorizontalFov
 from .image import Image
-from .clip import Clip
 from .save import Save
-from .depth_camera import DepthCamera
+from ..model import Model
 
 
 class Camera(Model):
     def __init__(
-        self,
-        horizontal_fov: "HorizontalFov" = None,
-        image: "Image" = None,
-        clip: "Clip" = None,
-        save: "Save" = None,
-        depth_camera: "DepthCamera" = None
+            self,
+            horizontal_fov: "HorizontalFov" = None,
+            image: "Image" = None,
+            clip: "Clip" = None,
+            save: "Save" = None,
+            depth_camera: "DepthCamera" = None
     ):
         self.horizontal_fov = horizontal_fov
         self.image = image

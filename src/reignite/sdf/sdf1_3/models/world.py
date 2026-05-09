@@ -1,23 +1,19 @@
 from __future__ import annotations
 
+import math
+from typing import List
 from xml.etree import ElementTree as ET
 
-from typing import List
-
-from ..model import Model
-from ....utils.pose import Pose
-from ....utils.vector3 import Vector3
+from .actor import Actor
 from .gui import Gui
-from .scene import Scene
 from .light import Light
 from .model import Model
-from .actor import Actor
 from .road import Road
+from .scene import Scene
 from .state import State
+from ....utils.pose import Pose
+from ....utils.vector3 import Vector3
 
-
-import math
-import sys
 
 def _parse_int32(raw: str) -> int:
     v = int(raw)
@@ -38,7 +34,6 @@ def _parse_double(raw: str) -> float:
     if not math.isfinite(v) or abs(v) > 1.7976931348623157e+308:
         raise ValueError(f"double out of range: {raw}")
     return v
-
 
 
 class UpdateRate(Model):
@@ -198,12 +193,12 @@ class Sor(Model):
 
 class Solver(Model):
     def __init__(
-        self,
-        type: "Type" = None,
-        dt: "Dt" = None,
-        iters: "Iters" = None,
-        precon_iters: "PreconIters" = None,
-        sor: "Sor" = None
+            self,
+            type: "Type" = None,
+            dt: "Dt" = None,
+            iters: "Iters" = None,
+            precon_iters: "PreconIters" = None,
+            sor: "Sor" = None
     ):
         self.type = type
         self.dt = dt
@@ -310,11 +305,11 @@ class ContactSurfaceLayer(Model):
 
 class Constraints(Model):
     def __init__(
-        self,
-        cfm: "Cfm" = None,
-        erp: "Erp" = None,
-        contact_max_correcting_vel: "ContactMaxCorrectingVel" = None,
-        contact_surface_layer: "ContactSurfaceLayer" = None
+            self,
+            cfm: "Cfm" = None,
+            erp: "Erp" = None,
+            contact_max_correcting_vel: "ContactMaxCorrectingVel" = None,
+            contact_surface_layer: "ContactSurfaceLayer" = None
     ):
         self.cfm = cfm
         self.erp = erp
@@ -340,10 +335,13 @@ class Constraints(Model):
         _c_erp = el.find("erp")
         _erp = Erp.from_sdf(_c_erp) if _c_erp is not None else None
         _c_contact_max_correcting_vel = el.find("contact_max_correcting_vel")
-        _contact_max_correcting_vel = ContactMaxCorrectingVel.from_sdf(_c_contact_max_correcting_vel) if _c_contact_max_correcting_vel is not None else None
+        _contact_max_correcting_vel = ContactMaxCorrectingVel.from_sdf(
+            _c_contact_max_correcting_vel) if _c_contact_max_correcting_vel is not None else None
         _c_contact_surface_layer = el.find("contact_surface_layer")
-        _contact_surface_layer = ContactSurfaceLayer.from_sdf(_c_contact_surface_layer) if _c_contact_surface_layer is not None else None
-        return cls(cfm=_cfm, erp=_erp, contact_max_correcting_vel=_contact_max_correcting_vel, contact_surface_layer=_contact_surface_layer)
+        _contact_surface_layer = ContactSurfaceLayer.from_sdf(
+            _c_contact_surface_layer) if _c_contact_surface_layer is not None else None
+        return cls(cfm=_cfm, erp=_erp, contact_max_correcting_vel=_contact_max_correcting_vel,
+                   contact_surface_layer=_contact_surface_layer)
 
 
 class Ode(Model):
@@ -370,13 +368,13 @@ class Ode(Model):
 
 class Physics(Model):
     def __init__(
-        self,
-        type: str = "ode",
-        update_rate: "UpdateRate" = None,
-        max_contacts: "MaxContacts" = None,
-        gravity: "Gravity" = None,
-        bullet: "Bullet" = None,
-        ode: "Ode" = None
+            self,
+            type: str = "ode",
+            update_rate: "UpdateRate" = None,
+            max_contacts: "MaxContacts" = None,
+            gravity: "Gravity" = None,
+            bullet: "Bullet" = None,
+            ode: "Ode" = None
     ):
         self.type = type
         self.update_rate = update_rate
@@ -414,7 +412,8 @@ class Physics(Model):
         _bullet = Bullet.from_sdf(_c_bullet) if _c_bullet is not None else None
         _c_ode = el.find("ode")
         _ode = Ode.from_sdf(_c_ode) if _c_ode is not None else None
-        return cls(type=_type, update_rate=_update_rate, max_contacts=_max_contacts, gravity=_gravity, bullet=_bullet, ode=_ode)
+        return cls(type=_type, update_rate=_update_rate, max_contacts=_max_contacts, gravity=_gravity, bullet=_bullet,
+                   ode=_ode)
 
 
 class Plugin(Model):
@@ -652,11 +651,11 @@ class Velocity(Model):
 
 class Limit(Model):
     def __init__(
-        self,
-        lower: "Lower" = None,
-        upper: "Upper" = None,
-        effort: "Effort" = None,
-        velocity: "Velocity" = None
+            self,
+            lower: "Lower" = None,
+            upper: "Upper" = None,
+            effort: "Effort" = None,
+            velocity: "Velocity" = None
     ):
         self.lower = lower
         self.upper = upper
@@ -744,16 +743,16 @@ class Axis2(Model):
 
 class Joint(Model):
     def __init__(
-        self,
-        name: str = "__default__",
-        type: str = "__default__",
-        parent: "Parent" = None,
-        child: "Child" = None,
-        pose: "Pose" = None,
-        thread_pitch: "ThreadPitch" = None,
-        axis: "Axis" = None,
-        axis2: "Axis2" = None,
-        physics: "Physics" = None
+            self,
+            name: str = "__default__",
+            type: str = "__default__",
+            parent: "Parent" = None,
+            child: "Child" = None,
+            pose: "Pose" = None,
+            thread_pitch: "ThreadPitch" = None,
+            axis: "Axis" = None,
+            axis2: "Axis2" = None,
+            physics: "Physics" = None
     ):
         self.name = name
         self.type = type
@@ -805,23 +804,24 @@ class Joint(Model):
         _axis2 = Axis2.from_sdf(_c_axis2) if _c_axis2 is not None else None
         _c_physics = el.find("physics")
         _physics = Physics.from_sdf(_c_physics) if _c_physics is not None else None
-        return cls(name=_name, type=_type, parent=_parent, child=_child, pose=_pose, thread_pitch=_thread_pitch, axis=_axis, axis2=_axis2, physics=_physics)
+        return cls(name=_name, type=_type, parent=_parent, child=_child, pose=_pose, thread_pitch=_thread_pitch,
+                   axis=_axis, axis2=_axis2, physics=_physics)
 
 
 class World(Model):
     def __init__(
-        self,
-        name: str = "__default__",
-        gui: "Gui" = None,
-        physics: "Physics" = None,
-        scene: "Scene" = None,
-        light: List["Light"] = None,
-        model: List["Model"] = None,
-        actor: List["Actor"] = None,
-        plugin: List["Plugin"] = None,
-        joint: List["Joint"] = None,
-        road: List["Road"] = None,
-        state: List["State"] = None
+            self,
+            name: str = "__default__",
+            gui: "Gui" = None,
+            physics: "Physics" = None,
+            scene: "Scene" = None,
+            light: List["Light"] = None,
+            model: List["Model"] = None,
+            actor: List["Actor"] = None,
+            plugin: List["Plugin"] = None,
+            joint: List["Joint"] = None,
+            road: List["Road"] = None,
+            state: List["State"] = None
     ):
         self.name = name
         self.gui = gui
@@ -877,4 +877,5 @@ class World(Model):
         _joint = [Joint.from_sdf(c) for c in el.findall("joint")]
         _road = [Road.from_sdf(c) for c in el.findall("road")]
         _state = [State.from_sdf(c) for c in el.findall("state")]
-        return cls(name=_name, gui=_gui, physics=_physics, scene=_scene, light=_light, model=_model, actor=_actor, plugin=_plugin, joint=_joint, road=_road, state=_state)
+        return cls(name=_name, gui=_gui, physics=_physics, scene=_scene, light=_light, model=_model, actor=_actor,
+                   plugin=_plugin, joint=_joint, road=_road, state=_state)

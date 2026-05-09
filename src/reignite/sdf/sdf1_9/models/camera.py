@@ -2,37 +2,36 @@ from __future__ import annotations
 
 from xml.etree import ElementTree as ET
 
-from ..model import Model
-from ...sdf1_8.models.noise import Noise as _PrevNoise
-from ...sdf1_8.models.camera import Camera as _PrevCamera
-from .pose import Pose
+from .box_type import BoxType
 from .camera_info_topic import CameraInfoTopic
-from .triggered import Triggered
-from .trigger_topic import TriggerTopic
+from .clip import Clip
+from .depth_camera import DepthCamera
+from .distortion import Distortion
 from .horizontal_fov import HorizontalFov
 from .image import Image
-from .clip import Clip
-from .save import Save
-from .depth_camera import DepthCamera
-from .segmentation_type import SegmentationType
-from .box_type import BoxType
-from .distortion import Distortion
 from .lens import Lens
-from .visibility_mask import VisibilityMask
 from .optical_frame_id import OpticalFrameId
+from .pose import Pose
+from .save import Save
+from .segmentation_type import SegmentationType
+from .trigger_topic import TriggerTopic
+from .triggered import Triggered
+from .visibility_mask import VisibilityMask
+from ...sdf1_8.models.camera import Camera as _PrevCamera
+from ...sdf1_8.models.noise import Noise as _PrevNoise
 
 
 class Noise(_PrevNoise):
     def __init__(
-        self,
-        type: str = "none",
-        mean: "Mean" = None,
-        stddev: "Stddev" = None,
-        bias_mean: "BiasMean" = None,
-        bias_stddev: "BiasStddev" = None,
-        dynamic_bias_stddev: "DynamicBiasStddev" = None,
-        dynamic_bias_correlation_time: "DynamicBiasCorrelationTime" = None,
-        precision: "Precision" = None
+            self,
+            type: str = "none",
+            mean: "Mean" = None,
+            stddev: "Stddev" = None,
+            bias_mean: "BiasMean" = None,
+            bias_stddev: "BiasStddev" = None,
+            dynamic_bias_stddev: "DynamicBiasStddev" = None,
+            dynamic_bias_correlation_time: "DynamicBiasCorrelationTime" = None,
+            precision: "Precision" = None
     ):
         super().__init__(type=type, mean=mean, stddev=stddev)
         self.bias_mean = bias_mean
@@ -63,36 +62,43 @@ class Noise(_PrevNoise):
         _c_bias_stddev = el.find("bias_stddev")
         _bias_stddev = BiasStddev.from_sdf(_c_bias_stddev) if _c_bias_stddev is not None else None
         _c_dynamic_bias_stddev = el.find("dynamic_bias_stddev")
-        _dynamic_bias_stddev = DynamicBiasStddev.from_sdf(_c_dynamic_bias_stddev) if _c_dynamic_bias_stddev is not None else None
+        _dynamic_bias_stddev = DynamicBiasStddev.from_sdf(
+            _c_dynamic_bias_stddev) if _c_dynamic_bias_stddev is not None else None
         _c_dynamic_bias_correlation_time = el.find("dynamic_bias_correlation_time")
-        _dynamic_bias_correlation_time = DynamicBiasCorrelationTime.from_sdf(_c_dynamic_bias_correlation_time) if _c_dynamic_bias_correlation_time is not None else None
+        _dynamic_bias_correlation_time = DynamicBiasCorrelationTime.from_sdf(
+            _c_dynamic_bias_correlation_time) if _c_dynamic_bias_correlation_time is not None else None
         _c_precision = el.find("precision")
         _precision = Precision.from_sdf(_c_precision) if _c_precision is not None else None
-        return cls(type=_base.type, mean=_base.mean, stddev=_base.stddev, bias_mean=_bias_mean, bias_stddev=_bias_stddev, dynamic_bias_stddev=_dynamic_bias_stddev, dynamic_bias_correlation_time=_dynamic_bias_correlation_time, precision=_precision)
+        return cls(type=_base.type, mean=_base.mean, stddev=_base.stddev, bias_mean=_bias_mean,
+                   bias_stddev=_bias_stddev, dynamic_bias_stddev=_dynamic_bias_stddev,
+                   dynamic_bias_correlation_time=_dynamic_bias_correlation_time, precision=_precision)
 
 
 class Camera(_PrevCamera):
     def __init__(
-        self,
-        name: str = "__default__",
-        pose: "Pose" = None,
-        camera_info_topic: "CameraInfoTopic" = None,
-        triggered: "Triggered" = None,
-        trigger_topic: "TriggerTopic" = None,
-        horizontal_fov: "HorizontalFov" = None,
-        image: "Image" = None,
-        clip: "Clip" = None,
-        save: "Save" = None,
-        depth_camera: "DepthCamera" = None,
-        segmentation_type: "SegmentationType" = None,
-        box_type: "BoxType" = None,
-        noise: "Noise" = None,
-        distortion: "Distortion" = None,
-        lens: "Lens" = None,
-        visibility_mask: "VisibilityMask" = None,
-        optical_frame_id: "OpticalFrameId" = None
+            self,
+            name: str = "__default__",
+            pose: "Pose" = None,
+            camera_info_topic: "CameraInfoTopic" = None,
+            triggered: "Triggered" = None,
+            trigger_topic: "TriggerTopic" = None,
+            horizontal_fov: "HorizontalFov" = None,
+            image: "Image" = None,
+            clip: "Clip" = None,
+            save: "Save" = None,
+            depth_camera: "DepthCamera" = None,
+            segmentation_type: "SegmentationType" = None,
+            box_type: "BoxType" = None,
+            noise: "Noise" = None,
+            distortion: "Distortion" = None,
+            lens: "Lens" = None,
+            visibility_mask: "VisibilityMask" = None,
+            optical_frame_id: "OpticalFrameId" = None
     ):
-        super().__init__(name=name, pose=pose, camera_info_topic=camera_info_topic, horizontal_fov=horizontal_fov, image=image, clip=clip, save=save, depth_camera=depth_camera, noise=noise, distortion=distortion, lens=lens, visibility_mask=visibility_mask, optical_frame_id=optical_frame_id)
+        super().__init__(name=name, pose=pose, camera_info_topic=camera_info_topic, horizontal_fov=horizontal_fov,
+                         image=image, clip=clip, save=save, depth_camera=depth_camera, noise=noise,
+                         distortion=distortion, lens=lens, visibility_mask=visibility_mask,
+                         optical_frame_id=optical_frame_id)
         self.triggered = triggered
         self.trigger_topic = trigger_topic
         self.segmentation_type = segmentation_type
@@ -118,7 +124,13 @@ class Camera(_PrevCamera):
         _c_trigger_topic = el.find("trigger_topic")
         _trigger_topic = TriggerTopic.from_sdf(_c_trigger_topic) if _c_trigger_topic is not None else None
         _c_segmentation_type = el.find("segmentation_type")
-        _segmentation_type = SegmentationType.from_sdf(_c_segmentation_type) if _c_segmentation_type is not None else None
+        _segmentation_type = SegmentationType.from_sdf(
+            _c_segmentation_type) if _c_segmentation_type is not None else None
         _c_box_type = el.find("box_type")
         _box_type = BoxType.from_sdf(_c_box_type) if _c_box_type is not None else None
-        return cls(name=_base.name, pose=_base.pose, camera_info_topic=_base.camera_info_topic, triggered=_triggered, trigger_topic=_trigger_topic, horizontal_fov=_base.horizontal_fov, image=_base.image, clip=_base.clip, save=_base.save, depth_camera=_base.depth_camera, segmentation_type=_segmentation_type, box_type=_box_type, noise=_base.noise, distortion=_base.distortion, lens=_base.lens, visibility_mask=_base.visibility_mask, optical_frame_id=_base.optical_frame_id)
+        return cls(name=_base.name, pose=_base.pose, camera_info_topic=_base.camera_info_topic, triggered=_triggered,
+                   trigger_topic=_trigger_topic, horizontal_fov=_base.horizontal_fov, image=_base.image,
+                   clip=_base.clip, save=_base.save, depth_camera=_base.depth_camera,
+                   segmentation_type=_segmentation_type, box_type=_box_type, noise=_base.noise,
+                   distortion=_base.distortion, lens=_base.lens, visibility_mask=_base.visibility_mask,
+                   optical_frame_id=_base.optical_frame_id)

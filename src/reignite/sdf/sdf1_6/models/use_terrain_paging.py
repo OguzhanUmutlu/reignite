@@ -2,7 +2,6 @@ from __future__ import annotations
 
 from xml.etree import ElementTree as ET
 
-from ..model import Model
 from ...sdf1_5.models.use_terrain_paging import UseTerrainPaging as _PrevUseTerrainPaging
 
 

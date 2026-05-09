@@ -1,15 +1,13 @@
 from __future__ import annotations
 
+import math
 from xml.etree import ElementTree as ET
 
-from ..model import Model
 from .geometry import Geometry
-from .origin import Origin
 from .material import Material
+from .origin import Origin
+from ..model import Model
 
-
-import math
-import sys
 
 def _parse_int32(raw: str) -> int:
     v = int(raw)
@@ -32,17 +30,16 @@ def _parse_double(raw: str) -> float:
     return v
 
 
-
 class Visual(Model):
     def __init__(
-        self,
-        name: str = "__default__",
-        cast_shadows: bool = True,
-        laser_retro: float = 0.0,
-        transparency: float = 0.0,
-        geometry: "Geometry" = None,
-        origin: "Origin" = None,
-        material: "Material" = None
+            self,
+            name: str = "__default__",
+            cast_shadows: bool = True,
+            laser_retro: float = 0.0,
+            transparency: float = 0.0,
+            geometry: "Geometry" = None,
+            origin: "Origin" = None,
+            material: "Material" = None
     ):
         self.name = name
         self.cast_shadows = cast_shadows
@@ -82,4 +79,5 @@ class Visual(Model):
         _origin = Origin.from_sdf(_c_origin) if _c_origin is not None else None
         _c_material = el.find("material")
         _material = Material.from_sdf(_c_material) if _c_material is not None else None
-        return cls(name=_name, cast_shadows=_cast_shadows, laser_retro=_laser_retro, transparency=_transparency, geometry=_geometry, origin=_origin, material=_material)
+        return cls(name=_name, cast_shadows=_cast_shadows, laser_retro=_laser_retro, transparency=_transparency,
+                   geometry=_geometry, origin=_origin, material=_material)

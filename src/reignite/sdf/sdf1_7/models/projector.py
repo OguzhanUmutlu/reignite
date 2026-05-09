@@ -1,18 +1,16 @@
 from __future__ import annotations
 
+from typing import List
 from xml.etree import ElementTree as ET
 
-from typing import List
-
-from ..model import Model
-from ...sdf1_6.models.texture import Texture as _PrevTexture
-from ...sdf1_6.models.projector import Projector as _PrevProjector
-from .pose import Pose
-from .plugin import Plugin
+from .far_clip import FarClip
 from .fov import Fov
 from .near_clip import NearClip
-from .far_clip import FarClip
+from .plugin import Plugin
+from .pose import Pose
 from .visibility_flags import VisibilityFlags
+from ...sdf1_6.models.projector import Projector as _PrevProjector
+from ...sdf1_6.models.texture import Texture as _PrevTexture
 
 
 class Texture(_PrevTexture):
@@ -45,17 +43,18 @@ class Texture(_PrevTexture):
 
 class Projector(_PrevProjector):
     def __init__(
-        self,
-        name: str = "__default__",
-        pose: "Pose" = None,
-        plugin: List["Plugin"] = None,
-        texture: "Texture" = None,
-        fov: "Fov" = None,
-        near_clip: "NearClip" = None,
-        far_clip: "FarClip" = None,
-        visibility_flags: "VisibilityFlags" = None
+            self,
+            name: str = "__default__",
+            pose: "Pose" = None,
+            plugin: List["Plugin"] = None,
+            texture: "Texture" = None,
+            fov: "Fov" = None,
+            near_clip: "NearClip" = None,
+            far_clip: "FarClip" = None,
+            visibility_flags: "VisibilityFlags" = None
     ):
-        super().__init__(name=name, pose=pose, plugin=plugin, texture=texture, fov=fov, near_clip=near_clip, far_clip=far_clip)
+        super().__init__(name=name, pose=pose, plugin=plugin, texture=texture, fov=fov, near_clip=near_clip,
+                         far_clip=far_clip)
         self.visibility_flags = visibility_flags
 
     def to_sdf(self) -> ET.Element:
@@ -69,4 +68,5 @@ class Projector(_PrevProjector):
         _base = _PrevProjector.from_sdf(el)
         _c_visibility_flags = el.find("visibility_flags")
         _visibility_flags = VisibilityFlags.from_sdf(_c_visibility_flags) if _c_visibility_flags is not None else None
-        return cls(name=_base.name, pose=_base.pose, plugin=_base.plugin, texture=_base.texture, fov=_base.fov, near_clip=_base.near_clip, far_clip=_base.far_clip, visibility_flags=_visibility_flags)
+        return cls(name=_base.name, pose=_base.pose, plugin=_base.plugin, texture=_base.texture, fov=_base.fov,
+                   near_clip=_base.near_clip, far_clip=_base.far_clip, visibility_flags=_visibility_flags)

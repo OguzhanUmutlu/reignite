@@ -1,13 +1,11 @@
 from __future__ import annotations
 
+import math
 from xml.etree import ElementTree as ET
 
-from ..model import Model
-from ...sdf1_8.models.override_stiction_transition_velocity import OverrideStictionTransitionVelocity as _PrevOverrideStictionTransitionVelocity
+from ...sdf1_8.models.override_stiction_transition_velocity import \
+    OverrideStictionTransitionVelocity as _PrevOverrideStictionTransitionVelocity
 
-
-import math
-import sys
 
 def _parse_int32(raw: str) -> int:
     v = int(raw)
@@ -28,7 +26,6 @@ def _parse_double(raw: str) -> float:
     if not math.isfinite(v) or abs(v) > 1.7976931348623157e+308:
         raise ValueError(f"double out of range: {raw}")
     return v
-
 
 
 class OverrideStictionTransitionVelocity(_PrevOverrideStictionTransitionVelocity):

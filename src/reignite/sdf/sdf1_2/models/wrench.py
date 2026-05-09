@@ -2,11 +2,10 @@ from __future__ import annotations
 
 from xml.etree import ElementTree as ET
 
-from ..model import Model
+from .mag import Mag
 from ...sdf1_0.models.pos import Pos as _PrevPos
 from ...sdf1_0.models.wrench import Wrench as _PrevWrench
 from ....utils.vector3 import Vector3
-from .mag import Mag
 
 
 class Pos(_PrevPos):

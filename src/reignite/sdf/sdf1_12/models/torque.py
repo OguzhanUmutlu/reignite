@@ -2,11 +2,10 @@ from __future__ import annotations
 
 from xml.etree import ElementTree as ET
 
-from ..model import Model
-from ...sdf1_11.models.torque import Torque as _PrevTorque
 from .x import X
 from .y import Y
 from .z import Z
+from ...sdf1_11.models.torque import Torque as _PrevTorque
 
 
 class Torque(_PrevTorque):

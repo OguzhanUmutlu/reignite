@@ -1,28 +1,26 @@
 from __future__ import annotations
 
+from typing import List
 from xml.etree import ElementTree as ET
 
-from typing import List
-
-from ..model import Model
-from ...sdf1_8.models.pose import Pose as _PrevPose
-from ...sdf1_8.models.actor import Actor as _PrevActor
-from ....utils.pose import Pose
-from .link import Link
-from .joint import Joint
-from .plugin import Plugin
-from .skin import Skin
 from .animation import Animation
+from .joint import Joint
+from .link import Link
+from .plugin import Plugin
 from .script import Script
+from .skin import Skin
+from ...sdf1_8.models.actor import Actor as _PrevActor
+from ...sdf1_8.models.pose import Pose as _PrevPose
+from ....utils.pose import Pose
 
 
 class Pose(_PrevPose):
     def __init__(
-        self,
-        pose: Pose = None,
-        relative_to: str = "",
-        rotation_format: str = "euler_rpy",
-        degrees: bool = False
+            self,
+            pose: Pose = None,
+            relative_to: str = "",
+            rotation_format: str = "euler_rpy",
+            degrees: bool = False
     ):
         if pose is None:
             pose = Pose.from_sdf("0 0 0 0 0 0")
@@ -48,17 +46,18 @@ class Pose(_PrevPose):
 
 class Actor(_PrevActor):
     def __init__(
-        self,
-        name: str = "__default__",
-        pose: "Pose" = None,
-        link: List["Link"] = None,
-        joint: List["Joint"] = None,
-        plugin: List["Plugin"] = None,
-        skin: "Skin" = None,
-        animation: List["Animation"] = None,
-        script: "Script" = None
+            self,
+            name: str = "__default__",
+            pose: "Pose" = None,
+            link: List["Link"] = None,
+            joint: List["Joint"] = None,
+            plugin: List["Plugin"] = None,
+            skin: "Skin" = None,
+            animation: List["Animation"] = None,
+            script: "Script" = None
     ):
-        super().__init__(name=name, pose=pose, link=link, joint=joint, plugin=plugin, skin=skin, animation=animation, script=script)
+        super().__init__(name=name, pose=pose, link=link, joint=joint, plugin=plugin, skin=skin, animation=animation,
+                         script=script)
 
     def to_sdf(self) -> ET.Element:
         el = super().to_sdf()
@@ -67,4 +66,5 @@ class Actor(_PrevActor):
     @classmethod
     def from_sdf(cls, el: ET.Element) -> "Actor":
         _base = _PrevActor.from_sdf(el)
-        return cls(name=_base.name, pose=_base.pose, link=_base.link, joint=_base.joint, plugin=_base.plugin, skin=_base.skin, animation=_base.animation, script=_base.script)
+        return cls(name=_base.name, pose=_base.pose, link=_base.link, joint=_base.joint, plugin=_base.plugin,
+                   skin=_base.skin, animation=_base.animation, script=_base.script)

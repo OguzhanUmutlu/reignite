@@ -2,10 +2,9 @@ from __future__ import annotations
 
 from xml.etree import ElementTree as ET
 
-from ..model import Model
-from ...sdf1_0.models.script import Script as _PrevScript
-from .uri import Uri
 from .name import Name
+from .uri import Uri
+from ...sdf1_0.models.script import Script as _PrevScript
 
 
 class Script(_PrevScript):

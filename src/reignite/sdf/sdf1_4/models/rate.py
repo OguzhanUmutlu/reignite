@@ -2,20 +2,20 @@ from __future__ import annotations
 
 from xml.etree import ElementTree as ET
 
-from ..model import Model
-from .mean import Mean
-from .stddev import Stddev
 from .bias_mean import BiasMean
 from .bias_stddev import BiasStddev
+from .mean import Mean
+from .stddev import Stddev
+from ..model import Model
 
 
 class Rate(Model):
     def __init__(
-        self,
-        mean: "Mean" = None,
-        stddev: "Stddev" = None,
-        bias_mean: "BiasMean" = None,
-        bias_stddev: "BiasStddev" = None
+            self,
+            mean: "Mean" = None,
+            stddev: "Stddev" = None,
+            bias_mean: "BiasMean" = None,
+            bias_stddev: "BiasStddev" = None
     ):
         self.mean = mean
         self.stddev = stddev

@@ -2,8 +2,8 @@ from __future__ import annotations
 
 from xml.etree import ElementTree as ET
 
-from ..model import Model
 from .noise import Noise
+from ..model import Model
 
 
 class Vertical(Model):

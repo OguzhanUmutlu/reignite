@@ -1,12 +1,10 @@
 from __future__ import annotations
 
+import math
 from xml.etree import ElementTree as ET
 
 from ..model import Model
 
-
-import math
-import sys
 
 def _parse_int32(raw: str) -> int:
     v = int(raw)
@@ -29,14 +27,13 @@ def _parse_double(raw: str) -> float:
     return v
 
 
-
 class Vertical(Model):
     def __init__(
-        self,
-        samples: int = 1,
-        resolution: float = 1,
-        min_angle: float = 0,
-        max_angle: float = 0
+            self,
+            samples: int = 1,
+            resolution: float = 1,
+            min_angle: float = 0,
+            max_angle: float = 0
     ):
         self.samples = samples
         self.resolution = resolution

@@ -1,17 +1,14 @@
 from __future__ import annotations
 
+import math
 from xml.etree import ElementTree as ET
 
-from ..model import Model
+from .geometry import Geometry
+from .max import Max
+from .min import Min
 from ...sdf1_9.models.radius import Radius as _PrevRadius
 from ...sdf1_9.models.sonar import Sonar as _PrevSonar
-from .geometry import Geometry
-from .min import Min
-from .max import Max
 
-
-import math
-import sys
 
 def _parse_int32(raw: str) -> int:
     v = int(raw)
@@ -34,7 +31,6 @@ def _parse_double(raw: str) -> float:
     return v
 
 
-
 class Radius(_PrevRadius):
     def __init__(self, radius: float = 0.5):
         super().__init__(radius=radius)
@@ -51,11 +47,11 @@ class Radius(_PrevRadius):
 
 class Sonar(_PrevSonar):
     def __init__(
-        self,
-        geometry: "Geometry" = None,
-        min: "Min" = None,
-        max: "Max" = None,
-        radius: "Radius" = None
+            self,
+            geometry: "Geometry" = None,
+            min: "Min" = None,
+            max: "Max" = None,
+            radius: "Radius" = None
     ):
         super().__init__(geometry=geometry, min=min, max=max, radius=radius)
 

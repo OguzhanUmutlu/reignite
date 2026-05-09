@@ -1,13 +1,11 @@
 from __future__ import annotations
 
+import math
 from xml.etree import ElementTree as ET
 
 from ..model import Model
 from ....utils.vector3 import Vector3
 
-
-import math
-import sys
 
 def _parse_int32(raw: str) -> int:
     v = int(raw)
@@ -30,15 +28,14 @@ def _parse_double(raw: str) -> float:
     return v
 
 
-
 class Ode(Model):
     def __init__(
-        self,
-        mu: float = -1,
-        mu2: float = -1,
-        fdir1: Vector3 = None,
-        slip1: float = 0.0,
-        slip2: float = 0.0
+            self,
+            mu: float = -1,
+            mu2: float = -1,
+            fdir1: Vector3 = None,
+            slip1: float = 0.0,
+            slip2: float = 0.0
     ):
         if fdir1 is None:
             fdir1 = Vector3.from_sdf("0 0 0")

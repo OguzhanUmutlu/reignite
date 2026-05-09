@@ -2,46 +2,46 @@ from __future__ import annotations
 
 from xml.etree import ElementTree as ET
 
-from ..model import Model
-from .pose import Pose
-from .material import Material
-from .emitting import Emitting
-from .duration import Duration
-from .size import Size
-from .particle_size import ParticleSize
-from .lifetime import Lifetime
-from .rate import Rate
-from .min_velocity import MinVelocity
-from .max_velocity import MaxVelocity
-from .scale_rate import ScaleRate
-from .color_start import ColorStart
 from .color_end import ColorEnd
 from .color_range_image import ColorRangeImage
-from .topic import Topic
+from .color_start import ColorStart
+from .duration import Duration
+from .emitting import Emitting
+from .lifetime import Lifetime
+from .material import Material
+from .max_velocity import MaxVelocity
+from .min_velocity import MinVelocity
 from .particle_scatter_ratio import ParticleScatterRatio
+from .particle_size import ParticleSize
+from .pose import Pose
+from .rate import Rate
+from .scale_rate import ScaleRate
+from .size import Size
+from .topic import Topic
+from ..model import Model
 
 
 class ParticleEmitter(Model):
     def __init__(
-        self,
-        name: str = "__default__",
-        type: str = "point",
-        pose: "Pose" = None,
-        material: "Material" = None,
-        emitting: "Emitting" = None,
-        duration: "Duration" = None,
-        size: "Size" = None,
-        particle_size: "ParticleSize" = None,
-        lifetime: "Lifetime" = None,
-        rate: "Rate" = None,
-        min_velocity: "MinVelocity" = None,
-        max_velocity: "MaxVelocity" = None,
-        scale_rate: "ScaleRate" = None,
-        color_start: "ColorStart" = None,
-        color_end: "ColorEnd" = None,
-        color_range_image: "ColorRangeImage" = None,
-        topic: "Topic" = None,
-        particle_scatter_ratio: "ParticleScatterRatio" = None
+            self,
+            name: str = "__default__",
+            type: str = "point",
+            pose: "Pose" = None,
+            material: "Material" = None,
+            emitting: "Emitting" = None,
+            duration: "Duration" = None,
+            size: "Size" = None,
+            particle_size: "ParticleSize" = None,
+            lifetime: "Lifetime" = None,
+            rate: "Rate" = None,
+            min_velocity: "MinVelocity" = None,
+            max_velocity: "MaxVelocity" = None,
+            scale_rate: "ScaleRate" = None,
+            color_start: "ColorStart" = None,
+            color_end: "ColorEnd" = None,
+            color_range_image: "ColorRangeImage" = None,
+            topic: "Topic" = None,
+            particle_scatter_ratio: "ParticleScatterRatio" = None
     ):
         self.name = name
         self.type = type
@@ -133,9 +133,14 @@ class ParticleEmitter(Model):
         _c_color_end = el.find("color_end")
         _color_end = ColorEnd.from_sdf(_c_color_end) if _c_color_end is not None else None
         _c_color_range_image = el.find("color_range_image")
-        _color_range_image = ColorRangeImage.from_sdf(_c_color_range_image) if _c_color_range_image is not None else None
+        _color_range_image = ColorRangeImage.from_sdf(
+            _c_color_range_image) if _c_color_range_image is not None else None
         _c_topic = el.find("topic")
         _topic = Topic.from_sdf(_c_topic) if _c_topic is not None else None
         _c_particle_scatter_ratio = el.find("particle_scatter_ratio")
-        _particle_scatter_ratio = ParticleScatterRatio.from_sdf(_c_particle_scatter_ratio) if _c_particle_scatter_ratio is not None else None
-        return cls(name=_name, type=_type, pose=_pose, material=_material, emitting=_emitting, duration=_duration, size=_size, particle_size=_particle_size, lifetime=_lifetime, rate=_rate, min_velocity=_min_velocity, max_velocity=_max_velocity, scale_rate=_scale_rate, color_start=_color_start, color_end=_color_end, color_range_image=_color_range_image, topic=_topic, particle_scatter_ratio=_particle_scatter_ratio)
+        _particle_scatter_ratio = ParticleScatterRatio.from_sdf(
+            _c_particle_scatter_ratio) if _c_particle_scatter_ratio is not None else None
+        return cls(name=_name, type=_type, pose=_pose, material=_material, emitting=_emitting, duration=_duration,
+                   size=_size, particle_size=_particle_size, lifetime=_lifetime, rate=_rate, min_velocity=_min_velocity,
+                   max_velocity=_max_velocity, scale_rate=_scale_rate, color_start=_color_start, color_end=_color_end,
+                   color_range_image=_color_range_image, topic=_topic, particle_scatter_ratio=_particle_scatter_ratio)

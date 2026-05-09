@@ -1,22 +1,21 @@
 from __future__ import annotations
 
+from typing import List
 from xml.etree import ElementTree as ET
 
-from typing import List
-
+from .joint import Joint
+from .light import Light
+from .model import Model
 from ..model import Model
 from ...sdf1_11.models.insertions import Insertions as _PrevInsertions
-from .model import Model
-from .light import Light
-from .joint import Joint
 
 
 class Insertions(_PrevInsertions):
     def __init__(
-        self,
-        model: List["Model"] = None,
-        light: List["Light"] = None,
-        joint: List["Joint"] = None
+            self,
+            model: List["Model"] = None,
+            light: List["Light"] = None,
+            joint: List["Joint"] = None
     ):
         super().__init__(model=model, light=light)
         self.joint = joint or []

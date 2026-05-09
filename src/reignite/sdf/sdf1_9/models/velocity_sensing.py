@@ -2,10 +2,9 @@ from __future__ import annotations
 
 from xml.etree import ElementTree as ET
 
-from ..model import Model
-from ...sdf1_8.models.velocity_sensing import VelocitySensing as _PrevVelocitySensing
 from .horizontal import Horizontal
 from .vertical import Vertical
+from ...sdf1_8.models.velocity_sensing import VelocitySensing as _PrevVelocitySensing
 
 
 class VelocitySensing(_PrevVelocitySensing):

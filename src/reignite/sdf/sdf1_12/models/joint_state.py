@@ -2,19 +2,19 @@ from __future__ import annotations
 
 from xml.etree import ElementTree as ET
 
-from ..model import Model
 from .angle import Angle
-from .axis_state import AxisState
 from .axis2_state import Axis2State
+from .axis_state import AxisState
+from ..model import Model
 
 
 class JointState(Model):
     def __init__(
-        self,
-        name: str = "__default__",
-        angle: "Angle" = None,
-        axis_state: "AxisState" = None,
-        axis2_state: "Axis2State" = None
+            self,
+            name: str = "__default__",
+            angle: "Angle" = None,
+            axis_state: "AxisState" = None,
+            axis2_state: "Axis2State" = None
     ):
         self.name = name
         self.angle = angle

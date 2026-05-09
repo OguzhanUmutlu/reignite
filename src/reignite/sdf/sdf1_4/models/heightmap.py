@@ -1,26 +1,22 @@
 from __future__ import annotations
 
+import math
+from typing import List
 from xml.etree import ElementTree as ET
 
-from typing import List
-
-from ..model import Model
-from ...sdf1_3.models.uri import Uri as _PrevUri
-from ...sdf1_3.models.size import Size as _PrevSize
-from ...sdf1_3.models.pos import Pos as _PrevPos
-from ...sdf1_3.models.diffuse import Diffuse as _PrevDiffuse
-from ...sdf1_3.models.normal import Normal as _PrevNormal
-from ...sdf1_3.models.texture import Texture as _PrevTexture
-from ...sdf1_3.models.min_height import MinHeight as _PrevMinHeight
-from ...sdf1_3.models.fade_dist import FadeDist as _PrevFadeDist
-from ...sdf1_3.models.blend import Blend as _PrevBlend
-from ...sdf1_3.models.heightmap import Heightmap as _PrevHeightmap
-from ....utils.vector3 import Vector3
 from .use_terrain_paging import UseTerrainPaging
+from ...sdf1_3.models.blend import Blend as _PrevBlend
+from ...sdf1_3.models.diffuse import Diffuse as _PrevDiffuse
+from ...sdf1_3.models.fade_dist import FadeDist as _PrevFadeDist
+from ...sdf1_3.models.heightmap import Heightmap as _PrevHeightmap
+from ...sdf1_3.models.min_height import MinHeight as _PrevMinHeight
+from ...sdf1_3.models.normal import Normal as _PrevNormal
+from ...sdf1_3.models.pos import Pos as _PrevPos
+from ...sdf1_3.models.size import Size as _PrevSize
+from ...sdf1_3.models.texture import Texture as _PrevTexture
+from ...sdf1_3.models.uri import Uri as _PrevUri
+from ....utils.vector3 import Vector3
 
-
-import math
-import sys
 
 def _parse_int32(raw: str) -> int:
     v = int(raw)
@@ -41,7 +37,6 @@ def _parse_double(raw: str) -> float:
     if not math.isfinite(v) or abs(v) > 1.7976931348623157e+308:
         raise ValueError(f"double out of range: {raw}")
     return v
-
 
 
 class Uri(_PrevUri):
@@ -190,13 +185,13 @@ class Blend(_PrevBlend):
 
 class Heightmap(_PrevHeightmap):
     def __init__(
-        self,
-        uri: "Uri" = None,
-        size: "Size" = None,
-        pos: "Pos" = None,
-        texture: List["Texture"] = None,
-        blend: List["Blend"] = None,
-        use_terrain_paging: "UseTerrainPaging" = None
+            self,
+            uri: "Uri" = None,
+            size: "Size" = None,
+            pos: "Pos" = None,
+            texture: List["Texture"] = None,
+            blend: List["Blend"] = None,
+            use_terrain_paging: "UseTerrainPaging" = None
     ):
         super().__init__(uri=uri, size=size, pos=pos, texture=texture, blend=blend)
         self.use_terrain_paging = use_terrain_paging
@@ -211,5 +206,7 @@ class Heightmap(_PrevHeightmap):
     def from_sdf(cls, el: ET.Element) -> "Heightmap":
         _base = _PrevHeightmap.from_sdf(el)
         _c_use_terrain_paging = el.find("use_terrain_paging")
-        _use_terrain_paging = UseTerrainPaging.from_sdf(_c_use_terrain_paging) if _c_use_terrain_paging is not None else None
-        return cls(uri=_base.uri, size=_base.size, pos=_base.pos, texture=_base.texture, blend=_base.blend, use_terrain_paging=_use_terrain_paging)
+        _use_terrain_paging = UseTerrainPaging.from_sdf(
+            _c_use_terrain_paging) if _c_use_terrain_paging is not None else None
+        return cls(uri=_base.uri, size=_base.size, pos=_base.pos, texture=_base.texture, blend=_base.blend,
+                   use_terrain_paging=_use_terrain_paging)

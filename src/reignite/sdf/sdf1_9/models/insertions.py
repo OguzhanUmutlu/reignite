@@ -1,13 +1,12 @@
 from __future__ import annotations
 
+from typing import List
 from xml.etree import ElementTree as ET
 
-from typing import List
-
+from .light import Light
+from .model import Model
 from ..model import Model
 from ...sdf1_8.models.insertions import Insertions as _PrevInsertions
-from .model import Model
-from .light import Light
 
 
 class Insertions(_PrevInsertions):

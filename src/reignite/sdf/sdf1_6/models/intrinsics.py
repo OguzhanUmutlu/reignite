@@ -2,22 +2,22 @@ from __future__ import annotations
 
 from xml.etree import ElementTree as ET
 
-from ..model import Model
-from .fx import Fx
-from .fy import Fy
 from .cx import Cx
 from .cy import Cy
+from .fx import Fx
+from .fy import Fy
 from .s import S
+from ..model import Model
 
 
 class Intrinsics(Model):
     def __init__(
-        self,
-        fx: "Fx" = None,
-        fy: "Fy" = None,
-        cx: "Cx" = None,
-        cy: "Cy" = None,
-        s: "S" = None
+            self,
+            fx: "Fx" = None,
+            fy: "Fy" = None,
+            cx: "Cx" = None,
+            cy: "Cy" = None,
+            s: "S" = None
     ):
         self.fx = fx
         self.fy = fy

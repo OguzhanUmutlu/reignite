@@ -2,11 +2,10 @@ from __future__ import annotations
 
 from xml.etree import ElementTree as ET
 
-from ..model import Model
-from ...sdf1_5.models.simbody import Simbody as _PrevSimbody
+from .provide_feedback import ProvideFeedback
 from ...sdf1_5.models.ode import Ode as _PrevOde
 from ...sdf1_5.models.physics import Physics as _PrevPhysics
-from .provide_feedback import ProvideFeedback
+from ...sdf1_5.models.simbody import Simbody as _PrevSimbody
 
 
 class Simbody(_PrevSimbody):
@@ -43,10 +42,10 @@ class Ode(_PrevOde):
 
 class Physics(_PrevPhysics):
     def __init__(
-        self,
-        simbody: "Simbody" = None,
-        ode: "Ode" = None,
-        provide_feedback: "ProvideFeedback" = None
+            self,
+            simbody: "Simbody" = None,
+            ode: "Ode" = None,
+            provide_feedback: "ProvideFeedback" = None
     ):
         super().__init__(simbody=simbody, ode=ode, provide_feedback=provide_feedback)
 

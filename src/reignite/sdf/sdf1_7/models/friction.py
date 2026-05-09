@@ -2,11 +2,10 @@ from __future__ import annotations
 
 from xml.etree import ElementTree as ET
 
-from ..model import Model
-from ...sdf1_6.models.ode import Ode as _PrevOde
+from .torsional import Torsional
 from ...sdf1_6.models.bullet import Bullet as _PrevBullet
 from ...sdf1_6.models.friction import Friction as _PrevFriction
-from .torsional import Torsional
+from ...sdf1_6.models.ode import Ode as _PrevOde
 
 
 class Ode(_PrevOde):
@@ -29,11 +28,11 @@ class Ode(_PrevOde):
 
 class Bullet(_PrevBullet):
     def __init__(
-        self,
-        friction: "Friction" = None,
-        friction2: "Friction2" = None,
-        fdir1: "Fdir1" = None,
-        rolling_friction: "RollingFriction" = None
+            self,
+            friction: "Friction" = None,
+            friction2: "Friction2" = None,
+            fdir1: "Fdir1" = None,
+            rolling_friction: "RollingFriction" = None
     ):
         super().__init__()
         self.friction = friction

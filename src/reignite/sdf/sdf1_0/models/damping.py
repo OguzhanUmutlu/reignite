@@ -2,9 +2,9 @@ from __future__ import annotations
 
 from xml.etree import ElementTree as ET
 
-from ..model import Model
-from .linear import Linear
 from .angular import Angular
+from .linear import Linear
+from ..model import Model
 
 
 class Damping(Model):

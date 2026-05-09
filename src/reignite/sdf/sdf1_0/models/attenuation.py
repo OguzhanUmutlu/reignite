@@ -1,12 +1,10 @@
 from __future__ import annotations
 
+import math
 from xml.etree import ElementTree as ET
 
 from ..model import Model
 
-
-import math
-import sys
 
 def _parse_int32(raw: str) -> int:
     v = int(raw)
@@ -29,14 +27,13 @@ def _parse_double(raw: str) -> float:
     return v
 
 
-
 class Attenuation(Model):
     def __init__(
-        self,
-        range: float = 10,
-        linear: float = 1,
-        constant: float = 1,
-        quadratic: float = 0
+            self,
+            range: float = 10,
+            linear: float = 1,
+            constant: float = 1,
+            quadratic: float = 0
     ):
         self.range = range
         self.linear = linear

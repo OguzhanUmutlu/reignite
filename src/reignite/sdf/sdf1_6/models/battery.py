@@ -2,9 +2,8 @@ from __future__ import annotations
 
 from xml.etree import ElementTree as ET
 
-from ..model import Model
-from ...sdf1_5.models.battery import Battery as _PrevBattery
 from .voltage import Voltage
+from ...sdf1_5.models.battery import Battery as _PrevBattery
 
 
 class Battery(_PrevBattery):

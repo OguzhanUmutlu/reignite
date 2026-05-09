@@ -2,27 +2,27 @@ from __future__ import annotations
 
 from xml.etree import ElementTree as ET
 
-from ..model import Model
-from .mean import Mean
-from .stddev import Stddev
 from .bias_mean import BiasMean
 from .bias_stddev import BiasStddev
-from .dynamic_bias_stddev import DynamicBiasStddev
 from .dynamic_bias_correlation_time import DynamicBiasCorrelationTime
+from .dynamic_bias_stddev import DynamicBiasStddev
+from .mean import Mean
 from .precision import Precision
+from .stddev import Stddev
+from ..model import Model
 
 
 class Noise(Model):
     def __init__(
-        self,
-        type: str = "none",
-        mean: "Mean" = None,
-        stddev: "Stddev" = None,
-        bias_mean: "BiasMean" = None,
-        bias_stddev: "BiasStddev" = None,
-        dynamic_bias_stddev: "DynamicBiasStddev" = None,
-        dynamic_bias_correlation_time: "DynamicBiasCorrelationTime" = None,
-        precision: "Precision" = None
+            self,
+            type: str = "none",
+            mean: "Mean" = None,
+            stddev: "Stddev" = None,
+            bias_mean: "BiasMean" = None,
+            bias_stddev: "BiasStddev" = None,
+            dynamic_bias_stddev: "DynamicBiasStddev" = None,
+            dynamic_bias_correlation_time: "DynamicBiasCorrelationTime" = None,
+            precision: "Precision" = None
     ):
         self.type = type
         self.mean = mean
@@ -65,9 +65,13 @@ class Noise(Model):
         _c_bias_stddev = el.find("bias_stddev")
         _bias_stddev = BiasStddev.from_sdf(_c_bias_stddev) if _c_bias_stddev is not None else None
         _c_dynamic_bias_stddev = el.find("dynamic_bias_stddev")
-        _dynamic_bias_stddev = DynamicBiasStddev.from_sdf(_c_dynamic_bias_stddev) if _c_dynamic_bias_stddev is not None else None
+        _dynamic_bias_stddev = DynamicBiasStddev.from_sdf(
+            _c_dynamic_bias_stddev) if _c_dynamic_bias_stddev is not None else None
         _c_dynamic_bias_correlation_time = el.find("dynamic_bias_correlation_time")
-        _dynamic_bias_correlation_time = DynamicBiasCorrelationTime.from_sdf(_c_dynamic_bias_correlation_time) if _c_dynamic_bias_correlation_time is not None else None
+        _dynamic_bias_correlation_time = DynamicBiasCorrelationTime.from_sdf(
+            _c_dynamic_bias_correlation_time) if _c_dynamic_bias_correlation_time is not None else None
         _c_precision = el.find("precision")
         _precision = Precision.from_sdf(_c_precision) if _c_precision is not None else None
-        return cls(type=_type, mean=_mean, stddev=_stddev, bias_mean=_bias_mean, bias_stddev=_bias_stddev, dynamic_bias_stddev=_dynamic_bias_stddev, dynamic_bias_correlation_time=_dynamic_bias_correlation_time, precision=_precision)
+        return cls(type=_type, mean=_mean, stddev=_stddev, bias_mean=_bias_mean, bias_stddev=_bias_stddev,
+                   dynamic_bias_stddev=_dynamic_bias_stddev,
+                   dynamic_bias_correlation_time=_dynamic_bias_correlation_time, precision=_precision)

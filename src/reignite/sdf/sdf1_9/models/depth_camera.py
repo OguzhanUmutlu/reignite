@@ -2,10 +2,9 @@ from __future__ import annotations
 
 from xml.etree import ElementTree as ET
 
-from ..model import Model
-from ...sdf1_8.models.depth_camera import DepthCamera as _PrevDepthCamera
-from .output import Output
 from .clip import Clip
+from .output import Output
+from ...sdf1_8.models.depth_camera import DepthCamera as _PrevDepthCamera
 
 
 class DepthCamera(_PrevDepthCamera):

@@ -2,17 +2,16 @@ from __future__ import annotations
 
 from xml.etree import ElementTree as ET
 
-from ..model import Model
-from ...sdf1_10.models.altimeter import Altimeter as _PrevAltimeter
 from .vertical_position import VerticalPosition
 from .vertical_velocity import VerticalVelocity
+from ...sdf1_10.models.altimeter import Altimeter as _PrevAltimeter
 
 
 class Altimeter(_PrevAltimeter):
     def __init__(
-        self,
-        vertical_position: "VerticalPosition" = None,
-        vertical_velocity: "VerticalVelocity" = None
+            self,
+            vertical_position: "VerticalPosition" = None,
+            vertical_velocity: "VerticalVelocity" = None
     ):
         super().__init__(vertical_position=vertical_position, vertical_velocity=vertical_velocity)
 

@@ -1,18 +1,17 @@
 from __future__ import annotations
 
-from xml.etree import ElementTree as ET
-
 from typing import List
+from xml.etree import ElementTree as ET
 
 from ..model import Model
 
 
 class GraspCheck(Model):
     def __init__(
-        self,
-        detach_steps: "DetachSteps" = None,
-        attach_steps: "AttachSteps" = None,
-        min_contact_count: "MinContactCount" = None
+            self,
+            detach_steps: "DetachSteps" = None,
+            attach_steps: "AttachSteps" = None,
+            min_contact_count: "MinContactCount" = None
     ):
         self.detach_steps = detach_steps
         self.attach_steps = attach_steps
@@ -35,7 +34,8 @@ class GraspCheck(Model):
         _c_attach_steps = el.find("attach_steps")
         _attach_steps = AttachSteps.from_sdf(_c_attach_steps) if _c_attach_steps is not None else None
         _c_min_contact_count = el.find("min_contact_count")
-        _min_contact_count = MinContactCount.from_sdf(_c_min_contact_count) if _c_min_contact_count is not None else None
+        _min_contact_count = MinContactCount.from_sdf(
+            _c_min_contact_count) if _c_min_contact_count is not None else None
         return cls(detach_steps=_detach_steps, attach_steps=_attach_steps, min_contact_count=_min_contact_count)
 
 
@@ -75,11 +75,11 @@ class PalmLink(Model):
 
 class Gripper(Model):
     def __init__(
-        self,
-        name: str = "__default__",
-        grasp_check: "GraspCheck" = None,
-        gripper_link: List["GripperLink"] = None,
-        palm_link: "PalmLink" = None
+            self,
+            name: str = "__default__",
+            grasp_check: "GraspCheck" = None,
+            gripper_link: List["GripperLink"] = None,
+            palm_link: "PalmLink" = None
     ):
         self.name = name
         self.grasp_check = grasp_check

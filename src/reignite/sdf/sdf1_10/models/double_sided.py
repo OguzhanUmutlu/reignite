@@ -2,7 +2,6 @@ from __future__ import annotations
 
 from xml.etree import ElementTree as ET
 
-from ..model import Model
 from ...sdf1_9.models.double_sided import DoubleSided as _PrevDoubleSided
 
 

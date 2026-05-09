@@ -2,7 +2,6 @@ from __future__ import annotations
 
 from xml.etree import ElementTree as ET
 
-from ..model import Model
 from ...sdf1_2.models.specular import Specular as _PrevSpecular
 from ....utils.color import Color
 

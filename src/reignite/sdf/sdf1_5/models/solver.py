@@ -2,21 +2,20 @@ from __future__ import annotations
 
 from xml.etree import ElementTree as ET
 
-from ..model import Model
-from ...sdf1_4.models.solver import Solver as _PrevSolver
-from .type import Type
-from .min_step_size import MinStepSize
 from .iters import Iters
+from .min_step_size import MinStepSize
 from .sor import Sor
+from .type import Type
+from ...sdf1_4.models.solver import Solver as _PrevSolver
 
 
 class Solver(_PrevSolver):
     def __init__(
-        self,
-        type: "Type" = None,
-        min_step_size: "MinStepSize" = None,
-        iters: "Iters" = None,
-        sor: "Sor" = None
+            self,
+            type: "Type" = None,
+            min_step_size: "MinStepSize" = None,
+            iters: "Iters" = None,
+            sor: "Sor" = None
     ):
         super().__init__(type=type, min_step_size=min_step_size, iters=iters, sor=sor)
 

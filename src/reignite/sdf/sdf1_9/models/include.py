@@ -1,27 +1,25 @@
 from __future__ import annotations
 
+from typing import List
 from xml.etree import ElementTree as ET
 
-from typing import List
-
-from ..model import Model
-from ...sdf1_8.models.pose import Pose as _PrevPose
-from ...sdf1_8.models.include import Include as _PrevInclude
-from ....utils.pose import Pose
-from .plugin import Plugin
-from .uri import Uri
 from .name import Name
-from .static import Static
 from .placement_frame import PlacementFrame
+from .plugin import Plugin
+from .static import Static
+from .uri import Uri
+from ...sdf1_8.models.include import Include as _PrevInclude
+from ...sdf1_8.models.pose import Pose as _PrevPose
+from ....utils.pose import Pose
 
 
 class Pose(_PrevPose):
     def __init__(
-        self,
-        pose: Pose = None,
-        relative_to: str = "",
-        rotation_format: str = "euler_rpy",
-        degrees: bool = False
+            self,
+            pose: Pose = None,
+            relative_to: str = "",
+            rotation_format: str = "euler_rpy",
+            degrees: bool = False
     ):
         if pose is None:
             pose = Pose.from_sdf("0 0 0 0 0 0")
@@ -47,14 +45,14 @@ class Pose(_PrevPose):
 
 class Include(_PrevInclude):
     def __init__(
-        self,
-        merge: bool = False,
-        pose: "Pose" = None,
-        plugin: List["Plugin"] = None,
-        uri: "Uri" = None,
-        name: "Name" = None,
-        static: "Static" = None,
-        placement_frame: "PlacementFrame" = None
+            self,
+            merge: bool = False,
+            pose: "Pose" = None,
+            plugin: List["Plugin"] = None,
+            uri: "Uri" = None,
+            name: "Name" = None,
+            static: "Static" = None,
+            placement_frame: "PlacementFrame" = None
     ):
         super().__init__(pose=pose, plugin=plugin, uri=uri, name=name, static=static, placement_frame=placement_frame)
         self.merge = merge
@@ -69,4 +67,5 @@ class Include(_PrevInclude):
     def from_sdf(cls, el: ET.Element) -> "Include":
         _base = _PrevInclude.from_sdf(el)
         _merge = el.get("merge", False).strip().lower() == 'true'
-        return cls(merge=_merge, pose=_base.pose, plugin=_base.plugin, uri=_base.uri, name=_base.name, static=_base.static, placement_frame=_base.placement_frame)
+        return cls(merge=_merge, pose=_base.pose, plugin=_base.plugin, uri=_base.uri, name=_base.name,
+                   static=_base.static, placement_frame=_base.placement_frame)

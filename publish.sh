@@ -1,7 +1,6 @@
 #!/usr/bin/env bash
 set -e
 
-# Change to the directory of the script just in case it's run from elsewhere
 cd "$(dirname "$0")"
 
 echo "🧹 Cleaning up old builds..."

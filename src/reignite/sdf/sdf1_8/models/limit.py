@@ -1,19 +1,16 @@
 from __future__ import annotations
 
+import math
 from xml.etree import ElementTree as ET
 
-from ..model import Model
-from ...sdf1_7.models.stiffness import Stiffness as _PrevStiffness
-from ...sdf1_7.models.dissipation import Dissipation as _PrevDissipation
-from ...sdf1_7.models.limit import Limit as _PrevLimit
+from .effort import Effort
 from .lower import Lower
 from .upper import Upper
-from .effort import Effort
 from .velocity import Velocity
+from ...sdf1_7.models.dissipation import Dissipation as _PrevDissipation
+from ...sdf1_7.models.limit import Limit as _PrevLimit
+from ...sdf1_7.models.stiffness import Stiffness as _PrevStiffness
 
-
-import math
-import sys
 
 def _parse_int32(raw: str) -> int:
     v = int(raw)
@@ -34,7 +31,6 @@ def _parse_double(raw: str) -> float:
     if not math.isfinite(v) or abs(v) > 1.7976931348623157e+308:
         raise ValueError(f"double out of range: {raw}")
     return v
-
 
 
 class Stiffness(_PrevStiffness):
@@ -67,13 +63,13 @@ class Dissipation(_PrevDissipation):
 
 class Limit(_PrevLimit):
     def __init__(
-        self,
-        lower: "Lower" = None,
-        upper: "Upper" = None,
-        effort: "Effort" = None,
-        velocity: "Velocity" = None,
-        stiffness: "Stiffness" = None,
-        dissipation: "Dissipation" = None
+            self,
+            lower: "Lower" = None,
+            upper: "Upper" = None,
+            effort: "Effort" = None,
+            velocity: "Velocity" = None,
+            stiffness: "Stiffness" = None,
+            dissipation: "Dissipation" = None
     ):
         super().__init__()
         self.lower = lower
@@ -113,4 +109,5 @@ class Limit(_PrevLimit):
         _stiffness = Stiffness.from_sdf(_c_stiffness) if _c_stiffness is not None else None
         _c_dissipation = el.find("dissipation")
         _dissipation = Dissipation.from_sdf(_c_dissipation) if _c_dissipation is not None else None
-        return cls(lower=_lower, upper=_upper, effort=_effort, velocity=_velocity, stiffness=_stiffness, dissipation=_dissipation)
+        return cls(lower=_lower, upper=_upper, effort=_effort, velocity=_velocity, stiffness=_stiffness,
+                   dissipation=_dissipation)

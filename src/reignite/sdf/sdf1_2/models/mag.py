@@ -2,7 +2,6 @@ from __future__ import annotations
 
 from xml.etree import ElementTree as ET
 
-from ..model import Model
 from ...sdf1_0.models.mag import Mag as _PrevMag
 from ....utils.pose import Pose
 

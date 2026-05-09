@@ -2,20 +2,20 @@ from __future__ import annotations
 
 from xml.etree import ElementTree as ET
 
-from ..model import Model
-from .near import Near
-from .far import Far
 from .aspect_ratio import AspectRatio
+from .far import Far
 from .horizontal_fov import HorizontalFov
+from .near import Near
+from ..model import Model
 
 
 class LogicalCamera(Model):
     def __init__(
-        self,
-        near: "Near" = None,
-        far: "Far" = None,
-        aspect_ratio: "AspectRatio" = None,
-        horizontal_fov: "HorizontalFov" = None
+            self,
+            near: "Near" = None,
+            far: "Far" = None,
+            aspect_ratio: "AspectRatio" = None,
+            horizontal_fov: "HorizontalFov" = None
     ):
         self.near = near
         self.far = far

@@ -1,34 +1,32 @@
 from __future__ import annotations
 
+from typing import List
 from xml.etree import ElementTree as ET
 
-from typing import List
-
-from ..model import Model
-from ...sdf1_11.models.pose import Pose as _PrevPose
+from .allow_auto_disable import AllowAutoDisable
+from .enable_wind import EnableWind
+from .gripper import Gripper
+from .include import Include
+from .joint import Joint
+from .link import Link
+from .model import Model
+from .model_state import ModelState
+from .plugin import Plugin
+from .self_collide import SelfCollide
+from .static import Static
 from ...sdf1_11.models.frame import Frame as _PrevFrame
 from ...sdf1_11.models.model import Model as _PrevModel
+from ...sdf1_11.models.pose import Pose as _PrevPose
 from ....utils.pose import Pose
-from .link import Link
-from .joint import Joint
-from .plugin import Plugin
-from .gripper import Gripper
-from .model_state import ModelState
-from .static import Static
-from .self_collide import SelfCollide
-from .allow_auto_disable import AllowAutoDisable
-from .include import Include
-from .model import Model
-from .enable_wind import EnableWind
 
 
 class Pose(_PrevPose):
     def __init__(
-        self,
-        pose: Pose = None,
-        relative_to: str = "",
-        rotation_format: str = "euler_rpy",
-        degrees: bool = False
+            self,
+            pose: Pose = None,
+            relative_to: str = "",
+            rotation_format: str = "euler_rpy",
+            degrees: bool = False
     ):
         if pose is None:
             pose = Pose.from_sdf("0 0 0 0 0 0")
@@ -41,7 +39,8 @@ class Pose(_PrevPose):
     @classmethod
     def from_sdf(cls, el: ET.Element) -> "Pose":
         _base = _PrevPose.from_sdf(el)
-        return cls(pose=_base.pose, relative_to=_base.relative_to, rotation_format=_base.rotation_format, degrees=_base.degrees)
+        return cls(pose=_base.pose, relative_to=_base.relative_to, rotation_format=_base.rotation_format,
+                   degrees=_base.degrees)
 
 
 class Frame(_PrevFrame):
@@ -72,23 +71,23 @@ class Frame(_PrevFrame):
 
 class Model(_PrevModel):
     def __init__(
-        self,
-        name: str = "__default__",
-        canonical_link: str = "",
-        placement_frame: str = "",
-        frame: List["Frame"] = None,
-        pose: "Pose" = None,
-        link: List["Link"] = None,
-        joint: List["Joint"] = None,
-        plugin: List["Plugin"] = None,
-        gripper: List["Gripper"] = None,
-        model_state: "ModelState" = None,
-        static: "Static" = None,
-        self_collide: "SelfCollide" = None,
-        allow_auto_disable: "AllowAutoDisable" = None,
-        include: List["Include"] = None,
-        model: List["Model"] = None,
-        enable_wind: "EnableWind" = None
+            self,
+            name: str = "__default__",
+            canonical_link: str = "",
+            placement_frame: str = "",
+            frame: List["Frame"] = None,
+            pose: "Pose" = None,
+            link: List["Link"] = None,
+            joint: List["Joint"] = None,
+            plugin: List["Plugin"] = None,
+            gripper: List["Gripper"] = None,
+            model_state: "ModelState" = None,
+            static: "Static" = None,
+            self_collide: "SelfCollide" = None,
+            allow_auto_disable: "AllowAutoDisable" = None,
+            include: List["Include"] = None,
+            model: List["Model"] = None,
+            enable_wind: "EnableWind" = None
     ):
         super().__init__(name=name)
         self.canonical_link = canonical_link
@@ -160,9 +159,13 @@ class Model(_PrevModel):
         _c_self_collide = el.find("self_collide")
         _self_collide = SelfCollide.from_sdf(_c_self_collide) if _c_self_collide is not None else None
         _c_allow_auto_disable = el.find("allow_auto_disable")
-        _allow_auto_disable = AllowAutoDisable.from_sdf(_c_allow_auto_disable) if _c_allow_auto_disable is not None else None
+        _allow_auto_disable = AllowAutoDisable.from_sdf(
+            _c_allow_auto_disable) if _c_allow_auto_disable is not None else None
         _include = [Include.from_sdf(c) for c in el.findall("include")]
         _model = [Model.from_sdf(c) for c in el.findall("model")]
         _c_enable_wind = el.find("enable_wind")
         _enable_wind = EnableWind.from_sdf(_c_enable_wind) if _c_enable_wind is not None else None
-        return cls(name=_base.name, canonical_link=_canonical_link, placement_frame=_placement_frame, frame=_frame, pose=_pose, link=_link, joint=_joint, plugin=_plugin, gripper=_gripper, model_state=_model_state, static=_static, self_collide=_self_collide, allow_auto_disable=_allow_auto_disable, include=_include, model=_model, enable_wind=_enable_wind)
+        return cls(name=_base.name, canonical_link=_canonical_link, placement_frame=_placement_frame, frame=_frame,
+                   pose=_pose, link=_link, joint=_joint, plugin=_plugin, gripper=_gripper, model_state=_model_state,
+                   static=_static, self_collide=_self_collide, allow_auto_disable=_allow_auto_disable, include=_include,
+                   model=_model, enable_wind=_enable_wind)

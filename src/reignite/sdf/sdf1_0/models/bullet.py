@@ -2,8 +2,8 @@ from __future__ import annotations
 
 from xml.etree import ElementTree as ET
 
-from ..model import Model
 from .dt import Dt
+from ..model import Model
 
 
 class Bullet(Model):

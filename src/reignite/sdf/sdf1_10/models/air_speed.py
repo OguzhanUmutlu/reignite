@@ -2,8 +2,8 @@ from __future__ import annotations
 
 from xml.etree import ElementTree as ET
 
-from ..model import Model
 from .pressure import Pressure
+from ..model import Model
 
 
 class AirSpeed(Model):

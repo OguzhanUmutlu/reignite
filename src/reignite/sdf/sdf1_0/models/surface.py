@@ -2,18 +2,18 @@ from __future__ import annotations
 
 from xml.etree import ElementTree as ET
 
-from ..model import Model
 from .bounce import Bounce
-from .friction import Friction
 from .contact import Contact
+from .friction import Friction
+from ..model import Model
 
 
 class Surface(Model):
     def __init__(
-        self,
-        bounce: "Bounce" = None,
-        friction: "Friction" = None,
-        contact: "Contact" = None
+            self,
+            bounce: "Bounce" = None,
+            friction: "Friction" = None,
+            contact: "Contact" = None
     ):
         self.bounce = bounce
         self.friction = friction

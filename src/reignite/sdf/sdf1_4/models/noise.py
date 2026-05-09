@@ -2,23 +2,23 @@ from __future__ import annotations
 
 from xml.etree import ElementTree as ET
 
-from ..model import Model
-from .mean import Mean
-from .stddev import Stddev
 from .bias_mean import BiasMean
 from .bias_stddev import BiasStddev
+from .mean import Mean
 from .precision import Precision
+from .stddev import Stddev
+from ..model import Model
 
 
 class Noise(Model):
     def __init__(
-        self,
-        type: str = "none",
-        mean: "Mean" = None,
-        stddev: "Stddev" = None,
-        bias_mean: "BiasMean" = None,
-        bias_stddev: "BiasStddev" = None,
-        precision: "Precision" = None
+            self,
+            type: str = "none",
+            mean: "Mean" = None,
+            stddev: "Stddev" = None,
+            bias_mean: "BiasMean" = None,
+            bias_stddev: "BiasStddev" = None,
+            precision: "Precision" = None
     ):
         self.type = type
         self.mean = mean
@@ -56,4 +56,5 @@ class Noise(Model):
         _bias_stddev = BiasStddev.from_sdf(_c_bias_stddev) if _c_bias_stddev is not None else None
         _c_precision = el.find("precision")
         _precision = Precision.from_sdf(_c_precision) if _c_precision is not None else None
-        return cls(type=_type, mean=_mean, stddev=_stddev, bias_mean=_bias_mean, bias_stddev=_bias_stddev, precision=_precision)
+        return cls(type=_type, mean=_mean, stddev=_stddev, bias_mean=_bias_mean, bias_stddev=_bias_stddev,
+                   precision=_precision)

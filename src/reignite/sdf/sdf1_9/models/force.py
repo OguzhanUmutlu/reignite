@@ -2,11 +2,10 @@ from __future__ import annotations
 
 from xml.etree import ElementTree as ET
 
-from ..model import Model
-from ...sdf1_8.models.force import Force as _PrevForce
 from .x import X
 from .y import Y
 from .z import Z
+from ...sdf1_8.models.force import Force as _PrevForce
 
 
 class Force(_PrevForce):

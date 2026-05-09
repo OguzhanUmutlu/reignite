@@ -2,10 +2,9 @@ from __future__ import annotations
 
 from xml.etree import ElementTree as ET
 
-from ..model import Model
-from ...sdf1_6.models.clip import Clip as _PrevClip
-from .near import Near
 from .far import Far
+from .near import Near
+from ...sdf1_6.models.clip import Clip as _PrevClip
 
 
 class Clip(_PrevClip):

@@ -2,10 +2,9 @@ from __future__ import annotations
 
 from xml.etree import ElementTree as ET
 
-from ..model import Model
-from ...sdf1_5.models.ode import Ode as _PrevOde
-from .solver import Solver
 from .constraints import Constraints
+from .solver import Solver
+from ...sdf1_5.models.ode import Ode as _PrevOde
 
 
 class Ode(_PrevOde):

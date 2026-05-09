@@ -2,12 +2,12 @@ from __future__ import annotations
 
 from xml.etree import ElementTree as ET
 
-from ..model import Model
-from ....utils.color import Color
-from .speed import Speed
 from .direction import Direction
 from .humidity import Humidity
 from .mean_size import MeanSize
+from .speed import Speed
+from ..model import Model
+from ....utils.color import Color
 
 
 class Ambient(Model):
@@ -31,12 +31,12 @@ class Ambient(Model):
 
 class Clouds(Model):
     def __init__(
-        self,
-        speed: "Speed" = None,
-        direction: "Direction" = None,
-        humidity: "Humidity" = None,
-        mean_size: "MeanSize" = None,
-        ambient: "Ambient" = None
+            self,
+            speed: "Speed" = None,
+            direction: "Direction" = None,
+            humidity: "Humidity" = None,
+            mean_size: "MeanSize" = None,
+            ambient: "Ambient" = None
     ):
         self.speed = speed
         self.direction = direction

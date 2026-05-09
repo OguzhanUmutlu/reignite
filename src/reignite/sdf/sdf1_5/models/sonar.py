@@ -2,11 +2,10 @@ from __future__ import annotations
 
 from xml.etree import ElementTree as ET
 
-from ..model import Model
-from ...sdf1_4.models.sonar import Sonar as _PrevSonar
-from .min import Min
 from .max import Max
+from .min import Min
 from .radius import Radius
+from ...sdf1_4.models.sonar import Sonar as _PrevSonar
 
 
 class Sonar(_PrevSonar):

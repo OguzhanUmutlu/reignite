@@ -2,9 +2,9 @@ from __future__ import annotations
 
 from xml.etree import ElementTree as ET
 
-from ..model import Model
-from .scan import Scan
 from .range import Range
+from .scan import Scan
+from ..model import Model
 
 
 class Ray(Model):

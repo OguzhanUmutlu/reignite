@@ -1,16 +1,14 @@
 from __future__ import annotations
 
+from typing import List
 from xml.etree import ElementTree as ET
 
-from typing import List
-
-from ..model import Model
-from ...sdf1_5.models.static import Static as _PrevStatic
-from ...sdf1_5.models.include import Include as _PrevInclude
-from .plugin import Plugin
-from .uri import Uri
-from .pose import Pose
 from .name import Name
+from .plugin import Plugin
+from .pose import Pose
+from .uri import Uri
+from ...sdf1_5.models.include import Include as _PrevInclude
+from ...sdf1_5.models.static import Static as _PrevStatic
 
 
 class Static(_PrevStatic):
@@ -29,12 +27,12 @@ class Static(_PrevStatic):
 
 class Include(_PrevInclude):
     def __init__(
-        self,
-        plugin: List["Plugin"] = None,
-        uri: "Uri" = None,
-        pose: "Pose" = None,
-        name: "Name" = None,
-        static: "Static" = None
+            self,
+            plugin: List["Plugin"] = None,
+            uri: "Uri" = None,
+            pose: "Pose" = None,
+            name: "Name" = None,
+            static: "Static" = None
     ):
         super().__init__(plugin=plugin, uri=uri, pose=pose, name=name, static=static)
 

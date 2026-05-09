@@ -2,8 +2,8 @@ from __future__ import annotations
 
 from xml.etree import ElementTree as ET
 
-from ..model import Model
 from .voltage import Voltage
+from ..model import Model
 
 
 class Battery(Model):

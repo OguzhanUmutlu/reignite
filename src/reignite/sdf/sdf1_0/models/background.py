@@ -2,9 +2,9 @@ from __future__ import annotations
 
 from xml.etree import ElementTree as ET
 
+from .sky import Sky
 from ..model import Model
 from ....utils.color import Color
-from .sky import Sky
 
 
 class Background(Model):

@@ -1,17 +1,14 @@
 from __future__ import annotations
 
-from xml.etree import ElementTree as ET
-
+import math
 from typing import List
+from xml.etree import ElementTree as ET
 
 from ..model import Model
 from ....utils.color import Color
 from ....utils.pose import Pose
 from ....utils.vector3 import Vector3
 
-
-import math
-import sys
 
 def _parse_int32(raw: str) -> int:
     v = int(raw)
@@ -32,7 +29,6 @@ def _parse_double(raw: str) -> float:
     if not math.isfinite(v) or abs(v) > 1.7976931348623157e+308:
         raise ValueError(f"double out of range: {raw}")
     return v
-
 
 
 class Mass(Model):
@@ -175,13 +171,13 @@ class Izz(Model):
 
 class Inertia(Model):
     def __init__(
-        self,
-        ixx: "Ixx" = None,
-        ixy: "Ixy" = None,
-        ixz: "Ixz" = None,
-        iyy: "Iyy" = None,
-        iyz: "Iyz" = None,
-        izz: "Izz" = None
+            self,
+            ixx: "Ixx" = None,
+            ixy: "Ixy" = None,
+            ixz: "Ixz" = None,
+            iyy: "Iyy" = None,
+            iyz: "Iyz" = None,
+            izz: "Izz" = None
     ):
         self.ixx = ixx
         self.ixy = ixy
@@ -516,12 +512,12 @@ class Granularity(Model):
 
 class Image(Model):
     def __init__(
-        self,
-        uri: "Uri" = None,
-        scale: "Scale" = None,
-        threshold: "Threshold" = None,
-        height: "Height" = None,
-        granularity: "Granularity" = None
+            self,
+            uri: "Uri" = None,
+            scale: "Scale" = None,
+            threshold: "Threshold" = None,
+            height: "Height" = None,
+            granularity: "Granularity" = None
     ):
         self.uri = uri
         self.scale = scale
@@ -681,12 +677,12 @@ class Blend(Model):
 
 class Heightmap(Model):
     def __init__(
-        self,
-        uri: "Uri" = None,
-        size: "Size" = None,
-        pos: "Pos" = None,
-        texture: List["Texture"] = None,
-        blend: List["Blend"] = None
+            self,
+            uri: "Uri" = None,
+            size: "Size" = None,
+            pos: "Pos" = None,
+            texture: List["Texture"] = None,
+            blend: List["Blend"] = None
     ):
         self.uri = uri
         self.size = size
@@ -723,15 +719,15 @@ class Heightmap(Model):
 
 class Geometry(Model):
     def __init__(
-        self,
-        box: "Box" = None,
-        sphere: "Sphere" = None,
-        cylinder: "Cylinder" = None,
-        mesh: "Mesh" = None,
-        plane: "Plane" = None,
-        image: "Image" = None,
-        heightmap: "Heightmap" = None,
-        empty: "Empty" = None
+            self,
+            box: "Box" = None,
+            sphere: "Sphere" = None,
+            cylinder: "Cylinder" = None,
+            mesh: "Mesh" = None,
+            plane: "Plane" = None,
+            image: "Image" = None,
+            heightmap: "Heightmap" = None,
+            empty: "Empty" = None
     ):
         self.box = box
         self.sphere = sphere
@@ -780,7 +776,8 @@ class Geometry(Model):
         _heightmap = Heightmap.from_sdf(_c_heightmap) if _c_heightmap is not None else None
         _c_empty = el.find("empty")
         _empty = Empty.from_sdf(_c_empty) if _c_empty is not None else None
-        return cls(box=_box, sphere=_sphere, cylinder=_cylinder, mesh=_mesh, plane=_plane, image=_image, heightmap=_heightmap, empty=_empty)
+        return cls(box=_box, sphere=_sphere, cylinder=_cylinder, mesh=_mesh, plane=_plane, image=_image,
+                   heightmap=_heightmap, empty=_empty)
 
 
 class RestitutionCoefficient(Model):
@@ -802,9 +799,9 @@ class RestitutionCoefficient(Model):
 
 class Bounce(Model):
     def __init__(
-        self,
-        restitution_coefficient: "RestitutionCoefficient" = None,
-        threshold: "Threshold" = None
+            self,
+            restitution_coefficient: "RestitutionCoefficient" = None,
+            threshold: "Threshold" = None
     ):
         self.restitution_coefficient = restitution_coefficient
         self.threshold = threshold
@@ -820,7 +817,8 @@ class Bounce(Model):
     @classmethod
     def from_sdf(cls, el: ET.Element) -> "Bounce":
         _c_restitution_coefficient = el.find("restitution_coefficient")
-        _restitution_coefficient = RestitutionCoefficient.from_sdf(_c_restitution_coefficient) if _c_restitution_coefficient is not None else None
+        _restitution_coefficient = RestitutionCoefficient.from_sdf(
+            _c_restitution_coefficient) if _c_restitution_coefficient is not None else None
         _c_threshold = el.find("threshold")
         _threshold = Threshold.from_sdf(_c_threshold) if _c_threshold is not None else None
         return cls(restitution_coefficient=_restitution_coefficient, threshold=_threshold)
@@ -913,12 +911,12 @@ class Sor(Model):
 
 class Solver(Model):
     def __init__(
-        self,
-        type: "Type" = None,
-        dt: "Dt" = None,
-        iters: "Iters" = None,
-        precon_iters: "PreconIters" = None,
-        sor: "Sor" = None
+            self,
+            type: "Type" = None,
+            dt: "Dt" = None,
+            iters: "Iters" = None,
+            precon_iters: "PreconIters" = None,
+            sor: "Sor" = None
     ):
         self.type = type
         self.dt = dt
@@ -1025,11 +1023,11 @@ class ContactSurfaceLayer(Model):
 
 class Constraints(Model):
     def __init__(
-        self,
-        cfm: "Cfm" = None,
-        erp: "Erp" = None,
-        contact_max_correcting_vel: "ContactMaxCorrectingVel" = None,
-        contact_surface_layer: "ContactSurfaceLayer" = None
+            self,
+            cfm: "Cfm" = None,
+            erp: "Erp" = None,
+            contact_max_correcting_vel: "ContactMaxCorrectingVel" = None,
+            contact_surface_layer: "ContactSurfaceLayer" = None
     ):
         self.cfm = cfm
         self.erp = erp
@@ -1055,10 +1053,13 @@ class Constraints(Model):
         _c_erp = el.find("erp")
         _erp = Erp.from_sdf(_c_erp) if _c_erp is not None else None
         _c_contact_max_correcting_vel = el.find("contact_max_correcting_vel")
-        _contact_max_correcting_vel = ContactMaxCorrectingVel.from_sdf(_c_contact_max_correcting_vel) if _c_contact_max_correcting_vel is not None else None
+        _contact_max_correcting_vel = ContactMaxCorrectingVel.from_sdf(
+            _c_contact_max_correcting_vel) if _c_contact_max_correcting_vel is not None else None
         _c_contact_surface_layer = el.find("contact_surface_layer")
-        _contact_surface_layer = ContactSurfaceLayer.from_sdf(_c_contact_surface_layer) if _c_contact_surface_layer is not None else None
-        return cls(cfm=_cfm, erp=_erp, contact_max_correcting_vel=_contact_max_correcting_vel, contact_surface_layer=_contact_surface_layer)
+        _contact_surface_layer = ContactSurfaceLayer.from_sdf(
+            _c_contact_surface_layer) if _c_contact_surface_layer is not None else None
+        return cls(cfm=_cfm, erp=_erp, contact_max_correcting_vel=_contact_max_correcting_vel,
+                   contact_surface_layer=_contact_surface_layer)
 
 
 class Ode(Model):
@@ -1119,10 +1120,10 @@ class Contact(Model):
 
 class Surface(Model):
     def __init__(
-        self,
-        bounce: "Bounce" = None,
-        friction: "Friction" = None,
-        contact: "Contact" = None
+            self,
+            bounce: "Bounce" = None,
+            friction: "Friction" = None,
+            contact: "Contact" = None
     ):
         self.bounce = bounce
         self.friction = friction
@@ -1185,13 +1186,13 @@ class MaxContacts(Model):
 
 class Collision(Model):
     def __init__(
-        self,
-        name: str = "__default__",
-        geometry: "Geometry" = None,
-        surface: "Surface" = None,
-        laser_retro: "LaserRetro" = None,
-        max_contacts: "MaxContacts" = None,
-        pose: "Pose" = None
+            self,
+            name: str = "__default__",
+            geometry: "Geometry" = None,
+            surface: "Surface" = None,
+            laser_retro: "LaserRetro" = None,
+            max_contacts: "MaxContacts" = None,
+            pose: "Pose" = None
     ):
         self.name = name
         self.geometry = geometry
@@ -1229,7 +1230,8 @@ class Collision(Model):
         _max_contacts = MaxContacts.from_sdf(_c_max_contacts) if _c_max_contacts is not None else None
         _c_pose = el.find("pose")
         _pose = Pose.from_sdf(_c_pose) if _c_pose is not None else None
-        return cls(name=_name, geometry=_geometry, surface=_surface, laser_retro=_laser_retro, max_contacts=_max_contacts, pose=_pose)
+        return cls(name=_name, geometry=_geometry, surface=_surface, laser_retro=_laser_retro,
+                   max_contacts=_max_contacts, pose=_pose)
 
 
 class Plugin(Model):
@@ -1421,13 +1423,13 @@ class Emissive(Model):
 
 class Material(Model):
     def __init__(
-        self,
-        script: "Script" = None,
-        shader: "Shader" = None,
-        ambient: "Ambient" = None,
-        diffuse: "Diffuse" = None,
-        specular: "Specular" = None,
-        emissive: "Emissive" = None
+            self,
+            script: "Script" = None,
+            shader: "Shader" = None,
+            ambient: "Ambient" = None,
+            diffuse: "Diffuse" = None,
+            specular: "Specular" = None,
+            emissive: "Emissive" = None
     ):
         self.script = script
         self.shader = shader
@@ -1466,20 +1468,21 @@ class Material(Model):
         _specular = Specular.from_sdf(_c_specular) if _c_specular is not None else None
         _c_emissive = el.find("emissive")
         _emissive = Emissive.from_sdf(_c_emissive) if _c_emissive is not None else None
-        return cls(script=_script, shader=_shader, ambient=_ambient, diffuse=_diffuse, specular=_specular, emissive=_emissive)
+        return cls(script=_script, shader=_shader, ambient=_ambient, diffuse=_diffuse, specular=_specular,
+                   emissive=_emissive)
 
 
 class Visual(Model):
     def __init__(
-        self,
-        name: str = "__default__",
-        geometry: "Geometry" = None,
-        plugin: List["Plugin"] = None,
-        cast_shadows: "CastShadows" = None,
-        laser_retro: "LaserRetro" = None,
-        transparency: "Transparency" = None,
-        pose: "Pose" = None,
-        material: "Material" = None
+            self,
+            name: str = "__default__",
+            geometry: "Geometry" = None,
+            plugin: List["Plugin"] = None,
+            cast_shadows: "CastShadows" = None,
+            laser_retro: "LaserRetro" = None,
+            transparency: "Transparency" = None,
+            pose: "Pose" = None,
+            material: "Material" = None
     ):
         self.name = name
         self.geometry = geometry
@@ -1526,16 +1529,17 @@ class Visual(Model):
         _pose = Pose.from_sdf(_c_pose) if _c_pose is not None else None
         _c_material = el.find("material")
         _material = Material.from_sdf(_c_material) if _c_material is not None else None
-        return cls(name=_name, geometry=_geometry, plugin=_plugin, cast_shadows=_cast_shadows, laser_retro=_laser_retro, transparency=_transparency, pose=_pose, material=_material)
+        return cls(name=_name, geometry=_geometry, plugin=_plugin, cast_shadows=_cast_shadows, laser_retro=_laser_retro,
+                   transparency=_transparency, pose=_pose, material=_material)
 
 
 class Camera(Model):
     def __init__(
-        self,
-        name: str = "user_camera",
-        view_controller: "ViewController" = None,
-        pose: "Pose" = None,
-        track_visual: "TrackVisual" = None
+            self,
+            name: str = "user_camera",
+            view_controller: "ViewController" = None,
+            pose: "Pose" = None,
+            track_visual: "TrackVisual" = None
     ):
         self.name = name
         self.view_controller = view_controller
@@ -1636,11 +1640,11 @@ class MaxAngle(Model):
 
 class Horizontal(Model):
     def __init__(
-        self,
-        samples: "Samples" = None,
-        resolution: "Resolution" = None,
-        min_angle: "MinAngle" = None,
-        max_angle: "MaxAngle" = None
+            self,
+            samples: "Samples" = None,
+            resolution: "Resolution" = None,
+            min_angle: "MinAngle" = None,
+            max_angle: "MaxAngle" = None
     ):
         self.samples = samples
         self.resolution = resolution
@@ -1674,11 +1678,11 @@ class Horizontal(Model):
 
 class Vertical(Model):
     def __init__(
-        self,
-        samples: "Samples" = None,
-        resolution: "Resolution" = None,
-        min_angle: "MinAngle" = None,
-        max_angle: "MaxAngle" = None
+            self,
+            samples: "Samples" = None,
+            resolution: "Resolution" = None,
+            min_angle: "MinAngle" = None,
+            max_angle: "MaxAngle" = None
     ):
         self.samples = samples
         self.resolution = resolution
@@ -1841,21 +1845,21 @@ class Topic(Model):
 
 class Sensor(Model):
     def __init__(
-        self,
-        name: str = "__default__",
-        type: str = "__default__",
-        plugin: List["Plugin"] = None,
-        camera: "Camera" = None,
-        ray: "Ray" = None,
-        contact: "Contact" = None,
-        rfidtag: "Rfidtag" = None,
-        rfid: "Rfid" = None,
-        imu: "Imu" = None,
-        always_on: "AlwaysOn" = None,
-        update_rate: "UpdateRate" = None,
-        visualize: "Visualize" = None,
-        pose: "Pose" = None,
-        topic: "Topic" = None
+            self,
+            name: str = "__default__",
+            type: str = "__default__",
+            plugin: List["Plugin"] = None,
+            camera: "Camera" = None,
+            ray: "Ray" = None,
+            contact: "Contact" = None,
+            rfidtag: "Rfidtag" = None,
+            rfid: "Rfid" = None,
+            imu: "Imu" = None,
+            always_on: "AlwaysOn" = None,
+            update_rate: "UpdateRate" = None,
+            visualize: "Visualize" = None,
+            pose: "Pose" = None,
+            topic: "Topic" = None
     ):
         self.name = name
         self.type = type
@@ -1931,7 +1935,9 @@ class Sensor(Model):
         _pose = Pose.from_sdf(_c_pose) if _c_pose is not None else None
         _c_topic = el.find("topic")
         _topic = Topic.from_sdf(_c_topic) if _c_topic is not None else None
-        return cls(name=_name, type=_type, plugin=_plugin, camera=_camera, ray=_ray, contact=_contact, rfidtag=_rfidtag, rfid=_rfid, imu=_imu, always_on=_always_on, update_rate=_update_rate, visualize=_visualize, pose=_pose, topic=_topic)
+        return cls(name=_name, type=_type, plugin=_plugin, camera=_camera, ray=_ray, contact=_contact, rfidtag=_rfidtag,
+                   rfid=_rfid, imu=_imu, always_on=_always_on, update_rate=_update_rate, visualize=_visualize,
+                   pose=_pose, topic=_topic)
 
 
 class Fov(Model):
@@ -1987,14 +1993,14 @@ class FarClip(Model):
 
 class Projector(Model):
     def __init__(
-        self,
-        name: str = "__default__",
-        plugin: List["Plugin"] = None,
-        texture: "Texture" = None,
-        pose: "Pose" = None,
-        fov: "Fov" = None,
-        near_clip: "NearClip" = None,
-        far_clip: "FarClip" = None
+            self,
+            name: str = "__default__",
+            plugin: List["Plugin"] = None,
+            texture: "Texture" = None,
+            pose: "Pose" = None,
+            fov: "Fov" = None,
+            near_clip: "NearClip" = None,
+            far_clip: "FarClip" = None
     ):
         self.name = name
         self.plugin = plugin or []
@@ -2036,7 +2042,8 @@ class Projector(Model):
         _near_clip = NearClip.from_sdf(_c_near_clip) if _c_near_clip is not None else None
         _c_far_clip = el.find("far_clip")
         _far_clip = FarClip.from_sdf(_c_far_clip) if _c_far_clip is not None else None
-        return cls(name=_name, plugin=_plugin, texture=_texture, pose=_pose, fov=_fov, near_clip=_near_clip, far_clip=_far_clip)
+        return cls(name=_name, plugin=_plugin, texture=_texture, pose=_pose, fov=_fov, near_clip=_near_clip,
+                   far_clip=_far_clip)
 
 
 class Gravity(Model):
@@ -2150,18 +2157,18 @@ class VelocityDecay(Model):
 
 class Link(Model):
     def __init__(
-        self,
-        name: str = "__default__",
-        inertial: "Inertial" = None,
-        collision: List["Collision"] = None,
-        visual: List["Visual"] = None,
-        sensor: List["Sensor"] = None,
-        projector: List["Projector"] = None,
-        gravity: "Gravity" = None,
-        self_collide: "SelfCollide" = None,
-        kinematic: "Kinematic" = None,
-        pose: "Pose" = None,
-        velocity_decay: "VelocityDecay" = None
+            self,
+            name: str = "__default__",
+            inertial: "Inertial" = None,
+            collision: List["Collision"] = None,
+            visual: List["Visual"] = None,
+            sensor: List["Sensor"] = None,
+            projector: List["Projector"] = None,
+            gravity: "Gravity" = None,
+            self_collide: "SelfCollide" = None,
+            kinematic: "Kinematic" = None,
+            pose: "Pose" = None,
+            velocity_decay: "VelocityDecay" = None
     ):
         self.name = name
         self.inertial = inertial
@@ -2220,7 +2227,9 @@ class Link(Model):
         _pose = Pose.from_sdf(_c_pose) if _c_pose is not None else None
         _c_velocity_decay = el.find("velocity_decay")
         _velocity_decay = VelocityDecay.from_sdf(_c_velocity_decay) if _c_velocity_decay is not None else None
-        return cls(name=_name, inertial=_inertial, collision=_collision, visual=_visual, sensor=_sensor, projector=_projector, gravity=_gravity, self_collide=_self_collide, kinematic=_kinematic, pose=_pose, velocity_decay=_velocity_decay)
+        return cls(name=_name, inertial=_inertial, collision=_collision, visual=_visual, sensor=_sensor,
+                   projector=_projector, gravity=_gravity, self_collide=_self_collide, kinematic=_kinematic, pose=_pose,
+                   velocity_decay=_velocity_decay)
 
 
 class Parent(Model):
@@ -2402,11 +2411,11 @@ class Velocity(Model):
 
 class Limit(Model):
     def __init__(
-        self,
-        lower: "Lower" = None,
-        upper: "Upper" = None,
-        effort: "Effort" = None,
-        velocity: "Velocity" = None
+            self,
+            lower: "Lower" = None,
+            upper: "Upper" = None,
+            effort: "Effort" = None,
+            velocity: "Velocity" = None
     ):
         self.lower = lower
         self.upper = upper
@@ -2511,13 +2520,13 @@ class Bullet(Model):
 
 class Physics(Model):
     def __init__(
-        self,
-        type: str = "ode",
-        update_rate: "UpdateRate" = None,
-        max_contacts: "MaxContacts" = None,
-        gravity: "Gravity" = None,
-        bullet: "Bullet" = None,
-        ode: "Ode" = None
+            self,
+            type: str = "ode",
+            update_rate: "UpdateRate" = None,
+            max_contacts: "MaxContacts" = None,
+            gravity: "Gravity" = None,
+            bullet: "Bullet" = None,
+            ode: "Ode" = None
     ):
         self.type = type
         self.update_rate = update_rate
@@ -2555,21 +2564,22 @@ class Physics(Model):
         _bullet = Bullet.from_sdf(_c_bullet) if _c_bullet is not None else None
         _c_ode = el.find("ode")
         _ode = Ode.from_sdf(_c_ode) if _c_ode is not None else None
-        return cls(type=_type, update_rate=_update_rate, max_contacts=_max_contacts, gravity=_gravity, bullet=_bullet, ode=_ode)
+        return cls(type=_type, update_rate=_update_rate, max_contacts=_max_contacts, gravity=_gravity, bullet=_bullet,
+                   ode=_ode)
 
 
 class Joint(Model):
     def __init__(
-        self,
-        name: str = "__default__",
-        type: str = "__default__",
-        parent: "Parent" = None,
-        child: "Child" = None,
-        pose: "Pose" = None,
-        thread_pitch: "ThreadPitch" = None,
-        axis: "Axis" = None,
-        axis2: "Axis2" = None,
-        physics: "Physics" = None
+            self,
+            name: str = "__default__",
+            type: str = "__default__",
+            parent: "Parent" = None,
+            child: "Child" = None,
+            pose: "Pose" = None,
+            thread_pitch: "ThreadPitch" = None,
+            axis: "Axis" = None,
+            axis2: "Axis2" = None,
+            physics: "Physics" = None
     ):
         self.name = name
         self.type = type
@@ -2621,7 +2631,8 @@ class Joint(Model):
         _axis2 = Axis2.from_sdf(_c_axis2) if _c_axis2 is not None else None
         _c_physics = el.find("physics")
         _physics = Physics.from_sdf(_c_physics) if _c_physics is not None else None
-        return cls(name=_name, type=_type, parent=_parent, child=_child, pose=_pose, thread_pitch=_thread_pitch, axis=_axis, axis2=_axis2, physics=_physics)
+        return cls(name=_name, type=_type, parent=_parent, child=_child, pose=_pose, thread_pitch=_thread_pitch,
+                   axis=_axis, axis2=_axis2, physics=_physics)
 
 
 class Filename(Model):
@@ -2682,11 +2693,11 @@ class InterpolateX(Model):
 
 class Animation(Model):
     def __init__(
-        self,
-        name: str = "__default__",
-        filename: "Filename" = None,
-        scale: "Scale" = None,
-        interpolate_x: "InterpolateX" = None
+            self,
+            name: str = "__default__",
+            filename: "Filename" = None,
+            scale: "Scale" = None,
+            interpolate_x: "InterpolateX" = None
     ):
         self.name = name
         self.filename = filename
@@ -2719,16 +2730,16 @@ class Animation(Model):
 
 class Actor(Model):
     def __init__(
-        self,
-        name: str = "__default__",
-        static: bool = False,
-        link: List["Link"] = None,
-        joint: List["Joint"] = None,
-        plugin: List["Plugin"] = None,
-        pose: "Pose" = None,
-        skin: "Skin" = None,
-        animation: List["Animation"] = None,
-        script: "Script" = None
+            self,
+            name: str = "__default__",
+            static: bool = False,
+            link: List["Link"] = None,
+            joint: List["Joint"] = None,
+            plugin: List["Plugin"] = None,
+            pose: "Pose" = None,
+            skin: "Skin" = None,
+            animation: List["Animation"] = None,
+            script: "Script" = None
     ):
         self.name = name
         self.static = static
@@ -2776,4 +2787,5 @@ class Actor(Model):
         _animation = [Animation.from_sdf(c) for c in el.findall("animation")]
         _c_script = el.find("script")
         _script = Script.from_sdf(_c_script) if _c_script is not None else None
-        return cls(name=_name, static=_static, link=_link, joint=_joint, plugin=_plugin, pose=_pose, skin=_skin, animation=_animation, script=_script)
+        return cls(name=_name, static=_static, link=_link, joint=_joint, plugin=_plugin, pose=_pose, skin=_skin,
+                   animation=_animation, script=_script)

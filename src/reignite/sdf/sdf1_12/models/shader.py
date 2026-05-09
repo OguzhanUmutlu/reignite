@@ -2,9 +2,8 @@ from __future__ import annotations
 
 from xml.etree import ElementTree as ET
 
-from ..model import Model
-from ...sdf1_11.models.shader import Shader as _PrevShader
 from .normal_map import NormalMap
+from ...sdf1_11.models.shader import Shader as _PrevShader
 
 
 class Shader(_PrevShader):

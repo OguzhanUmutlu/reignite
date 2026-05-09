@@ -2,9 +2,8 @@ from __future__ import annotations
 
 from xml.etree import ElementTree as ET
 
-from ..model import Model
-from ...sdf1_4.models.soft_contact import SoftContact as _PrevSoftContact
 from .dart import Dart
+from ...sdf1_4.models.soft_contact import SoftContact as _PrevSoftContact
 
 
 class SoftContact(_PrevSoftContact):

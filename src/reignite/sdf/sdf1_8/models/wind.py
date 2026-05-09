@@ -2,9 +2,8 @@ from __future__ import annotations
 
 from xml.etree import ElementTree as ET
 
-from ..model import Model
-from ...sdf1_7.models.wind import Wind as _PrevWind
 from .linear_velocity import LinearVelocity
+from ...sdf1_7.models.wind import Wind as _PrevWind
 
 
 class Wind(_PrevWind):

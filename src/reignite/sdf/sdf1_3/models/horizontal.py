@@ -2,21 +2,20 @@ from __future__ import annotations
 
 from xml.etree import ElementTree as ET
 
-from ..model import Model
-from ...sdf1_2.models.horizontal import Horizontal as _PrevHorizontal
-from .samples import Samples
-from .resolution import Resolution
-from .min_angle import MinAngle
 from .max_angle import MaxAngle
+from .min_angle import MinAngle
+from .resolution import Resolution
+from .samples import Samples
+from ...sdf1_2.models.horizontal import Horizontal as _PrevHorizontal
 
 
 class Horizontal(_PrevHorizontal):
     def __init__(
-        self,
-        samples: "Samples" = None,
-        resolution: "Resolution" = None,
-        min_angle: "MinAngle" = None,
-        max_angle: "MaxAngle" = None
+            self,
+            samples: "Samples" = None,
+            resolution: "Resolution" = None,
+            min_angle: "MinAngle" = None,
+            max_angle: "MaxAngle" = None
     ):
         super().__init__(samples=samples, resolution=resolution, min_angle=min_angle, max_angle=max_angle)
 
@@ -27,4 +26,5 @@ class Horizontal(_PrevHorizontal):
     @classmethod
     def from_sdf(cls, el: ET.Element) -> "Horizontal":
         _base = _PrevHorizontal.from_sdf(el)
-        return cls(samples=_base.samples, resolution=_base.resolution, min_angle=_base.min_angle, max_angle=_base.max_angle)
+        return cls(samples=_base.samples, resolution=_base.resolution, min_angle=_base.min_angle,
+                   max_angle=_base.max_angle)

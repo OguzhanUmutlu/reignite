@@ -1,23 +1,20 @@
 from __future__ import annotations
 
+import math
 from xml.etree import ElementTree as ET
 
-from ..model import Model
-from ...sdf1_6.models.mean import Mean as _PrevMean
-from ...sdf1_6.models.stddev import Stddev as _PrevStddev
 from ...sdf1_6.models.bias_mean import BiasMean as _PrevBiasMean
 from ...sdf1_6.models.bias_stddev import BiasStddev as _PrevBiasStddev
-from ...sdf1_6.models.dynamic_bias_stddev import DynamicBiasStddev as _PrevDynamicBiasStddev
 from ...sdf1_6.models.dynamic_bias_correlation_time import DynamicBiasCorrelationTime as _PrevDynamicBiasCorrelationTime
-from ...sdf1_6.models.precision import Precision as _PrevPrecision
-from ...sdf1_6.models.noise import Noise as _PrevNoise
+from ...sdf1_6.models.dynamic_bias_stddev import DynamicBiasStddev as _PrevDynamicBiasStddev
 from ...sdf1_6.models.horizontal import Horizontal as _PrevHorizontal
-from ...sdf1_6.models.vertical import Vertical as _PrevVertical
+from ...sdf1_6.models.mean import Mean as _PrevMean
+from ...sdf1_6.models.noise import Noise as _PrevNoise
+from ...sdf1_6.models.precision import Precision as _PrevPrecision
 from ...sdf1_6.models.scan import Scan as _PrevScan
+from ...sdf1_6.models.stddev import Stddev as _PrevStddev
+from ...sdf1_6.models.vertical import Vertical as _PrevVertical
 
-
-import math
-import sys
 
 def _parse_int32(raw: str) -> int:
     v = int(raw)
@@ -38,7 +35,6 @@ def _parse_double(raw: str) -> float:
     if not math.isfinite(v) or abs(v) > 1.7976931348623157e+308:
         raise ValueError(f"double out of range: {raw}")
     return v
-
 
 
 class Mean(_PrevMean):
@@ -141,15 +137,15 @@ class Precision(_PrevPrecision):
 
 class Noise(_PrevNoise):
     def __init__(
-        self,
-        type: str = "none",
-        mean: "Mean" = None,
-        stddev: "Stddev" = None,
-        bias_mean: "BiasMean" = None,
-        bias_stddev: "BiasStddev" = None,
-        dynamic_bias_stddev: "DynamicBiasStddev" = None,
-        dynamic_bias_correlation_time: "DynamicBiasCorrelationTime" = None,
-        precision: "Precision" = None
+            self,
+            type: str = "none",
+            mean: "Mean" = None,
+            stddev: "Stddev" = None,
+            bias_mean: "BiasMean" = None,
+            bias_stddev: "BiasStddev" = None,
+            dynamic_bias_stddev: "DynamicBiasStddev" = None,
+            dynamic_bias_correlation_time: "DynamicBiasCorrelationTime" = None,
+            precision: "Precision" = None
     ):
         super().__init__(type=type, mean=mean, stddev=stddev)
         self.bias_mean = bias_mean
@@ -180,12 +176,16 @@ class Noise(_PrevNoise):
         _c_bias_stddev = el.find("bias_stddev")
         _bias_stddev = BiasStddev.from_sdf(_c_bias_stddev) if _c_bias_stddev is not None else None
         _c_dynamic_bias_stddev = el.find("dynamic_bias_stddev")
-        _dynamic_bias_stddev = DynamicBiasStddev.from_sdf(_c_dynamic_bias_stddev) if _c_dynamic_bias_stddev is not None else None
+        _dynamic_bias_stddev = DynamicBiasStddev.from_sdf(
+            _c_dynamic_bias_stddev) if _c_dynamic_bias_stddev is not None else None
         _c_dynamic_bias_correlation_time = el.find("dynamic_bias_correlation_time")
-        _dynamic_bias_correlation_time = DynamicBiasCorrelationTime.from_sdf(_c_dynamic_bias_correlation_time) if _c_dynamic_bias_correlation_time is not None else None
+        _dynamic_bias_correlation_time = DynamicBiasCorrelationTime.from_sdf(
+            _c_dynamic_bias_correlation_time) if _c_dynamic_bias_correlation_time is not None else None
         _c_precision = el.find("precision")
         _precision = Precision.from_sdf(_c_precision) if _c_precision is not None else None
-        return cls(type=_base.type, mean=_base.mean, stddev=_base.stddev, bias_mean=_bias_mean, bias_stddev=_bias_stddev, dynamic_bias_stddev=_dynamic_bias_stddev, dynamic_bias_correlation_time=_dynamic_bias_correlation_time, precision=_precision)
+        return cls(type=_base.type, mean=_base.mean, stddev=_base.stddev, bias_mean=_bias_mean,
+                   bias_stddev=_bias_stddev, dynamic_bias_stddev=_dynamic_bias_stddev,
+                   dynamic_bias_correlation_time=_dynamic_bias_correlation_time, precision=_precision)
 
 
 class Horizontal(_PrevHorizontal):

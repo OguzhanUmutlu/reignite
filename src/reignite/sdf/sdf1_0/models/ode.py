@@ -2,9 +2,9 @@ from __future__ import annotations
 
 from xml.etree import ElementTree as ET
 
-from ..model import Model
-from .solver import Solver
 from .constraints import Constraints
+from .solver import Solver
+from ..model import Model
 
 
 class Ode(Model):

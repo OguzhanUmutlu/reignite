@@ -2,23 +2,23 @@ from __future__ import annotations
 
 from xml.etree import ElementTree as ET
 
-from ..model import Model
-from .shader import Shader
 from .ambient import Ambient
 from .diffuse import Diffuse
-from .specular import Specular
 from .emissive import Emissive
+from .shader import Shader
+from .specular import Specular
+from ..model import Model
 
 
 class Material(Model):
     def __init__(
-        self,
-        script: str = "__default__",
-        shader: "Shader" = None,
-        ambient: "Ambient" = None,
-        diffuse: "Diffuse" = None,
-        specular: "Specular" = None,
-        emissive: "Emissive" = None
+            self,
+            script: str = "__default__",
+            shader: "Shader" = None,
+            ambient: "Ambient" = None,
+            diffuse: "Diffuse" = None,
+            specular: "Specular" = None,
+            emissive: "Emissive" = None
     ):
         self.script = script
         self.shader = shader
@@ -56,4 +56,5 @@ class Material(Model):
         _specular = Specular.from_sdf(_c_specular) if _c_specular is not None else None
         _c_emissive = el.find("emissive")
         _emissive = Emissive.from_sdf(_c_emissive) if _c_emissive is not None else None
-        return cls(script=_script, shader=_shader, ambient=_ambient, diffuse=_diffuse, specular=_specular, emissive=_emissive)
+        return cls(script=_script, shader=_shader, ambient=_ambient, diffuse=_diffuse, specular=_specular,
+                   emissive=_emissive)

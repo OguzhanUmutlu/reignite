@@ -2,11 +2,10 @@ from __future__ import annotations
 
 from xml.etree import ElementTree as ET
 
-from ..model import Model
-from ...sdf1_10.models.range import Range as _PrevRange
-from .min import Min
 from .max import Max
+from .min import Min
 from .resolution import Resolution
+from ...sdf1_10.models.range import Range as _PrevRange
 
 
 class Range(_PrevRange):

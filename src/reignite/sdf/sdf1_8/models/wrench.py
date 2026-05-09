@@ -2,7 +2,6 @@ from __future__ import annotations
 
 from xml.etree import ElementTree as ET
 
-from ..model import Model
 from ...sdf1_7.models.wrench import Wrench as _PrevWrench
 from ....utils.pose import Pose
 

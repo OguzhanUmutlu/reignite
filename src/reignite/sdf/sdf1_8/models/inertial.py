@@ -2,11 +2,10 @@ from __future__ import annotations
 
 from xml.etree import ElementTree as ET
 
-from ..model import Model
-from ...sdf1_7.models.inertial import Inertial as _PrevInertial
+from .inertia import Inertia
 from .mass import Mass
 from .pose import Pose
-from .inertia import Inertia
+from ...sdf1_7.models.inertial import Inertial as _PrevInertial
 
 
 class Inertial(_PrevInertial):

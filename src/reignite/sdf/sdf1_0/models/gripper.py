@@ -1,22 +1,21 @@
 from __future__ import annotations
 
+from typing import List
 from xml.etree import ElementTree as ET
 
-from typing import List
-
-from ..model import Model
 from .grasp_check import GraspCheck
 from .gripper_link import GripperLink
 from .palm_link import PalmLink
+from ..model import Model
 
 
 class Gripper(Model):
     def __init__(
-        self,
-        name: str = "__default__",
-        grasp_check: "GraspCheck" = None,
-        gripper_link: List["GripperLink"] = None,
-        palm_link: "PalmLink" = None
+            self,
+            name: str = "__default__",
+            grasp_check: "GraspCheck" = None,
+            gripper_link: List["GripperLink"] = None,
+            palm_link: "PalmLink" = None
     ):
         self.name = name
         self.grasp_check = grasp_check

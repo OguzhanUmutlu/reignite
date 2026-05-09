@@ -2,13 +2,12 @@ from __future__ import annotations
 
 from xml.etree import ElementTree as ET
 
-from ..model import Model
-from ...sdf1_8.models.type import Type as _PrevType
-from ...sdf1_8.models.fog import Fog as _PrevFog
 from .color import Color
-from .start import Start
-from .end import End
 from .density import Density
+from .end import End
+from .start import Start
+from ...sdf1_8.models.fog import Fog as _PrevFog
+from ...sdf1_8.models.type import Type as _PrevType
 
 
 class Type(_PrevType):
@@ -27,12 +26,12 @@ class Type(_PrevType):
 
 class Fog(_PrevFog):
     def __init__(
-        self,
-        color: "Color" = None,
-        type: "Type" = None,
-        start: "Start" = None,
-        end: "End" = None,
-        density: "Density" = None
+            self,
+            color: "Color" = None,
+            type: "Type" = None,
+            start: "Start" = None,
+            end: "End" = None,
+            density: "Density" = None
     ):
         super().__init__(color=color, type=type, start=start, end=end, density=density)
 

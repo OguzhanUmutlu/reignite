@@ -1,14 +1,12 @@
 from __future__ import annotations
 
+import math
 from xml.etree import ElementTree as ET
 
-from ..model import Model
 from .temperature import Temperature
 from .temperature_gradient import TemperatureGradient
+from ..model import Model
 
-
-import math
-import sys
 
 def _parse_int32(raw: str) -> int:
     v = int(raw)
@@ -31,7 +29,6 @@ def _parse_double(raw: str) -> float:
     return v
 
 
-
 class Pressure(Model):
     def __init__(self, pressure: float = 101325):
         self.pressure = pressure
@@ -51,11 +48,11 @@ class Pressure(Model):
 
 class Atmosphere(Model):
     def __init__(
-        self,
-        type: str = "adiabatic",
-        temperature: "Temperature" = None,
-        pressure: "Pressure" = None,
-        temperature_gradient: "TemperatureGradient" = None
+            self,
+            type: str = "adiabatic",
+            temperature: "Temperature" = None,
+            pressure: "Pressure" = None,
+            temperature_gradient: "TemperatureGradient" = None
     ):
         self.type = type
         self.temperature = temperature
@@ -82,5 +79,6 @@ class Atmosphere(Model):
         _c_pressure = el.find("pressure")
         _pressure = Pressure.from_sdf(_c_pressure) if _c_pressure is not None else None
         _c_temperature_gradient = el.find("temperature_gradient")
-        _temperature_gradient = TemperatureGradient.from_sdf(_c_temperature_gradient) if _c_temperature_gradient is not None else None
+        _temperature_gradient = TemperatureGradient.from_sdf(
+            _c_temperature_gradient) if _c_temperature_gradient is not None else None
         return cls(type=_type, temperature=_temperature, pressure=_pressure, temperature_gradient=_temperature_gradient)

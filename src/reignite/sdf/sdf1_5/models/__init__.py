@@ -54,4 +54,10 @@ from .transceiver import Transceiver
 from .visual import Visual
 from .world import World
 
-TAG_NAMES: list[str] = ["actor", "altimeter", "audio_sink", "audio_source", "battery", "box", "camera", "collision", "collision_engine", "contact", "cylinder", "force_torque", "frame", "geometry", "gps", "gripper", "gui", "heightmap", "image", "imu", "inertial", "joint", "light", "link", "logical_camera", "magnetometer", "material", "mesh", "model", "noise", "physics", "plane", "plugin", "polyline", "population", "pose", "projector", "ray", "rfid", "rfidtag", "road", "robot", "scene", "sdf", "sensor", "sonar", "sphere", "spherical_coordinates", "state", "surface", "transceiver", "visual", "world"]
+TAG_NAMES: list[str] = ["actor", "altimeter", "audio_sink", "audio_source", "battery", "box", "camera", "collision",
+                        "collision_engine", "contact", "cylinder", "force_torque", "frame", "geometry", "gps",
+                        "gripper", "gui", "heightmap", "image", "imu", "inertial", "joint", "light", "link",
+                        "logical_camera", "magnetometer", "material", "mesh", "model", "noise", "physics", "plane",
+                        "plugin", "polyline", "population", "pose", "projector", "ray", "rfid", "rfidtag", "road",
+                        "robot", "scene", "sdf", "sensor", "sonar", "sphere", "spherical_coordinates", "state",
+                        "surface", "transceiver", "visual", "world"]

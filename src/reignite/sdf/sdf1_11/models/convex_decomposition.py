@@ -2,16 +2,16 @@ from __future__ import annotations
 
 from xml.etree import ElementTree as ET
 
-from ..model import Model
 from .max_convex_hulls import MaxConvexHulls
 from .voxel_resolution import VoxelResolution
+from ..model import Model
 
 
 class ConvexDecomposition(Model):
     def __init__(
-        self,
-        max_convex_hulls: "MaxConvexHulls" = None,
-        voxel_resolution: "VoxelResolution" = None
+            self,
+            max_convex_hulls: "MaxConvexHulls" = None,
+            voxel_resolution: "VoxelResolution" = None
     ):
         self.max_convex_hulls = max_convex_hulls
         self.voxel_resolution = voxel_resolution

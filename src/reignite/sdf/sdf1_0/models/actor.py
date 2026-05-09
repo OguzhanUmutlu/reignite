@@ -1,31 +1,30 @@
 from __future__ import annotations
 
+from typing import List
 from xml.etree import ElementTree as ET
 
-from typing import List
-
-from ..model import Model
-from .link import Link
-from .joint import Joint
-from .plugin import Plugin
-from .origin import Origin
-from .skin import Skin
 from .animation import Animation
+from .joint import Joint
+from .link import Link
+from .origin import Origin
+from .plugin import Plugin
 from .script import Script
+from .skin import Skin
+from ..model import Model
 
 
 class Actor(Model):
     def __init__(
-        self,
-        name: str = "__default__",
-        static: bool = False,
-        link: List["Link"] = None,
-        joint: List["Joint"] = None,
-        plugin: List["Plugin"] = None,
-        origin: "Origin" = None,
-        skin: "Skin" = None,
-        animation: List["Animation"] = None,
-        script: "Script" = None
+            self,
+            name: str = "__default__",
+            static: bool = False,
+            link: List["Link"] = None,
+            joint: List["Joint"] = None,
+            plugin: List["Plugin"] = None,
+            origin: "Origin" = None,
+            skin: "Skin" = None,
+            animation: List["Animation"] = None,
+            script: "Script" = None
     ):
         self.name = name
         self.static = static
@@ -73,4 +72,5 @@ class Actor(Model):
         _animation = [Animation.from_sdf(c) for c in el.findall("animation")]
         _c_script = el.find("script")
         _script = Script.from_sdf(_c_script) if _c_script is not None else None
-        return cls(name=_name, static=_static, link=_link, joint=_joint, plugin=_plugin, origin=_origin, skin=_skin, animation=_animation, script=_script)
+        return cls(name=_name, static=_static, link=_link, joint=_joint, plugin=_plugin, origin=_origin, skin=_skin,
+                   animation=_animation, script=_script)

@@ -2,30 +2,30 @@ from __future__ import annotations
 
 from xml.etree import ElementTree as ET
 
-from ..model import Model
 from .albedo_map import AlbedoMap
-from .roughness_map import RoughnessMap
-from .roughness import Roughness
-from .metalness_map import MetalnessMap
-from .metalness import Metalness
-from .environment_map import EnvironmentMap
 from .ambient_occlusion_map import AmbientOcclusionMap
-from .normal_map import NormalMap
 from .emissive_map import EmissiveMap
+from .environment_map import EnvironmentMap
+from .metalness import Metalness
+from .metalness_map import MetalnessMap
+from .normal_map import NormalMap
+from .roughness import Roughness
+from .roughness_map import RoughnessMap
+from ..model import Model
 
 
 class Metal(Model):
     def __init__(
-        self,
-        albedo_map: "AlbedoMap" = None,
-        roughness_map: "RoughnessMap" = None,
-        roughness: "Roughness" = None,
-        metalness_map: "MetalnessMap" = None,
-        metalness: "Metalness" = None,
-        environment_map: "EnvironmentMap" = None,
-        ambient_occlusion_map: "AmbientOcclusionMap" = None,
-        normal_map: "NormalMap" = None,
-        emissive_map: "EmissiveMap" = None
+            self,
+            albedo_map: "AlbedoMap" = None,
+            roughness_map: "RoughnessMap" = None,
+            roughness: "Roughness" = None,
+            metalness_map: "MetalnessMap" = None,
+            metalness: "Metalness" = None,
+            environment_map: "EnvironmentMap" = None,
+            ambient_occlusion_map: "AmbientOcclusionMap" = None,
+            normal_map: "NormalMap" = None,
+            emissive_map: "EmissiveMap" = None
     ):
         self.albedo_map = albedo_map
         self.roughness_map = roughness_map
@@ -74,9 +74,12 @@ class Metal(Model):
         _c_environment_map = el.find("environment_map")
         _environment_map = EnvironmentMap.from_sdf(_c_environment_map) if _c_environment_map is not None else None
         _c_ambient_occlusion_map = el.find("ambient_occlusion_map")
-        _ambient_occlusion_map = AmbientOcclusionMap.from_sdf(_c_ambient_occlusion_map) if _c_ambient_occlusion_map is not None else None
+        _ambient_occlusion_map = AmbientOcclusionMap.from_sdf(
+            _c_ambient_occlusion_map) if _c_ambient_occlusion_map is not None else None
         _c_normal_map = el.find("normal_map")
         _normal_map = NormalMap.from_sdf(_c_normal_map) if _c_normal_map is not None else None
         _c_emissive_map = el.find("emissive_map")
         _emissive_map = EmissiveMap.from_sdf(_c_emissive_map) if _c_emissive_map is not None else None
-        return cls(albedo_map=_albedo_map, roughness_map=_roughness_map, roughness=_roughness, metalness_map=_metalness_map, metalness=_metalness, environment_map=_environment_map, ambient_occlusion_map=_ambient_occlusion_map, normal_map=_normal_map, emissive_map=_emissive_map)
+        return cls(albedo_map=_albedo_map, roughness_map=_roughness_map, roughness=_roughness,
+                   metalness_map=_metalness_map, metalness=_metalness, environment_map=_environment_map,
+                   ambient_occlusion_map=_ambient_occlusion_map, normal_map=_normal_map, emissive_map=_emissive_map)

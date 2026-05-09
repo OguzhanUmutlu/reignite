@@ -1,23 +1,19 @@
 from __future__ import annotations
 
+import math
+from typing import List
 from xml.etree import ElementTree as ET
 
-from typing import List
-
-from ..model import Model
+from .actor import Actor
 from .gui import Gui
-from .scene import Scene
+from .joint import Joint
 from .light import Light
 from .model import Model
-from .actor import Actor
 from .plugin import Plugin
-from .joint import Joint
 from .road import Road
+from .scene import Scene
 from .state import State
 
-
-import math
-import sys
 
 def _parse_int32(raw: str) -> int:
     v = int(raw)
@@ -40,16 +36,15 @@ def _parse_double(raw: str) -> float:
     return v
 
 
-
 class Physics(Model):
     def __init__(
-        self,
-        type: str = "ode",
-        update_rate: float = 0,
-        max_contacts: "MaxContacts" = None,
-        gravity: "Gravity" = None,
-        bullet: "Bullet" = None,
-        ode: "Ode" = None
+            self,
+            type: str = "ode",
+            update_rate: float = 0,
+            max_contacts: "MaxContacts" = None,
+            gravity: "Gravity" = None,
+            bullet: "Bullet" = None,
+            ode: "Ode" = None
     ):
         self.type = type
         self.update_rate = update_rate
@@ -86,23 +81,24 @@ class Physics(Model):
         _bullet = Bullet.from_sdf(_c_bullet) if _c_bullet is not None else None
         _c_ode = el.find("ode")
         _ode = Ode.from_sdf(_c_ode) if _c_ode is not None else None
-        return cls(type=_type, update_rate=_update_rate, max_contacts=_max_contacts, gravity=_gravity, bullet=_bullet, ode=_ode)
+        return cls(type=_type, update_rate=_update_rate, max_contacts=_max_contacts, gravity=_gravity, bullet=_bullet,
+                   ode=_ode)
 
 
 class World(Model):
     def __init__(
-        self,
-        name: str = "__default__",
-        gui: "Gui" = None,
-        physics: "Physics" = None,
-        scene: "Scene" = None,
-        light: List["Light"] = None,
-        model: List["Model"] = None,
-        actor: List["Actor"] = None,
-        plugin: List["Plugin"] = None,
-        joint: List["Joint"] = None,
-        road: List["Road"] = None,
-        state: List["State"] = None
+            self,
+            name: str = "__default__",
+            gui: "Gui" = None,
+            physics: "Physics" = None,
+            scene: "Scene" = None,
+            light: List["Light"] = None,
+            model: List["Model"] = None,
+            actor: List["Actor"] = None,
+            plugin: List["Plugin"] = None,
+            joint: List["Joint"] = None,
+            road: List["Road"] = None,
+            state: List["State"] = None
     ):
         self.name = name
         self.gui = gui
@@ -158,4 +154,5 @@ class World(Model):
         _joint = [Joint.from_sdf(c) for c in el.findall("joint")]
         _road = [Road.from_sdf(c) for c in el.findall("road")]
         _state = [State.from_sdf(c) for c in el.findall("state")]
-        return cls(name=_name, gui=_gui, physics=_physics, scene=_scene, light=_light, model=_model, actor=_actor, plugin=_plugin, joint=_joint, road=_road, state=_state)
+        return cls(name=_name, gui=_gui, physics=_physics, scene=_scene, light=_light, model=_model, actor=_actor,
+                   plugin=_plugin, joint=_joint, road=_road, state=_state)

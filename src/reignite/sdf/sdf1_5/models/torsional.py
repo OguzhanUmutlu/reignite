@@ -2,12 +2,12 @@ from __future__ import annotations
 
 from xml.etree import ElementTree as ET
 
-from ..model import Model
-from ...sdf1_4.models.ode import Ode as _PrevOde
 from .coefficient import Coefficient
-from .use_patch_radius import UsePatchRadius
 from .patch_radius import PatchRadius
 from .surface_radius import SurfaceRadius
+from .use_patch_radius import UsePatchRadius
+from ..model import Model
+from ...sdf1_4.models.ode import Ode as _PrevOde
 
 
 class Ode(_PrevOde):
@@ -30,12 +30,12 @@ class Ode(_PrevOde):
 
 class Torsional(Model):
     def __init__(
-        self,
-        coefficient: "Coefficient" = None,
-        use_patch_radius: "UsePatchRadius" = None,
-        patch_radius: "PatchRadius" = None,
-        surface_radius: "SurfaceRadius" = None,
-        ode: "Ode" = None
+            self,
+            coefficient: "Coefficient" = None,
+            use_patch_radius: "UsePatchRadius" = None,
+            patch_radius: "PatchRadius" = None,
+            surface_radius: "SurfaceRadius" = None,
+            ode: "Ode" = None
     ):
         self.coefficient = coefficient
         self.use_patch_radius = use_patch_radius
@@ -69,4 +69,5 @@ class Torsional(Model):
         _surface_radius = SurfaceRadius.from_sdf(_c_surface_radius) if _c_surface_radius is not None else None
         _c_ode = el.find("ode")
         _ode = Ode.from_sdf(_c_ode) if _c_ode is not None else None
-        return cls(coefficient=_coefficient, use_patch_radius=_use_patch_radius, patch_radius=_patch_radius, surface_radius=_surface_radius, ode=_ode)
+        return cls(coefficient=_coefficient, use_patch_radius=_use_patch_radius, patch_radius=_patch_radius,
+                   surface_radius=_surface_radius, ode=_ode)

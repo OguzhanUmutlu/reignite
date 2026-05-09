@@ -8,13 +8,13 @@ from ...sdf1_4.models.noise import Noise as _PrevNoise
 
 class Noise(_PrevNoise):
     def __init__(
-        self,
-        type: str = "none",
-        mean: "Mean" = None,
-        stddev: "Stddev" = None,
-        bias_mean: "BiasMean" = None,
-        bias_stddev: "BiasStddev" = None,
-        precision: "Precision" = None
+            self,
+            type: str = "none",
+            mean: "Mean" = None,
+            stddev: "Stddev" = None,
+            bias_mean: "BiasMean" = None,
+            bias_stddev: "BiasStddev" = None,
+            precision: "Precision" = None
     ):
         super().__init__(type=type, mean=mean, stddev=stddev)
         self.bias_mean = bias_mean
@@ -40,7 +40,8 @@ class Noise(_PrevNoise):
         _bias_stddev = BiasStddev.from_sdf(_c_bias_stddev) if _c_bias_stddev is not None else None
         _c_precision = el.find("precision")
         _precision = Precision.from_sdf(_c_precision) if _c_precision is not None else None
-        return cls(type=_base.type, mean=_base.mean, stddev=_base.stddev, bias_mean=_bias_mean, bias_stddev=_bias_stddev, precision=_precision)
+        return cls(type=_base.type, mean=_base.mean, stddev=_base.stddev, bias_mean=_bias_mean,
+                   bias_stddev=_bias_stddev, precision=_precision)
 
 
 class Y(Model):

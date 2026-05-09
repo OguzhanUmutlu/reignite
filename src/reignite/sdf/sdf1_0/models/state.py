@@ -1,15 +1,11 @@
 from __future__ import annotations
 
+import math
+from typing import List
 from xml.etree import ElementTree as ET
 
-from typing import List
-
-from ..model import Model
 from .model import Model
 
-
-import math
-import sys
 
 def _parse_int32(raw: str) -> int:
     v = int(raw)
@@ -32,13 +28,12 @@ def _parse_double(raw: str) -> float:
     return v
 
 
-
 class State(Model):
     def __init__(
-        self,
-        world_name: str = "__default__",
-        time: float = "0 0",
-        model: List["Model"] = None
+            self,
+            world_name: str = "__default__",
+            time: float = "0 0",
+            model: List["Model"] = None
     ):
         self.world_name = world_name
         self.time = time

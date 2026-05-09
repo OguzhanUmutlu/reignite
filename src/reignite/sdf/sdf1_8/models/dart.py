@@ -2,10 +2,9 @@ from __future__ import annotations
 
 from xml.etree import ElementTree as ET
 
-from ..model import Model
-from ...sdf1_7.models.dart import Dart as _PrevDart
-from .solver import Solver
 from .collision_detector import CollisionDetector
+from .solver import Solver
+from ...sdf1_7.models.dart import Dart as _PrevDart
 
 
 class Dart(_PrevDart):

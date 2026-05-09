@@ -2,7 +2,6 @@ from __future__ import annotations
 
 from xml.etree import ElementTree as ET
 
-from ..model import Model
 from ...sdf1_11.models.scale_to_hfov import ScaleToHfov as _PrevScaleToHfov
 
 

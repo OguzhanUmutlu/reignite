@@ -1,14 +1,12 @@
 from __future__ import annotations
 
+import math
 from xml.etree import ElementTree as ET
 
-from ..model import Model
-from .position import Position
 from .acceleration import Acceleration
+from .position import Position
+from ..model import Model
 
-
-import math
-import sys
 
 def _parse_int32(raw: str) -> int:
     v = int(raw)
@@ -29,7 +27,6 @@ def _parse_double(raw: str) -> float:
     if not math.isfinite(v) or abs(v) > 1.7976931348623157e+308:
         raise ValueError(f"double out of range: {raw}")
     return v
-
 
 
 class Velocity(Model):
@@ -72,11 +69,11 @@ class Effort(Model):
 
 class Axis2State(Model):
     def __init__(
-        self,
-        position: "Position" = None,
-        velocity: "Velocity" = None,
-        acceleration: "Acceleration" = None,
-        effort: "Effort" = None
+            self,
+            position: "Position" = None,
+            velocity: "Velocity" = None,
+            acceleration: "Acceleration" = None,
+            effort: "Effort" = None
     ):
         self.position = position
         self.velocity = velocity

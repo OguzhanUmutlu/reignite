@@ -2,24 +2,24 @@ from __future__ import annotations
 
 from xml.etree import ElementTree as ET
 
-from ..model import Model
-from ...sdf1_8.models.pose import Pose as _PrevPose
-from ...sdf1_8.models.population import Population as _PrevPopulation
-from ....utils.pose import Pose
 from .box import Box
 from .cylinder import Cylinder
+from .distribution import Distribution
 from .model import Model
 from .model_count import ModelCount
-from .distribution import Distribution
+from ..model import Model
+from ...sdf1_8.models.population import Population as _PrevPopulation
+from ...sdf1_8.models.pose import Pose as _PrevPose
+from ....utils.pose import Pose
 
 
 class Pose(_PrevPose):
     def __init__(
-        self,
-        pose: Pose = None,
-        relative_to: str = "",
-        rotation_format: str = "euler_rpy",
-        degrees: bool = False
+            self,
+            pose: Pose = None,
+            relative_to: str = "",
+            rotation_format: str = "euler_rpy",
+            degrees: bool = False
     ):
         if pose is None:
             pose = Pose.from_sdf("0 0 0 0 0 0")
@@ -45,16 +45,17 @@ class Pose(_PrevPose):
 
 class Population(_PrevPopulation):
     def __init__(
-        self,
-        name: str = "__default__",
-        box: "Box" = None,
-        cylinder: "Cylinder" = None,
-        pose: "Pose" = None,
-        model: "Model" = None,
-        model_count: "ModelCount" = None,
-        distribution: "Distribution" = None
+            self,
+            name: str = "__default__",
+            box: "Box" = None,
+            cylinder: "Cylinder" = None,
+            pose: "Pose" = None,
+            model: "Model" = None,
+            model_count: "ModelCount" = None,
+            distribution: "Distribution" = None
     ):
-        super().__init__(name=name, box=box, cylinder=cylinder, pose=pose, model=model, model_count=model_count, distribution=distribution)
+        super().__init__(name=name, box=box, cylinder=cylinder, pose=pose, model=model, model_count=model_count,
+                         distribution=distribution)
 
     def to_sdf(self) -> ET.Element:
         el = super().to_sdf()
@@ -63,4 +64,5 @@ class Population(_PrevPopulation):
     @classmethod
     def from_sdf(cls, el: ET.Element) -> "Population":
         _base = _PrevPopulation.from_sdf(el)
-        return cls(name=_base.name, box=_base.box, cylinder=_base.cylinder, pose=_base.pose, model=_base.model, model_count=_base.model_count, distribution=_base.distribution)
+        return cls(name=_base.name, box=_base.box, cylinder=_base.cylinder, pose=_base.pose, model=_base.model,
+                   model_count=_base.model_count, distribution=_base.distribution)

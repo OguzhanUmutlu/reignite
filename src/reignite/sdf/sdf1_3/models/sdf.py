@@ -1,24 +1,22 @@
 from __future__ import annotations
 
+from typing import List
 from xml.etree import ElementTree as ET
 
-from typing import List
-
-from ..model import Model
-from .world import World
-from .model import Model
 from .actor import Actor
 from .light import Light
+from .model import Model
+from .world import World
 
 
 class Sdf(Model):
     def __init__(
-        self,
-        version: str = "1.3",
-        world: List["World"] = None,
-        model: List["Model"] = None,
-        actor: List["Actor"] = None,
-        light: List["Light"] = None
+            self,
+            version: str = "1.3",
+            world: List["World"] = None,
+            model: List["Model"] = None,
+            actor: List["Actor"] = None,
+            light: List["Light"] = None
     ):
         self.version = version
         self.world = world or []

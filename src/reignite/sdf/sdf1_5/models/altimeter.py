@@ -2,16 +2,16 @@ from __future__ import annotations
 
 from xml.etree import ElementTree as ET
 
-from ..model import Model
 from .vertical_position import VerticalPosition
 from .vertical_velocity import VerticalVelocity
+from ..model import Model
 
 
 class Altimeter(Model):
     def __init__(
-        self,
-        vertical_position: "VerticalPosition" = None,
-        vertical_velocity: "VerticalVelocity" = None
+            self,
+            vertical_position: "VerticalPosition" = None,
+            vertical_velocity: "VerticalVelocity" = None
     ):
         self.vertical_position = vertical_position
         self.vertical_velocity = vertical_velocity
@@ -27,7 +27,9 @@ class Altimeter(Model):
     @classmethod
     def from_sdf(cls, el: ET.Element) -> "Altimeter":
         _c_vertical_position = el.find("vertical_position")
-        _vertical_position = VerticalPosition.from_sdf(_c_vertical_position) if _c_vertical_position is not None else None
+        _vertical_position = VerticalPosition.from_sdf(
+            _c_vertical_position) if _c_vertical_position is not None else None
         _c_vertical_velocity = el.find("vertical_velocity")
-        _vertical_velocity = VerticalVelocity.from_sdf(_c_vertical_velocity) if _c_vertical_velocity is not None else None
+        _vertical_velocity = VerticalVelocity.from_sdf(
+            _c_vertical_velocity) if _c_vertical_velocity is not None else None
         return cls(vertical_position=_vertical_position, vertical_velocity=_vertical_velocity)

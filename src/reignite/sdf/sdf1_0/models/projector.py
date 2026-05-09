@@ -1,28 +1,27 @@
 from __future__ import annotations
 
+from typing import List
 from xml.etree import ElementTree as ET
 
-from typing import List
-
-from ..model import Model
-from .plugin import Plugin
-from .texture import Texture
-from .pose import Pose
+from .far_clip import FarClip
 from .fov import Fov
 from .near_clip import NearClip
-from .far_clip import FarClip
+from .plugin import Plugin
+from .pose import Pose
+from .texture import Texture
+from ..model import Model
 
 
 class Projector(Model):
     def __init__(
-        self,
-        name: str = "__default__",
-        plugin: List["Plugin"] = None,
-        texture: "Texture" = None,
-        pose: "Pose" = None,
-        fov: "Fov" = None,
-        near_clip: "NearClip" = None,
-        far_clip: "FarClip" = None
+            self,
+            name: str = "__default__",
+            plugin: List["Plugin"] = None,
+            texture: "Texture" = None,
+            pose: "Pose" = None,
+            fov: "Fov" = None,
+            near_clip: "NearClip" = None,
+            far_clip: "FarClip" = None
     ):
         self.name = name
         self.plugin = plugin or []
@@ -64,4 +63,5 @@ class Projector(Model):
         _near_clip = NearClip.from_sdf(_c_near_clip) if _c_near_clip is not None else None
         _c_far_clip = el.find("far_clip")
         _far_clip = FarClip.from_sdf(_c_far_clip) if _c_far_clip is not None else None
-        return cls(name=_name, plugin=_plugin, texture=_texture, pose=_pose, fov=_fov, near_clip=_near_clip, far_clip=_far_clip)
+        return cls(name=_name, plugin=_plugin, texture=_texture, pose=_pose, fov=_fov, near_clip=_near_clip,
+                   far_clip=_far_clip)

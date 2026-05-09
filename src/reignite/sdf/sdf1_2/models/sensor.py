@@ -1,25 +1,22 @@
 from __future__ import annotations
 
+import math
+from typing import List
 from xml.etree import ElementTree as ET
 
-from typing import List
-
+from .always_on import AlwaysOn
+from .camera import Camera
+from .contact import Contact
+from .plugin import Plugin
+from .pose import Pose
+from .ray import Ray
+from .rfid import Rfid
+from .rfidtag import Rfidtag
+from .topic import Topic
+from .visualize import Visualize
 from ..model import Model
 from ...sdf1_0.models.sensor import Sensor as _PrevSensor
-from .plugin import Plugin
-from .camera import Camera
-from .ray import Ray
-from .contact import Contact
-from .rfidtag import Rfidtag
-from .rfid import Rfid
-from .always_on import AlwaysOn
-from .visualize import Visualize
-from .pose import Pose
-from .topic import Topic
 
-
-import math
-import sys
 
 def _parse_int32(raw: str) -> int:
     v = int(raw)
@@ -42,7 +39,6 @@ def _parse_double(raw: str) -> float:
     return v
 
 
-
 class UpdateRate(Model):
     def __init__(self, update_rate: float = 0):
         self.update_rate = update_rate
@@ -62,22 +58,23 @@ class UpdateRate(Model):
 
 class Sensor(_PrevSensor):
     def __init__(
-        self,
-        name: str = "__default__",
-        type: str = "__default__",
-        plugin: List["Plugin"] = None,
-        camera: "Camera" = None,
-        ray: "Ray" = None,
-        contact: "Contact" = None,
-        rfidtag: "Rfidtag" = None,
-        rfid: "Rfid" = None,
-        always_on: "AlwaysOn" = None,
-        update_rate: "UpdateRate" = None,
-        visualize: "Visualize" = None,
-        pose: "Pose" = None,
-        topic: "Topic" = None
+            self,
+            name: str = "__default__",
+            type: str = "__default__",
+            plugin: List["Plugin"] = None,
+            camera: "Camera" = None,
+            ray: "Ray" = None,
+            contact: "Contact" = None,
+            rfidtag: "Rfidtag" = None,
+            rfid: "Rfid" = None,
+            always_on: "AlwaysOn" = None,
+            update_rate: "UpdateRate" = None,
+            visualize: "Visualize" = None,
+            pose: "Pose" = None,
+            topic: "Topic" = None
     ):
-        super().__init__(name=name, type=type, plugin=plugin, camera=camera, ray=ray, contact=contact, rfidtag=rfidtag, rfid=rfid, always_on=always_on, update_rate=update_rate, visualize=visualize, topic=topic)
+        super().__init__(name=name, type=type, plugin=plugin, camera=camera, ray=ray, contact=contact, rfidtag=rfidtag,
+                         rfid=rfid, always_on=always_on, update_rate=update_rate, visualize=visualize, topic=topic)
         self.pose = pose
 
     def to_sdf(self) -> ET.Element:
@@ -91,4 +88,6 @@ class Sensor(_PrevSensor):
         _base = _PrevSensor.from_sdf(el)
         _c_pose = el.find("pose")
         _pose = Pose.from_sdf(_c_pose) if _c_pose is not None else None
-        return cls(name=_base.name, type=_base.type, plugin=_base.plugin, camera=_base.camera, ray=_base.ray, contact=_base.contact, rfidtag=_base.rfidtag, rfid=_base.rfid, always_on=_base.always_on, update_rate=_base.update_rate, visualize=_base.visualize, pose=_pose, topic=_base.topic)
+        return cls(name=_base.name, type=_base.type, plugin=_base.plugin, camera=_base.camera, ray=_base.ray,
+                   contact=_base.contact, rfidtag=_base.rfidtag, rfid=_base.rfid, always_on=_base.always_on,
+                   update_rate=_base.update_rate, visualize=_base.visualize, pose=_pose, topic=_base.topic)

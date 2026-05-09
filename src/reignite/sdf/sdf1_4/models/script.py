@@ -1,13 +1,11 @@
 from __future__ import annotations
 
+from typing import List
 from xml.etree import ElementTree as ET
 
-from typing import List
-
-from ..model import Model
-from ...sdf1_3.models.uri import Uri as _PrevUri
-from ...sdf1_3.models.script import Script as _PrevScript
 from .name import Name
+from ...sdf1_3.models.script import Script as _PrevScript
+from ...sdf1_3.models.uri import Uri as _PrevUri
 
 
 class Uri(_PrevUri):

@@ -1,12 +1,10 @@
 from __future__ import annotations
 
+import math
 from xml.etree import ElementTree as ET
 
 from ..model import Model
 
-
-import math
-import sys
 
 def _parse_int32(raw: str) -> int:
     v = int(raw)
@@ -29,16 +27,15 @@ def _parse_double(raw: str) -> float:
     return v
 
 
-
 class Inertia(Model):
     def __init__(
-        self,
-        ixx: float = 0.0,
-        ixy: float = 0.0,
-        ixz: float = 0.0,
-        iyy: float = 0.0,
-        iyz: float = 0.0,
-        izz: float = 0.0
+            self,
+            ixx: float = 0.0,
+            ixy: float = 0.0,
+            ixz: float = 0.0,
+            iyy: float = 0.0,
+            iyz: float = 0.0,
+            izz: float = 0.0
     ):
         self.ixx = ixx
         self.ixy = ixy

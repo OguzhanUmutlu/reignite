@@ -1,12 +1,10 @@
 from __future__ import annotations
 
+import math
 from xml.etree import ElementTree as ET
 
 from ..model import Model
 
-
-import math
-import sys
 
 def _parse_int32(raw: str) -> int:
     v = int(raw)
@@ -29,14 +27,13 @@ def _parse_double(raw: str) -> float:
     return v
 
 
-
 class Limit(Model):
     def __init__(
-        self,
-        lower: float = -1e16,
-        upper: float = 1e16,
-        effort: float = 0,
-        velocity: float = 0
+            self,
+            lower: float = -1e16,
+            upper: float = 1e16,
+            effort: float = 0,
+            velocity: float = 0
     ):
         self.lower = lower
         self.upper = upper

@@ -4,8 +4,8 @@ from xml.etree import ElementTree as ET
 
 from ..model import Model
 from ...sdf1_3.models.horizontal import Horizontal as _PrevHorizontal
-from ...sdf1_3.models.vertical import Vertical as _PrevVertical
 from ...sdf1_3.models.scan import Scan as _PrevScan
+from ...sdf1_3.models.vertical import Vertical as _PrevVertical
 
 
 class Type(Model):

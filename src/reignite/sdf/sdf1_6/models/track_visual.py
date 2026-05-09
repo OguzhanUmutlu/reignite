@@ -2,16 +2,15 @@ from __future__ import annotations
 
 from xml.etree import ElementTree as ET
 
-from ..model import Model
-from ...sdf1_5.models.static import Static as _PrevStatic
-from ...sdf1_5.models.xyz import Xyz as _PrevXyz
-from ...sdf1_5.models.track_visual import TrackVisual as _PrevTrackVisual
-from ....utils.vector3 import Vector3
-from .name import Name
-from .min_dist import MinDist
-from .max_dist import MaxDist
-from .use_model_frame import UseModelFrame
 from .inherit_yaw import InheritYaw
+from .max_dist import MaxDist
+from .min_dist import MinDist
+from .name import Name
+from .use_model_frame import UseModelFrame
+from ...sdf1_5.models.static import Static as _PrevStatic
+from ...sdf1_5.models.track_visual import TrackVisual as _PrevTrackVisual
+from ...sdf1_5.models.xyz import Xyz as _PrevXyz
+from ....utils.vector3 import Vector3
 
 
 class Static(_PrevStatic):
@@ -46,14 +45,14 @@ class Xyz(_PrevXyz):
 
 class TrackVisual(_PrevTrackVisual):
     def __init__(
-        self,
-        name: "Name" = None,
-        min_dist: "MinDist" = None,
-        max_dist: "MaxDist" = None,
-        static: "Static" = None,
-        use_model_frame: "UseModelFrame" = None,
-        xyz: "Xyz" = None,
-        inherit_yaw: "InheritYaw" = None
+            self,
+            name: "Name" = None,
+            min_dist: "MinDist" = None,
+            max_dist: "MaxDist" = None,
+            static: "Static" = None,
+            use_model_frame: "UseModelFrame" = None,
+            xyz: "Xyz" = None,
+            inherit_yaw: "InheritYaw" = None
     ):
         super().__init__(name=name, min_dist=min_dist, max_dist=max_dist)
         self.static = static
@@ -84,4 +83,5 @@ class TrackVisual(_PrevTrackVisual):
         _xyz = Xyz.from_sdf(_c_xyz) if _c_xyz is not None else None
         _c_inherit_yaw = el.find("inherit_yaw")
         _inherit_yaw = InheritYaw.from_sdf(_c_inherit_yaw) if _c_inherit_yaw is not None else None
-        return cls(name=_base.name, min_dist=_base.min_dist, max_dist=_base.max_dist, static=_static, use_model_frame=_use_model_frame, xyz=_xyz, inherit_yaw=_inherit_yaw)
+        return cls(name=_base.name, min_dist=_base.min_dist, max_dist=_base.max_dist, static=_static,
+                   use_model_frame=_use_model_frame, xyz=_xyz, inherit_yaw=_inherit_yaw)

@@ -9,11 +9,11 @@ from ....utils.pose import Pose
 
 class Pose(_PrevPose):
     def __init__(
-        self,
-        pose: Pose = None,
-        relative_to: str = "",
-        rotation_format: str = "euler_rpy",
-        degrees: bool = False
+            self,
+            pose: Pose = None,
+            relative_to: str = "",
+            rotation_format: str = "euler_rpy",
+            degrees: bool = False
     ):
         if pose is None:
             pose = Pose.from_sdf("0 0 0 0 0 0")
@@ -26,7 +26,8 @@ class Pose(_PrevPose):
     @classmethod
     def from_sdf(cls, el: ET.Element) -> "Pose":
         _base = _PrevPose.from_sdf(el)
-        return cls(pose=_base.pose, relative_to=_base.relative_to, rotation_format=_base.rotation_format, degrees=_base.degrees)
+        return cls(pose=_base.pose, relative_to=_base.relative_to, rotation_format=_base.rotation_format,
+                   degrees=_base.degrees)
 
 
 class LightState(Model):

@@ -1,25 +1,23 @@
 from __future__ import annotations
 
+from typing import List
 from xml.etree import ElementTree as ET
 
-from typing import List
-
-from ..model import Model
-from ...sdf1_8.models.sdf import Sdf as _PrevSdf
-from .world import World
-from .model import Model
 from .actor import Actor
 from .light import Light
+from .model import Model
+from .world import World
+from ...sdf1_8.models.sdf import Sdf as _PrevSdf
 
 
 class Sdf(_PrevSdf):
     def __init__(
-        self,
-        version: str = "1.9",
-        world: List["World"] = None,
-        model: "Model" = None,
-        actor: "Actor" = None,
-        light: "Light" = None
+            self,
+            version: str = "1.9",
+            world: List["World"] = None,
+            model: "Model" = None,
+            actor: "Actor" = None,
+            light: "Light" = None
     ):
         super().__init__(version=version, world=world, model=model, actor=actor, light=light)
 

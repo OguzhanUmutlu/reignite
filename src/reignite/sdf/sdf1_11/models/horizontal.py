@@ -2,9 +2,8 @@ from __future__ import annotations
 
 from xml.etree import ElementTree as ET
 
-from ..model import Model
-from ...sdf1_10.models.horizontal import Horizontal as _PrevHorizontal
 from .noise import Noise
+from ...sdf1_10.models.horizontal import Horizontal as _PrevHorizontal
 
 
 class Horizontal(_PrevHorizontal):

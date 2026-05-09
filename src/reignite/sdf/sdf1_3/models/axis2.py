@@ -2,11 +2,10 @@ from __future__ import annotations
 
 from xml.etree import ElementTree as ET
 
-from ..model import Model
-from ...sdf1_2.models.axis2 import Axis2 as _PrevAxis2
-from .xyz import Xyz
 from .dynamics import Dynamics
 from .limit import Limit
+from .xyz import Xyz
+from ...sdf1_2.models.axis2 import Axis2 as _PrevAxis2
 
 
 class Axis2(_PrevAxis2):

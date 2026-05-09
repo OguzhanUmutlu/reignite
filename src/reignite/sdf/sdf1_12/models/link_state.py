@@ -1,21 +1,18 @@
 from __future__ import annotations
 
+import math
+from typing import List
 from xml.etree import ElementTree as ET
 
-from typing import List
-
+from .acceleration import Acceleration
+from .angular_acceleration import AngularAcceleration
+from .collision_state import CollisionState
+from .linear_velocity import LinearVelocity
+from .wrench import Wrench
 from ..model import Model
 from ....utils.pose import Pose
 from ....utils.vector3 import Vector3
-from .linear_velocity import LinearVelocity
-from .angular_acceleration import AngularAcceleration
-from .acceleration import Acceleration
-from .wrench import Wrench
-from .collision_state import CollisionState
 
-
-import math
-import sys
 
 def _parse_int32(raw: str) -> int:
     v = int(raw)
@@ -38,14 +35,13 @@ def _parse_double(raw: str) -> float:
     return v
 
 
-
 class Pose(Model):
     def __init__(
-        self,
-        pose: Pose = None,
-        relative_to: str = "",
-        rotation_format: str = "euler_rpy",
-        degrees: bool = False
+            self,
+            pose: Pose = None,
+            relative_to: str = "",
+            rotation_format: str = "euler_rpy",
+            degrees: bool = False
     ):
         if pose is None:
             pose = Pose.from_sdf("0 0 0 0 0 0")
@@ -179,19 +175,19 @@ class Force(Model):
 
 class LinkState(Model):
     def __init__(
-        self,
-        name: str = "__default__",
-        pose: "Pose" = None,
-        angular_velocity: "AngularVelocity" = None,
-        linear_velocity: "LinearVelocity" = None,
-        velocity: "Velocity" = None,
-        angular_acceleration: "AngularAcceleration" = None,
-        linear_acceleration: "LinearAcceleration" = None,
-        acceleration: "Acceleration" = None,
-        torque: "Torque" = None,
-        force: "Force" = None,
-        wrench: "Wrench" = None,
-        collision_state: List["CollisionState"] = None
+            self,
+            name: str = "__default__",
+            pose: "Pose" = None,
+            angular_velocity: "AngularVelocity" = None,
+            linear_velocity: "LinearVelocity" = None,
+            velocity: "Velocity" = None,
+            angular_acceleration: "AngularAcceleration" = None,
+            linear_acceleration: "LinearAcceleration" = None,
+            acceleration: "Acceleration" = None,
+            torque: "Torque" = None,
+            force: "Force" = None,
+            wrench: "Wrench" = None,
+            collision_state: List["CollisionState"] = None
     ):
         self.name = name
         self.pose = pose
@@ -246,9 +242,11 @@ class LinkState(Model):
         _c_velocity = el.find("velocity")
         _velocity = Velocity.from_sdf(_c_velocity) if _c_velocity is not None else None
         _c_angular_acceleration = el.find("angular_acceleration")
-        _angular_acceleration = AngularAcceleration.from_sdf(_c_angular_acceleration) if _c_angular_acceleration is not None else None
+        _angular_acceleration = AngularAcceleration.from_sdf(
+            _c_angular_acceleration) if _c_angular_acceleration is not None else None
         _c_linear_acceleration = el.find("linear_acceleration")
-        _linear_acceleration = LinearAcceleration.from_sdf(_c_linear_acceleration) if _c_linear_acceleration is not None else None
+        _linear_acceleration = LinearAcceleration.from_sdf(
+            _c_linear_acceleration) if _c_linear_acceleration is not None else None
         _c_acceleration = el.find("acceleration")
         _acceleration = Acceleration.from_sdf(_c_acceleration) if _c_acceleration is not None else None
         _c_torque = el.find("torque")
@@ -258,4 +256,7 @@ class LinkState(Model):
         _c_wrench = el.find("wrench")
         _wrench = Wrench.from_sdf(_c_wrench) if _c_wrench is not None else None
         _collision_state = [CollisionState.from_sdf(c) for c in el.findall("collision_state")]
-        return cls(name=_name, pose=_pose, angular_velocity=_angular_velocity, linear_velocity=_linear_velocity, velocity=_velocity, angular_acceleration=_angular_acceleration, linear_acceleration=_linear_acceleration, acceleration=_acceleration, torque=_torque, force=_force, wrench=_wrench, collision_state=_collision_state)
+        return cls(name=_name, pose=_pose, angular_velocity=_angular_velocity, linear_velocity=_linear_velocity,
+                   velocity=_velocity, angular_acceleration=_angular_acceleration,
+                   linear_acceleration=_linear_acceleration, acceleration=_acceleration, torque=_torque, force=_force,
+                   wrench=_wrench, collision_state=_collision_state)

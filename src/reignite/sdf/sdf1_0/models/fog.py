@@ -1,13 +1,11 @@
 from __future__ import annotations
 
+import math
 from xml.etree import ElementTree as ET
 
 from ..model import Model
 from ....utils.color import Color
 
-
-import math
-import sys
 
 def _parse_int32(raw: str) -> int:
     v = int(raw)
@@ -30,15 +28,14 @@ def _parse_double(raw: str) -> float:
     return v
 
 
-
 class Fog(Model):
     def __init__(
-        self,
-        rgba: Color = None,
-        type: str = "linear",
-        start: float = 1.0,
-        end: float = 100.0,
-        density: float = 1.0
+            self,
+            rgba: Color = None,
+            type: str = "linear",
+            start: float = 1.0,
+            end: float = 100.0,
+            density: float = 1.0
     ):
         if rgba is None:
             rgba = Color.from_sdf("1 1 1 1")

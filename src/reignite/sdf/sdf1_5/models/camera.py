@@ -1,32 +1,30 @@
 from __future__ import annotations
 
+from typing import List
 from xml.etree import ElementTree as ET
 
-from typing import List
-
-from ..model import Model
-from ...sdf1_4.models.noise import Noise as _PrevNoise
-from ...sdf1_4.models.camera import Camera as _PrevCamera
-from .frame import Frame
-from .pose import Pose
-from .horizontal_fov import HorizontalFov
-from .image import Image
 from .clip import Clip
-from .save import Save
 from .depth_camera import DepthCamera
 from .distortion import Distortion
+from .frame import Frame
+from .horizontal_fov import HorizontalFov
+from .image import Image
 from .lens import Lens
+from .pose import Pose
+from .save import Save
+from ...sdf1_4.models.camera import Camera as _PrevCamera
+from ...sdf1_4.models.noise import Noise as _PrevNoise
 
 
 class Noise(_PrevNoise):
     def __init__(
-        self,
-        type: str = "none",
-        mean: "Mean" = None,
-        stddev: "Stddev" = None,
-        bias_mean: "BiasMean" = None,
-        bias_stddev: "BiasStddev" = None,
-        precision: "Precision" = None
+            self,
+            type: str = "none",
+            mean: "Mean" = None,
+            stddev: "Stddev" = None,
+            bias_mean: "BiasMean" = None,
+            bias_stddev: "BiasStddev" = None,
+            precision: "Precision" = None
     ):
         super().__init__(type=type, mean=mean, stddev=stddev)
         self.bias_mean = bias_mean
@@ -52,25 +50,27 @@ class Noise(_PrevNoise):
         _bias_stddev = BiasStddev.from_sdf(_c_bias_stddev) if _c_bias_stddev is not None else None
         _c_precision = el.find("precision")
         _precision = Precision.from_sdf(_c_precision) if _c_precision is not None else None
-        return cls(type=_base.type, mean=_base.mean, stddev=_base.stddev, bias_mean=_bias_mean, bias_stddev=_bias_stddev, precision=_precision)
+        return cls(type=_base.type, mean=_base.mean, stddev=_base.stddev, bias_mean=_bias_mean,
+                   bias_stddev=_bias_stddev, precision=_precision)
 
 
 class Camera(_PrevCamera):
     def __init__(
-        self,
-        name: str = "__default__",
-        frame: List["Frame"] = None,
-        pose: "Pose" = None,
-        horizontal_fov: "HorizontalFov" = None,
-        image: "Image" = None,
-        clip: "Clip" = None,
-        save: "Save" = None,
-        depth_camera: "DepthCamera" = None,
-        noise: "Noise" = None,
-        distortion: "Distortion" = None,
-        lens: "Lens" = None
+            self,
+            name: str = "__default__",
+            frame: List["Frame"] = None,
+            pose: "Pose" = None,
+            horizontal_fov: "HorizontalFov" = None,
+            image: "Image" = None,
+            clip: "Clip" = None,
+            save: "Save" = None,
+            depth_camera: "DepthCamera" = None,
+            noise: "Noise" = None,
+            distortion: "Distortion" = None,
+            lens: "Lens" = None
     ):
-        super().__init__(name=name, pose=pose, horizontal_fov=horizontal_fov, image=image, clip=clip, save=save, depth_camera=depth_camera, noise=noise)
+        super().__init__(name=name, pose=pose, horizontal_fov=horizontal_fov, image=image, clip=clip, save=save,
+                         depth_camera=depth_camera, noise=noise)
         self.frame = frame or []
         self.distortion = distortion
         self.lens = lens
@@ -93,4 +93,6 @@ class Camera(_PrevCamera):
         _distortion = Distortion.from_sdf(_c_distortion) if _c_distortion is not None else None
         _c_lens = el.find("lens")
         _lens = Lens.from_sdf(_c_lens) if _c_lens is not None else None
-        return cls(name=_base.name, frame=_frame, pose=_base.pose, horizontal_fov=_base.horizontal_fov, image=_base.image, clip=_base.clip, save=_base.save, depth_camera=_base.depth_camera, noise=_base.noise, distortion=_distortion, lens=_lens)
+        return cls(name=_base.name, frame=_frame, pose=_base.pose, horizontal_fov=_base.horizontal_fov,
+                   image=_base.image, clip=_base.clip, save=_base.save, depth_camera=_base.depth_camera,
+                   noise=_base.noise, distortion=_distortion, lens=_lens)

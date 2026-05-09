@@ -2,20 +2,20 @@ from __future__ import annotations
 
 from xml.etree import ElementTree as ET
 
-from ..model import Model
-from .min_step_size import MinStepSize
 from .accuracy import Accuracy
-from .max_transient_velocity import MaxTransientVelocity
 from .contact import Contact
+from .max_transient_velocity import MaxTransientVelocity
+from .min_step_size import MinStepSize
+from ..model import Model
 
 
 class Simbody(Model):
     def __init__(
-        self,
-        min_step_size: "MinStepSize" = None,
-        accuracy: "Accuracy" = None,
-        max_transient_velocity: "MaxTransientVelocity" = None,
-        contact: "Contact" = None
+            self,
+            min_step_size: "MinStepSize" = None,
+            accuracy: "Accuracy" = None,
+            max_transient_velocity: "MaxTransientVelocity" = None,
+            contact: "Contact" = None
     ):
         self.min_step_size = min_step_size
         self.accuracy = accuracy
@@ -41,7 +41,9 @@ class Simbody(Model):
         _c_accuracy = el.find("accuracy")
         _accuracy = Accuracy.from_sdf(_c_accuracy) if _c_accuracy is not None else None
         _c_max_transient_velocity = el.find("max_transient_velocity")
-        _max_transient_velocity = MaxTransientVelocity.from_sdf(_c_max_transient_velocity) if _c_max_transient_velocity is not None else None
+        _max_transient_velocity = MaxTransientVelocity.from_sdf(
+            _c_max_transient_velocity) if _c_max_transient_velocity is not None else None
         _c_contact = el.find("contact")
         _contact = Contact.from_sdf(_c_contact) if _c_contact is not None else None
-        return cls(min_step_size=_min_step_size, accuracy=_accuracy, max_transient_velocity=_max_transient_velocity, contact=_contact)
+        return cls(min_step_size=_min_step_size, accuracy=_accuracy, max_transient_velocity=_max_transient_velocity,
+                   contact=_contact)

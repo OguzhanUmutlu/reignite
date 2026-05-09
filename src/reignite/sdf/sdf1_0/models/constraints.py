@@ -1,12 +1,10 @@
 from __future__ import annotations
 
+import math
 from xml.etree import ElementTree as ET
 
 from ..model import Model
 
-
-import math
-import sys
 
 def _parse_int32(raw: str) -> int:
     v = int(raw)
@@ -29,14 +27,13 @@ def _parse_double(raw: str) -> float:
     return v
 
 
-
 class Constraints(Model):
     def __init__(
-        self,
-        cfm: float = 0,
-        erp: float = 0.2,
-        contact_max_correcting_vel: float = 100.0,
-        contact_surface_layer: float = 0.001
+            self,
+            cfm: float = 0,
+            erp: float = 0.2,
+            contact_max_correcting_vel: float = 100.0,
+            contact_surface_layer: float = 0.001
     ):
         self.cfm = cfm
         self.erp = erp
@@ -61,4 +58,5 @@ class Constraints(Model):
         _erp = _parse_double(el.get("erp", 0.2))
         _contact_max_correcting_vel = _parse_double(el.get("contact_max_correcting_vel", 100.0))
         _contact_surface_layer = _parse_double(el.get("contact_surface_layer", 0.001))
-        return cls(cfm=_cfm, erp=_erp, contact_max_correcting_vel=_contact_max_correcting_vel, contact_surface_layer=_contact_surface_layer)
+        return cls(cfm=_cfm, erp=_erp, contact_max_correcting_vel=_contact_max_correcting_vel,
+                   contact_surface_layer=_contact_surface_layer)

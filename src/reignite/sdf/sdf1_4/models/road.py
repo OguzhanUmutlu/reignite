@@ -1,21 +1,19 @@
 from __future__ import annotations
 
+from typing import List
 from xml.etree import ElementTree as ET
 
-from typing import List
-
-from ..model import Model
-from ...sdf1_3.models.road import Road as _PrevRoad
-from .width import Width
 from .point import Point
+from .width import Width
+from ...sdf1_3.models.road import Road as _PrevRoad
 
 
 class Road(_PrevRoad):
     def __init__(
-        self,
-        name: str = "__default__",
-        width: "Width" = None,
-        point: List["Point"] = None
+            self,
+            name: str = "__default__",
+            width: "Width" = None,
+            point: List["Point"] = None
     ):
         super().__init__(name=name, width=width, point=point)
 

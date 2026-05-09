@@ -2,10 +2,9 @@ from __future__ import annotations
 
 from xml.etree import ElementTree as ET
 
-from ..model import Model
-from ...sdf1_6.models.blend import Blend as _PrevBlend
-from .min_height import MinHeight
 from .fade_dist import FadeDist
+from .min_height import MinHeight
+from ...sdf1_6.models.blend import Blend as _PrevBlend
 
 
 class Blend(_PrevBlend):

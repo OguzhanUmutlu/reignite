@@ -1,23 +1,22 @@
 from __future__ import annotations
 
+from typing import List
 from xml.etree import ElementTree as ET
 
-from typing import List
-
+from .blend import Blend
+from .texture import Texture
 from ..model import Model
 from ....utils.vector3 import Vector3
-from .texture import Texture
-from .blend import Blend
 
 
 class Heightmap(Model):
     def __init__(
-        self,
-        filename: str = "__default__",
-        size: Vector3 = None,
-        origin: Vector3 = None,
-        texture: List["Texture"] = None,
-        blend: List["Blend"] = None
+            self,
+            filename: str = "__default__",
+            size: Vector3 = None,
+            origin: Vector3 = None,
+            texture: List["Texture"] = None,
+            blend: List["Blend"] = None
     ):
         if size is None:
             size = Vector3.from_sdf("1 1 1")

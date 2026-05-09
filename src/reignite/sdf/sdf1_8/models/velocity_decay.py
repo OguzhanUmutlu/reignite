@@ -2,10 +2,9 @@ from __future__ import annotations
 
 from xml.etree import ElementTree as ET
 
-from ..model import Model
-from ...sdf1_7.models.velocity_decay import VelocityDecay as _PrevVelocityDecay
-from .linear import Linear
 from .angular import Angular
+from .linear import Linear
+from ...sdf1_7.models.velocity_decay import VelocityDecay as _PrevVelocityDecay
 
 
 class VelocityDecay(_PrevVelocityDecay):

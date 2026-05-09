@@ -2,9 +2,9 @@ from __future__ import annotations
 
 from xml.etree import ElementTree as ET
 
-from ..model import Model
-from .pos import Pos
 from .mag import Mag
+from .pos import Pos
+from ..model import Model
 
 
 class Wrench(Model):

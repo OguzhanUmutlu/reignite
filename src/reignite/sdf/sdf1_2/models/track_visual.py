@@ -2,11 +2,10 @@ from __future__ import annotations
 
 from xml.etree import ElementTree as ET
 
-from ..model import Model
+from .max_dist import MaxDist
+from .min_dist import MinDist
 from ...sdf1_0.models.name import Name as _PrevName
 from ...sdf1_0.models.track_visual import TrackVisual as _PrevTrackVisual
-from .min_dist import MinDist
-from .max_dist import MaxDist
 
 
 class Name(_PrevName):

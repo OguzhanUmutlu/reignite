@@ -2,14 +2,14 @@ from __future__ import annotations
 
 from xml.etree import ElementTree as ET
 
-from ..model import Model
-from ...sdf1_3.models.uri import Uri as _PrevUri
-from ...sdf1_3.models.ode import Ode as _PrevOde
-from ...sdf1_3.models.contact import Contact as _PrevContact
-from .pitch import Pitch
 from .gain import Gain
 from .loop import Loop
+from .pitch import Pitch
 from .pose import Pose
+from ..model import Model
+from ...sdf1_3.models.contact import Contact as _PrevContact
+from ...sdf1_3.models.ode import Ode as _PrevOde
+from ...sdf1_3.models.uri import Uri as _PrevUri
 
 
 class Uri(_PrevUri):
@@ -28,12 +28,12 @@ class Uri(_PrevUri):
 
 class Ode(_PrevOde):
     def __init__(
-        self,
-        mu: "Mu" = None,
-        mu2: "Mu2" = None,
-        fdir1: "Fdir1" = None,
-        slip1: "Slip1" = None,
-        slip2: "Slip2" = None
+            self,
+            mu: "Mu" = None,
+            mu2: "Mu2" = None,
+            fdir1: "Fdir1" = None,
+            slip1: "Slip1" = None,
+            slip2: "Slip2" = None
     ):
         super().__init__()
         self.mu = mu
@@ -73,11 +73,11 @@ class Ode(_PrevOde):
 
 class Bullet(Model):
     def __init__(
-        self,
-        friction: "Friction" = None,
-        friction2: "Friction2" = None,
-        fdir1: "Fdir1" = None,
-        rolling_friction: "RollingFriction" = None
+            self,
+            friction: "Friction" = None,
+            friction2: "Friction2" = None,
+            fdir1: "Fdir1" = None,
+            rolling_friction: "RollingFriction" = None
     ):
         self.friction = friction
         self.friction2 = friction2
@@ -111,12 +111,12 @@ class Bullet(Model):
 
 class Contact(_PrevContact):
     def __init__(
-        self,
-        collide_without_contact: "CollideWithoutContact" = None,
-        collide_without_contact_bitmask: "CollideWithoutContactBitmask" = None,
-        collide_bitmask: "CollideBitmask" = None,
-        ode: "Ode" = None,
-        bullet: "Bullet" = None
+            self,
+            collide_without_contact: "CollideWithoutContact" = None,
+            collide_without_contact_bitmask: "CollideWithoutContactBitmask" = None,
+            collide_bitmask: "CollideBitmask" = None,
+            ode: "Ode" = None,
+            bullet: "Bullet" = None
     ):
         super().__init__()
         self.collide_without_contact = collide_without_contact
@@ -142,27 +142,31 @@ class Contact(_PrevContact):
     @classmethod
     def from_sdf(cls, el: ET.Element) -> "Contact":
         _c_collide_without_contact = el.find("collide_without_contact")
-        _collide_without_contact = CollideWithoutContact.from_sdf(_c_collide_without_contact) if _c_collide_without_contact is not None else None
+        _collide_without_contact = CollideWithoutContact.from_sdf(
+            _c_collide_without_contact) if _c_collide_without_contact is not None else None
         _c_collide_without_contact_bitmask = el.find("collide_without_contact_bitmask")
-        _collide_without_contact_bitmask = CollideWithoutContactBitmask.from_sdf(_c_collide_without_contact_bitmask) if _c_collide_without_contact_bitmask is not None else None
+        _collide_without_contact_bitmask = CollideWithoutContactBitmask.from_sdf(
+            _c_collide_without_contact_bitmask) if _c_collide_without_contact_bitmask is not None else None
         _c_collide_bitmask = el.find("collide_bitmask")
         _collide_bitmask = CollideBitmask.from_sdf(_c_collide_bitmask) if _c_collide_bitmask is not None else None
         _c_ode = el.find("ode")
         _ode = Ode.from_sdf(_c_ode) if _c_ode is not None else None
         _c_bullet = el.find("bullet")
         _bullet = Bullet.from_sdf(_c_bullet) if _c_bullet is not None else None
-        return cls(collide_without_contact=_collide_without_contact, collide_without_contact_bitmask=_collide_without_contact_bitmask, collide_bitmask=_collide_bitmask, ode=_ode, bullet=_bullet)
+        return cls(collide_without_contact=_collide_without_contact,
+                   collide_without_contact_bitmask=_collide_without_contact_bitmask, collide_bitmask=_collide_bitmask,
+                   ode=_ode, bullet=_bullet)
 
 
 class AudioSource(Model):
     def __init__(
-        self,
-        uri: "Uri" = None,
-        pitch: "Pitch" = None,
-        gain: "Gain" = None,
-        contact: "Contact" = None,
-        loop: "Loop" = None,
-        pose: "Pose" = None
+            self,
+            uri: "Uri" = None,
+            pitch: "Pitch" = None,
+            gain: "Gain" = None,
+            contact: "Contact" = None,
+            loop: "Loop" = None,
+            pose: "Pose" = None
     ):
         self.uri = uri
         self.pitch = pitch

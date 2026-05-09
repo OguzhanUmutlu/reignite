@@ -2,10 +2,9 @@ from __future__ import annotations
 
 from xml.etree import ElementTree as ET
 
-from ..model import Model
-from ...sdf1_8.models.position_sensing import PositionSensing as _PrevPositionSensing
 from .horizontal import Horizontal
 from .vertical import Vertical
+from ...sdf1_8.models.position_sensing import PositionSensing as _PrevPositionSensing
 
 
 class PositionSensing(_PrevPositionSensing):

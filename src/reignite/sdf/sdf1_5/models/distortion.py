@@ -2,24 +2,24 @@ from __future__ import annotations
 
 from xml.etree import ElementTree as ET
 
-from ..model import Model
+from .center import Center
 from .k1 import K1
 from .k2 import K2
 from .k3 import K3
 from .p1 import P1
 from .p2 import P2
-from .center import Center
+from ..model import Model
 
 
 class Distortion(Model):
     def __init__(
-        self,
-        k1: "K1" = None,
-        k2: "K2" = None,
-        k3: "K3" = None,
-        p1: "P1" = None,
-        p2: "P2" = None,
-        center: "Center" = None
+            self,
+            k1: "K1" = None,
+            k2: "K2" = None,
+            k3: "K3" = None,
+            p1: "P1" = None,
+            p2: "P2" = None,
+            center: "Center" = None
     ):
         self.k1 = k1
         self.k2 = k2

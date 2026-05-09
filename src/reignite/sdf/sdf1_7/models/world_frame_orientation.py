@@ -2,7 +2,6 @@ from __future__ import annotations
 
 from xml.etree import ElementTree as ET
 
-from ..model import Model
 from ...sdf1_6.models.world_frame_orientation import WorldFrameOrientation as _PrevWorldFrameOrientation
 
 

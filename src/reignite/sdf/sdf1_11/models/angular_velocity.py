@@ -2,11 +2,10 @@ from __future__ import annotations
 
 from xml.etree import ElementTree as ET
 
-from ..model import Model
-from ...sdf1_10.models.angular_velocity import AngularVelocity as _PrevAngularVelocity
 from .x import X
 from .y import Y
 from .z import Z
+from ...sdf1_10.models.angular_velocity import AngularVelocity as _PrevAngularVelocity
 
 
 class AngularVelocity(_PrevAngularVelocity):

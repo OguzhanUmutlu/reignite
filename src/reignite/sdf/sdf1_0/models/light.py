@@ -2,12 +2,12 @@ from __future__ import annotations
 
 from xml.etree import ElementTree as ET
 
-from ..model import Model
-from ....utils.color import Color
-from .origin import Origin
 from .attenuation import Attenuation
 from .direction import Direction
+from .origin import Origin
 from .spot import Spot
+from ..model import Model
+from ....utils.color import Color
 
 
 class Diffuse(Model):
@@ -48,16 +48,16 @@ class Specular(Model):
 
 class Light(Model):
     def __init__(
-        self,
-        name: str = "__default__",
-        type: str = "point",
-        cast_shadows: bool = False,
-        origin: "Origin" = None,
-        diffuse: "Diffuse" = None,
-        specular: "Specular" = None,
-        attenuation: "Attenuation" = None,
-        direction: "Direction" = None,
-        spot: "Spot" = None
+            self,
+            name: str = "__default__",
+            type: str = "point",
+            cast_shadows: bool = False,
+            origin: "Origin" = None,
+            diffuse: "Diffuse" = None,
+            specular: "Specular" = None,
+            attenuation: "Attenuation" = None,
+            direction: "Direction" = None,
+            spot: "Spot" = None
     ):
         self.name = name
         self.type = type
@@ -108,4 +108,5 @@ class Light(Model):
         _direction = Direction.from_sdf(_c_direction) if _c_direction is not None else None
         _c_spot = el.find("spot")
         _spot = Spot.from_sdf(_c_spot) if _c_spot is not None else None
-        return cls(name=_name, type=_type, cast_shadows=_cast_shadows, origin=_origin, diffuse=_diffuse, specular=_specular, attenuation=_attenuation, direction=_direction, spot=_spot)
+        return cls(name=_name, type=_type, cast_shadows=_cast_shadows, origin=_origin, diffuse=_diffuse,
+                   specular=_specular, attenuation=_attenuation, direction=_direction, spot=_spot)

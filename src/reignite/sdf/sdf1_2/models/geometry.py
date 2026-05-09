@@ -2,29 +2,29 @@ from __future__ import annotations
 
 from xml.etree import ElementTree as ET
 
-from ..model import Model
-from ...sdf1_0.models.geometry import Geometry as _PrevGeometry
 from .box import Box
-from .sphere import Sphere
 from .cylinder import Cylinder
+from .heightmap import Heightmap
+from .image import Image
 from .mesh import Mesh
 from .plane import Plane
-from .image import Image
-from .heightmap import Heightmap
+from .sphere import Sphere
+from ...sdf1_0.models.geometry import Geometry as _PrevGeometry
 
 
 class Geometry(_PrevGeometry):
     def __init__(
-        self,
-        box: "Box" = None,
-        sphere: "Sphere" = None,
-        cylinder: "Cylinder" = None,
-        mesh: "Mesh" = None,
-        plane: "Plane" = None,
-        image: "Image" = None,
-        heightmap: "Heightmap" = None
+            self,
+            box: "Box" = None,
+            sphere: "Sphere" = None,
+            cylinder: "Cylinder" = None,
+            mesh: "Mesh" = None,
+            plane: "Plane" = None,
+            image: "Image" = None,
+            heightmap: "Heightmap" = None
     ):
-        super().__init__(box=box, sphere=sphere, cylinder=cylinder, mesh=mesh, plane=plane, image=image, heightmap=heightmap)
+        super().__init__(box=box, sphere=sphere, cylinder=cylinder, mesh=mesh, plane=plane, image=image,
+                         heightmap=heightmap)
 
     def to_sdf(self) -> ET.Element:
         el = super().to_sdf()
@@ -33,4 +33,5 @@ class Geometry(_PrevGeometry):
     @classmethod
     def from_sdf(cls, el: ET.Element) -> "Geometry":
         _base = _PrevGeometry.from_sdf(el)
-        return cls(box=_base.box, sphere=_base.sphere, cylinder=_base.cylinder, mesh=_base.mesh, plane=_base.plane, image=_base.image, heightmap=_base.heightmap)
+        return cls(box=_base.box, sphere=_base.sphere, cylinder=_base.cylinder, mesh=_base.mesh, plane=_base.plane,
+                   image=_base.image, heightmap=_base.heightmap)

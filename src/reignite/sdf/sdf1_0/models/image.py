@@ -1,12 +1,10 @@
 from __future__ import annotations
 
+import math
 from xml.etree import ElementTree as ET
 
 from ..model import Model
 
-
-import math
-import sys
 
 def _parse_int32(raw: str) -> int:
     v = int(raw)
@@ -29,15 +27,14 @@ def _parse_double(raw: str) -> float:
     return v
 
 
-
 class Image(Model):
     def __init__(
-        self,
-        filename: str = "__default__",
-        scale: float = 1,
-        threshold: int = 200,
-        height: float = 1,
-        granularity: int = 1
+            self,
+            filename: str = "__default__",
+            scale: float = 1,
+            threshold: int = 200,
+            height: float = 1,
+            granularity: int = 1
     ):
         self.filename = filename
         self.scale = scale

@@ -47,7 +47,12 @@ Transceiver = _models.Transceiver
 Visual = _models.Visual
 World = _models.World
 
-TAG_NAMES: list[str] = ["actor", "audio_sink", "audio_source", "box", "camera", "collision", "collision_engine", "contact", "cylinder", "force_torque", "geometry", "gps", "gripper", "gui", "heightmap", "image", "imu", "inertial", "joint", "light", "link", "mesh", "model", "noise", "physics", "plane", "plugin", "projector", "ray", "rfid", "rfidtag", "road", "robot", "scene", "sdf", "sensor", "sonar", "sphere", "spherical_coordinates", "state", "surface", "transceiver", "visual", "world"]
+TAG_NAMES: list[str] = ["actor", "audio_sink", "audio_source", "box", "camera", "collision", "collision_engine",
+                        "contact", "cylinder", "force_torque", "geometry", "gps", "gripper", "gui", "heightmap",
+                        "image", "imu", "inertial", "joint", "light", "link", "mesh", "model", "noise", "physics",
+                        "plane", "plugin", "projector", "ray", "rfid", "rfidtag", "road", "robot", "scene", "sdf",
+                        "sensor", "sonar", "sphere", "spherical_coordinates", "state", "surface", "transceiver",
+                        "visual", "world"]
 TAG_CLASS_MAP: dict[str, type] = {
     "actor": Actor,
     "audio_sink": AudioSink,
@@ -94,6 +99,7 @@ TAG_CLASS_MAP: dict[str, type] = {
     "visual": Visual,
     "world": World,
 }
+
 
 def get_tag_class(tag: str) -> type | None:
     return TAG_CLASS_MAP.get(tag)

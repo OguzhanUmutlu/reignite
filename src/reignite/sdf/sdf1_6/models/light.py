@@ -1,33 +1,32 @@
 from __future__ import annotations
 
+from typing import List
 from xml.etree import ElementTree as ET
 
-from typing import List
-
-from ..model import Model
-from .frame import Frame
-from .pose import Pose
+from .attenuation import Attenuation
 from .cast_shadows import CastShadows
 from .diffuse import Diffuse
-from .specular import Specular
-from .attenuation import Attenuation
 from .direction import Direction
+from .frame import Frame
+from .pose import Pose
+from .specular import Specular
 from .spot import Spot
+from ..model import Model
 
 
 class Light(Model):
     def __init__(
-        self,
-        name: str = "__default__",
-        type: str = "point",
-        frame: List["Frame"] = None,
-        pose: "Pose" = None,
-        cast_shadows: "CastShadows" = None,
-        diffuse: "Diffuse" = None,
-        specular: "Specular" = None,
-        attenuation: "Attenuation" = None,
-        direction: "Direction" = None,
-        spot: "Spot" = None
+            self,
+            name: str = "__default__",
+            type: str = "point",
+            frame: List["Frame"] = None,
+            pose: "Pose" = None,
+            cast_shadows: "CastShadows" = None,
+            diffuse: "Diffuse" = None,
+            specular: "Specular" = None,
+            attenuation: "Attenuation" = None,
+            direction: "Direction" = None,
+            spot: "Spot" = None
     ):
         self.name = name
         self.type = type
@@ -83,4 +82,5 @@ class Light(Model):
         _direction = Direction.from_sdf(_c_direction) if _c_direction is not None else None
         _c_spot = el.find("spot")
         _spot = Spot.from_sdf(_c_spot) if _c_spot is not None else None
-        return cls(name=_name, type=_type, frame=_frame, pose=_pose, cast_shadows=_cast_shadows, diffuse=_diffuse, specular=_specular, attenuation=_attenuation, direction=_direction, spot=_spot)
+        return cls(name=_name, type=_type, frame=_frame, pose=_pose, cast_shadows=_cast_shadows, diffuse=_diffuse,
+                   specular=_specular, attenuation=_attenuation, direction=_direction, spot=_spot)

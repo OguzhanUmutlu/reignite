@@ -1,21 +1,17 @@
 from __future__ import annotations
 
+import math
+from typing import List
 from xml.etree import ElementTree as ET
 
-from typing import List
-
-from ..model import Model
-from ...sdf1_5.models.max_contacts import MaxContacts as _PrevMaxContacts
-from ...sdf1_5.models.collision import Collision as _PrevCollision
 from .frame import Frame
-from .pose import Pose
 from .geometry import Geometry
-from .surface import Surface
 from .laser_retro import LaserRetro
+from .pose import Pose
+from .surface import Surface
+from ...sdf1_5.models.collision import Collision as _PrevCollision
+from ...sdf1_5.models.max_contacts import MaxContacts as _PrevMaxContacts
 
-
-import math
-import sys
 
 def _parse_int32(raw: str) -> int:
     v = int(raw)
@@ -38,7 +34,6 @@ def _parse_double(raw: str) -> float:
     return v
 
 
-
 class MaxContacts(_PrevMaxContacts):
     def __init__(self, max_contacts: int = 10):
         super().__init__(max_contacts=max_contacts)
@@ -55,14 +50,14 @@ class MaxContacts(_PrevMaxContacts):
 
 class Collision(_PrevCollision):
     def __init__(
-        self,
-        name: str = "__default__",
-        frame: List["Frame"] = None,
-        pose: "Pose" = None,
-        geometry: "Geometry" = None,
-        surface: "Surface" = None,
-        laser_retro: "LaserRetro" = None,
-        max_contacts: "MaxContacts" = None
+            self,
+            name: str = "__default__",
+            frame: List["Frame"] = None,
+            pose: "Pose" = None,
+            geometry: "Geometry" = None,
+            surface: "Surface" = None,
+            laser_retro: "LaserRetro" = None,
+            max_contacts: "MaxContacts" = None
     ):
         super().__init__()
         self.name = name
@@ -105,4 +100,5 @@ class Collision(_PrevCollision):
         _laser_retro = LaserRetro.from_sdf(_c_laser_retro) if _c_laser_retro is not None else None
         _c_max_contacts = el.find("max_contacts")
         _max_contacts = MaxContacts.from_sdf(_c_max_contacts) if _c_max_contacts is not None else None
-        return cls(name=_name, frame=_frame, pose=_pose, geometry=_geometry, surface=_surface, laser_retro=_laser_retro, max_contacts=_max_contacts)
+        return cls(name=_name, frame=_frame, pose=_pose, geometry=_geometry, surface=_surface, laser_retro=_laser_retro,
+                   max_contacts=_max_contacts)

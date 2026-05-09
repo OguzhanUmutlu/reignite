@@ -2,9 +2,9 @@ from __future__ import annotations
 
 from xml.etree import ElementTree as ET
 
+from .topic import Topic
 from ..model import Model
 from ...sdf1_3.models.imu import Imu as _PrevImu
-from .topic import Topic
 
 
 class Type(Model):

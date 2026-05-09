@@ -1,15 +1,12 @@
 from __future__ import annotations
 
-from xml.etree import ElementTree as ET
-
+import math
 from typing import List
+from xml.etree import ElementTree as ET
 
 from ..model import Model
 from ....utils.vector3 import Vector3
 
-
-import math
-import sys
 
 def _parse_int32(raw: str) -> int:
     v = int(raw)
@@ -30,7 +27,6 @@ def _parse_double(raw: str) -> float:
     if not math.isfinite(v) or abs(v) > 1.7976931348623157e+308:
         raise ValueError(f"double out of range: {raw}")
     return v
-
 
 
 class Width(Model):
@@ -71,10 +67,10 @@ class Point(Model):
 
 class Road(Model):
     def __init__(
-        self,
-        name: str = "__default__",
-        width: "Width" = None,
-        point: List["Point"] = None
+            self,
+            name: str = "__default__",
+            width: "Width" = None,
+            point: List["Point"] = None
     ):
         self.name = name
         self.width = width

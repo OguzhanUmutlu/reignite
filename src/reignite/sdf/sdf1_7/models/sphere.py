@@ -2,9 +2,8 @@ from __future__ import annotations
 
 from xml.etree import ElementTree as ET
 
-from ..model import Model
-from ...sdf1_6.models.sphere import Sphere as _PrevSphere
 from .radius import Radius
+from ...sdf1_6.models.sphere import Sphere as _PrevSphere
 
 
 class Sphere(_PrevSphere):

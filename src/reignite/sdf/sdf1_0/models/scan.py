@@ -2,9 +2,9 @@ from __future__ import annotations
 
 from xml.etree import ElementTree as ET
 
-from ..model import Model
 from .horizontal import Horizontal
 from .vertical import Vertical
+from ..model import Model
 
 
 class Scan(Model):

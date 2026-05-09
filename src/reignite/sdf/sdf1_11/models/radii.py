@@ -2,7 +2,6 @@ from __future__ import annotations
 
 from xml.etree import ElementTree as ET
 
-from ..model import Model
 from ...sdf1_10.models.radii import Radii as _PrevRadii
 from ....utils.vector3 import Vector3
 

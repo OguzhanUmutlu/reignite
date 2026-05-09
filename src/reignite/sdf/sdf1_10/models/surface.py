@@ -2,14 +2,13 @@ from __future__ import annotations
 
 from xml.etree import ElementTree as ET
 
-from ..model import Model
-from ...sdf1_9.models.ode import Ode as _PrevOde
-from ...sdf1_9.models.bullet import Bullet as _PrevBullet
-from ...sdf1_9.models.contact import Contact as _PrevContact
-from ...sdf1_9.models.surface import Surface as _PrevSurface
 from .bounce import Bounce
 from .friction import Friction
 from .soft_contact import SoftContact
+from ...sdf1_9.models.bullet import Bullet as _PrevBullet
+from ...sdf1_9.models.contact import Contact as _PrevContact
+from ...sdf1_9.models.ode import Ode as _PrevOde
+from ...sdf1_9.models.surface import Surface as _PrevSurface
 
 
 class Ode(_PrevOde):
@@ -32,11 +31,11 @@ class Ode(_PrevOde):
 
 class Bullet(_PrevBullet):
     def __init__(
-        self,
-        friction: "Friction" = None,
-        friction2: "Friction2" = None,
-        fdir1: "Fdir1" = None,
-        rolling_friction: "RollingFriction" = None
+            self,
+            friction: "Friction" = None,
+            friction2: "Friction2" = None,
+            fdir1: "Fdir1" = None,
+            rolling_friction: "RollingFriction" = None
     ):
         super().__init__()
         self.friction = friction
@@ -71,15 +70,15 @@ class Bullet(_PrevBullet):
 
 class Contact(_PrevContact):
     def __init__(
-        self,
-        collide_without_contact: "CollideWithoutContact" = None,
-        collide_without_contact_bitmask: "CollideWithoutContactBitmask" = None,
-        collide_bitmask: "CollideBitmask" = None,
-        category_bitmask: "CategoryBitmask" = None,
-        poissons_ratio: "PoissonsRatio" = None,
-        elastic_modulus: "ElasticModulus" = None,
-        ode: "Ode" = None,
-        bullet: "Bullet" = None
+            self,
+            collide_without_contact: "CollideWithoutContact" = None,
+            collide_without_contact_bitmask: "CollideWithoutContactBitmask" = None,
+            collide_bitmask: "CollideBitmask" = None,
+            category_bitmask: "CategoryBitmask" = None,
+            poissons_ratio: "PoissonsRatio" = None,
+            elastic_modulus: "ElasticModulus" = None,
+            ode: "Ode" = None,
+            bullet: "Bullet" = None
     ):
         super().__init__()
         self.collide_without_contact = collide_without_contact
@@ -114,9 +113,11 @@ class Contact(_PrevContact):
     @classmethod
     def from_sdf(cls, el: ET.Element) -> "Contact":
         _c_collide_without_contact = el.find("collide_without_contact")
-        _collide_without_contact = CollideWithoutContact.from_sdf(_c_collide_without_contact) if _c_collide_without_contact is not None else None
+        _collide_without_contact = CollideWithoutContact.from_sdf(
+            _c_collide_without_contact) if _c_collide_without_contact is not None else None
         _c_collide_without_contact_bitmask = el.find("collide_without_contact_bitmask")
-        _collide_without_contact_bitmask = CollideWithoutContactBitmask.from_sdf(_c_collide_without_contact_bitmask) if _c_collide_without_contact_bitmask is not None else None
+        _collide_without_contact_bitmask = CollideWithoutContactBitmask.from_sdf(
+            _c_collide_without_contact_bitmask) if _c_collide_without_contact_bitmask is not None else None
         _c_collide_bitmask = el.find("collide_bitmask")
         _collide_bitmask = CollideBitmask.from_sdf(_c_collide_bitmask) if _c_collide_bitmask is not None else None
         _c_category_bitmask = el.find("category_bitmask")
@@ -129,16 +130,19 @@ class Contact(_PrevContact):
         _ode = Ode.from_sdf(_c_ode) if _c_ode is not None else None
         _c_bullet = el.find("bullet")
         _bullet = Bullet.from_sdf(_c_bullet) if _c_bullet is not None else None
-        return cls(collide_without_contact=_collide_without_contact, collide_without_contact_bitmask=_collide_without_contact_bitmask, collide_bitmask=_collide_bitmask, category_bitmask=_category_bitmask, poissons_ratio=_poissons_ratio, elastic_modulus=_elastic_modulus, ode=_ode, bullet=_bullet)
+        return cls(collide_without_contact=_collide_without_contact,
+                   collide_without_contact_bitmask=_collide_without_contact_bitmask, collide_bitmask=_collide_bitmask,
+                   category_bitmask=_category_bitmask, poissons_ratio=_poissons_ratio, elastic_modulus=_elastic_modulus,
+                   ode=_ode, bullet=_bullet)
 
 
 class Surface(_PrevSurface):
     def __init__(
-        self,
-        bounce: "Bounce" = None,
-        friction: "Friction" = None,
-        contact: "Contact" = None,
-        soft_contact: "SoftContact" = None
+            self,
+            bounce: "Bounce" = None,
+            friction: "Friction" = None,
+            contact: "Contact" = None,
+            soft_contact: "SoftContact" = None
     ):
         super().__init__(bounce=bounce, friction=friction, contact=contact, soft_contact=soft_contact)
 

@@ -1,22 +1,19 @@
 from __future__ import annotations
 
+import math
+from typing import List
 from xml.etree import ElementTree as ET
 
-from typing import List
-
-from ..model import Model
-from .plugin import Plugin
 from .camera import Camera
-from .ray import Ray
 from .contact import Contact
-from .rfidtag import Rfidtag
-from .rfid import Rfid
 from .origin import Origin
+from .plugin import Plugin
+from .ray import Ray
+from .rfid import Rfid
+from .rfidtag import Rfidtag
 from .topic import Topic
+from ..model import Model
 
-
-import math
-import sys
 
 def _parse_int32(raw: str) -> int:
     v = int(raw)
@@ -39,23 +36,22 @@ def _parse_double(raw: str) -> float:
     return v
 
 
-
 class Sensor(Model):
     def __init__(
-        self,
-        name: str = "__default__",
-        type: str = "__default__",
-        always_on: bool = False,
-        update_rate: float = 0,
-        visualize: bool = False,
-        plugin: List["Plugin"] = None,
-        camera: "Camera" = None,
-        ray: "Ray" = None,
-        contact: "Contact" = None,
-        rfidtag: "Rfidtag" = None,
-        rfid: "Rfid" = None,
-        origin: "Origin" = None,
-        topic: "Topic" = None
+            self,
+            name: str = "__default__",
+            type: str = "__default__",
+            always_on: bool = False,
+            update_rate: float = 0,
+            visualize: bool = False,
+            plugin: List["Plugin"] = None,
+            camera: "Camera" = None,
+            ray: "Ray" = None,
+            contact: "Contact" = None,
+            rfidtag: "Rfidtag" = None,
+            rfid: "Rfid" = None,
+            origin: "Origin" = None,
+            topic: "Topic" = None
     ):
         self.name = name
         self.type = type
@@ -123,4 +119,6 @@ class Sensor(Model):
         _origin = Origin.from_sdf(_c_origin) if _c_origin is not None else None
         _c_topic = el.find("topic")
         _topic = Topic.from_sdf(_c_topic) if _c_topic is not None else None
-        return cls(name=_name, type=_type, always_on=_always_on, update_rate=_update_rate, visualize=_visualize, plugin=_plugin, camera=_camera, ray=_ray, contact=_contact, rfidtag=_rfidtag, rfid=_rfid, origin=_origin, topic=_topic)
+        return cls(name=_name, type=_type, always_on=_always_on, update_rate=_update_rate, visualize=_visualize,
+                   plugin=_plugin, camera=_camera, ray=_ray, contact=_contact, rfidtag=_rfidtag, rfid=_rfid,
+                   origin=_origin, topic=_topic)

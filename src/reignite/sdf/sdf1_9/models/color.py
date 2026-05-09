@@ -2,7 +2,6 @@ from __future__ import annotations
 
 from xml.etree import ElementTree as ET
 
-from ..model import Model
 from ...sdf1_8.models.color import Color as _PrevColor
 from ....utils.color import Color
 

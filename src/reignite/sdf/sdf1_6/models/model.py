@@ -1,23 +1,21 @@
 from __future__ import annotations
 
+from typing import List
 from xml.etree import ElementTree as ET
 
-from typing import List
-
-from ..model import Model
-from ...sdf1_5.models.static import Static as _PrevStatic
-from ...sdf1_5.models.model import Model as _PrevModel
-from .frame import Frame
-from .pose import Pose
-from .link import Link
-from .joint import Joint
-from .plugin import Plugin
-from .gripper import Gripper
-from .self_collide import SelfCollide
 from .allow_auto_disable import AllowAutoDisable
-from .include import Include
-from .model import Model
 from .enable_wind import EnableWind
+from .frame import Frame
+from .gripper import Gripper
+from .include import Include
+from .joint import Joint
+from .link import Link
+from .model import Model
+from .plugin import Plugin
+from .pose import Pose
+from .self_collide import SelfCollide
+from ...sdf1_5.models.model import Model as _PrevModel
+from ...sdf1_5.models.static import Static as _PrevStatic
 
 
 class Static(_PrevStatic):
@@ -36,20 +34,20 @@ class Static(_PrevStatic):
 
 class Model(_PrevModel):
     def __init__(
-        self,
-        name: str = "__default__",
-        frame: List["Frame"] = None,
-        pose: "Pose" = None,
-        link: List["Link"] = None,
-        joint: List["Joint"] = None,
-        plugin: List["Plugin"] = None,
-        gripper: List["Gripper"] = None,
-        static: "Static" = None,
-        self_collide: "SelfCollide" = None,
-        allow_auto_disable: "AllowAutoDisable" = None,
-        include: List["Include"] = None,
-        model: List["Model"] = None,
-        enable_wind: "EnableWind" = None
+            self,
+            name: str = "__default__",
+            frame: List["Frame"] = None,
+            pose: "Pose" = None,
+            link: List["Link"] = None,
+            joint: List["Joint"] = None,
+            plugin: List["Plugin"] = None,
+            gripper: List["Gripper"] = None,
+            static: "Static" = None,
+            self_collide: "SelfCollide" = None,
+            allow_auto_disable: "AllowAutoDisable" = None,
+            include: List["Include"] = None,
+            model: List["Model"] = None,
+            enable_wind: "EnableWind" = None
     ):
         super().__init__(name=name)
         self.frame = frame or []
@@ -108,9 +106,12 @@ class Model(_PrevModel):
         _c_self_collide = el.find("self_collide")
         _self_collide = SelfCollide.from_sdf(_c_self_collide) if _c_self_collide is not None else None
         _c_allow_auto_disable = el.find("allow_auto_disable")
-        _allow_auto_disable = AllowAutoDisable.from_sdf(_c_allow_auto_disable) if _c_allow_auto_disable is not None else None
+        _allow_auto_disable = AllowAutoDisable.from_sdf(
+            _c_allow_auto_disable) if _c_allow_auto_disable is not None else None
         _include = [Include.from_sdf(c) for c in el.findall("include")]
         _model = [Model.from_sdf(c) for c in el.findall("model")]
         _c_enable_wind = el.find("enable_wind")
         _enable_wind = EnableWind.from_sdf(_c_enable_wind) if _c_enable_wind is not None else None
-        return cls(name=_base.name, frame=_frame, pose=_pose, link=_link, joint=_joint, plugin=_plugin, gripper=_gripper, static=_static, self_collide=_self_collide, allow_auto_disable=_allow_auto_disable, include=_include, model=_model, enable_wind=_enable_wind)
+        return cls(name=_base.name, frame=_frame, pose=_pose, link=_link, joint=_joint, plugin=_plugin,
+                   gripper=_gripper, static=_static, self_collide=_self_collide, allow_auto_disable=_allow_auto_disable,
+                   include=_include, model=_model, enable_wind=_enable_wind)

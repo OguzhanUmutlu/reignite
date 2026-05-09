@@ -1,20 +1,19 @@
 from __future__ import annotations
 
+from typing import List
 from xml.etree import ElementTree as ET
 
-from typing import List
-
-from ..model import Model
-from .width import Width
 from .point import Point
+from .width import Width
+from ..model import Model
 
 
 class Road(Model):
     def __init__(
-        self,
-        name: str = "__default__",
-        width: "Width" = None,
-        point: List["Point"] = None
+            self,
+            name: str = "__default__",
+            width: "Width" = None,
+            point: List["Point"] = None
     ):
         self.name = name
         self.width = width

@@ -1,18 +1,15 @@
 from __future__ import annotations
 
+import math
 from xml.etree import ElementTree as ET
 
-from ..model import Model
-from ...sdf1_10.models.type import Type as _PrevType
+from .color import Color
+from .end import End
+from .start import Start
 from ...sdf1_10.models.density import Density as _PrevDensity
 from ...sdf1_10.models.fog import Fog as _PrevFog
-from .color import Color
-from .start import Start
-from .end import End
+from ...sdf1_10.models.type import Type as _PrevType
 
-
-import math
-import sys
 
 def _parse_int32(raw: str) -> int:
     v = int(raw)
@@ -33,7 +30,6 @@ def _parse_double(raw: str) -> float:
     if not math.isfinite(v) or abs(v) > 1.7976931348623157e+308:
         raise ValueError(f"double out of range: {raw}")
     return v
-
 
 
 class Type(_PrevType):
@@ -66,12 +62,12 @@ class Density(_PrevDensity):
 
 class Fog(_PrevFog):
     def __init__(
-        self,
-        color: "Color" = None,
-        type: "Type" = None,
-        start: "Start" = None,
-        end: "End" = None,
-        density: "Density" = None
+            self,
+            color: "Color" = None,
+            type: "Type" = None,
+            start: "Start" = None,
+            end: "End" = None,
+            density: "Density" = None
     ):
         super().__init__(color=color, type=type, start=start, end=end, density=density)
 

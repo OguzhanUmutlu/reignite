@@ -2,10 +2,10 @@ from __future__ import annotations
 
 from xml.etree import ElementTree as ET
 
-from ..model import Model
-from ....utils.vector3 import Vector3
 from .dynamics import Dynamics
 from .limit import Limit
+from ..model import Model
+from ....utils.vector3 import Vector3
 
 
 class Axis2(Model):

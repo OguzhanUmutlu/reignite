@@ -1,18 +1,16 @@
 from __future__ import annotations
 
+from typing import List
 from xml.etree import ElementTree as ET
 
-from typing import List
-
-from ..model import Model
-from ...sdf1_7.models.pose import Pose as _PrevPose
-from ...sdf1_7.models.include import Include as _PrevInclude
-from ....utils.pose import Pose
-from .plugin import Plugin
-from .uri import Uri
 from .name import Name
-from .static import Static
 from .placement_frame import PlacementFrame
+from .plugin import Plugin
+from .static import Static
+from .uri import Uri
+from ...sdf1_7.models.include import Include as _PrevInclude
+from ...sdf1_7.models.pose import Pose as _PrevPose
+from ....utils.pose import Pose
 
 
 class Pose(_PrevPose):
@@ -33,13 +31,13 @@ class Pose(_PrevPose):
 
 class Include(_PrevInclude):
     def __init__(
-        self,
-        pose: "Pose" = None,
-        plugin: List["Plugin"] = None,
-        uri: "Uri" = None,
-        name: "Name" = None,
-        static: "Static" = None,
-        placement_frame: "PlacementFrame" = None
+            self,
+            pose: "Pose" = None,
+            plugin: List["Plugin"] = None,
+            uri: "Uri" = None,
+            name: "Name" = None,
+            static: "Static" = None,
+            placement_frame: "PlacementFrame" = None
     ):
         super().__init__(pose=pose, plugin=plugin, uri=uri, name=name, static=static)
         self.placement_frame = placement_frame
@@ -55,4 +53,5 @@ class Include(_PrevInclude):
         _base = _PrevInclude.from_sdf(el)
         _c_placement_frame = el.find("placement_frame")
         _placement_frame = PlacementFrame.from_sdf(_c_placement_frame) if _c_placement_frame is not None else None
-        return cls(pose=_base.pose, plugin=_base.plugin, uri=_base.uri, name=_base.name, static=_base.static, placement_frame=_placement_frame)
+        return cls(pose=_base.pose, plugin=_base.plugin, uri=_base.uri, name=_base.name, static=_base.static,
+                   placement_frame=_placement_frame)

@@ -2,10 +2,10 @@ from __future__ import annotations
 
 from xml.etree import ElementTree as ET
 
-from ..model import Model
-from .name import Name
-from .min_dist import MinDist
 from .max_dist import MaxDist
+from .min_dist import MinDist
+from .name import Name
+from ..model import Model
 
 
 class TrackVisual(Model):

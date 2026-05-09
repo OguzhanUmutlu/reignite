@@ -2,10 +2,9 @@ from __future__ import annotations
 
 from xml.etree import ElementTree as ET
 
-from ..model import Model
-from ...sdf1_7.models.skin import Skin as _PrevSkin
 from .filename import Filename
 from .scale import Scale
+from ...sdf1_7.models.skin import Skin as _PrevSkin
 
 
 class Skin(_PrevSkin):

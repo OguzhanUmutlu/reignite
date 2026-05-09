@@ -2,9 +2,8 @@ from __future__ import annotations
 
 from xml.etree import ElementTree as ET
 
-from ..model import Model
-from ...sdf1_6.models.meta import Meta as _PrevMeta
 from .layer import Layer
+from ...sdf1_6.models.meta import Meta as _PrevMeta
 
 
 class Meta(_PrevMeta):

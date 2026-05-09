@@ -2,8 +2,8 @@ from __future__ import annotations
 
 from xml.etree import ElementTree as ET
 
-from ..model import Model
 from .linear_velocity import LinearVelocity
+from ..model import Model
 
 
 class Wind(Model):

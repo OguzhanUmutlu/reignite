@@ -2,9 +2,8 @@ from __future__ import annotations
 
 from xml.etree import ElementTree as ET
 
-from ..model import Model
-from ...sdf1_6.models.solver import Solver as _PrevSolver
 from .solver_type import SolverType
+from ...sdf1_6.models.solver import Solver as _PrevSolver
 
 
 class Solver(_PrevSolver):

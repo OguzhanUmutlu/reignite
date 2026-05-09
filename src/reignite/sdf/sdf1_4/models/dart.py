@@ -1,15 +1,13 @@
 from __future__ import annotations
 
+import math
 from xml.etree import ElementTree as ET
 
-from ..model import Model
 from .bone_attachment import BoneAttachment
 from .damping import Damping
 from .flesh_mass_fraction import FleshMassFraction
+from ..model import Model
 
-
-import math
-import sys
 
 def _parse_int32(raw: str) -> int:
     v = int(raw)
@@ -32,7 +30,6 @@ def _parse_double(raw: str) -> float:
     return v
 
 
-
 class Stiffness(Model):
     def __init__(self, stiffness: float = 100.0):
         self.stiffness = stiffness
@@ -52,11 +49,11 @@ class Stiffness(Model):
 
 class Dart(Model):
     def __init__(
-        self,
-        bone_attachment: "BoneAttachment" = None,
-        stiffness: "Stiffness" = None,
-        damping: "Damping" = None,
-        flesh_mass_fraction: "FleshMassFraction" = None
+            self,
+            bone_attachment: "BoneAttachment" = None,
+            stiffness: "Stiffness" = None,
+            damping: "Damping" = None,
+            flesh_mass_fraction: "FleshMassFraction" = None
     ):
         self.bone_attachment = bone_attachment
         self.stiffness = stiffness
@@ -84,5 +81,7 @@ class Dart(Model):
         _c_damping = el.find("damping")
         _damping = Damping.from_sdf(_c_damping) if _c_damping is not None else None
         _c_flesh_mass_fraction = el.find("flesh_mass_fraction")
-        _flesh_mass_fraction = FleshMassFraction.from_sdf(_c_flesh_mass_fraction) if _c_flesh_mass_fraction is not None else None
-        return cls(bone_attachment=_bone_attachment, stiffness=_stiffness, damping=_damping, flesh_mass_fraction=_flesh_mass_fraction)
+        _flesh_mass_fraction = FleshMassFraction.from_sdf(
+            _c_flesh_mass_fraction) if _c_flesh_mass_fraction is not None else None
+        return cls(bone_attachment=_bone_attachment, stiffness=_stiffness, damping=_damping,
+                   flesh_mass_fraction=_flesh_mass_fraction)

@@ -2,26 +2,26 @@ from __future__ import annotations
 
 from xml.etree import ElementTree as ET
 
-from ..model import Model
 from .box import Box
-from .sphere import Sphere
 from .cylinder import Cylinder
+from .heightmap import Heightmap
+from .image import Image
 from .mesh import Mesh
 from .plane import Plane
-from .image import Image
-from .heightmap import Heightmap
+from .sphere import Sphere
+from ..model import Model
 
 
 class Geometry(Model):
     def __init__(
-        self,
-        box: "Box" = None,
-        sphere: "Sphere" = None,
-        cylinder: "Cylinder" = None,
-        mesh: "Mesh" = None,
-        plane: "Plane" = None,
-        image: "Image" = None,
-        heightmap: "Heightmap" = None
+            self,
+            box: "Box" = None,
+            sphere: "Sphere" = None,
+            cylinder: "Cylinder" = None,
+            mesh: "Mesh" = None,
+            plane: "Plane" = None,
+            image: "Image" = None,
+            heightmap: "Heightmap" = None
     ):
         self.box = box
         self.sphere = sphere
@@ -65,4 +65,5 @@ class Geometry(Model):
         _image = Image.from_sdf(_c_image) if _c_image is not None else None
         _c_heightmap = el.find("heightmap")
         _heightmap = Heightmap.from_sdf(_c_heightmap) if _c_heightmap is not None else None
-        return cls(box=_box, sphere=_sphere, cylinder=_cylinder, mesh=_mesh, plane=_plane, image=_image, heightmap=_heightmap)
+        return cls(box=_box, sphere=_sphere, cylinder=_cylinder, mesh=_mesh, plane=_plane, image=_image,
+                   heightmap=_heightmap)

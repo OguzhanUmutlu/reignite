@@ -2,7 +2,6 @@ from __future__ import annotations
 
 from xml.etree import ElementTree as ET
 
-from ..model import Model
 from ...sdf1_2.models.fdir1 import Fdir1 as _PrevFdir1
 from ....utils.vector3 import Vector3
 

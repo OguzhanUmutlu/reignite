@@ -1,17 +1,15 @@
 from __future__ import annotations
 
+from typing import List
 from xml.etree import ElementTree as ET
 
-from typing import List
-
-from ..model import Model
-from ...sdf1_4.models.texture import Texture as _PrevTexture
-from ...sdf1_4.models.heightmap import Heightmap as _PrevHeightmap
-from .uri import Uri
-from .size import Size
-from .pos import Pos
 from .blend import Blend
+from .pos import Pos
+from .size import Size
+from .uri import Uri
 from .use_terrain_paging import UseTerrainPaging
+from ...sdf1_4.models.heightmap import Heightmap as _PrevHeightmap
+from ...sdf1_4.models.texture import Texture as _PrevTexture
 
 
 class Texture(_PrevTexture):
@@ -44,15 +42,16 @@ class Texture(_PrevTexture):
 
 class Heightmap(_PrevHeightmap):
     def __init__(
-        self,
-        uri: "Uri" = None,
-        size: "Size" = None,
-        pos: "Pos" = None,
-        texture: List["Texture"] = None,
-        blend: List["Blend"] = None,
-        use_terrain_paging: "UseTerrainPaging" = None
+            self,
+            uri: "Uri" = None,
+            size: "Size" = None,
+            pos: "Pos" = None,
+            texture: List["Texture"] = None,
+            blend: List["Blend"] = None,
+            use_terrain_paging: "UseTerrainPaging" = None
     ):
-        super().__init__(uri=uri, size=size, pos=pos, texture=texture, blend=blend, use_terrain_paging=use_terrain_paging)
+        super().__init__(uri=uri, size=size, pos=pos, texture=texture, blend=blend,
+                         use_terrain_paging=use_terrain_paging)
 
     def to_sdf(self) -> ET.Element:
         el = super().to_sdf()
@@ -61,4 +60,5 @@ class Heightmap(_PrevHeightmap):
     @classmethod
     def from_sdf(cls, el: ET.Element) -> "Heightmap":
         _base = _PrevHeightmap.from_sdf(el)
-        return cls(uri=_base.uri, size=_base.size, pos=_base.pos, texture=_base.texture, blend=_base.blend, use_terrain_paging=_base.use_terrain_paging)
+        return cls(uri=_base.uri, size=_base.size, pos=_base.pos, texture=_base.texture, blend=_base.blend,
+                   use_terrain_paging=_base.use_terrain_paging)

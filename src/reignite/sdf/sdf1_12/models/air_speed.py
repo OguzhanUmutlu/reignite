@@ -2,9 +2,8 @@ from __future__ import annotations
 
 from xml.etree import ElementTree as ET
 
-from ..model import Model
-from ...sdf1_11.models.air_speed import AirSpeed as _PrevAirSpeed
 from .pressure import Pressure
+from ...sdf1_11.models.air_speed import AirSpeed as _PrevAirSpeed
 
 
 class AirSpeed(_PrevAirSpeed):

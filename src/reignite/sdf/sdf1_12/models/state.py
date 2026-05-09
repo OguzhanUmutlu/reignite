@@ -1,37 +1,36 @@
 from __future__ import annotations
 
+from typing import List
 from xml.etree import ElementTree as ET
 
-from typing import List
-
-from ..model import Model
-from ...sdf1_11.models.state import State as _PrevState
-from .model_state import ModelState
-from .light_state import LightState
+from .deletions import Deletions
+from .insertions import Insertions
+from .iterations import Iterations
 from .joint_state import JointState
+from .light_state import LightState
+from .model_state import ModelState
+from .real_time import RealTime
 from .sim_time import SimTime
 from .wall_time import WallTime
-from .real_time import RealTime
-from .iterations import Iterations
-from .insertions import Insertions
-from .deletions import Deletions
+from ...sdf1_11.models.state import State as _PrevState
 
 
 class State(_PrevState):
     def __init__(
-        self,
-        world_name: str = "__default__",
-        model_state: List["ModelState"] = None,
-        light_state: List["LightState"] = None,
-        joint_state: List["JointState"] = None,
-        sim_time: "SimTime" = None,
-        wall_time: "WallTime" = None,
-        real_time: "RealTime" = None,
-        iterations: "Iterations" = None,
-        insertions: "Insertions" = None,
-        deletions: "Deletions" = None
+            self,
+            world_name: str = "__default__",
+            model_state: List["ModelState"] = None,
+            light_state: List["LightState"] = None,
+            joint_state: List["JointState"] = None,
+            sim_time: "SimTime" = None,
+            wall_time: "WallTime" = None,
+            real_time: "RealTime" = None,
+            iterations: "Iterations" = None,
+            insertions: "Insertions" = None,
+            deletions: "Deletions" = None
     ):
-        super().__init__(world_name=world_name, sim_time=sim_time, wall_time=wall_time, real_time=real_time, iterations=iterations, insertions=insertions, deletions=deletions)
+        super().__init__(world_name=world_name, sim_time=sim_time, wall_time=wall_time, real_time=real_time,
+                         iterations=iterations, insertions=insertions, deletions=deletions)
         self.model_state = model_state or []
         self.light_state = light_state or []
         self.joint_state = joint_state or []
@@ -52,4 +51,7 @@ class State(_PrevState):
         _model_state = [ModelState.from_sdf(c) for c in el.findall("model_state")]
         _light_state = [LightState.from_sdf(c) for c in el.findall("light_state")]
         _joint_state = [JointState.from_sdf(c) for c in el.findall("joint_state")]
-        return cls(world_name=_base.world_name, model_state=_model_state, light_state=_light_state, joint_state=_joint_state, sim_time=_base.sim_time, wall_time=_base.wall_time, real_time=_base.real_time, iterations=_base.iterations, insertions=_base.insertions, deletions=_base.deletions)
+        return cls(world_name=_base.world_name, model_state=_model_state, light_state=_light_state,
+                   joint_state=_joint_state, sim_time=_base.sim_time, wall_time=_base.wall_time,
+                   real_time=_base.real_time, iterations=_base.iterations, insertions=_base.insertions,
+                   deletions=_base.deletions)

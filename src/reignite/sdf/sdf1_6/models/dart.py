@@ -2,9 +2,9 @@ from __future__ import annotations
 
 from xml.etree import ElementTree as ET
 
-from ..model import Model
-from .solver import Solver
 from .collision_detector import CollisionDetector
+from .solver import Solver
+from ..model import Model
 
 
 class Dart(Model):
@@ -25,5 +25,6 @@ class Dart(Model):
         _c_solver = el.find("solver")
         _solver = Solver.from_sdf(_c_solver) if _c_solver is not None else None
         _c_collision_detector = el.find("collision_detector")
-        _collision_detector = CollisionDetector.from_sdf(_c_collision_detector) if _c_collision_detector is not None else None
+        _collision_detector = CollisionDetector.from_sdf(
+            _c_collision_detector) if _c_collision_detector is not None else None
         return cls(solver=_solver, collision_detector=_collision_detector)

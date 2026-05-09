@@ -2,19 +2,18 @@ from __future__ import annotations
 
 from xml.etree import ElementTree as ET
 
-from ..model import Model
-from ...sdf1_8.models.spot import Spot as _PrevSpot
+from .falloff import Falloff
 from .inner_angle import InnerAngle
 from .outer_angle import OuterAngle
-from .falloff import Falloff
+from ...sdf1_8.models.spot import Spot as _PrevSpot
 
 
 class Spot(_PrevSpot):
     def __init__(
-        self,
-        inner_angle: "InnerAngle" = None,
-        outer_angle: "OuterAngle" = None,
-        falloff: "Falloff" = None
+            self,
+            inner_angle: "InnerAngle" = None,
+            outer_angle: "OuterAngle" = None,
+            falloff: "Falloff" = None
     ):
         super().__init__(inner_angle=inner_angle, outer_angle=outer_angle, falloff=falloff)
 

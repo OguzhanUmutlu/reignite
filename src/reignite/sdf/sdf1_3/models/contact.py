@@ -2,19 +2,18 @@ from __future__ import annotations
 
 from xml.etree import ElementTree as ET
 
-from ..model import Model
-from ...sdf1_2.models.ode import Ode as _PrevOde
 from ...sdf1_2.models.contact import Contact as _PrevContact
+from ...sdf1_2.models.ode import Ode as _PrevOde
 
 
 class Ode(_PrevOde):
     def __init__(
-        self,
-        mu: "Mu" = None,
-        mu2: "Mu2" = None,
-        fdir1: "Fdir1" = None,
-        slip1: "Slip1" = None,
-        slip2: "Slip2" = None
+            self,
+            mu: "Mu" = None,
+            mu2: "Mu2" = None,
+            fdir1: "Fdir1" = None,
+            slip1: "Slip1" = None,
+            slip2: "Slip2" = None
     ):
         super().__init__()
         self.mu = mu

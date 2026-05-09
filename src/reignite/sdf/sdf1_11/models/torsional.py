@@ -2,13 +2,12 @@ from __future__ import annotations
 
 from xml.etree import ElementTree as ET
 
-from ..model import Model
-from ...sdf1_10.models.ode import Ode as _PrevOde
-from ...sdf1_10.models.torsional import Torsional as _PrevTorsional
 from .coefficient import Coefficient
-from .use_patch_radius import UsePatchRadius
 from .patch_radius import PatchRadius
 from .surface_radius import SurfaceRadius
+from .use_patch_radius import UsePatchRadius
+from ...sdf1_10.models.ode import Ode as _PrevOde
+from ...sdf1_10.models.torsional import Torsional as _PrevTorsional
 
 
 class Ode(_PrevOde):
@@ -31,14 +30,15 @@ class Ode(_PrevOde):
 
 class Torsional(_PrevTorsional):
     def __init__(
-        self,
-        coefficient: "Coefficient" = None,
-        use_patch_radius: "UsePatchRadius" = None,
-        patch_radius: "PatchRadius" = None,
-        surface_radius: "SurfaceRadius" = None,
-        ode: "Ode" = None
+            self,
+            coefficient: "Coefficient" = None,
+            use_patch_radius: "UsePatchRadius" = None,
+            patch_radius: "PatchRadius" = None,
+            surface_radius: "SurfaceRadius" = None,
+            ode: "Ode" = None
     ):
-        super().__init__(coefficient=coefficient, use_patch_radius=use_patch_radius, patch_radius=patch_radius, surface_radius=surface_radius, ode=ode)
+        super().__init__(coefficient=coefficient, use_patch_radius=use_patch_radius, patch_radius=patch_radius,
+                         surface_radius=surface_radius, ode=ode)
 
     def to_sdf(self) -> ET.Element:
         el = super().to_sdf()
@@ -47,4 +47,5 @@ class Torsional(_PrevTorsional):
     @classmethod
     def from_sdf(cls, el: ET.Element) -> "Torsional":
         _base = _PrevTorsional.from_sdf(el)
-        return cls(coefficient=_base.coefficient, use_patch_radius=_base.use_patch_radius, patch_radius=_base.patch_radius, surface_radius=_base.surface_radius, ode=_base.ode)
+        return cls(coefficient=_base.coefficient, use_patch_radius=_base.use_patch_radius,
+                   patch_radius=_base.patch_radius, surface_radius=_base.surface_radius, ode=_base.ode)

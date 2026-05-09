@@ -2,17 +2,16 @@ from __future__ import annotations
 
 from xml.etree import ElementTree as ET
 
-from ..model import Model
-from ...sdf1_11.models.convex_decomposition import ConvexDecomposition as _PrevConvexDecomposition
 from .max_convex_hulls import MaxConvexHulls
 from .voxel_resolution import VoxelResolution
+from ...sdf1_11.models.convex_decomposition import ConvexDecomposition as _PrevConvexDecomposition
 
 
 class ConvexDecomposition(_PrevConvexDecomposition):
     def __init__(
-        self,
-        max_convex_hulls: "MaxConvexHulls" = None,
-        voxel_resolution: "VoxelResolution" = None
+            self,
+            max_convex_hulls: "MaxConvexHulls" = None,
+            voxel_resolution: "VoxelResolution" = None
     ):
         super().__init__(max_convex_hulls=max_convex_hulls, voxel_resolution=voxel_resolution)
 

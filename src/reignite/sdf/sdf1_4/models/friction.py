@@ -3,18 +3,18 @@ from __future__ import annotations
 from xml.etree import ElementTree as ET
 
 from ..model import Model
-from ...sdf1_3.models.ode import Ode as _PrevOde
 from ...sdf1_3.models.friction import Friction as _PrevFriction
+from ...sdf1_3.models.ode import Ode as _PrevOde
 
 
 class Ode(_PrevOde):
     def __init__(
-        self,
-        mu: "Mu" = None,
-        mu2: "Mu2" = None,
-        fdir1: "Fdir1" = None,
-        slip1: "Slip1" = None,
-        slip2: "Slip2" = None
+            self,
+            mu: "Mu" = None,
+            mu2: "Mu2" = None,
+            fdir1: "Fdir1" = None,
+            slip1: "Slip1" = None,
+            slip2: "Slip2" = None
     ):
         super().__init__()
         self.mu = mu
@@ -54,11 +54,11 @@ class Ode(_PrevOde):
 
 class Bullet(Model):
     def __init__(
-        self,
-        friction: "Friction" = None,
-        friction2: "Friction2" = None,
-        fdir1: "Fdir1" = None,
-        rolling_friction: "RollingFriction" = None
+            self,
+            friction: "Friction" = None,
+            friction2: "Friction2" = None,
+            fdir1: "Fdir1" = None,
+            rolling_friction: "RollingFriction" = None
     ):
         self.friction = friction
         self.friction2 = friction2

@@ -1,14 +1,13 @@
 from __future__ import annotations
 
+from typing import List
 from xml.etree import ElementTree as ET
 
-from typing import List
-
 from ..model import Model
-from ...sdf1_4.models.static import Static as _PrevStatic
 from ...sdf1_4.models.include import Include as _PrevInclude
-from ...sdf1_4.models.model import Model as _PrevModel
 from ...sdf1_4.models.insertions import Insertions as _PrevInsertions
+from ...sdf1_4.models.model import Model as _PrevModel
+from ...sdf1_4.models.static import Static as _PrevStatic
 
 
 class Static(_PrevStatic):
@@ -27,12 +26,12 @@ class Static(_PrevStatic):
 
 class Include(_PrevInclude):
     def __init__(
-        self,
-        plugin: List["Plugin"] = None,
-        uri: "Uri" = None,
-        pose: "Pose" = None,
-        name: "Name" = None,
-        static: "Static" = None
+            self,
+            plugin: List["Plugin"] = None,
+            uri: "Uri" = None,
+            pose: "Pose" = None,
+            name: "Name" = None,
+            static: "Static" = None
     ):
         super().__init__(uri=uri)
         self.plugin = plugin or []
@@ -67,21 +66,22 @@ class Include(_PrevInclude):
 
 class Model(_PrevModel):
     def __init__(
-        self,
-        name: str = "__default__",
-        frame: List["Frame"] = None,
-        pose: "Pose" = None,
-        link: List["Link"] = None,
-        joint: List["Joint"] = None,
-        plugin: List["Plugin"] = None,
-        gripper: List["Gripper"] = None,
-        static: "Static" = None,
-        self_collide: "SelfCollide" = None,
-        allow_auto_disable: "AllowAutoDisable" = None,
-        include: List["Include"] = None,
-        model: List["Model"] = None
+            self,
+            name: str = "__default__",
+            frame: List["Frame"] = None,
+            pose: "Pose" = None,
+            link: List["Link"] = None,
+            joint: List["Joint"] = None,
+            plugin: List["Plugin"] = None,
+            gripper: List["Gripper"] = None,
+            static: "Static" = None,
+            self_collide: "SelfCollide" = None,
+            allow_auto_disable: "AllowAutoDisable" = None,
+            include: List["Include"] = None,
+            model: List["Model"] = None
     ):
-        super().__init__(name=name, pose=pose, link=link, joint=joint, plugin=plugin, gripper=gripper, static=static, allow_auto_disable=allow_auto_disable)
+        super().__init__(name=name, pose=pose, link=link, joint=joint, plugin=plugin, gripper=gripper, static=static,
+                         allow_auto_disable=allow_auto_disable)
         self.frame = frame or []
         self.self_collide = self_collide
         self.include = include or []
@@ -107,7 +107,9 @@ class Model(_PrevModel):
         _self_collide = SelfCollide.from_sdf(_c_self_collide) if _c_self_collide is not None else None
         _include = [Include.from_sdf(c) for c in el.findall("include")]
         _model = [Model.from_sdf(c) for c in el.findall("model")]
-        return cls(name=_base.name, frame=_frame, pose=_base.pose, link=_base.link, joint=_base.joint, plugin=_base.plugin, gripper=_base.gripper, static=_base.static, self_collide=_self_collide, allow_auto_disable=_base.allow_auto_disable, include=_include, model=_model)
+        return cls(name=_base.name, frame=_frame, pose=_base.pose, link=_base.link, joint=_base.joint,
+                   plugin=_base.plugin, gripper=_base.gripper, static=_base.static, self_collide=_self_collide,
+                   allow_auto_disable=_base.allow_auto_disable, include=_include, model=_model)
 
 
 class Insertions(_PrevInsertions):

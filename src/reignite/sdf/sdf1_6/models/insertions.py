@@ -1,33 +1,30 @@
 from __future__ import annotations
 
+import math
+from typing import List
 from xml.etree import ElementTree as ET
 
-from typing import List
-
+from .model import Model
 from ..model import Model
-from ...sdf1_5.models.pose import Pose as _PrevPose
-from ...sdf1_5.models.frame import Frame as _PrevFrame
-from ...sdf1_5.models.cast_shadows import CastShadows as _PrevCastShadows
-from ...sdf1_5.models.diffuse import Diffuse as _PrevDiffuse
-from ...sdf1_5.models.specular import Specular as _PrevSpecular
-from ...sdf1_5.models.range import Range as _PrevRange
-from ...sdf1_5.models.constant import Constant as _PrevConstant
-from ...sdf1_5.models.quadratic import Quadratic as _PrevQuadratic
 from ...sdf1_5.models.attenuation import Attenuation as _PrevAttenuation
+from ...sdf1_5.models.cast_shadows import CastShadows as _PrevCastShadows
+from ...sdf1_5.models.constant import Constant as _PrevConstant
+from ...sdf1_5.models.diffuse import Diffuse as _PrevDiffuse
 from ...sdf1_5.models.direction import Direction as _PrevDirection
-from ...sdf1_5.models.inner_angle import InnerAngle as _PrevInnerAngle
-from ...sdf1_5.models.outer_angle import OuterAngle as _PrevOuterAngle
 from ...sdf1_5.models.falloff import Falloff as _PrevFalloff
-from ...sdf1_5.models.spot import Spot as _PrevSpot
-from ...sdf1_5.models.light import Light as _PrevLight
+from ...sdf1_5.models.frame import Frame as _PrevFrame
+from ...sdf1_5.models.inner_angle import InnerAngle as _PrevInnerAngle
 from ...sdf1_5.models.insertions import Insertions as _PrevInsertions
+from ...sdf1_5.models.light import Light as _PrevLight
+from ...sdf1_5.models.outer_angle import OuterAngle as _PrevOuterAngle
+from ...sdf1_5.models.pose import Pose as _PrevPose
+from ...sdf1_5.models.quadratic import Quadratic as _PrevQuadratic
+from ...sdf1_5.models.range import Range as _PrevRange
+from ...sdf1_5.models.specular import Specular as _PrevSpecular
+from ...sdf1_5.models.spot import Spot as _PrevSpot
 from ....utils.color import Color
 from ....utils.pose import Pose
-from .model import Model
 
-
-import math
-import sys
 
 def _parse_int32(raw: str) -> int:
     v = int(raw)
@@ -48,7 +45,6 @@ def _parse_double(raw: str) -> float:
     if not math.isfinite(v) or abs(v) > 1.7976931348623157e+308:
         raise ValueError(f"double out of range: {raw}")
     return v
-
 
 
 class Pose(_PrevPose):
@@ -171,11 +167,11 @@ class Quadratic(_PrevQuadratic):
 
 class Attenuation(_PrevAttenuation):
     def __init__(
-        self,
-        range: "Range" = None,
-        linear: "Linear" = None,
-        constant: "Constant" = None,
-        quadratic: "Quadratic" = None
+            self,
+            range: "Range" = None,
+            linear: "Linear" = None,
+            constant: "Constant" = None,
+            quadratic: "Quadratic" = None
     ):
         super().__init__(range=range, linear=linear, constant=constant, quadratic=quadratic)
 
@@ -247,10 +243,10 @@ class Falloff(_PrevFalloff):
 
 class Spot(_PrevSpot):
     def __init__(
-        self,
-        inner_angle: "InnerAngle" = None,
-        outer_angle: "OuterAngle" = None,
-        falloff: "Falloff" = None
+            self,
+            inner_angle: "InnerAngle" = None,
+            outer_angle: "OuterAngle" = None,
+            falloff: "Falloff" = None
     ):
         super().__init__(inner_angle=inner_angle, outer_angle=outer_angle, falloff=falloff)
 
@@ -266,19 +262,20 @@ class Spot(_PrevSpot):
 
 class Light(_PrevLight):
     def __init__(
-        self,
-        name: str = "__default__",
-        type: str = "point",
-        frame: List["Frame"] = None,
-        pose: "Pose" = None,
-        cast_shadows: "CastShadows" = None,
-        diffuse: "Diffuse" = None,
-        specular: "Specular" = None,
-        attenuation: "Attenuation" = None,
-        direction: "Direction" = None,
-        spot: "Spot" = None
+            self,
+            name: str = "__default__",
+            type: str = "point",
+            frame: List["Frame"] = None,
+            pose: "Pose" = None,
+            cast_shadows: "CastShadows" = None,
+            diffuse: "Diffuse" = None,
+            specular: "Specular" = None,
+            attenuation: "Attenuation" = None,
+            direction: "Direction" = None,
+            spot: "Spot" = None
     ):
-        super().__init__(name=name, type=type, frame=frame, pose=pose, cast_shadows=cast_shadows, diffuse=diffuse, specular=specular, attenuation=attenuation, direction=direction, spot=spot)
+        super().__init__(name=name, type=type, frame=frame, pose=pose, cast_shadows=cast_shadows, diffuse=diffuse,
+                         specular=specular, attenuation=attenuation, direction=direction, spot=spot)
 
     def to_sdf(self) -> ET.Element:
         el = super().to_sdf()
@@ -287,7 +284,9 @@ class Light(_PrevLight):
     @classmethod
     def from_sdf(cls, el: ET.Element) -> "Light":
         _base = _PrevLight.from_sdf(el)
-        return cls(name=_base.name, type=_base.type, frame=_base.frame, pose=_base.pose, cast_shadows=_base.cast_shadows, diffuse=_base.diffuse, specular=_base.specular, attenuation=_base.attenuation, direction=_base.direction, spot=_base.spot)
+        return cls(name=_base.name, type=_base.type, frame=_base.frame, pose=_base.pose,
+                   cast_shadows=_base.cast_shadows, diffuse=_base.diffuse, specular=_base.specular,
+                   attenuation=_base.attenuation, direction=_base.direction, spot=_base.spot)
 
 
 class Insertions(_PrevInsertions):

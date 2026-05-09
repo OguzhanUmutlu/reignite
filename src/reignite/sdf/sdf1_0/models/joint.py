@@ -2,28 +2,28 @@ from __future__ import annotations
 
 from xml.etree import ElementTree as ET
 
-from ..model import Model
-from .parent import Parent
-from .child import Child
-from .origin import Origin
-from .thread_pitch import ThreadPitch
 from .axis import Axis
 from .axis2 import Axis2
+from .child import Child
+from .origin import Origin
+from .parent import Parent
 from .physics import Physics
+from .thread_pitch import ThreadPitch
+from ..model import Model
 
 
 class Joint(Model):
     def __init__(
-        self,
-        name: str = "__default__",
-        type: str = "__default__",
-        parent: "Parent" = None,
-        child: "Child" = None,
-        origin: "Origin" = None,
-        thread_pitch: "ThreadPitch" = None,
-        axis: "Axis" = None,
-        axis2: "Axis2" = None,
-        physics: "Physics" = None
+            self,
+            name: str = "__default__",
+            type: str = "__default__",
+            parent: "Parent" = None,
+            child: "Child" = None,
+            origin: "Origin" = None,
+            thread_pitch: "ThreadPitch" = None,
+            axis: "Axis" = None,
+            axis2: "Axis2" = None,
+            physics: "Physics" = None
     ):
         self.name = name
         self.type = type
@@ -75,4 +75,5 @@ class Joint(Model):
         _axis2 = Axis2.from_sdf(_c_axis2) if _c_axis2 is not None else None
         _c_physics = el.find("physics")
         _physics = Physics.from_sdf(_c_physics) if _c_physics is not None else None
-        return cls(name=_name, type=_type, parent=_parent, child=_child, origin=_origin, thread_pitch=_thread_pitch, axis=_axis, axis2=_axis2, physics=_physics)
+        return cls(name=_name, type=_type, parent=_parent, child=_child, origin=_origin, thread_pitch=_thread_pitch,
+                   axis=_axis, axis2=_axis2, physics=_physics)

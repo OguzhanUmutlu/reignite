@@ -2,10 +2,9 @@ from __future__ import annotations
 
 from xml.etree import ElementTree as ET
 
-from ..model import Model
-from ...sdf1_4.models.cylinder import Cylinder as _PrevCylinder
-from .radius import Radius
 from .length import Length
+from .radius import Radius
+from ...sdf1_4.models.cylinder import Cylinder as _PrevCylinder
 
 
 class Cylinder(_PrevCylinder):

@@ -2,14 +2,14 @@ from __future__ import annotations
 
 from xml.etree import ElementTree as ET
 
-from ..model import Model
-from ...sdf1_3.models.camera import Camera as _PrevCamera
-from .pose import Pose
+from .clip import Clip
+from .depth_camera import DepthCamera
 from .horizontal_fov import HorizontalFov
 from .image import Image
-from .clip import Clip
+from .pose import Pose
 from .save import Save
-from .depth_camera import DepthCamera
+from ..model import Model
+from ...sdf1_3.models.camera import Camera as _PrevCamera
 
 
 class Type(Model):
@@ -58,17 +58,18 @@ class Noise(Model):
 
 class Camera(_PrevCamera):
     def __init__(
-        self,
-        name: str = "__default__",
-        pose: "Pose" = None,
-        horizontal_fov: "HorizontalFov" = None,
-        image: "Image" = None,
-        clip: "Clip" = None,
-        save: "Save" = None,
-        depth_camera: "DepthCamera" = None,
-        noise: "Noise" = None
+            self,
+            name: str = "__default__",
+            pose: "Pose" = None,
+            horizontal_fov: "HorizontalFov" = None,
+            image: "Image" = None,
+            clip: "Clip" = None,
+            save: "Save" = None,
+            depth_camera: "DepthCamera" = None,
+            noise: "Noise" = None
     ):
-        super().__init__(name=name, pose=pose, horizontal_fov=horizontal_fov, image=image, clip=clip, save=save, depth_camera=depth_camera)
+        super().__init__(name=name, pose=pose, horizontal_fov=horizontal_fov, image=image, clip=clip, save=save,
+                         depth_camera=depth_camera)
         self.noise = noise
 
     def to_sdf(self) -> ET.Element:
@@ -82,4 +83,5 @@ class Camera(_PrevCamera):
         _base = _PrevCamera.from_sdf(el)
         _c_noise = el.find("noise")
         _noise = Noise.from_sdf(_c_noise) if _c_noise is not None else None
-        return cls(name=_base.name, pose=_base.pose, horizontal_fov=_base.horizontal_fov, image=_base.image, clip=_base.clip, save=_base.save, depth_camera=_base.depth_camera, noise=_noise)
+        return cls(name=_base.name, pose=_base.pose, horizontal_fov=_base.horizontal_fov, image=_base.image,
+                   clip=_base.clip, save=_base.save, depth_camera=_base.depth_camera, noise=_noise)

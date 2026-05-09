@@ -60,7 +60,13 @@ Transceiver = _models.Transceiver
 Visual = _models.Visual
 World = _models.World
 
-TAG_NAMES: list[str] = ["actor", "air_pressure", "altimeter", "atmosphere", "audio_sink", "audio_source", "battery", "box", "camera", "collision", "collision_engine", "contact", "cylinder", "force_torque", "frame", "geometry", "gps", "gripper", "gui", "heightmap", "image", "imu", "inertial", "joint", "lidar", "light", "link", "logical_camera", "magnetometer", "material", "mesh", "model", "noise", "particle_emitter", "physics", "plane", "plugin", "polyline", "population", "pose", "projector", "ray", "rfid", "rfidtag", "road", "robot", "scene", "sdf", "sensor", "sonar", "sphere", "spherical_coordinates", "state", "surface", "transceiver", "visual", "world"]
+TAG_NAMES: list[str] = ["actor", "air_pressure", "altimeter", "atmosphere", "audio_sink", "audio_source", "battery",
+                        "box", "camera", "collision", "collision_engine", "contact", "cylinder", "force_torque",
+                        "frame", "geometry", "gps", "gripper", "gui", "heightmap", "image", "imu", "inertial", "joint",
+                        "lidar", "light", "link", "logical_camera", "magnetometer", "material", "mesh", "model",
+                        "noise", "particle_emitter", "physics", "plane", "plugin", "polyline", "population", "pose",
+                        "projector", "ray", "rfid", "rfidtag", "road", "robot", "scene", "sdf", "sensor", "sonar",
+                        "sphere", "spherical_coordinates", "state", "surface", "transceiver", "visual", "world"]
 TAG_CLASS_MAP: dict[str, type] = {
     "actor": Actor,
     "air_pressure": AirPressure,
@@ -120,6 +126,7 @@ TAG_CLASS_MAP: dict[str, type] = {
     "visual": Visual,
     "world": World,
 }
+
 
 def get_tag_class(tag: str) -> type | None:
     return TAG_CLASS_MAP.get(tag)

@@ -2,10 +2,9 @@ from __future__ import annotations
 
 from xml.etree import ElementTree as ET
 
-from ..model import Model
-from ...sdf1_9.models.bullet import Bullet as _PrevBullet
-from .solver import Solver
 from .constraints import Constraints
+from .solver import Solver
+from ...sdf1_9.models.bullet import Bullet as _PrevBullet
 
 
 class Bullet(_PrevBullet):

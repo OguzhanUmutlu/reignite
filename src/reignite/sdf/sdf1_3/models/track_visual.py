@@ -2,9 +2,9 @@ from __future__ import annotations
 
 from xml.etree import ElementTree as ET
 
-from ..model import Model
-from .min_dist import MinDist
 from .max_dist import MaxDist
+from .min_dist import MinDist
+from ..model import Model
 
 
 class Name(Model):

@@ -1,15 +1,13 @@
 from __future__ import annotations
 
+from typing import List
 from xml.etree import ElementTree as ET
 
-from typing import List
-
-from ..model import Model
-from ...sdf1_6.models.pose import Pose as _PrevPose
+from .plugin import Plugin
 from ...sdf1_6.models.camera import Camera as _PrevCamera
 from ...sdf1_6.models.gui import Gui as _PrevGui
+from ...sdf1_6.models.pose import Pose as _PrevPose
 from ....utils.pose import Pose
-from .plugin import Plugin
 
 
 class Pose(_PrevPose):
@@ -34,12 +32,12 @@ class Pose(_PrevPose):
 
 class Camera(_PrevCamera):
     def __init__(
-        self,
-        name: str = "user_camera",
-        pose: "Pose" = None,
-        view_controller: "ViewController" = None,
-        projection_type: "ProjectionType" = None,
-        track_visual: "TrackVisual" = None
+            self,
+            name: str = "user_camera",
+            pose: "Pose" = None,
+            view_controller: "ViewController" = None,
+            projection_type: "ProjectionType" = None,
+            track_visual: "TrackVisual" = None
     ):
         super().__init__(name=name, pose=pose)
         self.view_controller = view_controller
@@ -65,15 +63,16 @@ class Camera(_PrevCamera):
         _projection_type = ProjectionType.from_sdf(_c_projection_type) if _c_projection_type is not None else None
         _c_track_visual = el.find("track_visual")
         _track_visual = TrackVisual.from_sdf(_c_track_visual) if _c_track_visual is not None else None
-        return cls(name=_base.name, pose=_base.pose, view_controller=_view_controller, projection_type=_projection_type, track_visual=_track_visual)
+        return cls(name=_base.name, pose=_base.pose, view_controller=_view_controller, projection_type=_projection_type,
+                   track_visual=_track_visual)
 
 
 class Gui(_PrevGui):
     def __init__(
-        self,
-        fullscreen: bool = False,
-        plugin: List["Plugin"] = None,
-        camera: "Camera" = None
+            self,
+            fullscreen: bool = False,
+            plugin: List["Plugin"] = None,
+            camera: "Camera" = None
     ):
         super().__init__(fullscreen=fullscreen, plugin=plugin, camera=camera)
 

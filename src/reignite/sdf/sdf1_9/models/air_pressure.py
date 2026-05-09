@@ -2,10 +2,9 @@ from __future__ import annotations
 
 from xml.etree import ElementTree as ET
 
-from ..model import Model
-from ...sdf1_8.models.air_pressure import AirPressure as _PrevAirPressure
-from .reference_altitude import ReferenceAltitude
 from .pressure import Pressure
+from .reference_altitude import ReferenceAltitude
+from ...sdf1_8.models.air_pressure import AirPressure as _PrevAirPressure
 
 
 class AirPressure(_PrevAirPressure):

@@ -1,16 +1,13 @@
 from __future__ import annotations
 
+import math
 from xml.etree import ElementTree as ET
 
-from ..model import Model
-from ...sdf1_10.models.pressure import Pressure as _PrevPressure
-from ...sdf1_10.models.atmosphere import Atmosphere as _PrevAtmosphere
 from .temperature import Temperature
 from .temperature_gradient import TemperatureGradient
+from ...sdf1_10.models.atmosphere import Atmosphere as _PrevAtmosphere
+from ...sdf1_10.models.pressure import Pressure as _PrevPressure
 
-
-import math
-import sys
 
 def _parse_int32(raw: str) -> int:
     v = int(raw)
@@ -33,7 +30,6 @@ def _parse_double(raw: str) -> float:
     return v
 
 
-
 class Pressure(_PrevPressure):
     def __init__(self, pressure: float = 101325):
         super().__init__()
@@ -54,13 +50,14 @@ class Pressure(_PrevPressure):
 
 class Atmosphere(_PrevAtmosphere):
     def __init__(
-        self,
-        type: str = "adiabatic",
-        temperature: "Temperature" = None,
-        pressure: "Pressure" = None,
-        temperature_gradient: "TemperatureGradient" = None
+            self,
+            type: str = "adiabatic",
+            temperature: "Temperature" = None,
+            pressure: "Pressure" = None,
+            temperature_gradient: "TemperatureGradient" = None
     ):
-        super().__init__(type=type, temperature=temperature, pressure=pressure, temperature_gradient=temperature_gradient)
+        super().__init__(type=type, temperature=temperature, pressure=pressure,
+                         temperature_gradient=temperature_gradient)
 
     def to_sdf(self) -> ET.Element:
         el = super().to_sdf()
@@ -69,4 +66,5 @@ class Atmosphere(_PrevAtmosphere):
     @classmethod
     def from_sdf(cls, el: ET.Element) -> "Atmosphere":
         _base = _PrevAtmosphere.from_sdf(el)
-        return cls(type=_base.type, temperature=_base.temperature, pressure=_base.pressure, temperature_gradient=_base.temperature_gradient)
+        return cls(type=_base.type, temperature=_base.temperature, pressure=_base.pressure,
+                   temperature_gradient=_base.temperature_gradient)

@@ -2,54 +2,54 @@ from __future__ import annotations
 
 from xml.etree import ElementTree as ET
 
-from ..model import Model
-from .xx import Xx
-from .xy import Xy
-from .xz import Xz
-from .xp import Xp
-from .xq import Xq
-from .xr import Xr
-from .yy import Yy
-from .yz import Yz
-from .yp import Yp
-from .yq import Yq
-from .yr import Yr
-from .zz import Zz
-from .zp import Zp
-from .zq import Zq
-from .zr import Zr
 from .pp import Pp
 from .pq import Pq
 from .pr import Pr
 from .qq import Qq
 from .qr import Qr
 from .rr import Rr
+from .xp import Xp
+from .xq import Xq
+from .xr import Xr
+from .xx import Xx
+from .xy import Xy
+from .xz import Xz
+from .yp import Yp
+from .yq import Yq
+from .yr import Yr
+from .yy import Yy
+from .yz import Yz
+from .zp import Zp
+from .zq import Zq
+from .zr import Zr
+from .zz import Zz
+from ..model import Model
 
 
 class FluidAddedMass(Model):
     def __init__(
-        self,
-        xx: "Xx" = None,
-        xy: "Xy" = None,
-        xz: "Xz" = None,
-        xp: "Xp" = None,
-        xq: "Xq" = None,
-        xr: "Xr" = None,
-        yy: "Yy" = None,
-        yz: "Yz" = None,
-        yp: "Yp" = None,
-        yq: "Yq" = None,
-        yr: "Yr" = None,
-        zz: "Zz" = None,
-        zp: "Zp" = None,
-        zq: "Zq" = None,
-        zr: "Zr" = None,
-        pp: "Pp" = None,
-        pq: "Pq" = None,
-        pr: "Pr" = None,
-        qq: "Qq" = None,
-        qr: "Qr" = None,
-        rr: "Rr" = None
+            self,
+            xx: "Xx" = None,
+            xy: "Xy" = None,
+            xz: "Xz" = None,
+            xp: "Xp" = None,
+            xq: "Xq" = None,
+            xr: "Xr" = None,
+            yy: "Yy" = None,
+            yz: "Yz" = None,
+            yp: "Yp" = None,
+            yq: "Yq" = None,
+            yr: "Yr" = None,
+            zz: "Zz" = None,
+            zp: "Zp" = None,
+            zq: "Zq" = None,
+            zr: "Zr" = None,
+            pp: "Pp" = None,
+            pq: "Pq" = None,
+            pr: "Pr" = None,
+            qq: "Qq" = None,
+            qr: "Qr" = None,
+            rr: "Rr" = None
     ):
         self.xx = xx
         self.xy = xy
@@ -163,4 +163,5 @@ class FluidAddedMass(Model):
         _qr = Qr.from_sdf(_c_qr) if _c_qr is not None else None
         _c_rr = el.find("rr")
         _rr = Rr.from_sdf(_c_rr) if _c_rr is not None else None
-        return cls(xx=_xx, xy=_xy, xz=_xz, xp=_xp, xq=_xq, xr=_xr, yy=_yy, yz=_yz, yp=_yp, yq=_yq, yr=_yr, zz=_zz, zp=_zp, zq=_zq, zr=_zr, pp=_pp, pq=_pq, pr=_pr, qq=_qq, qr=_qr, rr=_rr)
+        return cls(xx=_xx, xy=_xy, xz=_xz, xp=_xp, xq=_xq, xr=_xr, yy=_yy, yz=_yz, yp=_yp, yq=_yq, yr=_yr, zz=_zz,
+                   zp=_zp, zq=_zq, zr=_zr, pp=_pp, pq=_pq, pr=_pr, qq=_qq, qr=_qr, rr=_rr)

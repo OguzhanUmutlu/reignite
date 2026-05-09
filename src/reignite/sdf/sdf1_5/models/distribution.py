@@ -2,10 +2,10 @@ from __future__ import annotations
 
 from xml.etree import ElementTree as ET
 
-from ..model import Model
-from .rows import Rows
 from .cols import Cols
+from .rows import Rows
 from .step import Step
+from ..model import Model
 
 
 class Type(Model):
@@ -27,11 +27,11 @@ class Type(Model):
 
 class Distribution(Model):
     def __init__(
-        self,
-        type: "Type" = None,
-        rows: "Rows" = None,
-        cols: "Cols" = None,
-        step: "Step" = None
+            self,
+            type: "Type" = None,
+            rows: "Rows" = None,
+            cols: "Cols" = None,
+            step: "Step" = None
     ):
         self.type = type
         self.rows = rows

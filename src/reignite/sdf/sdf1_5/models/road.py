@@ -1,15 +1,13 @@
 from __future__ import annotations
 
+from typing import List
 from xml.etree import ElementTree as ET
 
-from typing import List
-
-from ..model import Model
+from .material import Material
+from .width import Width
 from ...sdf1_4.models.point import Point as _PrevPoint
 from ...sdf1_4.models.road import Road as _PrevRoad
 from ....utils.vector2d import Vector2d
-from .material import Material
-from .width import Width
 
 
 class Point(_PrevPoint):
@@ -30,11 +28,11 @@ class Point(_PrevPoint):
 
 class Road(_PrevRoad):
     def __init__(
-        self,
-        name: str = "__default__",
-        material: "Material" = None,
-        width: "Width" = None,
-        point: List["Point"] = None
+            self,
+            name: str = "__default__",
+            material: "Material" = None,
+            width: "Width" = None,
+            point: List["Point"] = None
     ):
         super().__init__(name=name, width=width, point=point)
         self.material = material

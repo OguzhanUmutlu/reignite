@@ -2,9 +2,9 @@ from __future__ import annotations
 
 from xml.etree import ElementTree as ET
 
-from ..model import Model
-from .reference_altitude import ReferenceAltitude
 from .pressure import Pressure
+from .reference_altitude import ReferenceAltitude
+from ..model import Model
 
 
 class AirPressure(Model):
@@ -23,7 +23,8 @@ class AirPressure(Model):
     @classmethod
     def from_sdf(cls, el: ET.Element) -> "AirPressure":
         _c_reference_altitude = el.find("reference_altitude")
-        _reference_altitude = ReferenceAltitude.from_sdf(_c_reference_altitude) if _c_reference_altitude is not None else None
+        _reference_altitude = ReferenceAltitude.from_sdf(
+            _c_reference_altitude) if _c_reference_altitude is not None else None
         _c_pressure = el.find("pressure")
         _pressure = Pressure.from_sdf(_c_pressure) if _c_pressure is not None else None
         return cls(reference_altitude=_reference_altitude, pressure=_pressure)

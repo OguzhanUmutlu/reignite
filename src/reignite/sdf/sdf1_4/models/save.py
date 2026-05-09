@@ -2,9 +2,8 @@ from __future__ import annotations
 
 from xml.etree import ElementTree as ET
 
-from ..model import Model
-from ...sdf1_3.models.save import Save as _PrevSave
 from .path import Path
+from ...sdf1_3.models.save import Save as _PrevSave
 
 
 class Save(_PrevSave):

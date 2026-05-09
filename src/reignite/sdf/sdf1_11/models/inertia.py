@@ -2,25 +2,24 @@ from __future__ import annotations
 
 from xml.etree import ElementTree as ET
 
-from ..model import Model
-from ...sdf1_10.models.inertia import Inertia as _PrevInertia
 from .ixx import Ixx
 from .ixy import Ixy
 from .ixz import Ixz
 from .iyy import Iyy
 from .iyz import Iyz
 from .izz import Izz
+from ...sdf1_10.models.inertia import Inertia as _PrevInertia
 
 
 class Inertia(_PrevInertia):
     def __init__(
-        self,
-        ixx: "Ixx" = None,
-        ixy: "Ixy" = None,
-        ixz: "Ixz" = None,
-        iyy: "Iyy" = None,
-        iyz: "Iyz" = None,
-        izz: "Izz" = None
+            self,
+            ixx: "Ixx" = None,
+            ixy: "Ixy" = None,
+            ixz: "Ixz" = None,
+            iyy: "Iyy" = None,
+            iyz: "Iyz" = None,
+            izz: "Izz" = None
     ):
         super().__init__(ixx=ixx, ixy=ixy, ixz=ixz, iyy=iyy, iyz=iyz, izz=izz)
 

@@ -2,10 +2,9 @@ from __future__ import annotations
 
 from xml.etree import ElementTree as ET
 
-from ..model import Model
-from ...sdf1_4.models.submesh import Submesh as _PrevSubmesh
-from .name import Name
 from .center import Center
+from .name import Name
+from ...sdf1_4.models.submesh import Submesh as _PrevSubmesh
 
 
 class Submesh(_PrevSubmesh):

@@ -2,18 +2,17 @@ from __future__ import annotations
 
 from xml.etree import ElementTree as ET
 
-from ..model import Model
 from ...sdf1_0.models.camera import Camera as _PrevCamera
 from ...sdf1_0.models.gui import Gui as _PrevGui
 
 
 class Camera(_PrevCamera):
     def __init__(
-        self,
-        name: str = "user_camera",
-        view_controller: "ViewController" = None,
-        pose: "Pose" = None,
-        track_visual: "TrackVisual" = None
+            self,
+            name: str = "user_camera",
+            view_controller: "ViewController" = None,
+            pose: "Pose" = None,
+            track_visual: "TrackVisual" = None
     ):
         super().__init__()
         self.name = name

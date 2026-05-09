@@ -2,21 +2,20 @@ from __future__ import annotations
 
 from xml.etree import ElementTree as ET
 
-from ..model import Model
-from ...sdf1_2.models.limit import Limit as _PrevLimit
+from .effort import Effort
 from .lower import Lower
 from .upper import Upper
-from .effort import Effort
 from .velocity import Velocity
+from ...sdf1_2.models.limit import Limit as _PrevLimit
 
 
 class Limit(_PrevLimit):
     def __init__(
-        self,
-        lower: "Lower" = None,
-        upper: "Upper" = None,
-        effort: "Effort" = None,
-        velocity: "Velocity" = None
+            self,
+            lower: "Lower" = None,
+            upper: "Upper" = None,
+            effort: "Effort" = None,
+            velocity: "Velocity" = None
     ):
         super().__init__()
         self.lower = lower

@@ -2,21 +2,20 @@ from __future__ import annotations
 
 from xml.etree import ElementTree as ET
 
-from ..model import Model
-from ...sdf1_4.models.dynamics import Dynamics as _PrevDynamics
 from .damping import Damping
 from .friction import Friction
 from .spring_reference import SpringReference
 from .spring_stiffness import SpringStiffness
+from ...sdf1_4.models.dynamics import Dynamics as _PrevDynamics
 
 
 class Dynamics(_PrevDynamics):
     def __init__(
-        self,
-        damping: "Damping" = None,
-        friction: "Friction" = None,
-        spring_reference: "SpringReference" = None,
-        spring_stiffness: "SpringStiffness" = None
+            self,
+            damping: "Damping" = None,
+            friction: "Friction" = None,
+            spring_reference: "SpringReference" = None,
+            spring_stiffness: "SpringStiffness" = None
     ):
         super().__init__(damping=damping, friction=friction)
         self.spring_reference = spring_reference
@@ -37,4 +36,5 @@ class Dynamics(_PrevDynamics):
         _spring_reference = SpringReference.from_sdf(_c_spring_reference) if _c_spring_reference is not None else None
         _c_spring_stiffness = el.find("spring_stiffness")
         _spring_stiffness = SpringStiffness.from_sdf(_c_spring_stiffness) if _c_spring_stiffness is not None else None
-        return cls(damping=_base.damping, friction=_base.friction, spring_reference=_spring_reference, spring_stiffness=_spring_stiffness)
+        return cls(damping=_base.damping, friction=_base.friction, spring_reference=_spring_reference,
+                   spring_stiffness=_spring_stiffness)

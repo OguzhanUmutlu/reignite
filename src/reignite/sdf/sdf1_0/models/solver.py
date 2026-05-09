@@ -1,12 +1,10 @@
 from __future__ import annotations
 
+import math
 from xml.etree import ElementTree as ET
 
 from ..model import Model
 
-
-import math
-import sys
 
 def _parse_int32(raw: str) -> int:
     v = int(raw)
@@ -29,15 +27,14 @@ def _parse_double(raw: str) -> float:
     return v
 
 
-
 class Solver(Model):
     def __init__(
-        self,
-        type: str = "quick",
-        dt: float = 0.001,
-        iters: int = 50,
-        precon_iters: int = 0,
-        sor: float = 1.3
+            self,
+            type: str = "quick",
+            dt: float = 0.001,
+            iters: int = 50,
+            precon_iters: int = 0,
+            sor: float = 1.3
     ):
         self.type = type
         self.dt = dt

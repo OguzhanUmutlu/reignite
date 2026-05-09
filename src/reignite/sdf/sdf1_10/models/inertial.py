@@ -2,21 +2,20 @@ from __future__ import annotations
 
 from xml.etree import ElementTree as ET
 
-from ..model import Model
-from ...sdf1_9.models.inertial import Inertial as _PrevInertial
+from .fluid_added_mass import FluidAddedMass
+from .inertia import Inertia
 from .mass import Mass
 from .pose import Pose
-from .inertia import Inertia
-from .fluid_added_mass import FluidAddedMass
+from ...sdf1_9.models.inertial import Inertial as _PrevInertial
 
 
 class Inertial(_PrevInertial):
     def __init__(
-        self,
-        mass: "Mass" = None,
-        pose: "Pose" = None,
-        inertia: "Inertia" = None,
-        fluid_added_mass: "FluidAddedMass" = None
+            self,
+            mass: "Mass" = None,
+            pose: "Pose" = None,
+            inertia: "Inertia" = None,
+            fluid_added_mass: "FluidAddedMass" = None
     ):
         super().__init__(mass=mass, pose=pose, inertia=inertia)
         self.fluid_added_mass = fluid_added_mass

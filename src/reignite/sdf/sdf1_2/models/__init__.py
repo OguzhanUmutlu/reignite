@@ -28,4 +28,6 @@ from .surface import Surface
 from .visual import Visual
 from .world import World
 
-TAG_NAMES: list[str] = ["actor", "camera", "collision", "contact", "gazebo", "geometry", "gripper", "gui", "inertial", "joint", "light", "link", "model", "physics", "plugin", "projector", "ray", "rfid", "rfidtag", "road", "robot", "scene", "sensor", "state", "surface", "visual", "world"]
+TAG_NAMES: list[str] = ["actor", "camera", "collision", "contact", "gazebo", "geometry", "gripper", "gui", "inertial",
+                        "joint", "light", "link", "model", "physics", "plugin", "projector", "ray", "rfid", "rfidtag",
+                        "road", "robot", "scene", "sensor", "state", "surface", "visual", "world"]

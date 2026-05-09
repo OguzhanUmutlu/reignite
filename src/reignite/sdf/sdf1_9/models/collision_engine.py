@@ -2,10 +2,9 @@ from __future__ import annotations
 
 from xml.etree import ElementTree as ET
 
-from ..model import Model
-from ...sdf1_8.models.ode import Ode as _PrevOde
 from ...sdf1_8.models.bullet import Bullet as _PrevBullet
 from ...sdf1_8.models.collision_engine import CollisionEngine as _PrevCollisionEngine
+from ...sdf1_8.models.ode import Ode as _PrevOde
 
 
 class Ode(_PrevOde):

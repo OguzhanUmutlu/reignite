@@ -2,9 +2,9 @@ from __future__ import annotations
 
 from xml.etree import ElementTree as ET
 
-from ..model import Model
-from .min_height import MinHeight
 from .fade_dist import FadeDist
+from .min_height import MinHeight
+from ..model import Model
 
 
 class Blend(Model):

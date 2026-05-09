@@ -30,7 +30,9 @@ Surface = _models.Surface
 Visual = _models.Visual
 World = _models.World
 
-TAG_NAMES: list[str] = ["actor", "camera", "collision", "contact", "gazebo", "geometry", "gripper", "gui", "inertial", "joint", "light", "link", "model", "physics", "plugin", "projector", "ray", "rfid", "rfidtag", "road", "robot", "scene", "sensor", "state", "surface", "visual", "world"]
+TAG_NAMES: list[str] = ["actor", "camera", "collision", "contact", "gazebo", "geometry", "gripper", "gui", "inertial",
+                        "joint", "light", "link", "model", "physics", "plugin", "projector", "ray", "rfid", "rfidtag",
+                        "road", "robot", "scene", "sensor", "state", "surface", "visual", "world"]
 TAG_CLASS_MAP: dict[str, type] = {
     "actor": Actor,
     "camera": Camera,
@@ -60,6 +62,7 @@ TAG_CLASS_MAP: dict[str, type] = {
     "visual": Visual,
     "world": World,
 }
+
 
 def get_tag_class(tag: str) -> type | None:
     return TAG_CLASS_MAP.get(tag)
