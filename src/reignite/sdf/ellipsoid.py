@@ -5,14 +5,14 @@ from xml.etree import ElementTree as ET
 
 from ..utils.model import BaseModel
 from ..utils.errors import SDFError
-from ..utils.vector3 import Vector3
+from ..utils.vector3 import Vector3 as _SDFVector3
 
 
 class Radii(BaseModel):
-    def __init__(self, sdf_version: str, radii: Vector3 = None):
+    def __init__(self, sdf_version: str, radii: _SDFVector3 = None):
         self.__version__ = sdf_version
         if radii is None:
-            radii = Vector3.from_sdf("1 1 1")
+            radii = _SDFVector3.from_sdf("1 1 1")
         self.radii = radii
 
     def to_version(self, target_version: str) -> "Radii":
@@ -26,18 +26,14 @@ class Radii(BaseModel):
             return self.to_version(version).to_sdf()
         version = version or self.__version__
         el = ET.Element("radii")
-        if self.radii is None:
-            raise ValueError(f"'radii' is required in SDF version {version}")
         if self.radii is not None:
             el.text = self.radii.to_sdf()
         return el
 
     @classmethod
     def _from_sdf(cls, el: ET.Element, version: str):
-        if el.text is None:
-            return SDFError(f"'radii' is required in SDF version {version}")
         _text = el.text or "1 1 1"
-        _radii = Vector3._from_sdf(_text, version)
+        _radii = _SDFVector3._from_sdf(_text, version)
         if isinstance(_radii, SDFError):
             return _radii
         return cls(sdf_version=version, radii=_radii)
@@ -59,8 +55,6 @@ class Ellipsoid(BaseModel):
             return self.to_version(version).to_sdf()
         version = version or self.__version__
         el = ET.Element("ellipsoid")
-        if self.radii is None:
-            raise ValueError(f"'radii' is required in SDF version {version}")
         if self.radii is not None:
             el.append(self.radii.to_sdf(version))
         return el
@@ -75,6 +69,4 @@ class Ellipsoid(BaseModel):
             _radii = _res
         else:
             _radii = None
-        if _radii is None:
-            return SDFError(f"'radii' is required in SDF version {version}")
         return cls(sdf_version=version, radii=_radii)

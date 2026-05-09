@@ -57,16 +57,12 @@ class Min(BaseModel):
             return self.to_version(version).to_sdf()
         version = version or self.__version__
         el = ET.Element("min")
-        if self.min is None:
-            raise ValueError(f"'min' is required in SDF version {version}")
         if self.min is not None:
             el.text = str(self.min)
         return el
 
     @classmethod
     def _from_sdf(cls, el: ET.Element, version: str):
-        if el.text is None:
-            return SDFError(f"'min' is required in SDF version {version}")
         _text = el.text or 0
         _min = _parse_double(_text)
         if isinstance(_min, SDFError):
@@ -90,16 +86,12 @@ class Max(BaseModel):
             return self.to_version(version).to_sdf()
         version = version or self.__version__
         el = ET.Element("max")
-        if self.max is None:
-            raise ValueError(f"'max' is required in SDF version {version}")
         if self.max is not None:
             el.text = str(self.max)
         return el
 
     @classmethod
     def _from_sdf(cls, el: ET.Element, version: str):
-        if el.text is None:
-            return SDFError(f"'max' is required in SDF version {version}")
         _text = el.text or 1.0
         _max = _parse_double(_text)
         if isinstance(_max, SDFError):
@@ -123,18 +115,12 @@ class Radius(BaseModel):
             return self.to_version(version).to_sdf()
         version = version or self.__version__
         el = ET.Element("radius")
-        if cmp_version(version, "1.12") < 0:
-            if self.radius is None:
-                raise ValueError(f"'radius' is required in SDF version {version}")
         if self.radius is not None:
             el.text = str(self.radius)
         return el
 
     @classmethod
     def _from_sdf(cls, el: ET.Element, version: str):
-        if cmp_version(version, "1.12") < 0:
-            if el.text is None:
-                return SDFError(f"'radius' is required in SDF version {version}")
         _text = el.text or 0.5
         _radius = _parse_double(_text)
         if isinstance(_radius, SDFError):
@@ -207,17 +193,10 @@ class Sonar(BaseModel):
             return self.to_version(version).to_sdf()
         version = version or self.__version__
         el = ET.Element("sonar")
-        if self.min is None:
-            raise ValueError(f"'min' is required in SDF version {version}")
         if self.min is not None:
             el.append(self.min.to_sdf(version))
-        if self.max is None:
-            raise ValueError(f"'max' is required in SDF version {version}")
         if self.max is not None:
             el.append(self.max.to_sdf(version))
-        if cmp_version(version, "1.12") < 0:
-            if self.radius is None:
-                raise ValueError(f"'radius' is required in SDF version {version}")
         if self.radius is not None:
             el.append(self.radius.to_sdf(version))
         if self.geometry is not None:
@@ -234,8 +213,6 @@ class Sonar(BaseModel):
             _min = _res
         else:
             _min = None
-        if _min is None:
-            return SDFError(f"'min' is required in SDF version {version}")
         _c_max = el.find("max")
         if _c_max is not None:
             _res = Max._from_sdf(_c_max, version)
@@ -244,8 +221,6 @@ class Sonar(BaseModel):
             _max = _res
         else:
             _max = None
-        if _max is None:
-            return SDFError(f"'max' is required in SDF version {version}")
         _c_radius = el.find("radius")
         if _c_radius is not None:
             _res = Radius._from_sdf(_c_radius, version)
@@ -254,9 +229,6 @@ class Sonar(BaseModel):
             _radius = _res
         else:
             _radius = None
-        if cmp_version(version, "1.12") < 0:
-            if _radius is None:
-                return SDFError(f"'radius' is required in SDF version {version}")
         _c_geometry = el.find("geometry")
         if _c_geometry is not None:
             _res = Geometry._from_sdf(_c_geometry, version)

@@ -7,7 +7,7 @@ from typing import List
 
 from ..utils.model import BaseModel
 from ..utils.errors import SDFError
-from ..utils.pose import Pose
+from ..utils.pose import Pose as _SDFPose
 from ..utils.version import cmp_version
 from ..utils.migration import apply_migrations
 
@@ -61,16 +61,12 @@ class Uri(BaseModel):
             return self.to_version(version).to_sdf()
         version = version or self.__version__
         el = ET.Element("uri")
-        if self.uri is None:
-            raise ValueError(f"'uri' is required in SDF version {version}")
         if self.uri is not None:
             el.text = self.uri
         return el
 
     @classmethod
     def _from_sdf(cls, el: ET.Element, version: str):
-        if el.text is None:
-            return SDFError(f"'uri' is required in SDF version {version}")
         _text = el.text or "__default__"
         _uri = _text
         if isinstance(_uri, SDFError):
@@ -152,16 +148,12 @@ class Collision(BaseModel):
             return self.to_version(version).to_sdf()
         version = version or self.__version__
         el = ET.Element("collision")
-        if self.collision is None:
-            raise ValueError(f"'collision' is required in SDF version {version}")
         if self.collision is not None:
             el.text = self.collision
         return el
 
     @classmethod
     def _from_sdf(cls, el: ET.Element, version: str):
-        if el.text is None:
-            return SDFError(f"'collision' is required in SDF version {version}")
         _text = el.text or "__default__"
         _collision = _text
         if isinstance(_collision, SDFError):
@@ -185,8 +177,6 @@ class Contact(BaseModel):
             return self.to_version(version).to_sdf()
         version = version or self.__version__
         el = ET.Element("contact")
-        if not self.collision:
-            raise ValueError(f"'collision' is required in SDF version {version}")
         for item in (self.collision or []):
             el.append(item.to_sdf(version))
         return el
@@ -199,8 +189,6 @@ class Contact(BaseModel):
             if isinstance(_res, SDFError):
                 return _res.extend("collision")
             _collision.append(_res)
-        if not _collision:
-            return SDFError(f"'collision' is required in SDF version {version}")
         return cls(sdf_version=version, collision=_collision)
 
 
@@ -239,7 +227,7 @@ class Pose(BaseModel):
     def __init__(
         self,
         sdf_version: str,
-        pose: Pose = None,
+        pose: _SDFPose = None,
         frame: str = "",
         relative_to: str = "",
         rotation_format: str = "euler_rpy",
@@ -247,7 +235,7 @@ class Pose(BaseModel):
     ):
         self.__version__ = sdf_version
         if pose is None:
-            pose = Pose.from_sdf("0 0 0 0 0 0")
+            pose = _SDFPose.from_sdf("0 0 0 0 0 0")
         self.pose = pose
         self.frame = frame
         self.relative_to = relative_to
@@ -295,7 +283,7 @@ class Pose(BaseModel):
     @classmethod
     def _from_sdf(cls, el: ET.Element, version: str):
         _text = el.text or "0 0 0 0 0 0"
-        _pose = Pose._from_sdf(_text, version)
+        _pose = _SDFPose._from_sdf(_text, version)
         if isinstance(_pose, SDFError):
             return _pose
         _frame = el.get("frame", "")
@@ -325,8 +313,49 @@ class Pose(BaseModel):
         return cls(sdf_version=version, pose=_pose, frame=_frame, relative_to=_relative_to, rotation_format=_rotation_format, degrees=_degrees)
 
 
+class FramePose(BaseModel):
+    _MIGRATIONS = [{"version": "1.7", "ops": [{"type": "move", "from": "frame", "to": "relative_to"}]}]
+
+    def __init__(self, sdf_version: str, pose: _SDFPose = None, frame: str = ""):
+        self.__version__ = sdf_version
+        if pose is None:
+            pose = _SDFPose.from_sdf("0 0 0 0 0 0")
+        self.pose = pose
+        self.frame = frame
+
+    def to_version(self, target_version: str) -> "FramePose":
+        kwargs = {"sdf_version": target_version}
+        kwargs["pose"] = self.pose
+        kwargs["frame"] = self.frame
+        new_obj = self.__class__(**kwargs)
+        apply_migrations(new_obj, target_version)
+        return new_obj
+
+    def to_sdf(self, version: str = None) -> ET.Element:
+        if version is not None and version != self.__version__:
+            return self.to_version(version).to_sdf()
+        version = version or self.__version__
+        el = ET.Element("pose")
+        if self.pose is not None:
+            el.text = self.pose.to_sdf()
+        if self.frame is not None:
+            el.set("frame", self.frame)
+        return el
+
+    @classmethod
+    def _from_sdf(cls, el: ET.Element, version: str):
+        _text = el.text or "0 0 0 0 0 0"
+        _pose = _SDFPose._from_sdf(_text, version)
+        if isinstance(_pose, SDFError):
+            return _pose
+        _frame = el.get("frame", "")
+        if isinstance(_frame, SDFError):
+            return _frame.extend("@frame")
+        return cls(sdf_version=version, pose=_pose, frame=_frame)
+
+
 class Frame(BaseModel):
-    def __init__(self, sdf_version: str, name: str = "", pose: "Pose" = None):
+    def __init__(self, sdf_version: str, name: str = "", pose: "FramePose" = None):
         self.__version__ = sdf_version
         self.name = name
         self.pose = pose
@@ -360,7 +389,7 @@ class Frame(BaseModel):
             return _name.extend("@name")
         _c_pose = el.find("pose")
         if _c_pose is not None:
-            _res = Pose._from_sdf(_c_pose, version)
+            _res = FramePose._from_sdf(_c_pose, version)
             if isinstance(_res, SDFError):
                 return _res.extend("pose")
             _pose = _res
@@ -411,8 +440,6 @@ class AudioSource(BaseModel):
             return self.to_version(version).to_sdf()
         version = version or self.__version__
         el = ET.Element("audio_source")
-        if self.uri is None:
-            raise ValueError(f"'uri' is required in SDF version {version}")
         if self.uri is not None:
             el.append(self.uri.to_sdf(version))
         if self.pitch is not None:
@@ -439,8 +466,6 @@ class AudioSource(BaseModel):
             _uri = _res
         else:
             _uri = None
-        if _uri is None:
-            return SDFError(f"'uri' is required in SDF version {version}")
         _c_pitch = el.find("pitch")
         if _c_pitch is not None:
             _res = Pitch._from_sdf(_c_pitch, version)

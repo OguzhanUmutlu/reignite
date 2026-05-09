@@ -56,16 +56,12 @@ class Radius(BaseModel):
             return self.to_version(version).to_sdf()
         version = version or self.__version__
         el = ET.Element("radius")
-        if self.radius is None:
-            raise ValueError(f"'radius' is required in SDF version {version}")
         if self.radius is not None:
             el.text = str(self.radius)
         return el
 
     @classmethod
     def _from_sdf(cls, el: ET.Element, version: str):
-        if el.text is None:
-            return SDFError(f"'radius' is required in SDF version {version}")
         _text = el.text or 0.5
         _radius = _parse_double(_text)
         if isinstance(_radius, SDFError):
@@ -89,16 +85,12 @@ class Length(BaseModel):
             return self.to_version(version).to_sdf()
         version = version or self.__version__
         el = ET.Element("length")
-        if self.length is None:
-            raise ValueError(f"'length' is required in SDF version {version}")
         if self.length is not None:
             el.text = str(self.length)
         return el
 
     @classmethod
     def _from_sdf(cls, el: ET.Element, version: str):
-        if el.text is None:
-            return SDFError(f"'length' is required in SDF version {version}")
         _text = el.text or 1
         _length = _parse_double(_text)
         if isinstance(_length, SDFError):
@@ -124,12 +116,8 @@ class Capsule(BaseModel):
             return self.to_version(version).to_sdf()
         version = version or self.__version__
         el = ET.Element("capsule")
-        if self.radius is None:
-            raise ValueError(f"'radius' is required in SDF version {version}")
         if self.radius is not None:
             el.append(self.radius.to_sdf(version))
-        if self.length is None:
-            raise ValueError(f"'length' is required in SDF version {version}")
         if self.length is not None:
             el.append(self.length.to_sdf(version))
         return el
@@ -144,8 +132,6 @@ class Capsule(BaseModel):
             _radius = _res
         else:
             _radius = None
-        if _radius is None:
-            return SDFError(f"'radius' is required in SDF version {version}")
         _c_length = el.find("length")
         if _c_length is not None:
             _res = Length._from_sdf(_c_length, version)
@@ -154,6 +140,4 @@ class Capsule(BaseModel):
             _length = _res
         else:
             _length = None
-        if _length is None:
-            return SDFError(f"'length' is required in SDF version {version}")
         return cls(sdf_version=version, radius=_radius, length=_length)

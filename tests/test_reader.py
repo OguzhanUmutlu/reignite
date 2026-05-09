@@ -21,5 +21,5 @@ def test_read_sdf_string_model():
 def test_read_sdf_file_model():
     fixture = Path(__file__).parent / "fixtures" / "model.sdf"
     model = read_sdf(fixture)
-    assert type(model).__name__ == "Model"
-    assert getattr(model, "name") == "demo"
+    assert type(model).__name__ == "World"
+    assert getattr(model, "name") == "iris_runway"

@@ -5,7 +5,7 @@ from xml.etree import ElementTree as ET
 
 from ..utils.model import BaseModel
 from ..utils.errors import SDFError
-from ..utils.pose import Pose
+from ..utils.pose import Pose as _SDFPose
 from ..utils.migration import apply_migrations
 
 
@@ -15,14 +15,14 @@ class Pose(BaseModel):
     def __init__(
         self,
         sdf_version: str,
-        pose: Pose = None,
+        pose: _SDFPose = None,
         relative_to: str = "",
         rotation_format: str = "euler_rpy",
         degrees: bool = False
     ):
         self.__version__ = sdf_version
         if pose is None:
-            pose = Pose.from_sdf("0 0 0 0 0 0")
+            pose = _SDFPose.from_sdf("0 0 0 0 0 0")
         self.pose = pose
         self.relative_to = relative_to
         self.rotation_format = rotation_format
@@ -56,7 +56,7 @@ class Pose(BaseModel):
     @classmethod
     def _from_sdf(cls, el: ET.Element, version: str):
         _text = el.text or "0 0 0 0 0 0"
-        _pose = Pose._from_sdf(_text, version)
+        _pose = _SDFPose._from_sdf(_text, version)
         if isinstance(_pose, SDFError):
             return _pose
         _relative_to = el.get("relative_to", "")
@@ -89,8 +89,6 @@ class LightState(BaseModel):
             return self.to_version(version).to_sdf()
         version = version or self.__version__
         el = ET.Element("light_state")
-        if self.name is None:
-            raise ValueError(f"'name' is required in SDF version {version}")
         if self.name is not None:
             el.set("name", self.name)
         if self.pose is not None:
@@ -99,8 +97,6 @@ class LightState(BaseModel):
 
     @classmethod
     def _from_sdf(cls, el: ET.Element, version: str):
-        if el.get("name") is None:
-            return SDFError(f"'name' is required in SDF version {version}")
         _name = el.get("name", "__default__")
         if isinstance(_name, SDFError):
             return _name.extend("@name")

@@ -56,16 +56,12 @@ class Radius(BaseModel):
             return self.to_version(version).to_sdf()
         version = version or self.__version__
         el = ET.Element("radius")
-        if self.radius is None:
-            raise ValueError(f"'radius' is required in SDF version {version}")
         if self.radius is not None:
             el.text = str(self.radius)
         return el
 
     @classmethod
     def _from_sdf(cls, el: ET.Element, version: str):
-        if el.text is None:
-            return SDFError(f"'radius' is required in SDF version {version}")
         _text = el.text or 1
         _radius = _parse_double(_text)
         if isinstance(_radius, SDFError):
@@ -89,8 +85,6 @@ class Sphere(BaseModel):
             return self.to_version(version).to_sdf()
         version = version or self.__version__
         el = ET.Element("sphere")
-        if self.radius is None:
-            raise ValueError(f"'radius' is required in SDF version {version}")
         if self.radius is not None:
             el.append(self.radius.to_sdf(version))
         return el
@@ -105,6 +99,4 @@ class Sphere(BaseModel):
             _radius = _res
         else:
             _radius = None
-        if _radius is None:
-            return SDFError(f"'radius' is required in SDF version {version}")
         return cls(sdf_version=version, radius=_radius)

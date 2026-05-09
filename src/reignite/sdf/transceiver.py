@@ -172,16 +172,12 @@ class Gain(BaseModel):
             return self.to_version(version).to_sdf()
         version = version or self.__version__
         el = ET.Element("gain")
-        if self.gain is None:
-            raise ValueError(f"'gain' is required in SDF version {version}")
         if self.gain is not None:
             el.text = str(self.gain)
         return el
 
     @classmethod
     def _from_sdf(cls, el: ET.Element, version: str):
-        if el.text is None:
-            return SDFError(f"'gain' is required in SDF version {version}")
         _text = el.text or 2.5
         _gain = _parse_double(_text)
         if isinstance(_gain, SDFError):
@@ -205,16 +201,12 @@ class Power(BaseModel):
             return self.to_version(version).to_sdf()
         version = version or self.__version__
         el = ET.Element("power")
-        if self.power is None:
-            raise ValueError(f"'power' is required in SDF version {version}")
         if self.power is not None:
             el.text = str(self.power)
         return el
 
     @classmethod
     def _from_sdf(cls, el: ET.Element, version: str):
-        if el.text is None:
-            return SDFError(f"'power' is required in SDF version {version}")
         _text = el.text or 14.50
         _power = _parse_double(_text)
         if isinstance(_power, SDFError):
@@ -297,12 +289,8 @@ class Transceiver(BaseModel):
             el.append(self.min_frequency.to_sdf(version))
         if self.max_frequency is not None:
             el.append(self.max_frequency.to_sdf(version))
-        if self.gain is None:
-            raise ValueError(f"'gain' is required in SDF version {version}")
         if self.gain is not None:
             el.append(self.gain.to_sdf(version))
-        if self.power is None:
-            raise ValueError(f"'power' is required in SDF version {version}")
         if self.power is not None:
             el.append(self.power.to_sdf(version))
         if self.sensitivity is not None:
@@ -351,8 +339,6 @@ class Transceiver(BaseModel):
             _gain = _res
         else:
             _gain = None
-        if _gain is None:
-            return SDFError(f"'gain' is required in SDF version {version}")
         _c_power = el.find("power")
         if _c_power is not None:
             _res = Power._from_sdf(_c_power, version)
@@ -361,8 +347,6 @@ class Transceiver(BaseModel):
             _power = _res
         else:
             _power = None
-        if _power is None:
-            return SDFError(f"'power' is required in SDF version {version}")
         _c_sensitivity = el.find("sensitivity")
         if _c_sensitivity is not None:
             _res = Sensitivity._from_sdf(_c_sensitivity, version)

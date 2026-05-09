@@ -60,8 +60,6 @@ class Angle(BaseModel):
         el = ET.Element("angle")
         if self.angle is not None:
             el.text = str(self.angle)
-        if self.axis is None:
-            raise ValueError(f"'axis' is required in SDF version {version}")
         if self.axis is not None:
             el.set("axis", str(self.axis))
         return el
@@ -72,8 +70,6 @@ class Angle(BaseModel):
         _angle = _parse_double(_text)
         if isinstance(_angle, SDFError):
             return _angle
-        if el.get("axis") is None:
-            return SDFError(f"'axis' is required in SDF version {version}")
         _axis = _parse_uint32(el.get("axis", 0))
         if isinstance(_axis, SDFError):
             return _axis.extend("@axis")
@@ -398,8 +394,6 @@ class JointState(BaseModel):
             return self.to_version(version).to_sdf()
         version = version or self.__version__
         el = ET.Element("joint_state")
-        if self.name is None:
-            raise ValueError(f"'name' is required in SDF version {version}")
         if self.name is not None:
             el.set("name", self.name)
         if self.angle is not None:
@@ -412,8 +406,6 @@ class JointState(BaseModel):
 
     @classmethod
     def _from_sdf(cls, el: ET.Element, version: str):
-        if el.get("name") is None:
-            return SDFError(f"'name' is required in SDF version {version}")
         _name = el.get("name", "__default__")
         if isinstance(_name, SDFError):
             return _name.extend("@name")

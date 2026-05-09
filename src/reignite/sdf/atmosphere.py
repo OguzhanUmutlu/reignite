@@ -156,8 +156,6 @@ class Atmosphere(BaseModel):
             return self.to_version(version).to_sdf()
         version = version or self.__version__
         el = ET.Element("atmosphere")
-        if self.type is None:
-            raise ValueError(f"'type' is required in SDF version {version}")
         if self.type is not None:
             el.set("type", self.type)
         if self.temperature is not None:
@@ -170,8 +168,6 @@ class Atmosphere(BaseModel):
 
     @classmethod
     def _from_sdf(cls, el: ET.Element, version: str):
-        if el.get("type") is None:
-            return SDFError(f"'type' is required in SDF version {version}")
         _type = el.get("type", "adiabatic")
         if isinstance(_type, SDFError):
             return _type.extend("@type")

@@ -7,7 +7,7 @@ from typing import List
 
 from ..utils.model import BaseModel
 from ..utils.errors import SDFError
-from ..utils.vector3 import Vector3
+from ..utils.vector3 import Vector3 as _SDFVector3
 from ..utils.version import cmp_version
 
 
@@ -60,16 +60,12 @@ class Uri(BaseModel):
             return self.to_version(version).to_sdf()
         version = version or self.__version__
         el = ET.Element("uri")
-        if self.uri is None:
-            raise ValueError(f"'uri' is required in SDF version {version}")
         if self.uri is not None:
             el.text = self.uri
         return el
 
     @classmethod
     def _from_sdf(cls, el: ET.Element, version: str):
-        if el.text is None:
-            return SDFError(f"'uri' is required in SDF version {version}")
         _text = el.text or "__default__"
         _uri = _text
         if isinstance(_uri, SDFError):
@@ -78,10 +74,10 @@ class Uri(BaseModel):
 
 
 class Size(BaseModel):
-    def __init__(self, sdf_version: str, size: Vector3 = None):
+    def __init__(self, sdf_version: str, size: _SDFVector3 = None):
         self.__version__ = sdf_version
         if size is None:
-            size = Vector3.from_sdf("1 1 1")
+            size = _SDFVector3.from_sdf("1 1 1")
         self.size = size
 
     def to_version(self, target_version: str) -> "Size":
@@ -102,17 +98,17 @@ class Size(BaseModel):
     @classmethod
     def _from_sdf(cls, el: ET.Element, version: str):
         _text = el.text or "1 1 1"
-        _size = Vector3._from_sdf(_text, version)
+        _size = _SDFVector3._from_sdf(_text, version)
         if isinstance(_size, SDFError):
             return _size
         return cls(sdf_version=version, size=_size)
 
 
 class Pos(BaseModel):
-    def __init__(self, sdf_version: str, pos: Vector3 = None):
+    def __init__(self, sdf_version: str, pos: _SDFVector3 = None):
         self.__version__ = sdf_version
         if pos is None:
-            pos = Vector3.from_sdf("0 0 0")
+            pos = _SDFVector3.from_sdf("0 0 0")
         self.pos = pos
 
     def to_version(self, target_version: str) -> "Pos":
@@ -133,10 +129,39 @@ class Pos(BaseModel):
     @classmethod
     def _from_sdf(cls, el: ET.Element, version: str):
         _text = el.text or "0 0 0"
-        _pos = Vector3._from_sdf(_text, version)
+        _pos = _SDFVector3._from_sdf(_text, version)
         if isinstance(_pos, SDFError):
             return _pos
         return cls(sdf_version=version, pos=_pos)
+
+
+class TextureSize(BaseModel):
+    def __init__(self, sdf_version: str, size: float = 10):
+        self.__version__ = sdf_version
+        self.size = size
+
+    def to_version(self, target_version: str) -> "TextureSize":
+        kwargs = {"sdf_version": target_version}
+        kwargs["size"] = self.size
+        new_obj = self.__class__(**kwargs)
+        return new_obj
+
+    def to_sdf(self, version: str = None) -> ET.Element:
+        if version is not None and version != self.__version__:
+            return self.to_version(version).to_sdf()
+        version = version or self.__version__
+        el = ET.Element("size")
+        if self.size is not None:
+            el.text = str(self.size)
+        return el
+
+    @classmethod
+    def _from_sdf(cls, el: ET.Element, version: str):
+        _text = el.text or 10
+        _size = _parse_double(_text)
+        if isinstance(_size, SDFError):
+            return _size
+        return cls(sdf_version=version, size=_size)
 
 
 class Diffuse(BaseModel):
@@ -155,16 +180,12 @@ class Diffuse(BaseModel):
             return self.to_version(version).to_sdf()
         version = version or self.__version__
         el = ET.Element("diffuse")
-        if self.diffuse is None:
-            raise ValueError(f"'diffuse' is required in SDF version {version}")
         if self.diffuse is not None:
             el.text = self.diffuse
         return el
 
     @classmethod
     def _from_sdf(cls, el: ET.Element, version: str):
-        if el.text is None:
-            return SDFError(f"'diffuse' is required in SDF version {version}")
         _text = el.text or "__default__"
         _diffuse = _text
         if isinstance(_diffuse, SDFError):
@@ -188,16 +209,12 @@ class Normal(BaseModel):
             return self.to_version(version).to_sdf()
         version = version or self.__version__
         el = ET.Element("normal")
-        if self.normal is None:
-            raise ValueError(f"'normal' is required in SDF version {version}")
         if self.normal is not None:
             el.text = self.normal
         return el
 
     @classmethod
     def _from_sdf(cls, el: ET.Element, version: str):
-        if el.text is None:
-            return SDFError(f"'normal' is required in SDF version {version}")
         _text = el.text or "__default__"
         _normal = _text
         if isinstance(_normal, SDFError):
@@ -209,7 +226,7 @@ class Texture(BaseModel):
     def __init__(
         self,
         sdf_version: str,
-        size: "Size" = None,
+        size: "TextureSize" = None,
         diffuse: "Diffuse" = None,
         normal: "Normal" = None
     ):
@@ -231,16 +248,10 @@ class Texture(BaseModel):
             return self.to_version(version).to_sdf()
         version = version or self.__version__
         el = ET.Element("texture")
-        if self.size is None:
-            raise ValueError(f"'size' is required in SDF version {version}")
         if self.size is not None:
             el.append(self.size.to_sdf(version))
-        if self.diffuse is None:
-            raise ValueError(f"'diffuse' is required in SDF version {version}")
         if self.diffuse is not None:
             el.append(self.diffuse.to_sdf(version))
-        if self.normal is None:
-            raise ValueError(f"'normal' is required in SDF version {version}")
         if self.normal is not None:
             el.append(self.normal.to_sdf(version))
         return el
@@ -249,14 +260,12 @@ class Texture(BaseModel):
     def _from_sdf(cls, el: ET.Element, version: str):
         _c_size = el.find("size")
         if _c_size is not None:
-            _res = Size._from_sdf(_c_size, version)
+            _res = TextureSize._from_sdf(_c_size, version)
             if isinstance(_res, SDFError):
                 return _res.extend("size")
             _size = _res
         else:
             _size = None
-        if _size is None:
-            return SDFError(f"'size' is required in SDF version {version}")
         _c_diffuse = el.find("diffuse")
         if _c_diffuse is not None:
             _res = Diffuse._from_sdf(_c_diffuse, version)
@@ -265,8 +274,6 @@ class Texture(BaseModel):
             _diffuse = _res
         else:
             _diffuse = None
-        if _diffuse is None:
-            return SDFError(f"'diffuse' is required in SDF version {version}")
         _c_normal = el.find("normal")
         if _c_normal is not None:
             _res = Normal._from_sdf(_c_normal, version)
@@ -275,8 +282,6 @@ class Texture(BaseModel):
             _normal = _res
         else:
             _normal = None
-        if _normal is None:
-            return SDFError(f"'normal' is required in SDF version {version}")
         return cls(sdf_version=version, size=_size, diffuse=_diffuse, normal=_normal)
 
 
@@ -296,16 +301,12 @@ class MinHeight(BaseModel):
             return self.to_version(version).to_sdf()
         version = version or self.__version__
         el = ET.Element("min_height")
-        if self.min_height is None:
-            raise ValueError(f"'min_height' is required in SDF version {version}")
         if self.min_height is not None:
             el.text = str(self.min_height)
         return el
 
     @classmethod
     def _from_sdf(cls, el: ET.Element, version: str):
-        if el.text is None:
-            return SDFError(f"'min_height' is required in SDF version {version}")
         _text = el.text or 0
         _min_height = _parse_double(_text)
         if isinstance(_min_height, SDFError):
@@ -329,16 +330,12 @@ class FadeDist(BaseModel):
             return self.to_version(version).to_sdf()
         version = version or self.__version__
         el = ET.Element("fade_dist")
-        if self.fade_dist is None:
-            raise ValueError(f"'fade_dist' is required in SDF version {version}")
         if self.fade_dist is not None:
             el.text = str(self.fade_dist)
         return el
 
     @classmethod
     def _from_sdf(cls, el: ET.Element, version: str):
-        if el.text is None:
-            return SDFError(f"'fade_dist' is required in SDF version {version}")
         _text = el.text or 0
         _fade_dist = _parse_double(_text)
         if isinstance(_fade_dist, SDFError):
@@ -369,12 +366,8 @@ class Blend(BaseModel):
             return self.to_version(version).to_sdf()
         version = version or self.__version__
         el = ET.Element("blend")
-        if self.min_height is None:
-            raise ValueError(f"'min_height' is required in SDF version {version}")
         if self.min_height is not None:
             el.append(self.min_height.to_sdf(version))
-        if self.fade_dist is None:
-            raise ValueError(f"'fade_dist' is required in SDF version {version}")
         if self.fade_dist is not None:
             el.append(self.fade_dist.to_sdf(version))
         return el
@@ -389,8 +382,6 @@ class Blend(BaseModel):
             _min_height = _res
         else:
             _min_height = None
-        if _min_height is None:
-            return SDFError(f"'min_height' is required in SDF version {version}")
         _c_fade_dist = el.find("fade_dist")
         if _c_fade_dist is not None:
             _res = FadeDist._from_sdf(_c_fade_dist, version)
@@ -399,8 +390,6 @@ class Blend(BaseModel):
             _fade_dist = _res
         else:
             _fade_dist = None
-        if _fade_dist is None:
-            return SDFError(f"'fade_dist' is required in SDF version {version}")
         return cls(sdf_version=version, min_height=_min_height, fade_dist=_fade_dist)
 
 
@@ -507,8 +496,6 @@ class Heightmap(BaseModel):
             return self.to_version(version).to_sdf()
         version = version or self.__version__
         el = ET.Element("heightmap")
-        if self.uri is None:
-            raise ValueError(f"'uri' is required in SDF version {version}")
         if self.uri is not None:
             el.append(self.uri.to_sdf(version))
         if self.size is not None:
@@ -535,8 +522,6 @@ class Heightmap(BaseModel):
             _uri = _res
         else:
             _uri = None
-        if _uri is None:
-            return SDFError(f"'uri' is required in SDF version {version}")
         _c_size = el.find("size")
         if _c_size is not None:
             _res = Size._from_sdf(_c_size, version)

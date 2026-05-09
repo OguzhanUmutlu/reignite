@@ -7,7 +7,7 @@ from typing import List
 
 from ..utils.model import BaseModel
 from ..utils.errors import SDFError
-from ..utils.pose import Pose
+from ..utils.pose import Pose as _SDFPose
 from ..utils.version import cmp_version
 from ..utils.migration import apply_migrations
 
@@ -63,27 +63,17 @@ class Plugin(BaseModel):
             return self.to_version(version).to_sdf()
         version = version or self.__version__
         el = ET.Element("plugin")
-        if cmp_version(version, "1.12") < 0:
-            if self.name is None:
-                raise ValueError(f"'name' is required in SDF version {version}")
         if self.name is not None:
             el.set("name", self.name)
-        if self.filename is None:
-            raise ValueError(f"'filename' is required in SDF version {version}")
         if self.filename is not None:
             el.set("filename", self.filename)
         return el
 
     @classmethod
     def _from_sdf(cls, el: ET.Element, version: str):
-        if cmp_version(version, "1.12") < 0:
-            if el.get("name") is None:
-                return SDFError(f"'name' is required in SDF version {version}")
         _name = el.get("name", "__default__")
         if isinstance(_name, SDFError):
             return _name.extend("@name")
-        if el.get("filename") is None:
-            return SDFError(f"'filename' is required in SDF version {version}")
         _filename = el.get("filename", "__default__")
         if isinstance(_filename, SDFError):
             return _filename.extend("@filename")
@@ -106,16 +96,12 @@ class Texture(BaseModel):
             return self.to_version(version).to_sdf()
         version = version or self.__version__
         el = ET.Element("texture")
-        if self.texture is None:
-            raise ValueError(f"'texture' is required in SDF version {version}")
         if self.texture is not None:
             el.text = self.texture
         return el
 
     @classmethod
     def _from_sdf(cls, el: ET.Element, version: str):
-        if el.text is None:
-            return SDFError(f"'texture' is required in SDF version {version}")
         _text = el.text or "__default__"
         _texture = _text
         if isinstance(_texture, SDFError):
@@ -129,7 +115,7 @@ class Pose(BaseModel):
     def __init__(
         self,
         sdf_version: str,
-        pose: Pose = None,
+        pose: _SDFPose = None,
         frame: str = "",
         relative_to: str = "",
         rotation_format: str = "euler_rpy",
@@ -137,7 +123,7 @@ class Pose(BaseModel):
     ):
         self.__version__ = sdf_version
         if pose is None:
-            pose = Pose.from_sdf("0 0 0 0 0 0")
+            pose = _SDFPose.from_sdf("0 0 0 0 0 0")
         self.pose = pose
         self.frame = frame
         self.relative_to = relative_to
@@ -185,7 +171,7 @@ class Pose(BaseModel):
     @classmethod
     def _from_sdf(cls, el: ET.Element, version: str):
         _text = el.text or "0 0 0 0 0 0"
-        _pose = Pose._from_sdf(_text, version)
+        _pose = _SDFPose._from_sdf(_text, version)
         if isinstance(_pose, SDFError):
             return _pose
         _frame = el.get("frame", "")
@@ -302,8 +288,49 @@ class FarClip(BaseModel):
         return cls(sdf_version=version, far_clip=_far_clip)
 
 
+class FramePose(BaseModel):
+    _MIGRATIONS = [{"version": "1.7", "ops": [{"type": "move", "from": "frame", "to": "relative_to"}]}]
+
+    def __init__(self, sdf_version: str, pose: _SDFPose = None, frame: str = ""):
+        self.__version__ = sdf_version
+        if pose is None:
+            pose = _SDFPose.from_sdf("0 0 0 0 0 0")
+        self.pose = pose
+        self.frame = frame
+
+    def to_version(self, target_version: str) -> "FramePose":
+        kwargs = {"sdf_version": target_version}
+        kwargs["pose"] = self.pose
+        kwargs["frame"] = self.frame
+        new_obj = self.__class__(**kwargs)
+        apply_migrations(new_obj, target_version)
+        return new_obj
+
+    def to_sdf(self, version: str = None) -> ET.Element:
+        if version is not None and version != self.__version__:
+            return self.to_version(version).to_sdf()
+        version = version or self.__version__
+        el = ET.Element("pose")
+        if self.pose is not None:
+            el.text = self.pose.to_sdf()
+        if self.frame is not None:
+            el.set("frame", self.frame)
+        return el
+
+    @classmethod
+    def _from_sdf(cls, el: ET.Element, version: str):
+        _text = el.text or "0 0 0 0 0 0"
+        _pose = _SDFPose._from_sdf(_text, version)
+        if isinstance(_pose, SDFError):
+            return _pose
+        _frame = el.get("frame", "")
+        if isinstance(_frame, SDFError):
+            return _frame.extend("@frame")
+        return cls(sdf_version=version, pose=_pose, frame=_frame)
+
+
 class Frame(BaseModel):
-    def __init__(self, sdf_version: str, name: str = "", pose: "Pose" = None):
+    def __init__(self, sdf_version: str, name: str = "", pose: "FramePose" = None):
         self.__version__ = sdf_version
         self.name = name
         self.pose = pose
@@ -337,7 +364,7 @@ class Frame(BaseModel):
             return _name.extend("@name")
         _c_pose = el.find("pose")
         if _c_pose is not None:
-            _res = Pose._from_sdf(_c_pose, version)
+            _res = FramePose._from_sdf(_c_pose, version)
             if isinstance(_res, SDFError):
                 return _res.extend("pose")
             _pose = _res
@@ -430,14 +457,10 @@ class Projector(BaseModel):
             return self.to_version(version).to_sdf()
         version = version or self.__version__
         el = ET.Element("projector")
-        if self.name is None:
-            raise ValueError(f"'name' is required in SDF version {version}")
         if self.name is not None:
             el.set("name", self.name)
         for item in (self.plugin or []):
             el.append(item.to_sdf(version))
-        if self.texture is None:
-            raise ValueError(f"'texture' is required in SDF version {version}")
         if self.texture is not None:
             el.append(self.texture.to_sdf(version))
         if self.pose is not None:
@@ -456,8 +479,6 @@ class Projector(BaseModel):
 
     @classmethod
     def _from_sdf(cls, el: ET.Element, version: str):
-        if el.get("name") is None:
-            return SDFError(f"'name' is required in SDF version {version}")
         _name = el.get("name", "__default__")
         if isinstance(_name, SDFError):
             return _name.extend("@name")
@@ -475,8 +496,6 @@ class Projector(BaseModel):
             _texture = _res
         else:
             _texture = None
-        if _texture is None:
-            return SDFError(f"'texture' is required in SDF version {version}")
         _c_pose = el.find("pose")
         if _c_pose is not None:
             _res = Pose._from_sdf(_c_pose, version)

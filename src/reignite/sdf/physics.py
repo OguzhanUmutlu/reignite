@@ -5,7 +5,7 @@ from xml.etree import ElementTree as ET
 
 from ..utils.model import BaseModel
 from ..utils.errors import SDFError
-from ..utils.vector3 import Vector3
+from ..utils.vector3 import Vector3 as _SDFVector3
 from ..utils.version import cmp_version
 from ..utils.migration import apply_migrations
 
@@ -73,12 +73,12 @@ class MaxContacts(BaseModel):
 
 
 class Gravity(BaseModel):
-    def __init__(self, sdf_version: str, gravity: Vector3 = None, xyz: Vector3 = None):
+    def __init__(self, sdf_version: str, gravity: _SDFVector3 = None, xyz: _SDFVector3 = None):
         self.__version__ = sdf_version
         if gravity is None:
-            gravity = Vector3.from_sdf("0 0 -9.8")
+            gravity = _SDFVector3.from_sdf("0 0 -9.8")
         if xyz is None:
-            xyz = Vector3.from_sdf("0 0 -9.8")
+            xyz = _SDFVector3.from_sdf("0 0 -9.8")
         self.gravity = gravity
         self.xyz = xyz
 
@@ -98,31 +98,19 @@ class Gravity(BaseModel):
             return self.to_version(version).to_sdf()
         version = version or self.__version__
         el = ET.Element("gravity")
-        if cmp_version(version, "1.6") < 0:
-            if self.gravity is None:
-                raise ValueError(f"'gravity' is required in SDF version {version}")
         if self.gravity is not None:
             el.text = self.gravity.to_sdf()
-        if cmp_version(version, "1.2") < 0:
-            if self.xyz is None:
-                raise ValueError(f"'xyz' is required in SDF version {version}")
         if self.xyz is not None:
             el.set("xyz", self.xyz.to_sdf())
         return el
 
     @classmethod
     def _from_sdf(cls, el: ET.Element, version: str):
-        if cmp_version(version, "1.6") < 0:
-            if el.text is None:
-                return SDFError(f"'gravity' is required in SDF version {version}")
         _text = el.text or "0 0 -9.8"
-        _gravity = Vector3._from_sdf(_text, version)
+        _gravity = _SDFVector3._from_sdf(_text, version)
         if isinstance(_gravity, SDFError):
             return _gravity
-        if cmp_version(version, "1.2") < 0:
-            if el.get("xyz") is None:
-                return SDFError(f"'xyz' is required in SDF version {version}")
-        _xyz = Vector3._from_sdf(el.get("xyz", "0 0 -9.8"), version)
+        _xyz = _SDFVector3._from_sdf(el.get("xyz", "0 0 -9.8"), version)
         if isinstance(_xyz, SDFError):
             return _xyz.extend("@xyz")
         return cls(sdf_version=version, gravity=_gravity, xyz=_xyz)
@@ -146,18 +134,12 @@ class Dt(BaseModel):
             return self.to_version(version).to_sdf()
         version = version or self.__version__
         el = ET.Element("dt")
-        if cmp_version(version, "1.4") < 0:
-            if self.dt is None:
-                raise ValueError(f"'dt' is required in SDF version {version}")
         if self.dt is not None:
             el.text = str(self.dt)
         return el
 
     @classmethod
     def _from_sdf(cls, el: ET.Element, version: str):
-        if cmp_version(version, "1.4") < 0:
-            if el.text is None:
-                return SDFError(f"'dt' is required in SDF version {version}")
         _text = el.text or 0.003
         _dt = _parse_double(_text)
         if isinstance(_dt, SDFError):
@@ -181,16 +163,12 @@ class Type(BaseModel):
             return self.to_version(version).to_sdf()
         version = version or self.__version__
         el = ET.Element("type")
-        if self.type is None:
-            raise ValueError(f"'type' is required in SDF version {version}")
         if self.type is not None:
             el.text = self.type
         return el
 
     @classmethod
     def _from_sdf(cls, el: ET.Element, version: str):
-        if el.text is None:
-            return SDFError(f"'type' is required in SDF version {version}")
         _text = el.text or "sequential_impulse"
         _type = _text
         if isinstance(_type, SDFError):
@@ -243,16 +221,12 @@ class Iters(BaseModel):
             return self.to_version(version).to_sdf()
         version = version or self.__version__
         el = ET.Element("iters")
-        if self.iters is None:
-            raise ValueError(f"'iters' is required in SDF version {version}")
         if self.iters is not None:
             el.text = str(self.iters)
         return el
 
     @classmethod
     def _from_sdf(cls, el: ET.Element, version: str):
-        if el.text is None:
-            return SDFError(f"'iters' is required in SDF version {version}")
         _text = el.text or 50
         _iters = _parse_int32(_text)
         if isinstance(_iters, SDFError):
@@ -276,16 +250,12 @@ class Sor(BaseModel):
             return self.to_version(version).to_sdf()
         version = version or self.__version__
         el = ET.Element("sor")
-        if self.sor is None:
-            raise ValueError(f"'sor' is required in SDF version {version}")
         if self.sor is not None:
             el.text = str(self.sor)
         return el
 
     @classmethod
     def _from_sdf(cls, el: ET.Element, version: str):
-        if el.text is None:
-            return SDFError(f"'sor' is required in SDF version {version}")
         _text = el.text or 1.3
         _sor = _parse_double(_text)
         if isinstance(_sor, SDFError):
@@ -322,18 +292,12 @@ class Solver(BaseModel):
             return self.to_version(version).to_sdf()
         version = version or self.__version__
         el = ET.Element("solver")
-        if self.type is None:
-            raise ValueError(f"'type' is required in SDF version {version}")
         if self.type is not None:
             el.append(self.type.to_sdf(version))
         if self.min_step_size is not None:
             el.append(self.min_step_size.to_sdf(version))
-        if self.iters is None:
-            raise ValueError(f"'iters' is required in SDF version {version}")
         if self.iters is not None:
             el.append(self.iters.to_sdf(version))
-        if self.sor is None:
-            raise ValueError(f"'sor' is required in SDF version {version}")
         if self.sor is not None:
             el.append(self.sor.to_sdf(version))
         return el
@@ -348,8 +312,6 @@ class Solver(BaseModel):
             _type = _res
         else:
             _type = None
-        if _type is None:
-            return SDFError(f"'type' is required in SDF version {version}")
         _c_min_step_size = el.find("min_step_size")
         if _c_min_step_size is not None:
             _res = MinStepSize._from_sdf(_c_min_step_size, version)
@@ -366,8 +328,6 @@ class Solver(BaseModel):
             _iters = _res
         else:
             _iters = None
-        if _iters is None:
-            return SDFError(f"'iters' is required in SDF version {version}")
         _c_sor = el.find("sor")
         if _c_sor is not None:
             _res = Sor._from_sdf(_c_sor, version)
@@ -376,8 +336,6 @@ class Solver(BaseModel):
             _sor = _res
         else:
             _sor = None
-        if _sor is None:
-            return SDFError(f"'sor' is required in SDF version {version}")
         return cls(sdf_version=version, type=_type, min_step_size=_min_step_size, iters=_iters, sor=_sor)
 
 
@@ -397,16 +355,12 @@ class Cfm(BaseModel):
             return self.to_version(version).to_sdf()
         version = version or self.__version__
         el = ET.Element("cfm")
-        if self.cfm is None:
-            raise ValueError(f"'cfm' is required in SDF version {version}")
         if self.cfm is not None:
             el.text = str(self.cfm)
         return el
 
     @classmethod
     def _from_sdf(cls, el: ET.Element, version: str):
-        if el.text is None:
-            return SDFError(f"'cfm' is required in SDF version {version}")
         _text = el.text or 0
         _cfm = _parse_double(_text)
         if isinstance(_cfm, SDFError):
@@ -430,16 +384,12 @@ class Erp(BaseModel):
             return self.to_version(version).to_sdf()
         version = version or self.__version__
         el = ET.Element("erp")
-        if self.erp is None:
-            raise ValueError(f"'erp' is required in SDF version {version}")
         if self.erp is not None:
             el.text = str(self.erp)
         return el
 
     @classmethod
     def _from_sdf(cls, el: ET.Element, version: str):
-        if el.text is None:
-            return SDFError(f"'erp' is required in SDF version {version}")
         _text = el.text or 0.2
         _erp = _parse_double(_text)
         if isinstance(_erp, SDFError):
@@ -463,16 +413,12 @@ class ContactSurfaceLayer(BaseModel):
             return self.to_version(version).to_sdf()
         version = version or self.__version__
         el = ET.Element("contact_surface_layer")
-        if self.contact_surface_layer is None:
-            raise ValueError(f"'contact_surface_layer' is required in SDF version {version}")
         if self.contact_surface_layer is not None:
             el.text = str(self.contact_surface_layer)
         return el
 
     @classmethod
     def _from_sdf(cls, el: ET.Element, version: str):
-        if el.text is None:
-            return SDFError(f"'contact_surface_layer' is required in SDF version {version}")
         _text = el.text or 0.001
         _contact_surface_layer = _parse_double(_text)
         if isinstance(_contact_surface_layer, SDFError):
@@ -496,16 +442,12 @@ class SplitImpulse(BaseModel):
             return self.to_version(version).to_sdf()
         version = version or self.__version__
         el = ET.Element("split_impulse")
-        if self.split_impulse is None:
-            raise ValueError(f"'split_impulse' is required in SDF version {version}")
         if self.split_impulse is not None:
             el.text = str(self.split_impulse).lower()
         return el
 
     @classmethod
     def _from_sdf(cls, el: ET.Element, version: str):
-        if el.text is None:
-            return SDFError(f"'split_impulse' is required in SDF version {version}")
         _text = el.text or True
         _split_impulse = str(_text).strip().lower() == 'true'
         if isinstance(_split_impulse, SDFError):
@@ -529,16 +471,12 @@ class SplitImpulsePenetrationThreshold(BaseModel):
             return self.to_version(version).to_sdf()
         version = version or self.__version__
         el = ET.Element("split_impulse_penetration_threshold")
-        if self.split_impulse_penetration_threshold is None:
-            raise ValueError(f"'split_impulse_penetration_threshold' is required in SDF version {version}")
         if self.split_impulse_penetration_threshold is not None:
             el.text = str(self.split_impulse_penetration_threshold)
         return el
 
     @classmethod
     def _from_sdf(cls, el: ET.Element, version: str):
-        if el.text is None:
-            return SDFError(f"'split_impulse_penetration_threshold' is required in SDF version {version}")
         _text = el.text or -0.01
         _split_impulse_penetration_threshold = _parse_double(_text)
         if isinstance(_split_impulse_penetration_threshold, SDFError):
@@ -578,24 +516,14 @@ class Constraints(BaseModel):
             return self.to_version(version).to_sdf()
         version = version or self.__version__
         el = ET.Element("constraints")
-        if self.cfm is None:
-            raise ValueError(f"'cfm' is required in SDF version {version}")
         if self.cfm is not None:
             el.append(self.cfm.to_sdf(version))
-        if self.erp is None:
-            raise ValueError(f"'erp' is required in SDF version {version}")
         if self.erp is not None:
             el.append(self.erp.to_sdf(version))
-        if self.contact_surface_layer is None:
-            raise ValueError(f"'contact_surface_layer' is required in SDF version {version}")
         if self.contact_surface_layer is not None:
             el.append(self.contact_surface_layer.to_sdf(version))
-        if self.split_impulse is None:
-            raise ValueError(f"'split_impulse' is required in SDF version {version}")
         if self.split_impulse is not None:
             el.append(self.split_impulse.to_sdf(version))
-        if self.split_impulse_penetration_threshold is None:
-            raise ValueError(f"'split_impulse_penetration_threshold' is required in SDF version {version}")
         if self.split_impulse_penetration_threshold is not None:
             el.append(self.split_impulse_penetration_threshold.to_sdf(version))
         return el
@@ -610,8 +538,6 @@ class Constraints(BaseModel):
             _cfm = _res
         else:
             _cfm = None
-        if _cfm is None:
-            return SDFError(f"'cfm' is required in SDF version {version}")
         _c_erp = el.find("erp")
         if _c_erp is not None:
             _res = Erp._from_sdf(_c_erp, version)
@@ -620,8 +546,6 @@ class Constraints(BaseModel):
             _erp = _res
         else:
             _erp = None
-        if _erp is None:
-            return SDFError(f"'erp' is required in SDF version {version}")
         _c_contact_surface_layer = el.find("contact_surface_layer")
         if _c_contact_surface_layer is not None:
             _res = ContactSurfaceLayer._from_sdf(_c_contact_surface_layer, version)
@@ -630,8 +554,6 @@ class Constraints(BaseModel):
             _contact_surface_layer = _res
         else:
             _contact_surface_layer = None
-        if _contact_surface_layer is None:
-            return SDFError(f"'contact_surface_layer' is required in SDF version {version}")
         _c_split_impulse = el.find("split_impulse")
         if _c_split_impulse is not None:
             _res = SplitImpulse._from_sdf(_c_split_impulse, version)
@@ -640,8 +562,6 @@ class Constraints(BaseModel):
             _split_impulse = _res
         else:
             _split_impulse = None
-        if _split_impulse is None:
-            return SDFError(f"'split_impulse' is required in SDF version {version}")
         _c_split_impulse_penetration_threshold = el.find("split_impulse_penetration_threshold")
         if _c_split_impulse_penetration_threshold is not None:
             _res = SplitImpulsePenetrationThreshold._from_sdf(_c_split_impulse_penetration_threshold, version)
@@ -650,8 +570,6 @@ class Constraints(BaseModel):
             _split_impulse_penetration_threshold = _res
         else:
             _split_impulse_penetration_threshold = None
-        if _split_impulse_penetration_threshold is None:
-            return SDFError(f"'split_impulse_penetration_threshold' is required in SDF version {version}")
         return cls(sdf_version=version, cfm=_cfm, erp=_erp, contact_surface_layer=_contact_surface_layer, split_impulse=_split_impulse, split_impulse_penetration_threshold=_split_impulse_penetration_threshold)
 
 
@@ -687,19 +605,16 @@ class Bullet(BaseModel):
             return self.to_version(version).to_sdf()
         version = version or self.__version__
         el = ET.Element("bullet")
-        if cmp_version(version, "1.4") < 0:
-            if self.dt is None:
-                raise ValueError(f"'dt' is required in SDF version {version}")
         if self.dt is not None:
             el.append(self.dt.to_sdf(version))
         if cmp_version(version, "1.4") >= 0:
             if self.solver is None:
-                raise ValueError(f"'solver' is required in SDF version {version}")
+                self.solver = Solver(sdf_version=version)
         if self.solver is not None:
             el.append(self.solver.to_sdf(version))
         if cmp_version(version, "1.4") >= 0:
             if self.constraints is None:
-                raise ValueError(f"'constraints' is required in SDF version {version}")
+                self.constraints = Constraints(sdf_version=version)
         if self.constraints is not None:
             el.append(self.constraints.to_sdf(version))
         return el
@@ -714,9 +629,6 @@ class Bullet(BaseModel):
             _dt = _res
         else:
             _dt = None
-        if cmp_version(version, "1.4") < 0:
-            if _dt is None:
-                return SDFError(f"'dt' is required in SDF version {version}")
         _c_solver = el.find("solver")
         if _c_solver is not None:
             _res = Solver._from_sdf(_c_solver, version)
@@ -724,10 +636,10 @@ class Bullet(BaseModel):
                 return _res.extend("solver")
             _solver = _res
         else:
-            _solver = None
-        if cmp_version(version, "1.4") >= 0:
-            if _solver is None:
-                return SDFError(f"'solver' is required in SDF version {version}")
+            _res = Solver._from_sdf(ET.Element("solver"), version)
+            if isinstance(_res, SDFError):
+                return _res.extend("solver")
+            _solver = _res
         if _solver is not None and cmp_version(version, "1.4") < 0:
             return SDFError(f"'solver' is not supported in SDF version {version} (added in 1.4)")
         _c_constraints = el.find("constraints")
@@ -737,21 +649,518 @@ class Bullet(BaseModel):
                 return _res.extend("constraints")
             _constraints = _res
         else:
-            _constraints = None
-        if cmp_version(version, "1.4") >= 0:
-            if _constraints is None:
-                return SDFError(f"'constraints' is required in SDF version {version}")
+            _res = Constraints._from_sdf(ET.Element("constraints"), version)
+            if isinstance(_res, SDFError):
+                return _res.extend("constraints")
+            _constraints = _res
         if _constraints is not None and cmp_version(version, "1.4") < 0:
             return SDFError(f"'constraints' is not supported in SDF version {version} (added in 1.4)")
         return cls(sdf_version=version, dt=_dt, solver=_solver, constraints=_constraints)
+
+
+class SolverType(BaseModel):
+    def __init__(self, sdf_version: str, type: str = "quick"):
+        self.__version__ = sdf_version
+        self.type = type
+
+    def to_version(self, target_version: str) -> "SolverType":
+        if self.type is not None and cmp_version(target_version, "1.2") < 0:
+            raise ValueError(f"'type' is not supported in SDF version {target_version} (added in 1.2)")
+        kwargs = {"sdf_version": target_version}
+        kwargs["type"] = self.type
+        new_obj = self.__class__(**kwargs)
+        return new_obj
+
+    def to_sdf(self, version: str = None) -> ET.Element:
+        if version is not None and version != self.__version__:
+            return self.to_version(version).to_sdf()
+        version = version or self.__version__
+        el = ET.Element("type")
+        if self.type is not None:
+            el.text = self.type
+        return el
+
+    @classmethod
+    def _from_sdf(cls, el: ET.Element, version: str):
+        _text = el.text or "quick"
+        _type = _text
+        if isinstance(_type, SDFError):
+            return _type
+        if _type is not None and cmp_version(version, "1.2") < 0:
+            if _type != "quick":
+                return SDFError(f"'type' is not supported in SDF version {version} (added in 1.2)")
+        return cls(sdf_version=version, type=_type)
+
+
+class PreconIters(BaseModel):
+    def __init__(self, sdf_version: str, precon_iters: int = 0):
+        self.__version__ = sdf_version
+        self.precon_iters = precon_iters
+
+    def to_version(self, target_version: str) -> "PreconIters":
+        if self.precon_iters is not None and cmp_version(target_version, "1.2") < 0:
+            raise ValueError(f"'precon_iters' is not supported in SDF version {target_version} (added in 1.2)")
+        kwargs = {"sdf_version": target_version}
+        kwargs["precon_iters"] = self.precon_iters
+        new_obj = self.__class__(**kwargs)
+        return new_obj
+
+    def to_sdf(self, version: str = None) -> ET.Element:
+        if version is not None and version != self.__version__:
+            return self.to_version(version).to_sdf()
+        version = version or self.__version__
+        el = ET.Element("precon_iters")
+        if self.precon_iters is not None:
+            el.text = str(self.precon_iters)
+        return el
+
+    @classmethod
+    def _from_sdf(cls, el: ET.Element, version: str):
+        _text = el.text or 0
+        _precon_iters = _parse_int32(_text)
+        if isinstance(_precon_iters, SDFError):
+            return _precon_iters
+        if _precon_iters is not None and cmp_version(version, "1.2") < 0:
+            if _precon_iters != 0:
+                return SDFError(f"'precon_iters' is not supported in SDF version {version} (added in 1.2)")
+        return cls(sdf_version=version, precon_iters=_precon_iters)
+
+
+class SolverDt(BaseModel):
+    def __init__(self, sdf_version: str, dt: float = 0.001):
+        self.__version__ = sdf_version
+        self.dt = dt
+
+    def to_version(self, target_version: str) -> "SolverDt":
+        if self.dt is not None and cmp_version(target_version, "1.2") < 0:
+            raise ValueError(f"'dt' is not supported in SDF version {target_version} (added in 1.2)")
+        if self.dt is not None and cmp_version(target_version, "1.4") >= 0:
+            raise ValueError(f"'dt' is not supported in SDF version {target_version} (removed in 1.4)")
+        kwargs = {"sdf_version": target_version}
+        kwargs["dt"] = self.dt
+        new_obj = self.__class__(**kwargs)
+        return new_obj
+
+    def to_sdf(self, version: str = None) -> ET.Element:
+        if version is not None and version != self.__version__:
+            return self.to_version(version).to_sdf()
+        version = version or self.__version__
+        el = ET.Element("dt")
+        if self.dt is not None:
+            el.text = str(self.dt)
+        return el
+
+    @classmethod
+    def _from_sdf(cls, el: ET.Element, version: str):
+        _text = el.text or 0.001
+        _dt = _parse_double(_text)
+        if isinstance(_dt, SDFError):
+            return _dt
+        if _dt is not None and cmp_version(version, "1.2") < 0:
+            if _dt != 0.001:
+                return SDFError(f"'dt' is not supported in SDF version {version} (added in 1.2)")
+        return cls(sdf_version=version, dt=_dt)
+
+
+class UseDynamicMoiRescaling(BaseModel):
+    def __init__(self, sdf_version: str, use_dynamic_moi_rescaling: bool = False):
+        self.__version__ = sdf_version
+        self.use_dynamic_moi_rescaling = use_dynamic_moi_rescaling
+
+    def to_version(self, target_version: str) -> "UseDynamicMoiRescaling":
+        if self.use_dynamic_moi_rescaling is not None and cmp_version(target_version, "1.4") < 0:
+            raise ValueError(f"'use_dynamic_moi_rescaling' is not supported in SDF version {target_version} (added in 1.4)")
+        kwargs = {"sdf_version": target_version}
+        kwargs["use_dynamic_moi_rescaling"] = self.use_dynamic_moi_rescaling
+        new_obj = self.__class__(**kwargs)
+        return new_obj
+
+    def to_sdf(self, version: str = None) -> ET.Element:
+        if version is not None and version != self.__version__:
+            return self.to_version(version).to_sdf()
+        version = version or self.__version__
+        el = ET.Element("use_dynamic_moi_rescaling")
+        if self.use_dynamic_moi_rescaling is not None:
+            el.text = str(self.use_dynamic_moi_rescaling).lower()
+        return el
+
+    @classmethod
+    def _from_sdf(cls, el: ET.Element, version: str):
+        _text = el.text or False
+        _use_dynamic_moi_rescaling = str(_text).strip().lower() == 'true'
+        if isinstance(_use_dynamic_moi_rescaling, SDFError):
+            return _use_dynamic_moi_rescaling
+        if _use_dynamic_moi_rescaling is not None and cmp_version(version, "1.4") < 0:
+            if _use_dynamic_moi_rescaling != False:
+                return SDFError(f"'use_dynamic_moi_rescaling' is not supported in SDF version {version} (added in 1.4)")
+        return cls(sdf_version=version, use_dynamic_moi_rescaling=_use_dynamic_moi_rescaling)
+
+
+class ThreadPositionCorrection(BaseModel):
+    def __init__(self, sdf_version: str, thread_position_correction: bool = False):
+        self.__version__ = sdf_version
+        self.thread_position_correction = thread_position_correction
+
+    def to_version(self, target_version: str) -> "ThreadPositionCorrection":
+        if self.thread_position_correction is not None and cmp_version(target_version, "1.6") < 0:
+            raise ValueError(f"'thread_position_correction' is not supported in SDF version {target_version} (added in 1.6)")
+        kwargs = {"sdf_version": target_version}
+        kwargs["thread_position_correction"] = self.thread_position_correction
+        new_obj = self.__class__(**kwargs)
+        return new_obj
+
+    def to_sdf(self, version: str = None) -> ET.Element:
+        if version is not None and version != self.__version__:
+            return self.to_version(version).to_sdf()
+        version = version or self.__version__
+        el = ET.Element("thread_position_correction")
+        if self.thread_position_correction is not None:
+            el.text = str(self.thread_position_correction).lower()
+        return el
+
+    @classmethod
+    def _from_sdf(cls, el: ET.Element, version: str):
+        _text = el.text or False
+        _thread_position_correction = str(_text).strip().lower() == 'true'
+        if isinstance(_thread_position_correction, SDFError):
+            return _thread_position_correction
+        if _thread_position_correction is not None and cmp_version(version, "1.6") < 0:
+            if _thread_position_correction != False:
+                return SDFError(f"'thread_position_correction' is not supported in SDF version {version} (added in 1.6)")
+        return cls(sdf_version=version, thread_position_correction=_thread_position_correction)
+
+
+class FrictionModel(BaseModel):
+    def __init__(self, sdf_version: str, friction_model: str = "pyramid_model"):
+        self.__version__ = sdf_version
+        self.friction_model = friction_model
+
+    def to_version(self, target_version: str) -> "FrictionModel":
+        if self.friction_model is not None and cmp_version(target_version, "1.6") < 0:
+            raise ValueError(f"'friction_model' is not supported in SDF version {target_version} (added in 1.6)")
+        kwargs = {"sdf_version": target_version}
+        kwargs["friction_model"] = self.friction_model
+        new_obj = self.__class__(**kwargs)
+        return new_obj
+
+    def to_sdf(self, version: str = None) -> ET.Element:
+        if version is not None and version != self.__version__:
+            return self.to_version(version).to_sdf()
+        version = version or self.__version__
+        el = ET.Element("friction_model")
+        if self.friction_model is not None:
+            el.text = self.friction_model
+        return el
+
+    @classmethod
+    def _from_sdf(cls, el: ET.Element, version: str):
+        _text = el.text or "pyramid_model"
+        _friction_model = _text
+        if isinstance(_friction_model, SDFError):
+            return _friction_model
+        if _friction_model is not None and cmp_version(version, "1.6") < 0:
+            if _friction_model != "pyramid_model":
+                return SDFError(f"'friction_model' is not supported in SDF version {version} (added in 1.6)")
+        return cls(sdf_version=version, friction_model=_friction_model)
+
+
+class IslandThreads(BaseModel):
+    def __init__(self, sdf_version: str, island_threads: int = 0):
+        self.__version__ = sdf_version
+        self.island_threads = island_threads
+
+    def to_version(self, target_version: str) -> "IslandThreads":
+        if self.island_threads is not None and cmp_version(target_version, "1.6") < 0:
+            raise ValueError(f"'island_threads' is not supported in SDF version {target_version} (added in 1.6)")
+        kwargs = {"sdf_version": target_version}
+        kwargs["island_threads"] = self.island_threads
+        new_obj = self.__class__(**kwargs)
+        return new_obj
+
+    def to_sdf(self, version: str = None) -> ET.Element:
+        if version is not None and version != self.__version__:
+            return self.to_version(version).to_sdf()
+        version = version or self.__version__
+        el = ET.Element("island_threads")
+        if self.island_threads is not None:
+            el.text = str(self.island_threads)
+        return el
+
+    @classmethod
+    def _from_sdf(cls, el: ET.Element, version: str):
+        _text = el.text or 0
+        _island_threads = _parse_int32(_text)
+        if isinstance(_island_threads, SDFError):
+            return _island_threads
+        if _island_threads is not None and cmp_version(version, "1.6") < 0:
+            if _island_threads != 0:
+                return SDFError(f"'island_threads' is not supported in SDF version {version} (added in 1.6)")
+        return cls(sdf_version=version, island_threads=_island_threads)
+
+
+class OdeSolver(BaseModel):
+    def __init__(
+        self,
+        sdf_version: str,
+        type: str = "quick",
+        dt: float = 0.001,
+        iters: int = 50,
+        precon_iters: int = 0,
+        sor: float = 1.3,
+        use_dynamic_moi_rescaling: "UseDynamicMoiRescaling" = None,
+        min_step_size: "MinStepSize" = None,
+        thread_position_correction: "ThreadPositionCorrection" = None,
+        friction_model: "FrictionModel" = None,
+        island_threads: "IslandThreads" = None
+    ):
+        self.__version__ = sdf_version
+        self.type = type
+        self.dt = dt
+        self.iters = iters
+        self.precon_iters = precon_iters
+        self.sor = sor
+        self.use_dynamic_moi_rescaling = use_dynamic_moi_rescaling
+        self.min_step_size = min_step_size
+        self.thread_position_correction = thread_position_correction
+        self.friction_model = friction_model
+        self.island_threads = island_threads
+
+    def to_version(self, target_version: str) -> "OdeSolver":
+        if self.type is not None and cmp_version(target_version, "1.2") >= 0:
+            raise ValueError(f"'type' is not supported in SDF version {target_version} (removed in 1.2)")
+        if self.dt is not None and cmp_version(target_version, "1.2") >= 0:
+            raise ValueError(f"'dt' is not supported in SDF version {target_version} (removed in 1.2)")
+        if self.iters is not None and cmp_version(target_version, "1.2") >= 0:
+            raise ValueError(f"'iters' is not supported in SDF version {target_version} (removed in 1.2)")
+        if self.precon_iters is not None and cmp_version(target_version, "1.2") >= 0:
+            raise ValueError(f"'precon_iters' is not supported in SDF version {target_version} (removed in 1.2)")
+        if self.sor is not None and cmp_version(target_version, "1.2") >= 0:
+            raise ValueError(f"'sor' is not supported in SDF version {target_version} (removed in 1.2)")
+        if self.use_dynamic_moi_rescaling is not None and cmp_version(target_version, "1.4") < 0:
+            raise ValueError(f"'use_dynamic_moi_rescaling' is not supported in SDF version {target_version} (added in 1.4)")
+        if self.min_step_size is not None and cmp_version(target_version, "1.4") < 0:
+            raise ValueError(f"'min_step_size' is not supported in SDF version {target_version} (added in 1.4)")
+        if self.thread_position_correction is not None and cmp_version(target_version, "1.6") < 0:
+            raise ValueError(f"'thread_position_correction' is not supported in SDF version {target_version} (added in 1.6)")
+        if self.friction_model is not None and cmp_version(target_version, "1.6") < 0:
+            raise ValueError(f"'friction_model' is not supported in SDF version {target_version} (added in 1.6)")
+        if self.island_threads is not None and cmp_version(target_version, "1.6") < 0:
+            raise ValueError(f"'island_threads' is not supported in SDF version {target_version} (added in 1.6)")
+        kwargs = {"sdf_version": target_version}
+        kwargs["type"] = self.type
+        kwargs["dt"] = self.dt
+        kwargs["iters"] = self.iters
+        kwargs["precon_iters"] = self.precon_iters
+        kwargs["sor"] = self.sor
+        kwargs["use_dynamic_moi_rescaling"] = self.use_dynamic_moi_rescaling.to_version(target_version) if self.use_dynamic_moi_rescaling is not None else None
+        kwargs["min_step_size"] = self.min_step_size.to_version(target_version) if self.min_step_size is not None else None
+        kwargs["thread_position_correction"] = self.thread_position_correction.to_version(target_version) if self.thread_position_correction is not None else None
+        kwargs["friction_model"] = self.friction_model.to_version(target_version) if self.friction_model is not None else None
+        kwargs["island_threads"] = self.island_threads.to_version(target_version) if self.island_threads is not None else None
+        new_obj = self.__class__(**kwargs)
+        return new_obj
+
+    def to_sdf(self, version: str = None) -> ET.Element:
+        if version is not None and version != self.__version__:
+            return self.to_version(version).to_sdf()
+        version = version or self.__version__
+        el = ET.Element("solver")
+        if self.type is not None:
+            el.set("type", self.type)
+        if self.dt is not None:
+            el.set("dt", str(self.dt))
+        if self.iters is not None:
+            el.set("iters", str(self.iters))
+        if self.precon_iters is not None:
+            el.set("precon_iters", str(self.precon_iters))
+        if self.sor is not None:
+            el.set("sor", str(self.sor))
+        if self.use_dynamic_moi_rescaling is not None:
+            el.append(self.use_dynamic_moi_rescaling.to_sdf(version))
+        if self.min_step_size is not None:
+            el.append(self.min_step_size.to_sdf(version))
+        if self.thread_position_correction is not None:
+            el.append(self.thread_position_correction.to_sdf(version))
+        if self.friction_model is not None:
+            el.append(self.friction_model.to_sdf(version))
+        if self.island_threads is not None:
+            el.append(self.island_threads.to_sdf(version))
+        return el
+
+    @classmethod
+    def _from_sdf(cls, el: ET.Element, version: str):
+        _type = el.get("type", "quick")
+        if isinstance(_type, SDFError):
+            return _type.extend("@type")
+        _dt = _parse_double(el.get("dt", 0.001))
+        if isinstance(_dt, SDFError):
+            return _dt.extend("@dt")
+        _iters = _parse_int32(el.get("iters", 50))
+        if isinstance(_iters, SDFError):
+            return _iters.extend("@iters")
+        _precon_iters = _parse_int32(el.get("precon_iters", 0))
+        if isinstance(_precon_iters, SDFError):
+            return _precon_iters.extend("@precon_iters")
+        _sor = _parse_double(el.get("sor", 1.3))
+        if isinstance(_sor, SDFError):
+            return _sor.extend("@sor")
+        _c_use_dynamic_moi_rescaling = el.find("use_dynamic_moi_rescaling")
+        if _c_use_dynamic_moi_rescaling is not None:
+            _res = UseDynamicMoiRescaling._from_sdf(_c_use_dynamic_moi_rescaling, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("use_dynamic_moi_rescaling")
+            _use_dynamic_moi_rescaling = _res
+        else:
+            _use_dynamic_moi_rescaling = None
+        if _use_dynamic_moi_rescaling is not None and cmp_version(version, "1.4") < 0:
+            return SDFError(f"'use_dynamic_moi_rescaling' is not supported in SDF version {version} (added in 1.4)")
+        _c_min_step_size = el.find("min_step_size")
+        if _c_min_step_size is not None:
+            _res = MinStepSize._from_sdf(_c_min_step_size, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("min_step_size")
+            _min_step_size = _res
+        else:
+            _min_step_size = None
+        if _min_step_size is not None and cmp_version(version, "1.4") < 0:
+            return SDFError(f"'min_step_size' is not supported in SDF version {version} (added in 1.4)")
+        _c_thread_position_correction = el.find("thread_position_correction")
+        if _c_thread_position_correction is not None:
+            _res = ThreadPositionCorrection._from_sdf(_c_thread_position_correction, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("thread_position_correction")
+            _thread_position_correction = _res
+        else:
+            _thread_position_correction = None
+        if _thread_position_correction is not None and cmp_version(version, "1.6") < 0:
+            return SDFError(f"'thread_position_correction' is not supported in SDF version {version} (added in 1.6)")
+        _c_friction_model = el.find("friction_model")
+        if _c_friction_model is not None:
+            _res = FrictionModel._from_sdf(_c_friction_model, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("friction_model")
+            _friction_model = _res
+        else:
+            _friction_model = None
+        if _friction_model is not None and cmp_version(version, "1.6") < 0:
+            return SDFError(f"'friction_model' is not supported in SDF version {version} (added in 1.6)")
+        _c_island_threads = el.find("island_threads")
+        if _c_island_threads is not None:
+            _res = IslandThreads._from_sdf(_c_island_threads, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("island_threads")
+            _island_threads = _res
+        else:
+            _island_threads = None
+        if _island_threads is not None and cmp_version(version, "1.6") < 0:
+            return SDFError(f"'island_threads' is not supported in SDF version {version} (added in 1.6)")
+        return cls(sdf_version=version, type=_type, dt=_dt, iters=_iters, precon_iters=_precon_iters, sor=_sor, use_dynamic_moi_rescaling=_use_dynamic_moi_rescaling, min_step_size=_min_step_size, thread_position_correction=_thread_position_correction, friction_model=_friction_model, island_threads=_island_threads)
+
+
+class ContactMaxCorrectingVel(BaseModel):
+    def __init__(self, sdf_version: str, contact_max_correcting_vel: float = 100.0):
+        self.__version__ = sdf_version
+        self.contact_max_correcting_vel = contact_max_correcting_vel
+
+    def to_version(self, target_version: str) -> "ContactMaxCorrectingVel":
+        if self.contact_max_correcting_vel is not None and cmp_version(target_version, "1.2") < 0:
+            raise ValueError(f"'contact_max_correcting_vel' is not supported in SDF version {target_version} (added in 1.2)")
+        kwargs = {"sdf_version": target_version}
+        kwargs["contact_max_correcting_vel"] = self.contact_max_correcting_vel
+        new_obj = self.__class__(**kwargs)
+        return new_obj
+
+    def to_sdf(self, version: str = None) -> ET.Element:
+        if version is not None and version != self.__version__:
+            return self.to_version(version).to_sdf()
+        version = version or self.__version__
+        el = ET.Element("contact_max_correcting_vel")
+        if self.contact_max_correcting_vel is not None:
+            el.text = str(self.contact_max_correcting_vel)
+        return el
+
+    @classmethod
+    def _from_sdf(cls, el: ET.Element, version: str):
+        _text = el.text or 100.0
+        _contact_max_correcting_vel = _parse_double(_text)
+        if isinstance(_contact_max_correcting_vel, SDFError):
+            return _contact_max_correcting_vel
+        if _contact_max_correcting_vel is not None and cmp_version(version, "1.2") < 0:
+            if _contact_max_correcting_vel != 100.0:
+                return SDFError(f"'contact_max_correcting_vel' is not supported in SDF version {version} (added in 1.2)")
+        return cls(sdf_version=version, contact_max_correcting_vel=_contact_max_correcting_vel)
+
+
+class OdeConstraints(BaseModel):
+    def __init__(
+        self,
+        sdf_version: str,
+        cfm: float = 0,
+        erp: float = 0.2,
+        contact_max_correcting_vel: float = 100.0,
+        contact_surface_layer: float = 0.001
+    ):
+        self.__version__ = sdf_version
+        self.cfm = cfm
+        self.erp = erp
+        self.contact_max_correcting_vel = contact_max_correcting_vel
+        self.contact_surface_layer = contact_surface_layer
+
+    def to_version(self, target_version: str) -> "OdeConstraints":
+        if self.cfm is not None and cmp_version(target_version, "1.2") >= 0:
+            raise ValueError(f"'cfm' is not supported in SDF version {target_version} (removed in 1.2)")
+        if self.erp is not None and cmp_version(target_version, "1.2") >= 0:
+            raise ValueError(f"'erp' is not supported in SDF version {target_version} (removed in 1.2)")
+        if self.contact_max_correcting_vel is not None and cmp_version(target_version, "1.2") >= 0:
+            raise ValueError(f"'contact_max_correcting_vel' is not supported in SDF version {target_version} (removed in 1.2)")
+        if self.contact_surface_layer is not None and cmp_version(target_version, "1.2") >= 0:
+            raise ValueError(f"'contact_surface_layer' is not supported in SDF version {target_version} (removed in 1.2)")
+        kwargs = {"sdf_version": target_version}
+        kwargs["cfm"] = self.cfm
+        kwargs["erp"] = self.erp
+        kwargs["contact_max_correcting_vel"] = self.contact_max_correcting_vel
+        kwargs["contact_surface_layer"] = self.contact_surface_layer
+        new_obj = self.__class__(**kwargs)
+        return new_obj
+
+    def to_sdf(self, version: str = None) -> ET.Element:
+        if version is not None and version != self.__version__:
+            return self.to_version(version).to_sdf()
+        version = version or self.__version__
+        el = ET.Element("constraints")
+        if self.cfm is not None:
+            el.set("cfm", str(self.cfm))
+        if self.erp is not None:
+            el.set("erp", str(self.erp))
+        if self.contact_max_correcting_vel is not None:
+            el.set("contact_max_correcting_vel", str(self.contact_max_correcting_vel))
+        if self.contact_surface_layer is not None:
+            el.set("contact_surface_layer", str(self.contact_surface_layer))
+        return el
+
+    @classmethod
+    def _from_sdf(cls, el: ET.Element, version: str):
+        _cfm = _parse_double(el.get("cfm", 0))
+        if isinstance(_cfm, SDFError):
+            return _cfm.extend("@cfm")
+        _erp = _parse_double(el.get("erp", 0.2))
+        if isinstance(_erp, SDFError):
+            return _erp.extend("@erp")
+        _contact_max_correcting_vel = _parse_double(el.get("contact_max_correcting_vel", 100.0))
+        if isinstance(_contact_max_correcting_vel, SDFError):
+            return _contact_max_correcting_vel.extend("@contact_max_correcting_vel")
+        _contact_surface_layer = _parse_double(el.get("contact_surface_layer", 0.001))
+        if isinstance(_contact_surface_layer, SDFError):
+            return _contact_surface_layer.extend("@contact_surface_layer")
+        return cls(sdf_version=version, cfm=_cfm, erp=_erp, contact_max_correcting_vel=_contact_max_correcting_vel, contact_surface_layer=_contact_surface_layer)
 
 
 class Ode(BaseModel):
     def __init__(
         self,
         sdf_version: str,
-        solver: "Solver" = None,
-        constraints: "Constraints" = None
+        solver: "OdeSolver" = None,
+        constraints: "OdeConstraints" = None
     ):
         self.__version__ = sdf_version
         self.solver = solver
@@ -770,11 +1179,11 @@ class Ode(BaseModel):
         version = version or self.__version__
         el = ET.Element("ode")
         if self.solver is None:
-            raise ValueError(f"'solver' is required in SDF version {version}")
+            self.solver = OdeSolver(sdf_version=version)
         if self.solver is not None:
             el.append(self.solver.to_sdf(version))
         if self.constraints is None:
-            raise ValueError(f"'constraints' is required in SDF version {version}")
+            self.constraints = OdeConstraints(sdf_version=version)
         if self.constraints is not None:
             el.append(self.constraints.to_sdf(version))
         return el
@@ -783,24 +1192,26 @@ class Ode(BaseModel):
     def _from_sdf(cls, el: ET.Element, version: str):
         _c_solver = el.find("solver")
         if _c_solver is not None:
-            _res = Solver._from_sdf(_c_solver, version)
+            _res = OdeSolver._from_sdf(_c_solver, version)
             if isinstance(_res, SDFError):
                 return _res.extend("solver")
             _solver = _res
         else:
-            _solver = None
-        if _solver is None:
-            return SDFError(f"'solver' is required in SDF version {version}")
+            _res = OdeSolver._from_sdf(ET.Element("solver"), version)
+            if isinstance(_res, SDFError):
+                return _res.extend("solver")
+            _solver = _res
         _c_constraints = el.find("constraints")
         if _c_constraints is not None:
-            _res = Constraints._from_sdf(_c_constraints, version)
+            _res = OdeConstraints._from_sdf(_c_constraints, version)
             if isinstance(_res, SDFError):
                 return _res.extend("constraints")
             _constraints = _res
         else:
-            _constraints = None
-        if _constraints is None:
-            return SDFError(f"'constraints' is required in SDF version {version}")
+            _res = OdeConstraints._from_sdf(ET.Element("constraints"), version)
+            if isinstance(_res, SDFError):
+                return _res.extend("constraints")
+            _constraints = _res
         return cls(sdf_version=version, solver=_solver, constraints=_constraints)
 
 
@@ -824,18 +1235,12 @@ class UpdateRate(BaseModel):
             return self.to_version(version).to_sdf()
         version = version or self.__version__
         el = ET.Element("update_rate")
-        if cmp_version(version, "1.2") >= 0 and cmp_version(version, "1.4") < 0:
-            if self.update_rate is None:
-                raise ValueError(f"'update_rate' is required in SDF version {version}")
         if self.update_rate is not None:
             el.text = str(self.update_rate)
         return el
 
     @classmethod
     def _from_sdf(cls, el: ET.Element, version: str):
-        if cmp_version(version, "1.2") >= 0 and cmp_version(version, "1.4") < 0:
-            if el.text is None:
-                return SDFError(f"'update_rate' is required in SDF version {version}")
         _text = el.text or 1000
         _update_rate = _parse_double(_text)
         if isinstance(_update_rate, SDFError):
@@ -844,46 +1249,6 @@ class UpdateRate(BaseModel):
             if _update_rate != 1000:
                 return SDFError(f"'update_rate' is not supported in SDF version {version} (added in 1.2)")
         return cls(sdf_version=version, update_rate=_update_rate)
-
-
-class RealTimeUpdateRate(BaseModel):
-    def __init__(self, sdf_version: str, real_time_update_rate: float = 1000):
-        self.__version__ = sdf_version
-        self.real_time_update_rate = real_time_update_rate
-
-    def to_version(self, target_version: str) -> "RealTimeUpdateRate":
-        if self.real_time_update_rate is not None and cmp_version(target_version, "1.4") < 0:
-            raise ValueError(f"'real_time_update_rate' is not supported in SDF version {target_version} (added in 1.4)")
-        kwargs = {"sdf_version": target_version}
-        kwargs["real_time_update_rate"] = self.real_time_update_rate
-        new_obj = self.__class__(**kwargs)
-        return new_obj
-
-    def to_sdf(self, version: str = None) -> ET.Element:
-        if version is not None and version != self.__version__:
-            return self.to_version(version).to_sdf()
-        version = version or self.__version__
-        el = ET.Element("real_time_update_rate")
-        if cmp_version(version, "1.4") >= 0:
-            if self.real_time_update_rate is None:
-                raise ValueError(f"'real_time_update_rate' is required in SDF version {version}")
-        if self.real_time_update_rate is not None:
-            el.text = str(self.real_time_update_rate)
-        return el
-
-    @classmethod
-    def _from_sdf(cls, el: ET.Element, version: str):
-        if cmp_version(version, "1.4") >= 0:
-            if el.text is None:
-                return SDFError(f"'real_time_update_rate' is required in SDF version {version}")
-        _text = el.text or 1000
-        _real_time_update_rate = _parse_double(_text)
-        if isinstance(_real_time_update_rate, SDFError):
-            return _real_time_update_rate
-        if _real_time_update_rate is not None and cmp_version(version, "1.4") < 0:
-            if _real_time_update_rate != 1000:
-                return SDFError(f"'real_time_update_rate' is not supported in SDF version {version} (added in 1.4)")
-        return cls(sdf_version=version, real_time_update_rate=_real_time_update_rate)
 
 
 class Accuracy(BaseModel):
@@ -1422,16 +1787,16 @@ class Simbody(BaseModel):
         return cls(sdf_version=version, min_step_size=_min_step_size, accuracy=_accuracy, max_transient_velocity=_max_transient_velocity, contact=_contact)
 
 
-class RealTimeFactor(BaseModel):
-    def __init__(self, sdf_version: str, real_time_factor: float = 1.0):
+class RealTimeUpdateRate(BaseModel):
+    def __init__(self, sdf_version: str, real_time_update_rate: float = 1000):
         self.__version__ = sdf_version
-        self.real_time_factor = real_time_factor
+        self.real_time_update_rate = real_time_update_rate
 
-    def to_version(self, target_version: str) -> "RealTimeFactor":
-        if self.real_time_factor is not None and cmp_version(target_version, "1.4") < 0:
-            raise ValueError(f"'real_time_factor' is not supported in SDF version {target_version} (added in 1.4)")
+    def to_version(self, target_version: str) -> "RealTimeUpdateRate":
+        if self.real_time_update_rate is not None and cmp_version(target_version, "1.4") < 0:
+            raise ValueError(f"'real_time_update_rate' is not supported in SDF version {target_version} (added in 1.4)")
         kwargs = {"sdf_version": target_version}
-        kwargs["real_time_factor"] = self.real_time_factor
+        kwargs["real_time_update_rate"] = self.real_time_update_rate
         new_obj = self.__class__(**kwargs)
         return new_obj
 
@@ -1439,27 +1804,21 @@ class RealTimeFactor(BaseModel):
         if version is not None and version != self.__version__:
             return self.to_version(version).to_sdf()
         version = version or self.__version__
-        el = ET.Element("real_time_factor")
-        if cmp_version(version, "1.4") >= 0:
-            if self.real_time_factor is None:
-                raise ValueError(f"'real_time_factor' is required in SDF version {version}")
-        if self.real_time_factor is not None:
-            el.text = str(self.real_time_factor)
+        el = ET.Element("real_time_update_rate")
+        if self.real_time_update_rate is not None:
+            el.text = str(self.real_time_update_rate)
         return el
 
     @classmethod
     def _from_sdf(cls, el: ET.Element, version: str):
-        if cmp_version(version, "1.4") >= 0:
-            if el.text is None:
-                return SDFError(f"'real_time_factor' is required in SDF version {version}")
-        _text = el.text or 1.0
-        _real_time_factor = _parse_double(_text)
-        if isinstance(_real_time_factor, SDFError):
-            return _real_time_factor
-        if _real_time_factor is not None and cmp_version(version, "1.4") < 0:
-            if _real_time_factor != 1.0:
-                return SDFError(f"'real_time_factor' is not supported in SDF version {version} (added in 1.4)")
-        return cls(sdf_version=version, real_time_factor=_real_time_factor)
+        _text = el.text or 1000
+        _real_time_update_rate = _parse_double(_text)
+        if isinstance(_real_time_update_rate, SDFError):
+            return _real_time_update_rate
+        if _real_time_update_rate is not None and cmp_version(version, "1.4") < 0:
+            if _real_time_update_rate != 1000:
+                return SDFError(f"'real_time_update_rate' is not supported in SDF version {version} (added in 1.4)")
+        return cls(sdf_version=version, real_time_update_rate=_real_time_update_rate)
 
 
 class MaxStepSize(BaseModel):
@@ -1480,18 +1839,12 @@ class MaxStepSize(BaseModel):
             return self.to_version(version).to_sdf()
         version = version or self.__version__
         el = ET.Element("max_step_size")
-        if cmp_version(version, "1.4") >= 0:
-            if self.max_step_size is None:
-                raise ValueError(f"'max_step_size' is required in SDF version {version}")
         if self.max_step_size is not None:
             el.text = str(self.max_step_size)
         return el
 
     @classmethod
     def _from_sdf(cls, el: ET.Element, version: str):
-        if cmp_version(version, "1.4") >= 0:
-            if el.text is None:
-                return SDFError(f"'max_step_size' is required in SDF version {version}")
         _text = el.text or 0.001
         _max_step_size = _parse_double(_text)
         if isinstance(_max_step_size, SDFError):
@@ -1502,11 +1855,45 @@ class MaxStepSize(BaseModel):
         return cls(sdf_version=version, max_step_size=_max_step_size)
 
 
+class RealTimeFactor(BaseModel):
+    def __init__(self, sdf_version: str, real_time_factor: float = 1.0):
+        self.__version__ = sdf_version
+        self.real_time_factor = real_time_factor
+
+    def to_version(self, target_version: str) -> "RealTimeFactor":
+        if self.real_time_factor is not None and cmp_version(target_version, "1.4") < 0:
+            raise ValueError(f"'real_time_factor' is not supported in SDF version {target_version} (added in 1.4)")
+        kwargs = {"sdf_version": target_version}
+        kwargs["real_time_factor"] = self.real_time_factor
+        new_obj = self.__class__(**kwargs)
+        return new_obj
+
+    def to_sdf(self, version: str = None) -> ET.Element:
+        if version is not None and version != self.__version__:
+            return self.to_version(version).to_sdf()
+        version = version or self.__version__
+        el = ET.Element("real_time_factor")
+        if self.real_time_factor is not None:
+            el.text = str(self.real_time_factor)
+        return el
+
+    @classmethod
+    def _from_sdf(cls, el: ET.Element, version: str):
+        _text = el.text or 1.0
+        _real_time_factor = _parse_double(_text)
+        if isinstance(_real_time_factor, SDFError):
+            return _real_time_factor
+        if _real_time_factor is not None and cmp_version(version, "1.4") < 0:
+            if _real_time_factor != 1.0:
+                return SDFError(f"'real_time_factor' is not supported in SDF version {version} (added in 1.4)")
+        return cls(sdf_version=version, real_time_factor=_real_time_factor)
+
+
 class MagneticField(BaseModel):
-    def __init__(self, sdf_version: str, magnetic_field: Vector3 = None):
+    def __init__(self, sdf_version: str, magnetic_field: _SDFVector3 = None):
         self.__version__ = sdf_version
         if magnetic_field is None:
-            magnetic_field = Vector3.from_sdf("5.5645e-6 22.8758e-6 -42.3884e-6")
+            magnetic_field = _SDFVector3.from_sdf("5.5645e-6 22.8758e-6 -42.3884e-6")
         self.magnetic_field = magnetic_field
 
     def to_version(self, target_version: str) -> "MagneticField":
@@ -1524,26 +1911,82 @@ class MagneticField(BaseModel):
             return self.to_version(version).to_sdf()
         version = version or self.__version__
         el = ET.Element("magnetic_field")
-        if cmp_version(version, "1.5") >= 0 and cmp_version(version, "1.6") < 0:
-            if self.magnetic_field is None:
-                raise ValueError(f"'magnetic_field' is required in SDF version {version}")
         if self.magnetic_field is not None:
             el.text = self.magnetic_field.to_sdf()
         return el
 
     @classmethod
     def _from_sdf(cls, el: ET.Element, version: str):
-        if cmp_version(version, "1.5") >= 0 and cmp_version(version, "1.6") < 0:
-            if el.text is None:
-                return SDFError(f"'magnetic_field' is required in SDF version {version}")
         _text = el.text or "5.5645e-6 22.8758e-6 -42.3884e-6"
-        _magnetic_field = Vector3._from_sdf(_text, version)
+        _magnetic_field = _SDFVector3._from_sdf(_text, version)
         if isinstance(_magnetic_field, SDFError):
             return _magnetic_field
         if _magnetic_field is not None and cmp_version(version, "1.5") < 0:
             if _magnetic_field != "5.5645e-6 22.8758e-6 -42.3884e-6":
                 return SDFError(f"'magnetic_field' is not supported in SDF version {version} (added in 1.5)")
         return cls(sdf_version=version, magnetic_field=_magnetic_field)
+
+
+class SolverSolverType(BaseModel):
+    def __init__(self, sdf_version: str, solver_type: str = "dantzig"):
+        self.__version__ = sdf_version
+        self.solver_type = solver_type
+
+    def to_version(self, target_version: str) -> "SolverSolverType":
+        kwargs = {"sdf_version": target_version}
+        kwargs["solver_type"] = self.solver_type
+        new_obj = self.__class__(**kwargs)
+        return new_obj
+
+    def to_sdf(self, version: str = None) -> ET.Element:
+        if version is not None and version != self.__version__:
+            return self.to_version(version).to_sdf()
+        version = version or self.__version__
+        el = ET.Element("solver_type")
+        if self.solver_type is not None:
+            el.text = self.solver_type
+        return el
+
+    @classmethod
+    def _from_sdf(cls, el: ET.Element, version: str):
+        _text = el.text or "dantzig"
+        _solver_type = _text
+        if isinstance(_solver_type, SDFError):
+            return _solver_type
+        return cls(sdf_version=version, solver_type=_solver_type)
+
+
+class DartSolver(BaseModel):
+    def __init__(self, sdf_version: str, solver_type: "SolverSolverType" = None):
+        self.__version__ = sdf_version
+        self.solver_type = solver_type
+
+    def to_version(self, target_version: str) -> "DartSolver":
+        kwargs = {"sdf_version": target_version}
+        kwargs["solver_type"] = self.solver_type.to_version(target_version) if self.solver_type is not None else None
+        new_obj = self.__class__(**kwargs)
+        return new_obj
+
+    def to_sdf(self, version: str = None) -> ET.Element:
+        if version is not None and version != self.__version__:
+            return self.to_version(version).to_sdf()
+        version = version or self.__version__
+        el = ET.Element("solver")
+        if self.solver_type is not None:
+            el.append(self.solver_type.to_sdf(version))
+        return el
+
+    @classmethod
+    def _from_sdf(cls, el: ET.Element, version: str):
+        _c_solver_type = el.find("solver_type")
+        if _c_solver_type is not None:
+            _res = SolverSolverType._from_sdf(_c_solver_type, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("solver_type")
+            _solver_type = _res
+        else:
+            _solver_type = None
+        return cls(sdf_version=version, solver_type=_solver_type)
 
 
 class CollisionDetector(BaseModel):
@@ -1579,7 +2022,7 @@ class Dart(BaseModel):
     def __init__(
         self,
         sdf_version: str,
-        solver: "Solver" = None,
+        solver: "DartSolver" = None,
         collision_detector: "CollisionDetector" = None
     ):
         self.__version__ = sdf_version
@@ -1599,7 +2042,7 @@ class Dart(BaseModel):
         version = version or self.__version__
         el = ET.Element("dart")
         if self.solver is None:
-            raise ValueError(f"'solver' is required in SDF version {version}")
+            self.solver = DartSolver(sdf_version=version)
         if self.solver is not None:
             el.append(self.solver.to_sdf(version))
         if self.collision_detector is not None:
@@ -1610,14 +2053,15 @@ class Dart(BaseModel):
     def _from_sdf(cls, el: ET.Element, version: str):
         _c_solver = el.find("solver")
         if _c_solver is not None:
-            _res = Solver._from_sdf(_c_solver, version)
+            _res = DartSolver._from_sdf(_c_solver, version)
             if isinstance(_res, SDFError):
                 return _res.extend("solver")
             _solver = _res
         else:
-            _solver = None
-        if _solver is None:
-            return SDFError(f"'solver' is required in SDF version {version}")
+            _res = DartSolver._from_sdf(ET.Element("solver"), version)
+            if isinstance(_res, SDFError):
+                return _res.extend("solver")
+            _solver = _res
         _c_collision_detector = el.find("collision_detector")
         if _c_collision_detector is not None:
             _res = CollisionDetector._from_sdf(_c_collision_detector, version)
@@ -1643,10 +2087,10 @@ class Physics(BaseModel):
         gravity: "Gravity" = None,
         bullet: "Bullet" = None,
         ode: "Ode" = None,
-        real_time_update_rate: "RealTimeUpdateRate" = None,
         simbody: "Simbody" = None,
-        real_time_factor: "RealTimeFactor" = None,
+        real_time_update_rate: "RealTimeUpdateRate" = None,
         max_step_size: "MaxStepSize" = None,
+        real_time_factor: "RealTimeFactor" = None,
         magnetic_field: "MagneticField" = None,
         dart: "Dart" = None
     ):
@@ -1659,10 +2103,10 @@ class Physics(BaseModel):
         self.gravity = gravity
         self.bullet = bullet
         self.ode = ode
-        self.real_time_update_rate = real_time_update_rate
         self.simbody = simbody
-        self.real_time_factor = real_time_factor
+        self.real_time_update_rate = real_time_update_rate
         self.max_step_size = max_step_size
+        self.real_time_factor = real_time_factor
         self.magnetic_field = magnetic_field
         self.dart = dart
 
@@ -1675,14 +2119,14 @@ class Physics(BaseModel):
             raise ValueError(f"'default' is not supported in SDF version {target_version} (added in 1.5)")
         if self.gravity is not None and cmp_version(target_version, "1.6") >= 0:
             raise ValueError(f"'gravity' is not supported in SDF version {target_version} (removed in 1.6)")
-        if self.real_time_update_rate is not None and cmp_version(target_version, "1.4") < 0:
-            raise ValueError(f"'real_time_update_rate' is not supported in SDF version {target_version} (added in 1.4)")
         if self.simbody is not None and cmp_version(target_version, "1.4") < 0:
             raise ValueError(f"'simbody' is not supported in SDF version {target_version} (added in 1.4)")
-        if self.real_time_factor is not None and cmp_version(target_version, "1.4") < 0:
-            raise ValueError(f"'real_time_factor' is not supported in SDF version {target_version} (added in 1.4)")
+        if self.real_time_update_rate is not None and cmp_version(target_version, "1.4") < 0:
+            raise ValueError(f"'real_time_update_rate' is not supported in SDF version {target_version} (added in 1.4)")
         if self.max_step_size is not None and cmp_version(target_version, "1.4") < 0:
             raise ValueError(f"'max_step_size' is not supported in SDF version {target_version} (added in 1.4)")
+        if self.real_time_factor is not None and cmp_version(target_version, "1.4") < 0:
+            raise ValueError(f"'real_time_factor' is not supported in SDF version {target_version} (added in 1.4)")
         if self.magnetic_field is not None and cmp_version(target_version, "1.5") < 0:
             raise ValueError(f"'magnetic_field' is not supported in SDF version {target_version} (added in 1.5)")
         if self.magnetic_field is not None and cmp_version(target_version, "1.6") >= 0:
@@ -1698,10 +2142,10 @@ class Physics(BaseModel):
         kwargs["gravity"] = self.gravity.to_version(target_version) if self.gravity is not None else None
         kwargs["bullet"] = self.bullet.to_version(target_version) if self.bullet is not None else None
         kwargs["ode"] = self.ode.to_version(target_version) if self.ode is not None else None
-        kwargs["real_time_update_rate"] = self.real_time_update_rate.to_version(target_version) if self.real_time_update_rate is not None else None
         kwargs["simbody"] = self.simbody.to_version(target_version) if self.simbody is not None else None
-        kwargs["real_time_factor"] = self.real_time_factor.to_version(target_version) if self.real_time_factor is not None else None
+        kwargs["real_time_update_rate"] = self.real_time_update_rate.to_version(target_version) if self.real_time_update_rate is not None else None
         kwargs["max_step_size"] = self.max_step_size.to_version(target_version) if self.max_step_size is not None else None
+        kwargs["real_time_factor"] = self.real_time_factor.to_version(target_version) if self.real_time_factor is not None else None
         kwargs["magnetic_field"] = self.magnetic_field.to_version(target_version) if self.magnetic_field is not None else None
         kwargs["dart"] = self.dart.to_version(target_version) if self.dart is not None else None
         new_obj = self.__class__(**kwargs)
@@ -1713,8 +2157,6 @@ class Physics(BaseModel):
             return self.to_version(version).to_sdf()
         version = version or self.__version__
         el = ET.Element("physics")
-        if self.type is None:
-            raise ValueError(f"'type' is required in SDF version {version}")
         if self.type is not None:
             el.set("type", self.type)
         if self.update_rate is not None:
@@ -1725,35 +2167,20 @@ class Physics(BaseModel):
             el.set("default", str(self.default).lower())
         if self.max_contacts is not None:
             el.append(self.max_contacts.to_sdf(version))
-        if cmp_version(version, "1.6") < 0:
-            if self.gravity is None:
-                raise ValueError(f"'gravity' is required in SDF version {version}")
         if self.gravity is not None:
             el.append(self.gravity.to_sdf(version))
         if self.bullet is not None:
             el.append(self.bullet.to_sdf(version))
         if self.ode is not None:
             el.append(self.ode.to_sdf(version))
-        if cmp_version(version, "1.4") >= 0:
-            if self.real_time_update_rate is None:
-                raise ValueError(f"'real_time_update_rate' is required in SDF version {version}")
-        if self.real_time_update_rate is not None:
-            el.append(self.real_time_update_rate.to_sdf(version))
         if self.simbody is not None:
             el.append(self.simbody.to_sdf(version))
-        if cmp_version(version, "1.4") >= 0:
-            if self.real_time_factor is None:
-                raise ValueError(f"'real_time_factor' is required in SDF version {version}")
-        if self.real_time_factor is not None:
-            el.append(self.real_time_factor.to_sdf(version))
-        if cmp_version(version, "1.4") >= 0:
-            if self.max_step_size is None:
-                raise ValueError(f"'max_step_size' is required in SDF version {version}")
+        if self.real_time_update_rate is not None:
+            el.append(self.real_time_update_rate.to_sdf(version))
         if self.max_step_size is not None:
             el.append(self.max_step_size.to_sdf(version))
-        if cmp_version(version, "1.5") >= 0 and cmp_version(version, "1.6") < 0:
-            if self.magnetic_field is None:
-                raise ValueError(f"'magnetic_field' is required in SDF version {version}")
+        if self.real_time_factor is not None:
+            el.append(self.real_time_factor.to_sdf(version))
         if self.magnetic_field is not None:
             el.append(self.magnetic_field.to_sdf(version))
         if self.dart is not None:
@@ -1762,8 +2189,6 @@ class Physics(BaseModel):
 
     @classmethod
     def _from_sdf(cls, el: ET.Element, version: str):
-        if el.get("type") is None:
-            return SDFError(f"'type' is required in SDF version {version}")
         _type = el.get("type", "ode")
         if isinstance(_type, SDFError):
             return _type.extend("@type")
@@ -1798,9 +2223,6 @@ class Physics(BaseModel):
             _gravity = _res
         else:
             _gravity = None
-        if cmp_version(version, "1.6") < 0:
-            if _gravity is None:
-                return SDFError(f"'gravity' is required in SDF version {version}")
         _c_bullet = el.find("bullet")
         if _c_bullet is not None:
             _res = Bullet._from_sdf(_c_bullet, version)
@@ -1817,19 +2239,6 @@ class Physics(BaseModel):
             _ode = _res
         else:
             _ode = None
-        _c_real_time_update_rate = el.find("real_time_update_rate")
-        if _c_real_time_update_rate is not None:
-            _res = RealTimeUpdateRate._from_sdf(_c_real_time_update_rate, version)
-            if isinstance(_res, SDFError):
-                return _res.extend("real_time_update_rate")
-            _real_time_update_rate = _res
-        else:
-            _real_time_update_rate = None
-        if cmp_version(version, "1.4") >= 0:
-            if _real_time_update_rate is None:
-                return SDFError(f"'real_time_update_rate' is required in SDF version {version}")
-        if _real_time_update_rate is not None and cmp_version(version, "1.4") < 0:
-            return SDFError(f"'real_time_update_rate' is not supported in SDF version {version} (added in 1.4)")
         _c_simbody = el.find("simbody")
         if _c_simbody is not None:
             _res = Simbody._from_sdf(_c_simbody, version)
@@ -1840,19 +2249,16 @@ class Physics(BaseModel):
             _simbody = None
         if _simbody is not None and cmp_version(version, "1.4") < 0:
             return SDFError(f"'simbody' is not supported in SDF version {version} (added in 1.4)")
-        _c_real_time_factor = el.find("real_time_factor")
-        if _c_real_time_factor is not None:
-            _res = RealTimeFactor._from_sdf(_c_real_time_factor, version)
+        _c_real_time_update_rate = el.find("real_time_update_rate")
+        if _c_real_time_update_rate is not None:
+            _res = RealTimeUpdateRate._from_sdf(_c_real_time_update_rate, version)
             if isinstance(_res, SDFError):
-                return _res.extend("real_time_factor")
-            _real_time_factor = _res
+                return _res.extend("real_time_update_rate")
+            _real_time_update_rate = _res
         else:
-            _real_time_factor = None
-        if cmp_version(version, "1.4") >= 0:
-            if _real_time_factor is None:
-                return SDFError(f"'real_time_factor' is required in SDF version {version}")
-        if _real_time_factor is not None and cmp_version(version, "1.4") < 0:
-            return SDFError(f"'real_time_factor' is not supported in SDF version {version} (added in 1.4)")
+            _real_time_update_rate = None
+        if _real_time_update_rate is not None and cmp_version(version, "1.4") < 0:
+            return SDFError(f"'real_time_update_rate' is not supported in SDF version {version} (added in 1.4)")
         _c_max_step_size = el.find("max_step_size")
         if _c_max_step_size is not None:
             _res = MaxStepSize._from_sdf(_c_max_step_size, version)
@@ -1861,11 +2267,18 @@ class Physics(BaseModel):
             _max_step_size = _res
         else:
             _max_step_size = None
-        if cmp_version(version, "1.4") >= 0:
-            if _max_step_size is None:
-                return SDFError(f"'max_step_size' is required in SDF version {version}")
         if _max_step_size is not None and cmp_version(version, "1.4") < 0:
             return SDFError(f"'max_step_size' is not supported in SDF version {version} (added in 1.4)")
+        _c_real_time_factor = el.find("real_time_factor")
+        if _c_real_time_factor is not None:
+            _res = RealTimeFactor._from_sdf(_c_real_time_factor, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("real_time_factor")
+            _real_time_factor = _res
+        else:
+            _real_time_factor = None
+        if _real_time_factor is not None and cmp_version(version, "1.4") < 0:
+            return SDFError(f"'real_time_factor' is not supported in SDF version {version} (added in 1.4)")
         _c_magnetic_field = el.find("magnetic_field")
         if _c_magnetic_field is not None:
             _res = MagneticField._from_sdf(_c_magnetic_field, version)
@@ -1874,9 +2287,6 @@ class Physics(BaseModel):
             _magnetic_field = _res
         else:
             _magnetic_field = None
-        if cmp_version(version, "1.5") >= 0 and cmp_version(version, "1.6") < 0:
-            if _magnetic_field is None:
-                return SDFError(f"'magnetic_field' is required in SDF version {version}")
         if _magnetic_field is not None and cmp_version(version, "1.5") < 0:
             return SDFError(f"'magnetic_field' is not supported in SDF version {version} (added in 1.5)")
         _c_dart = el.find("dart")
@@ -1889,4 +2299,4 @@ class Physics(BaseModel):
             _dart = None
         if _dart is not None and cmp_version(version, "1.6") < 0:
             return SDFError(f"'dart' is not supported in SDF version {version} (added in 1.6)")
-        return cls(sdf_version=version, type=_type, update_rate=_update_rate, name=_name, default=_default, max_contacts=_max_contacts, gravity=_gravity, bullet=_bullet, ode=_ode, real_time_update_rate=_real_time_update_rate, simbody=_simbody, real_time_factor=_real_time_factor, max_step_size=_max_step_size, magnetic_field=_magnetic_field, dart=_dart)
+        return cls(sdf_version=version, type=_type, update_rate=_update_rate, name=_name, default=_default, max_contacts=_max_contacts, gravity=_gravity, bullet=_bullet, ode=_ode, simbody=_simbody, real_time_update_rate=_real_time_update_rate, max_step_size=_max_step_size, real_time_factor=_real_time_factor, magnetic_field=_magnetic_field, dart=_dart)

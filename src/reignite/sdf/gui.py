@@ -7,8 +7,8 @@ from typing import List
 
 from ..utils.model import BaseModel
 from ..utils.errors import SDFError
-from ..utils.pose import Pose
-from ..utils.vector3 import Vector3
+from ..utils.pose import Pose as _SDFPose
+from ..utils.vector3 import Vector3 as _SDFVector3
 from ..utils.version import cmp_version
 from ..utils.migration import apply_migrations
 
@@ -76,10 +76,10 @@ class ViewController(BaseModel):
 
 
 class Origin(BaseModel):
-    def __init__(self, sdf_version: str, pose: Pose = None):
+    def __init__(self, sdf_version: str, pose: _SDFPose = None):
         self.__version__ = sdf_version
         if pose is None:
-            pose = Pose.from_sdf("0 0 0 0 0 0")
+            pose = _SDFPose.from_sdf("0 0 0 0 0 0")
         self.pose = pose
 
     def to_version(self, target_version: str) -> "Origin":
@@ -93,17 +93,13 @@ class Origin(BaseModel):
             return self.to_version(version).to_sdf()
         version = version or self.__version__
         el = ET.Element("origin")
-        if self.pose is None:
-            raise ValueError(f"'pose' is required in SDF version {version}")
         if self.pose is not None:
             el.set("pose", self.pose.to_sdf())
         return el
 
     @classmethod
     def _from_sdf(cls, el: ET.Element, version: str):
-        if el.get("pose") is None:
-            return SDFError(f"'pose' is required in SDF version {version}")
-        _pose = Pose._from_sdf(el.get("pose", "0 0 0 0 0 0"), version)
+        _pose = _SDFPose._from_sdf(el.get("pose", "0 0 0 0 0 0"), version)
         if isinstance(_pose, SDFError):
             return _pose.extend("@pose")
         return cls(sdf_version=version, pose=_pose)
@@ -125,18 +121,12 @@ class Name(BaseModel):
             return self.to_version(version).to_sdf()
         version = version or self.__version__
         el = ET.Element("name")
-        if cmp_version(version, "1.12") < 0:
-            if self.name is None:
-                raise ValueError(f"'name' is required in SDF version {version}")
         if self.name is not None:
             el.text = self.name
         return el
 
     @classmethod
     def _from_sdf(cls, el: ET.Element, version: str):
-        if cmp_version(version, "1.12") < 0:
-            if el.text is None:
-                return SDFError(f"'name' is required in SDF version {version}")
         _text = el.text or "__default__"
         _name = _text
         if isinstance(_name, SDFError):
@@ -236,18 +226,16 @@ class Static(BaseModel):
         return cls(sdf_version=version, static=_static)
 
 
-class Xyz(BaseModel):
-    def __init__(self, sdf_version: str, xyz: Vector3 = None):
+class InheritYaw(BaseModel):
+    def __init__(self, sdf_version: str, inherit_yaw: bool = False):
         self.__version__ = sdf_version
-        if xyz is None:
-            xyz = Vector3.from_sdf("-5.0 0.0 3.0")
-        self.xyz = xyz
+        self.inherit_yaw = inherit_yaw
 
-    def to_version(self, target_version: str) -> "Xyz":
-        if self.xyz is not None and cmp_version(target_version, "1.6") < 0:
-            raise ValueError(f"'xyz' is not supported in SDF version {target_version} (added in 1.6)")
+    def to_version(self, target_version: str) -> "InheritYaw":
+        if self.inherit_yaw is not None and cmp_version(target_version, "1.6") < 0:
+            raise ValueError(f"'inherit_yaw' is not supported in SDF version {target_version} (added in 1.6)")
         kwargs = {"sdf_version": target_version}
-        kwargs["xyz"] = self.xyz
+        kwargs["inherit_yaw"] = self.inherit_yaw
         new_obj = self.__class__(**kwargs)
         return new_obj
 
@@ -255,21 +243,21 @@ class Xyz(BaseModel):
         if version is not None and version != self.__version__:
             return self.to_version(version).to_sdf()
         version = version or self.__version__
-        el = ET.Element("xyz")
-        if self.xyz is not None:
-            el.text = self.xyz.to_sdf()
+        el = ET.Element("inherit_yaw")
+        if self.inherit_yaw is not None:
+            el.text = str(self.inherit_yaw).lower()
         return el
 
     @classmethod
     def _from_sdf(cls, el: ET.Element, version: str):
-        _text = el.text or "-5.0 0.0 3.0"
-        _xyz = Vector3._from_sdf(_text, version)
-        if isinstance(_xyz, SDFError):
-            return _xyz
-        if _xyz is not None and cmp_version(version, "1.6") < 0:
-            if _xyz != "-5.0 0.0 3.0":
-                return SDFError(f"'xyz' is not supported in SDF version {version} (added in 1.6)")
-        return cls(sdf_version=version, xyz=_xyz)
+        _text = el.text or False
+        _inherit_yaw = str(_text).strip().lower() == 'true'
+        if isinstance(_inherit_yaw, SDFError):
+            return _inherit_yaw
+        if _inherit_yaw is not None and cmp_version(version, "1.6") < 0:
+            if _inherit_yaw != False:
+                return SDFError(f"'inherit_yaw' is not supported in SDF version {version} (added in 1.6)")
+        return cls(sdf_version=version, inherit_yaw=_inherit_yaw)
 
 
 class UseModelFrame(BaseModel):
@@ -306,16 +294,18 @@ class UseModelFrame(BaseModel):
         return cls(sdf_version=version, use_model_frame=_use_model_frame)
 
 
-class InheritYaw(BaseModel):
-    def __init__(self, sdf_version: str, inherit_yaw: bool = False):
+class Xyz(BaseModel):
+    def __init__(self, sdf_version: str, xyz: _SDFVector3 = None):
         self.__version__ = sdf_version
-        self.inherit_yaw = inherit_yaw
+        if xyz is None:
+            xyz = _SDFVector3.from_sdf("-5.0 0.0 3.0")
+        self.xyz = xyz
 
-    def to_version(self, target_version: str) -> "InheritYaw":
-        if self.inherit_yaw is not None and cmp_version(target_version, "1.6") < 0:
-            raise ValueError(f"'inherit_yaw' is not supported in SDF version {target_version} (added in 1.6)")
+    def to_version(self, target_version: str) -> "Xyz":
+        if self.xyz is not None and cmp_version(target_version, "1.6") < 0:
+            raise ValueError(f"'xyz' is not supported in SDF version {target_version} (added in 1.6)")
         kwargs = {"sdf_version": target_version}
-        kwargs["inherit_yaw"] = self.inherit_yaw
+        kwargs["xyz"] = self.xyz
         new_obj = self.__class__(**kwargs)
         return new_obj
 
@@ -323,21 +313,21 @@ class InheritYaw(BaseModel):
         if version is not None and version != self.__version__:
             return self.to_version(version).to_sdf()
         version = version or self.__version__
-        el = ET.Element("inherit_yaw")
-        if self.inherit_yaw is not None:
-            el.text = str(self.inherit_yaw).lower()
+        el = ET.Element("xyz")
+        if self.xyz is not None:
+            el.text = self.xyz.to_sdf()
         return el
 
     @classmethod
     def _from_sdf(cls, el: ET.Element, version: str):
-        _text = el.text or False
-        _inherit_yaw = str(_text).strip().lower() == 'true'
-        if isinstance(_inherit_yaw, SDFError):
-            return _inherit_yaw
-        if _inherit_yaw is not None and cmp_version(version, "1.6") < 0:
-            if _inherit_yaw != False:
-                return SDFError(f"'inherit_yaw' is not supported in SDF version {version} (added in 1.6)")
-        return cls(sdf_version=version, inherit_yaw=_inherit_yaw)
+        _text = el.text or "-5.0 0.0 3.0"
+        _xyz = _SDFVector3._from_sdf(_text, version)
+        if isinstance(_xyz, SDFError):
+            return _xyz
+        if _xyz is not None and cmp_version(version, "1.6") < 0:
+            if _xyz != "-5.0 0.0 3.0":
+                return SDFError(f"'xyz' is not supported in SDF version {version} (added in 1.6)")
+        return cls(sdf_version=version, xyz=_xyz)
 
 
 class TrackVisual(BaseModel):
@@ -348,36 +338,36 @@ class TrackVisual(BaseModel):
         min_dist: "MinDist" = None,
         max_dist: "MaxDist" = None,
         static: "Static" = None,
-        xyz: "Xyz" = None,
+        inherit_yaw: "InheritYaw" = None,
         use_model_frame: "UseModelFrame" = None,
-        inherit_yaw: "InheritYaw" = None
+        xyz: "Xyz" = None
     ):
         self.__version__ = sdf_version
         self.name = name
         self.min_dist = min_dist
         self.max_dist = max_dist
         self.static = static
-        self.xyz = xyz
-        self.use_model_frame = use_model_frame
         self.inherit_yaw = inherit_yaw
+        self.use_model_frame = use_model_frame
+        self.xyz = xyz
 
     def to_version(self, target_version: str) -> "TrackVisual":
         if self.static is not None and cmp_version(target_version, "1.6") < 0:
             raise ValueError(f"'static' is not supported in SDF version {target_version} (added in 1.6)")
-        if self.xyz is not None and cmp_version(target_version, "1.6") < 0:
-            raise ValueError(f"'xyz' is not supported in SDF version {target_version} (added in 1.6)")
-        if self.use_model_frame is not None and cmp_version(target_version, "1.6") < 0:
-            raise ValueError(f"'use_model_frame' is not supported in SDF version {target_version} (added in 1.6)")
         if self.inherit_yaw is not None and cmp_version(target_version, "1.6") < 0:
             raise ValueError(f"'inherit_yaw' is not supported in SDF version {target_version} (added in 1.6)")
+        if self.use_model_frame is not None and cmp_version(target_version, "1.6") < 0:
+            raise ValueError(f"'use_model_frame' is not supported in SDF version {target_version} (added in 1.6)")
+        if self.xyz is not None and cmp_version(target_version, "1.6") < 0:
+            raise ValueError(f"'xyz' is not supported in SDF version {target_version} (added in 1.6)")
         kwargs = {"sdf_version": target_version}
         kwargs["name"] = self.name.to_version(target_version) if self.name is not None else None
         kwargs["min_dist"] = self.min_dist.to_version(target_version) if self.min_dist is not None else None
         kwargs["max_dist"] = self.max_dist.to_version(target_version) if self.max_dist is not None else None
         kwargs["static"] = self.static.to_version(target_version) if self.static is not None else None
-        kwargs["xyz"] = self.xyz.to_version(target_version) if self.xyz is not None else None
-        kwargs["use_model_frame"] = self.use_model_frame.to_version(target_version) if self.use_model_frame is not None else None
         kwargs["inherit_yaw"] = self.inherit_yaw.to_version(target_version) if self.inherit_yaw is not None else None
+        kwargs["use_model_frame"] = self.use_model_frame.to_version(target_version) if self.use_model_frame is not None else None
+        kwargs["xyz"] = self.xyz.to_version(target_version) if self.xyz is not None else None
         new_obj = self.__class__(**kwargs)
         return new_obj
 
@@ -386,9 +376,6 @@ class TrackVisual(BaseModel):
             return self.to_version(version).to_sdf()
         version = version or self.__version__
         el = ET.Element("track_visual")
-        if cmp_version(version, "1.12") < 0:
-            if self.name is None:
-                raise ValueError(f"'name' is required in SDF version {version}")
         if self.name is not None:
             el.append(self.name.to_sdf(version))
         if self.min_dist is not None:
@@ -397,12 +384,12 @@ class TrackVisual(BaseModel):
             el.append(self.max_dist.to_sdf(version))
         if self.static is not None:
             el.append(self.static.to_sdf(version))
-        if self.xyz is not None:
-            el.append(self.xyz.to_sdf(version))
-        if self.use_model_frame is not None:
-            el.append(self.use_model_frame.to_sdf(version))
         if self.inherit_yaw is not None:
             el.append(self.inherit_yaw.to_sdf(version))
+        if self.use_model_frame is not None:
+            el.append(self.use_model_frame.to_sdf(version))
+        if self.xyz is not None:
+            el.append(self.xyz.to_sdf(version))
         return el
 
     @classmethod
@@ -415,9 +402,6 @@ class TrackVisual(BaseModel):
             _name = _res
         else:
             _name = None
-        if cmp_version(version, "1.12") < 0:
-            if _name is None:
-                return SDFError(f"'name' is required in SDF version {version}")
         _c_min_dist = el.find("min_dist")
         if _c_min_dist is not None:
             _res = MinDist._from_sdf(_c_min_dist, version)
@@ -444,26 +428,6 @@ class TrackVisual(BaseModel):
             _static = None
         if _static is not None and cmp_version(version, "1.6") < 0:
             return SDFError(f"'static' is not supported in SDF version {version} (added in 1.6)")
-        _c_xyz = el.find("xyz")
-        if _c_xyz is not None:
-            _res = Xyz._from_sdf(_c_xyz, version)
-            if isinstance(_res, SDFError):
-                return _res.extend("xyz")
-            _xyz = _res
-        else:
-            _xyz = None
-        if _xyz is not None and cmp_version(version, "1.6") < 0:
-            return SDFError(f"'xyz' is not supported in SDF version {version} (added in 1.6)")
-        _c_use_model_frame = el.find("use_model_frame")
-        if _c_use_model_frame is not None:
-            _res = UseModelFrame._from_sdf(_c_use_model_frame, version)
-            if isinstance(_res, SDFError):
-                return _res.extend("use_model_frame")
-            _use_model_frame = _res
-        else:
-            _use_model_frame = None
-        if _use_model_frame is not None and cmp_version(version, "1.6") < 0:
-            return SDFError(f"'use_model_frame' is not supported in SDF version {version} (added in 1.6)")
         _c_inherit_yaw = el.find("inherit_yaw")
         if _c_inherit_yaw is not None:
             _res = InheritYaw._from_sdf(_c_inherit_yaw, version)
@@ -474,7 +438,27 @@ class TrackVisual(BaseModel):
             _inherit_yaw = None
         if _inherit_yaw is not None and cmp_version(version, "1.6") < 0:
             return SDFError(f"'inherit_yaw' is not supported in SDF version {version} (added in 1.6)")
-        return cls(sdf_version=version, name=_name, min_dist=_min_dist, max_dist=_max_dist, static=_static, xyz=_xyz, use_model_frame=_use_model_frame, inherit_yaw=_inherit_yaw)
+        _c_use_model_frame = el.find("use_model_frame")
+        if _c_use_model_frame is not None:
+            _res = UseModelFrame._from_sdf(_c_use_model_frame, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("use_model_frame")
+            _use_model_frame = _res
+        else:
+            _use_model_frame = None
+        if _use_model_frame is not None and cmp_version(version, "1.6") < 0:
+            return SDFError(f"'use_model_frame' is not supported in SDF version {version} (added in 1.6)")
+        _c_xyz = el.find("xyz")
+        if _c_xyz is not None:
+            _res = Xyz._from_sdf(_c_xyz, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("xyz")
+            _xyz = _res
+        else:
+            _xyz = None
+        if _xyz is not None and cmp_version(version, "1.6") < 0:
+            return SDFError(f"'xyz' is not supported in SDF version {version} (added in 1.6)")
+        return cls(sdf_version=version, name=_name, min_dist=_min_dist, max_dist=_max_dist, static=_static, inherit_yaw=_inherit_yaw, use_model_frame=_use_model_frame, xyz=_xyz)
 
 
 class Pose(BaseModel):
@@ -483,7 +467,7 @@ class Pose(BaseModel):
     def __init__(
         self,
         sdf_version: str,
-        pose: Pose = None,
+        pose: _SDFPose = None,
         frame: str = "",
         relative_to: str = "",
         rotation_format: str = "euler_rpy",
@@ -491,7 +475,7 @@ class Pose(BaseModel):
     ):
         self.__version__ = sdf_version
         if pose is None:
-            pose = Pose.from_sdf("0 0 0 0 0 0")
+            pose = _SDFPose.from_sdf("0 0 0 0 0 0")
         self.pose = pose
         self.frame = frame
         self.relative_to = relative_to
@@ -541,7 +525,7 @@ class Pose(BaseModel):
     @classmethod
     def _from_sdf(cls, el: ET.Element, version: str):
         _text = el.text or "0 0 0 0 0 0"
-        _pose = Pose._from_sdf(_text, version)
+        _pose = _SDFPose._from_sdf(_text, version)
         if isinstance(_pose, SDFError):
             return _pose
         if _pose is not None and cmp_version(version, "1.2") < 0:
@@ -608,8 +592,49 @@ class ProjectionType(BaseModel):
         return cls(sdf_version=version, projection_type=_projection_type)
 
 
+class FramePose(BaseModel):
+    _MIGRATIONS = [{"version": "1.7", "ops": [{"type": "move", "from": "frame", "to": "relative_to"}]}]
+
+    def __init__(self, sdf_version: str, pose: _SDFPose = None, frame: str = ""):
+        self.__version__ = sdf_version
+        if pose is None:
+            pose = _SDFPose.from_sdf("0 0 0 0 0 0")
+        self.pose = pose
+        self.frame = frame
+
+    def to_version(self, target_version: str) -> "FramePose":
+        kwargs = {"sdf_version": target_version}
+        kwargs["pose"] = self.pose
+        kwargs["frame"] = self.frame
+        new_obj = self.__class__(**kwargs)
+        apply_migrations(new_obj, target_version)
+        return new_obj
+
+    def to_sdf(self, version: str = None) -> ET.Element:
+        if version is not None and version != self.__version__:
+            return self.to_version(version).to_sdf()
+        version = version or self.__version__
+        el = ET.Element("pose")
+        if self.pose is not None:
+            el.text = self.pose.to_sdf()
+        if self.frame is not None:
+            el.set("frame", self.frame)
+        return el
+
+    @classmethod
+    def _from_sdf(cls, el: ET.Element, version: str):
+        _text = el.text or "0 0 0 0 0 0"
+        _pose = _SDFPose._from_sdf(_text, version)
+        if isinstance(_pose, SDFError):
+            return _pose
+        _frame = el.get("frame", "")
+        if isinstance(_frame, SDFError):
+            return _frame.extend("@frame")
+        return cls(sdf_version=version, pose=_pose, frame=_frame)
+
+
 class Frame(BaseModel):
-    def __init__(self, sdf_version: str, name: str = "", pose: "Pose" = None):
+    def __init__(self, sdf_version: str, name: str = "", pose: "FramePose" = None):
         self.__version__ = sdf_version
         self.name = name
         self.pose = pose
@@ -643,7 +668,7 @@ class Frame(BaseModel):
             return _name.extend("@name")
         _c_pose = el.find("pose")
         if _c_pose is not None:
-            _res = Pose._from_sdf(_c_pose, version)
+            _res = FramePose._from_sdf(_c_pose, version)
             if isinstance(_res, SDFError):
                 return _res.extend("pose")
             _pose = _res
@@ -700,8 +725,6 @@ class Camera(BaseModel):
             return self.to_version(version).to_sdf()
         version = version or self.__version__
         el = ET.Element("camera")
-        if self.name is None:
-            raise ValueError(f"'name' is required in SDF version {version}")
         if self.name is not None:
             el.set("name", self.name)
         if self.view_controller is not None:
@@ -720,8 +743,6 @@ class Camera(BaseModel):
 
     @classmethod
     def _from_sdf(cls, el: ET.Element, version: str):
-        if el.get("name") is None:
-            return SDFError(f"'name' is required in SDF version {version}")
         _name = el.get("name", "user_camera")
         if isinstance(_name, SDFError):
             return _name.extend("@name")
@@ -798,27 +819,17 @@ class Plugin(BaseModel):
             return self.to_version(version).to_sdf()
         version = version or self.__version__
         el = ET.Element("plugin")
-        if cmp_version(version, "1.12") < 0:
-            if self.name is None:
-                raise ValueError(f"'name' is required in SDF version {version}")
         if self.name is not None:
             el.set("name", self.name)
-        if self.filename is None:
-            raise ValueError(f"'filename' is required in SDF version {version}")
         if self.filename is not None:
             el.set("filename", self.filename)
         return el
 
     @classmethod
     def _from_sdf(cls, el: ET.Element, version: str):
-        if cmp_version(version, "1.12") < 0:
-            if el.get("name") is None:
-                return SDFError(f"'name' is required in SDF version {version}")
         _name = el.get("name", "__default__")
         if isinstance(_name, SDFError):
             return _name.extend("@name")
-        if el.get("filename") is None:
-            return SDFError(f"'filename' is required in SDF version {version}")
         _filename = el.get("filename", "__default__")
         if isinstance(_filename, SDFError):
             return _filename.extend("@filename")

@@ -27,28 +27,18 @@ class Collision(BaseModel):
             return self.to_version(version).to_sdf()
         version = version or self.__version__
         el = ET.Element("collision")
-        if self.collision is None:
-            raise ValueError(f"'collision' is required in SDF version {version}")
         if self.collision is not None:
             el.text = self.collision
-        if cmp_version(version, "1.2") < 0:
-            if self.name is None:
-                raise ValueError(f"'name' is required in SDF version {version}")
         if self.name is not None:
             el.set("name", self.name)
         return el
 
     @classmethod
     def _from_sdf(cls, el: ET.Element, version: str):
-        if el.text is None:
-            return SDFError(f"'collision' is required in SDF version {version}")
         _text = el.text or "__default__"
         _collision = _text
         if isinstance(_collision, SDFError):
             return _collision
-        if cmp_version(version, "1.2") < 0:
-            if el.get("name") is None:
-                return SDFError(f"'name' is required in SDF version {version}")
         _name = el.get("name", "__default__")
         if isinstance(_name, SDFError):
             return _name.extend("@name")
@@ -71,16 +61,12 @@ class Topic(BaseModel):
             return self.to_version(version).to_sdf()
         version = version or self.__version__
         el = ET.Element("topic")
-        if self.topic is None:
-            raise ValueError(f"'topic' is required in SDF version {version}")
         if self.topic is not None:
             el.text = self.topic
         return el
 
     @classmethod
     def _from_sdf(cls, el: ET.Element, version: str):
-        if el.text is None:
-            return SDFError(f"'topic' is required in SDF version {version}")
         _text = el.text or "__default_topic__"
         _topic = _text
         if isinstance(_topic, SDFError):
@@ -106,12 +92,8 @@ class Contact(BaseModel):
             return self.to_version(version).to_sdf()
         version = version or self.__version__
         el = ET.Element("contact")
-        if self.collision is None:
-            raise ValueError(f"'collision' is required in SDF version {version}")
         if self.collision is not None:
             el.append(self.collision.to_sdf(version))
-        if self.topic is None:
-            raise ValueError(f"'topic' is required in SDF version {version}")
         if self.topic is not None:
             el.append(self.topic.to_sdf(version))
         return el
@@ -126,8 +108,6 @@ class Contact(BaseModel):
             _collision = _res
         else:
             _collision = None
-        if _collision is None:
-            return SDFError(f"'collision' is required in SDF version {version}")
         _c_topic = el.find("topic")
         if _c_topic is not None:
             _res = Topic._from_sdf(_c_topic, version)
@@ -136,6 +116,4 @@ class Contact(BaseModel):
             _topic = _res
         else:
             _topic = None
-        if _topic is None:
-            return SDFError(f"'topic' is required in SDF version {version}")
         return cls(sdf_version=version, collision=_collision, topic=_topic)

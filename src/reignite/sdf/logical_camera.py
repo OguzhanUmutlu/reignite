@@ -56,16 +56,12 @@ class Near(BaseModel):
             return self.to_version(version).to_sdf()
         version = version or self.__version__
         el = ET.Element("near")
-        if self.near is None:
-            raise ValueError(f"'near' is required in SDF version {version}")
         if self.near is not None:
             el.text = str(self.near)
         return el
 
     @classmethod
     def _from_sdf(cls, el: ET.Element, version: str):
-        if el.text is None:
-            return SDFError(f"'near' is required in SDF version {version}")
         _text = el.text or 0
         _near = _parse_double(_text)
         if isinstance(_near, SDFError):
@@ -89,16 +85,12 @@ class Far(BaseModel):
             return self.to_version(version).to_sdf()
         version = version or self.__version__
         el = ET.Element("far")
-        if self.far is None:
-            raise ValueError(f"'far' is required in SDF version {version}")
         if self.far is not None:
             el.text = str(self.far)
         return el
 
     @classmethod
     def _from_sdf(cls, el: ET.Element, version: str):
-        if el.text is None:
-            return SDFError(f"'far' is required in SDF version {version}")
         _text = el.text or 1
         _far = _parse_double(_text)
         if isinstance(_far, SDFError):
@@ -122,16 +114,12 @@ class AspectRatio(BaseModel):
             return self.to_version(version).to_sdf()
         version = version or self.__version__
         el = ET.Element("aspect_ratio")
-        if self.aspect_ratio is None:
-            raise ValueError(f"'aspect_ratio' is required in SDF version {version}")
         if self.aspect_ratio is not None:
             el.text = str(self.aspect_ratio)
         return el
 
     @classmethod
     def _from_sdf(cls, el: ET.Element, version: str):
-        if el.text is None:
-            return SDFError(f"'aspect_ratio' is required in SDF version {version}")
         _text = el.text or 1
         _aspect_ratio = _parse_double(_text)
         if isinstance(_aspect_ratio, SDFError):
@@ -155,16 +143,12 @@ class HorizontalFov(BaseModel):
             return self.to_version(version).to_sdf()
         version = version or self.__version__
         el = ET.Element("horizontal_fov")
-        if self.horizontal_fov is None:
-            raise ValueError(f"'horizontal_fov' is required in SDF version {version}")
         if self.horizontal_fov is not None:
             el.text = str(self.horizontal_fov)
         return el
 
     @classmethod
     def _from_sdf(cls, el: ET.Element, version: str):
-        if el.text is None:
-            return SDFError(f"'horizontal_fov' is required in SDF version {version}")
         _text = el.text or 1
         _horizontal_fov = _parse_double(_text)
         if isinstance(_horizontal_fov, SDFError):
@@ -201,20 +185,12 @@ class LogicalCamera(BaseModel):
             return self.to_version(version).to_sdf()
         version = version or self.__version__
         el = ET.Element("logical_camera")
-        if self.near is None:
-            raise ValueError(f"'near' is required in SDF version {version}")
         if self.near is not None:
             el.append(self.near.to_sdf(version))
-        if self.far is None:
-            raise ValueError(f"'far' is required in SDF version {version}")
         if self.far is not None:
             el.append(self.far.to_sdf(version))
-        if self.aspect_ratio is None:
-            raise ValueError(f"'aspect_ratio' is required in SDF version {version}")
         if self.aspect_ratio is not None:
             el.append(self.aspect_ratio.to_sdf(version))
-        if self.horizontal_fov is None:
-            raise ValueError(f"'horizontal_fov' is required in SDF version {version}")
         if self.horizontal_fov is not None:
             el.append(self.horizontal_fov.to_sdf(version))
         return el
@@ -229,8 +205,6 @@ class LogicalCamera(BaseModel):
             _near = _res
         else:
             _near = None
-        if _near is None:
-            return SDFError(f"'near' is required in SDF version {version}")
         _c_far = el.find("far")
         if _c_far is not None:
             _res = Far._from_sdf(_c_far, version)
@@ -239,8 +213,6 @@ class LogicalCamera(BaseModel):
             _far = _res
         else:
             _far = None
-        if _far is None:
-            return SDFError(f"'far' is required in SDF version {version}")
         _c_aspect_ratio = el.find("aspect_ratio")
         if _c_aspect_ratio is not None:
             _res = AspectRatio._from_sdf(_c_aspect_ratio, version)
@@ -249,8 +221,6 @@ class LogicalCamera(BaseModel):
             _aspect_ratio = _res
         else:
             _aspect_ratio = None
-        if _aspect_ratio is None:
-            return SDFError(f"'aspect_ratio' is required in SDF version {version}")
         _c_horizontal_fov = el.find("horizontal_fov")
         if _c_horizontal_fov is not None:
             _res = HorizontalFov._from_sdf(_c_horizontal_fov, version)
@@ -259,6 +229,4 @@ class LogicalCamera(BaseModel):
             _horizontal_fov = _res
         else:
             _horizontal_fov = None
-        if _horizontal_fov is None:
-            return SDFError(f"'horizontal_fov' is required in SDF version {version}")
         return cls(sdf_version=version, near=_near, far=_far, aspect_ratio=_aspect_ratio, horizontal_fov=_horizontal_fov)

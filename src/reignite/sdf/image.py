@@ -56,16 +56,12 @@ class Uri(BaseModel):
             return self.to_version(version).to_sdf()
         version = version or self.__version__
         el = ET.Element("uri")
-        if self.uri is None:
-            raise ValueError(f"'uri' is required in SDF version {version}")
         if self.uri is not None:
             el.text = self.uri
         return el
 
     @classmethod
     def _from_sdf(cls, el: ET.Element, version: str):
-        if el.text is None:
-            return SDFError(f"'uri' is required in SDF version {version}")
         _text = el.text or "__default__"
         _uri = _text
         if isinstance(_uri, SDFError):
@@ -89,16 +85,12 @@ class Scale(BaseModel):
             return self.to_version(version).to_sdf()
         version = version or self.__version__
         el = ET.Element("scale")
-        if self.scale is None:
-            raise ValueError(f"'scale' is required in SDF version {version}")
         if self.scale is not None:
             el.text = str(self.scale)
         return el
 
     @classmethod
     def _from_sdf(cls, el: ET.Element, version: str):
-        if el.text is None:
-            return SDFError(f"'scale' is required in SDF version {version}")
         _text = el.text or 1
         _scale = _parse_double(_text)
         if isinstance(_scale, SDFError):
@@ -122,16 +114,12 @@ class Threshold(BaseModel):
             return self.to_version(version).to_sdf()
         version = version or self.__version__
         el = ET.Element("threshold")
-        if self.threshold is None:
-            raise ValueError(f"'threshold' is required in SDF version {version}")
         if self.threshold is not None:
             el.text = str(self.threshold)
         return el
 
     @classmethod
     def _from_sdf(cls, el: ET.Element, version: str):
-        if el.text is None:
-            return SDFError(f"'threshold' is required in SDF version {version}")
         _text = el.text or 200
         _threshold = _parse_int32(_text)
         if isinstance(_threshold, SDFError):
@@ -155,16 +143,12 @@ class Height(BaseModel):
             return self.to_version(version).to_sdf()
         version = version or self.__version__
         el = ET.Element("height")
-        if self.height is None:
-            raise ValueError(f"'height' is required in SDF version {version}")
         if self.height is not None:
             el.text = str(self.height)
         return el
 
     @classmethod
     def _from_sdf(cls, el: ET.Element, version: str):
-        if el.text is None:
-            return SDFError(f"'height' is required in SDF version {version}")
         _text = el.text or 1
         _height = _parse_double(_text)
         if isinstance(_height, SDFError):
@@ -188,16 +172,12 @@ class Granularity(BaseModel):
             return self.to_version(version).to_sdf()
         version = version or self.__version__
         el = ET.Element("granularity")
-        if self.granularity is None:
-            raise ValueError(f"'granularity' is required in SDF version {version}")
         if self.granularity is not None:
             el.text = str(self.granularity)
         return el
 
     @classmethod
     def _from_sdf(cls, el: ET.Element, version: str):
-        if el.text is None:
-            return SDFError(f"'granularity' is required in SDF version {version}")
         _text = el.text or 1
         _granularity = _parse_int32(_text)
         if isinstance(_granularity, SDFError):
@@ -237,24 +217,14 @@ class Image(BaseModel):
             return self.to_version(version).to_sdf()
         version = version or self.__version__
         el = ET.Element("image")
-        if self.uri is None:
-            raise ValueError(f"'uri' is required in SDF version {version}")
         if self.uri is not None:
             el.append(self.uri.to_sdf(version))
-        if self.scale is None:
-            raise ValueError(f"'scale' is required in SDF version {version}")
         if self.scale is not None:
             el.append(self.scale.to_sdf(version))
-        if self.threshold is None:
-            raise ValueError(f"'threshold' is required in SDF version {version}")
         if self.threshold is not None:
             el.append(self.threshold.to_sdf(version))
-        if self.height is None:
-            raise ValueError(f"'height' is required in SDF version {version}")
         if self.height is not None:
             el.append(self.height.to_sdf(version))
-        if self.granularity is None:
-            raise ValueError(f"'granularity' is required in SDF version {version}")
         if self.granularity is not None:
             el.append(self.granularity.to_sdf(version))
         return el
@@ -269,8 +239,6 @@ class Image(BaseModel):
             _uri = _res
         else:
             _uri = None
-        if _uri is None:
-            return SDFError(f"'uri' is required in SDF version {version}")
         _c_scale = el.find("scale")
         if _c_scale is not None:
             _res = Scale._from_sdf(_c_scale, version)
@@ -279,8 +247,6 @@ class Image(BaseModel):
             _scale = _res
         else:
             _scale = None
-        if _scale is None:
-            return SDFError(f"'scale' is required in SDF version {version}")
         _c_threshold = el.find("threshold")
         if _c_threshold is not None:
             _res = Threshold._from_sdf(_c_threshold, version)
@@ -289,8 +255,6 @@ class Image(BaseModel):
             _threshold = _res
         else:
             _threshold = None
-        if _threshold is None:
-            return SDFError(f"'threshold' is required in SDF version {version}")
         _c_height = el.find("height")
         if _c_height is not None:
             _res = Height._from_sdf(_c_height, version)
@@ -299,8 +263,6 @@ class Image(BaseModel):
             _height = _res
         else:
             _height = None
-        if _height is None:
-            return SDFError(f"'height' is required in SDF version {version}")
         _c_granularity = el.find("granularity")
         if _c_granularity is not None:
             _res = Granularity._from_sdf(_c_granularity, version)
@@ -309,6 +271,4 @@ class Image(BaseModel):
             _granularity = _res
         else:
             _granularity = None
-        if _granularity is None:
-            return SDFError(f"'granularity' is required in SDF version {version}")
         return cls(sdf_version=version, uri=_uri, scale=_scale, threshold=_threshold, height=_height, granularity=_granularity)

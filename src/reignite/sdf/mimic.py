@@ -56,16 +56,12 @@ class Multiplier(BaseModel):
             return self.to_version(version).to_sdf()
         version = version or self.__version__
         el = ET.Element("multiplier")
-        if self.multiplier is None:
-            raise ValueError(f"'multiplier' is required in SDF version {version}")
         if self.multiplier is not None:
             el.text = str(self.multiplier)
         return el
 
     @classmethod
     def _from_sdf(cls, el: ET.Element, version: str):
-        if el.text is None:
-            return SDFError(f"'multiplier' is required in SDF version {version}")
         _text = el.text or 1.0
         _multiplier = _parse_double(_text)
         if isinstance(_multiplier, SDFError):
@@ -89,16 +85,12 @@ class Offset(BaseModel):
             return self.to_version(version).to_sdf()
         version = version or self.__version__
         el = ET.Element("offset")
-        if self.offset is None:
-            raise ValueError(f"'offset' is required in SDF version {version}")
         if self.offset is not None:
             el.text = str(self.offset)
         return el
 
     @classmethod
     def _from_sdf(cls, el: ET.Element, version: str):
-        if el.text is None:
-            return SDFError(f"'offset' is required in SDF version {version}")
         _text = el.text or 0
         _offset = _parse_double(_text)
         if isinstance(_offset, SDFError):
@@ -122,16 +114,12 @@ class Reference(BaseModel):
             return self.to_version(version).to_sdf()
         version = version or self.__version__
         el = ET.Element("reference")
-        if self.reference is None:
-            raise ValueError(f"'reference' is required in SDF version {version}")
         if self.reference is not None:
             el.text = str(self.reference)
         return el
 
     @classmethod
     def _from_sdf(cls, el: ET.Element, version: str):
-        if el.text is None:
-            return SDFError(f"'reference' is required in SDF version {version}")
         _text = el.text or 0
         _reference = _parse_double(_text)
         if isinstance(_reference, SDFError):
@@ -177,16 +165,10 @@ class Mimic(BaseModel):
             el.set("joint", self.joint)
         if self.axis is not None:
             el.set("axis", self.axis)
-        if self.multiplier is None:
-            raise ValueError(f"'multiplier' is required in SDF version {version}")
         if self.multiplier is not None:
             el.append(self.multiplier.to_sdf(version))
-        if self.offset is None:
-            raise ValueError(f"'offset' is required in SDF version {version}")
         if self.offset is not None:
             el.append(self.offset.to_sdf(version))
-        if self.reference is None:
-            raise ValueError(f"'reference' is required in SDF version {version}")
         if self.reference is not None:
             el.append(self.reference.to_sdf(version))
         return el
@@ -209,8 +191,6 @@ class Mimic(BaseModel):
             _multiplier = _res
         else:
             _multiplier = None
-        if _multiplier is None:
-            return SDFError(f"'multiplier' is required in SDF version {version}")
         _c_offset = el.find("offset")
         if _c_offset is not None:
             _res = Offset._from_sdf(_c_offset, version)
@@ -219,8 +199,6 @@ class Mimic(BaseModel):
             _offset = _res
         else:
             _offset = None
-        if _offset is None:
-            return SDFError(f"'offset' is required in SDF version {version}")
         _c_reference = el.find("reference")
         if _c_reference is not None:
             _res = Reference._from_sdf(_c_reference, version)
@@ -229,6 +207,4 @@ class Mimic(BaseModel):
             _reference = _res
         else:
             _reference = None
-        if _reference is None:
-            return SDFError(f"'reference' is required in SDF version {version}")
         return cls(sdf_version=version, joint=_joint, axis=_axis, multiplier=_multiplier, offset=_offset, reference=_reference)

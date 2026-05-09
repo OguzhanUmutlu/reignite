@@ -5,15 +5,15 @@ from xml.etree import ElementTree as ET
 
 from ..utils.model import BaseModel
 from ..utils.errors import SDFError
-from ..utils.vector2d import Vector2d
-from ..utils.vector3 import Vector3
+from ..utils.vector2d import Vector2d as _SDFVector2d
+from ..utils.vector3 import Vector3 as _SDFVector3
 
 
 class Normal(BaseModel):
-    def __init__(self, sdf_version: str, normal: Vector3 = None):
+    def __init__(self, sdf_version: str, normal: _SDFVector3 = None):
         self.__version__ = sdf_version
         if normal is None:
-            normal = Vector3.from_sdf("0 0 1")
+            normal = _SDFVector3.from_sdf("0 0 1")
         self.normal = normal
 
     def to_version(self, target_version: str) -> "Normal":
@@ -27,28 +27,24 @@ class Normal(BaseModel):
             return self.to_version(version).to_sdf()
         version = version or self.__version__
         el = ET.Element("normal")
-        if self.normal is None:
-            raise ValueError(f"'normal' is required in SDF version {version}")
         if self.normal is not None:
             el.text = self.normal.to_sdf()
         return el
 
     @classmethod
     def _from_sdf(cls, el: ET.Element, version: str):
-        if el.text is None:
-            return SDFError(f"'normal' is required in SDF version {version}")
         _text = el.text or "0 0 1"
-        _normal = Vector3._from_sdf(_text, version)
+        _normal = _SDFVector3._from_sdf(_text, version)
         if isinstance(_normal, SDFError):
             return _normal
         return cls(sdf_version=version, normal=_normal)
 
 
 class Size(BaseModel):
-    def __init__(self, sdf_version: str, size: Vector2d = None):
+    def __init__(self, sdf_version: str, size: _SDFVector2d = None):
         self.__version__ = sdf_version
         if size is None:
-            size = Vector2d.from_sdf("1 1")
+            size = _SDFVector2d.from_sdf("1 1")
         self.size = size
 
     def to_version(self, target_version: str) -> "Size":
@@ -62,18 +58,14 @@ class Size(BaseModel):
             return self.to_version(version).to_sdf()
         version = version or self.__version__
         el = ET.Element("size")
-        if self.size is None:
-            raise ValueError(f"'size' is required in SDF version {version}")
         if self.size is not None:
             el.text = self.size.to_sdf()
         return el
 
     @classmethod
     def _from_sdf(cls, el: ET.Element, version: str):
-        if el.text is None:
-            return SDFError(f"'size' is required in SDF version {version}")
         _text = el.text or "1 1"
-        _size = Vector2d._from_sdf(_text, version)
+        _size = _SDFVector2d._from_sdf(_text, version)
         if isinstance(_size, SDFError):
             return _size
         return cls(sdf_version=version, size=_size)
@@ -97,12 +89,8 @@ class Plane(BaseModel):
             return self.to_version(version).to_sdf()
         version = version or self.__version__
         el = ET.Element("plane")
-        if self.normal is None:
-            raise ValueError(f"'normal' is required in SDF version {version}")
         if self.normal is not None:
             el.append(self.normal.to_sdf(version))
-        if self.size is None:
-            raise ValueError(f"'size' is required in SDF version {version}")
         if self.size is not None:
             el.append(self.size.to_sdf(version))
         return el
@@ -117,8 +105,6 @@ class Plane(BaseModel):
             _normal = _res
         else:
             _normal = None
-        if _normal is None:
-            return SDFError(f"'normal' is required in SDF version {version}")
         _c_size = el.find("size")
         if _c_size is not None:
             _res = Size._from_sdf(_c_size, version)
@@ -127,6 +113,4 @@ class Plane(BaseModel):
             _size = _res
         else:
             _size = None
-        if _size is None:
-            return SDFError(f"'size' is required in SDF version {version}")
         return cls(sdf_version=version, normal=_normal, size=_size)

@@ -5,7 +5,7 @@ from xml.etree import ElementTree as ET
 
 from ..utils.model import BaseModel
 from ..utils.errors import SDFError
-from ..utils.vector3 import Vector3
+from ..utils.vector3 import Vector3 as _SDFVector3
 from ..utils.version import cmp_version
 
 
@@ -58,16 +58,12 @@ class Uri(BaseModel):
             return self.to_version(version).to_sdf()
         version = version or self.__version__
         el = ET.Element("uri")
-        if self.uri is None:
-            raise ValueError(f"'uri' is required in SDF version {version}")
         if self.uri is not None:
             el.text = self.uri
         return el
 
     @classmethod
     def _from_sdf(cls, el: ET.Element, version: str):
-        if el.text is None:
-            return SDFError(f"'uri' is required in SDF version {version}")
         _text = el.text or "__default__"
         _uri = _text
         if isinstance(_uri, SDFError):
@@ -91,16 +87,12 @@ class Name(BaseModel):
             return self.to_version(version).to_sdf()
         version = version or self.__version__
         el = ET.Element("name")
-        if self.name is None:
-            raise ValueError(f"'name' is required in SDF version {version}")
         if self.name is not None:
             el.text = self.name
         return el
 
     @classmethod
     def _from_sdf(cls, el: ET.Element, version: str):
-        if el.text is None:
-            return SDFError(f"'name' is required in SDF version {version}")
         _text = el.text or "__default__"
         _name = _text
         if isinstance(_name, SDFError):
@@ -155,8 +147,6 @@ class Submesh(BaseModel):
             return self.to_version(version).to_sdf()
         version = version or self.__version__
         el = ET.Element("submesh")
-        if self.name is None:
-            raise ValueError(f"'name' is required in SDF version {version}")
         if self.name is not None:
             el.append(self.name.to_sdf(version))
         if self.center is not None:
@@ -173,8 +163,6 @@ class Submesh(BaseModel):
             _name = _res
         else:
             _name = None
-        if _name is None:
-            return SDFError(f"'name' is required in SDF version {version}")
         _c_center = el.find("center")
         if _c_center is not None:
             _res = Center._from_sdf(_c_center, version)
@@ -187,10 +175,10 @@ class Submesh(BaseModel):
 
 
 class Scale(BaseModel):
-    def __init__(self, sdf_version: str, scale: Vector3 = None):
+    def __init__(self, sdf_version: str, scale: _SDFVector3 = None):
         self.__version__ = sdf_version
         if scale is None:
-            scale = Vector3.from_sdf("1 1 1")
+            scale = _SDFVector3.from_sdf("1 1 1")
         self.scale = scale
 
     def to_version(self, target_version: str) -> "Scale":
@@ -211,7 +199,7 @@ class Scale(BaseModel):
     @classmethod
     def _from_sdf(cls, el: ET.Element, version: str):
         _text = el.text or "1 1 1"
-        _scale = Vector3._from_sdf(_text, version)
+        _scale = _SDFVector3._from_sdf(_text, version)
         if isinstance(_scale, SDFError):
             return _scale
         return cls(sdf_version=version, scale=_scale)
@@ -363,8 +351,6 @@ class Mesh(BaseModel):
         el = ET.Element("mesh")
         if self.optimization is not None:
             el.set("optimization", self.optimization)
-        if self.uri is None:
-            raise ValueError(f"'uri' is required in SDF version {version}")
         if self.uri is not None:
             el.append(self.uri.to_sdf(version))
         if self.submesh is not None:
@@ -391,8 +377,6 @@ class Mesh(BaseModel):
             _uri = _res
         else:
             _uri = None
-        if _uri is None:
-            return SDFError(f"'uri' is required in SDF version {version}")
         _c_submesh = el.find("submesh")
         if _c_submesh is not None:
             _res = Submesh._from_sdf(_c_submesh, version)
