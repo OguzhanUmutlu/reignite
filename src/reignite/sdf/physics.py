@@ -796,40 +796,6 @@ class UseDynamicMoiRescaling(BaseModel):
         return cls(sdf_version=version, use_dynamic_moi_rescaling=_use_dynamic_moi_rescaling)
 
 
-class ThreadPositionCorrection(BaseModel):
-    def __init__(self, sdf_version: str, thread_position_correction: bool = False):
-        self.__version__ = sdf_version
-        self.thread_position_correction = thread_position_correction
-
-    def to_version(self, target_version: str) -> "ThreadPositionCorrection":
-        if self.thread_position_correction is not None and cmp_version(target_version, "1.6") < 0:
-            raise ValueError(f"'thread_position_correction' is not supported in SDF version {target_version} (added in 1.6)")
-        kwargs = {"sdf_version": target_version}
-        kwargs["thread_position_correction"] = self.thread_position_correction
-        new_obj = self.__class__(**kwargs)
-        return new_obj
-
-    def to_sdf(self, version: str = None) -> ET.Element:
-        if version is not None and version != self.__version__:
-            return self.to_version(version).to_sdf()
-        version = version or self.__version__
-        el = ET.Element("thread_position_correction")
-        if self.thread_position_correction is not None:
-            el.text = str(self.thread_position_correction).lower()
-        return el
-
-    @classmethod
-    def _from_sdf(cls, el: ET.Element, version: str):
-        _text = el.text or False
-        _thread_position_correction = str(_text).strip().lower() == 'true'
-        if isinstance(_thread_position_correction, SDFError):
-            return _thread_position_correction
-        if _thread_position_correction is not None and cmp_version(version, "1.6") < 0:
-            if _thread_position_correction != False:
-                return SDFError(f"'thread_position_correction' is not supported in SDF version {version} (added in 1.6)")
-        return cls(sdf_version=version, thread_position_correction=_thread_position_correction)
-
-
 class FrictionModel(BaseModel):
     def __init__(self, sdf_version: str, friction_model: str = "pyramid_model"):
         self.__version__ = sdf_version
@@ -898,6 +864,40 @@ class IslandThreads(BaseModel):
         return cls(sdf_version=version, island_threads=_island_threads)
 
 
+class ThreadPositionCorrection(BaseModel):
+    def __init__(self, sdf_version: str, thread_position_correction: bool = False):
+        self.__version__ = sdf_version
+        self.thread_position_correction = thread_position_correction
+
+    def to_version(self, target_version: str) -> "ThreadPositionCorrection":
+        if self.thread_position_correction is not None and cmp_version(target_version, "1.6") < 0:
+            raise ValueError(f"'thread_position_correction' is not supported in SDF version {target_version} (added in 1.6)")
+        kwargs = {"sdf_version": target_version}
+        kwargs["thread_position_correction"] = self.thread_position_correction
+        new_obj = self.__class__(**kwargs)
+        return new_obj
+
+    def to_sdf(self, version: str = None) -> ET.Element:
+        if version is not None and version != self.__version__:
+            return self.to_version(version).to_sdf()
+        version = version or self.__version__
+        el = ET.Element("thread_position_correction")
+        if self.thread_position_correction is not None:
+            el.text = str(self.thread_position_correction).lower()
+        return el
+
+    @classmethod
+    def _from_sdf(cls, el: ET.Element, version: str):
+        _text = el.text or False
+        _thread_position_correction = str(_text).strip().lower() == 'true'
+        if isinstance(_thread_position_correction, SDFError):
+            return _thread_position_correction
+        if _thread_position_correction is not None and cmp_version(version, "1.6") < 0:
+            if _thread_position_correction != False:
+                return SDFError(f"'thread_position_correction' is not supported in SDF version {version} (added in 1.6)")
+        return cls(sdf_version=version, thread_position_correction=_thread_position_correction)
+
+
 class OdeSolver(BaseModel):
     def __init__(
         self,
@@ -909,9 +909,9 @@ class OdeSolver(BaseModel):
         sor: float = 1.3,
         use_dynamic_moi_rescaling: "UseDynamicMoiRescaling" = None,
         min_step_size: "MinStepSize" = None,
-        thread_position_correction: "ThreadPositionCorrection" = None,
         friction_model: "FrictionModel" = None,
-        island_threads: "IslandThreads" = None
+        island_threads: "IslandThreads" = None,
+        thread_position_correction: "ThreadPositionCorrection" = None
     ):
         self.__version__ = sdf_version
         self.type = type
@@ -921,9 +921,9 @@ class OdeSolver(BaseModel):
         self.sor = sor
         self.use_dynamic_moi_rescaling = use_dynamic_moi_rescaling
         self.min_step_size = min_step_size
-        self.thread_position_correction = thread_position_correction
         self.friction_model = friction_model
         self.island_threads = island_threads
+        self.thread_position_correction = thread_position_correction
 
     def to_version(self, target_version: str) -> "OdeSolver":
         if self.type is not None and cmp_version(target_version, "1.2") >= 0:
@@ -940,12 +940,12 @@ class OdeSolver(BaseModel):
             raise ValueError(f"'use_dynamic_moi_rescaling' is not supported in SDF version {target_version} (added in 1.4)")
         if self.min_step_size is not None and cmp_version(target_version, "1.4") < 0:
             raise ValueError(f"'min_step_size' is not supported in SDF version {target_version} (added in 1.4)")
-        if self.thread_position_correction is not None and cmp_version(target_version, "1.6") < 0:
-            raise ValueError(f"'thread_position_correction' is not supported in SDF version {target_version} (added in 1.6)")
         if self.friction_model is not None and cmp_version(target_version, "1.6") < 0:
             raise ValueError(f"'friction_model' is not supported in SDF version {target_version} (added in 1.6)")
         if self.island_threads is not None and cmp_version(target_version, "1.6") < 0:
             raise ValueError(f"'island_threads' is not supported in SDF version {target_version} (added in 1.6)")
+        if self.thread_position_correction is not None and cmp_version(target_version, "1.6") < 0:
+            raise ValueError(f"'thread_position_correction' is not supported in SDF version {target_version} (added in 1.6)")
         kwargs = {"sdf_version": target_version}
         kwargs["type"] = self.type
         kwargs["dt"] = self.dt
@@ -954,9 +954,9 @@ class OdeSolver(BaseModel):
         kwargs["sor"] = self.sor
         kwargs["use_dynamic_moi_rescaling"] = self.use_dynamic_moi_rescaling.to_version(target_version) if self.use_dynamic_moi_rescaling is not None else None
         kwargs["min_step_size"] = self.min_step_size.to_version(target_version) if self.min_step_size is not None else None
-        kwargs["thread_position_correction"] = self.thread_position_correction.to_version(target_version) if self.thread_position_correction is not None else None
         kwargs["friction_model"] = self.friction_model.to_version(target_version) if self.friction_model is not None else None
         kwargs["island_threads"] = self.island_threads.to_version(target_version) if self.island_threads is not None else None
+        kwargs["thread_position_correction"] = self.thread_position_correction.to_version(target_version) if self.thread_position_correction is not None else None
         new_obj = self.__class__(**kwargs)
         return new_obj
 
@@ -979,12 +979,12 @@ class OdeSolver(BaseModel):
             el.append(self.use_dynamic_moi_rescaling.to_sdf(version))
         if self.min_step_size is not None:
             el.append(self.min_step_size.to_sdf(version))
-        if self.thread_position_correction is not None:
-            el.append(self.thread_position_correction.to_sdf(version))
         if self.friction_model is not None:
             el.append(self.friction_model.to_sdf(version))
         if self.island_threads is not None:
             el.append(self.island_threads.to_sdf(version))
+        if self.thread_position_correction is not None:
+            el.append(self.thread_position_correction.to_sdf(version))
         return el
 
     @classmethod
@@ -1024,16 +1024,6 @@ class OdeSolver(BaseModel):
             _min_step_size = None
         if _min_step_size is not None and cmp_version(version, "1.4") < 0:
             return SDFError(f"'min_step_size' is not supported in SDF version {version} (added in 1.4)")
-        _c_thread_position_correction = el.find("thread_position_correction")
-        if _c_thread_position_correction is not None:
-            _res = ThreadPositionCorrection._from_sdf(_c_thread_position_correction, version)
-            if isinstance(_res, SDFError):
-                return _res.extend("thread_position_correction")
-            _thread_position_correction = _res
-        else:
-            _thread_position_correction = None
-        if _thread_position_correction is not None and cmp_version(version, "1.6") < 0:
-            return SDFError(f"'thread_position_correction' is not supported in SDF version {version} (added in 1.6)")
         _c_friction_model = el.find("friction_model")
         if _c_friction_model is not None:
             _res = FrictionModel._from_sdf(_c_friction_model, version)
@@ -1054,7 +1044,17 @@ class OdeSolver(BaseModel):
             _island_threads = None
         if _island_threads is not None and cmp_version(version, "1.6") < 0:
             return SDFError(f"'island_threads' is not supported in SDF version {version} (added in 1.6)")
-        return cls(sdf_version=version, type=_type, dt=_dt, iters=_iters, precon_iters=_precon_iters, sor=_sor, use_dynamic_moi_rescaling=_use_dynamic_moi_rescaling, min_step_size=_min_step_size, thread_position_correction=_thread_position_correction, friction_model=_friction_model, island_threads=_island_threads)
+        _c_thread_position_correction = el.find("thread_position_correction")
+        if _c_thread_position_correction is not None:
+            _res = ThreadPositionCorrection._from_sdf(_c_thread_position_correction, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("thread_position_correction")
+            _thread_position_correction = _res
+        else:
+            _thread_position_correction = None
+        if _thread_position_correction is not None and cmp_version(version, "1.6") < 0:
+            return SDFError(f"'thread_position_correction' is not supported in SDF version {version} (added in 1.6)")
+        return cls(sdf_version=version, type=_type, dt=_dt, iters=_iters, precon_iters=_precon_iters, sor=_sor, use_dynamic_moi_rescaling=_use_dynamic_moi_rescaling, min_step_size=_min_step_size, friction_model=_friction_model, island_threads=_island_threads, thread_position_correction=_thread_position_correction)
 
 
 class ContactMaxCorrectingVel(BaseModel):
@@ -1249,6 +1249,40 @@ class UpdateRate(BaseModel):
             if _update_rate != 1000:
                 return SDFError(f"'update_rate' is not supported in SDF version {version} (added in 1.2)")
         return cls(sdf_version=version, update_rate=_update_rate)
+
+
+class RealTimeUpdateRate(BaseModel):
+    def __init__(self, sdf_version: str, real_time_update_rate: float = 1000):
+        self.__version__ = sdf_version
+        self.real_time_update_rate = real_time_update_rate
+
+    def to_version(self, target_version: str) -> "RealTimeUpdateRate":
+        if self.real_time_update_rate is not None and cmp_version(target_version, "1.4") < 0:
+            raise ValueError(f"'real_time_update_rate' is not supported in SDF version {target_version} (added in 1.4)")
+        kwargs = {"sdf_version": target_version}
+        kwargs["real_time_update_rate"] = self.real_time_update_rate
+        new_obj = self.__class__(**kwargs)
+        return new_obj
+
+    def to_sdf(self, version: str = None) -> ET.Element:
+        if version is not None and version != self.__version__:
+            return self.to_version(version).to_sdf()
+        version = version or self.__version__
+        el = ET.Element("real_time_update_rate")
+        if self.real_time_update_rate is not None:
+            el.text = str(self.real_time_update_rate)
+        return el
+
+    @classmethod
+    def _from_sdf(cls, el: ET.Element, version: str):
+        _text = el.text or 1000
+        _real_time_update_rate = _parse_double(_text)
+        if isinstance(_real_time_update_rate, SDFError):
+            return _real_time_update_rate
+        if _real_time_update_rate is not None and cmp_version(version, "1.4") < 0:
+            if _real_time_update_rate != 1000:
+                return SDFError(f"'real_time_update_rate' is not supported in SDF version {version} (added in 1.4)")
+        return cls(sdf_version=version, real_time_update_rate=_real_time_update_rate)
 
 
 class Accuracy(BaseModel):
@@ -1787,16 +1821,16 @@ class Simbody(BaseModel):
         return cls(sdf_version=version, min_step_size=_min_step_size, accuracy=_accuracy, max_transient_velocity=_max_transient_velocity, contact=_contact)
 
 
-class RealTimeUpdateRate(BaseModel):
-    def __init__(self, sdf_version: str, real_time_update_rate: float = 1000):
+class RealTimeFactor(BaseModel):
+    def __init__(self, sdf_version: str, real_time_factor: float = 1.0):
         self.__version__ = sdf_version
-        self.real_time_update_rate = real_time_update_rate
+        self.real_time_factor = real_time_factor
 
-    def to_version(self, target_version: str) -> "RealTimeUpdateRate":
-        if self.real_time_update_rate is not None and cmp_version(target_version, "1.4") < 0:
-            raise ValueError(f"'real_time_update_rate' is not supported in SDF version {target_version} (added in 1.4)")
+    def to_version(self, target_version: str) -> "RealTimeFactor":
+        if self.real_time_factor is not None and cmp_version(target_version, "1.4") < 0:
+            raise ValueError(f"'real_time_factor' is not supported in SDF version {target_version} (added in 1.4)")
         kwargs = {"sdf_version": target_version}
-        kwargs["real_time_update_rate"] = self.real_time_update_rate
+        kwargs["real_time_factor"] = self.real_time_factor
         new_obj = self.__class__(**kwargs)
         return new_obj
 
@@ -1804,21 +1838,21 @@ class RealTimeUpdateRate(BaseModel):
         if version is not None and version != self.__version__:
             return self.to_version(version).to_sdf()
         version = version or self.__version__
-        el = ET.Element("real_time_update_rate")
-        if self.real_time_update_rate is not None:
-            el.text = str(self.real_time_update_rate)
+        el = ET.Element("real_time_factor")
+        if self.real_time_factor is not None:
+            el.text = str(self.real_time_factor)
         return el
 
     @classmethod
     def _from_sdf(cls, el: ET.Element, version: str):
-        _text = el.text or 1000
-        _real_time_update_rate = _parse_double(_text)
-        if isinstance(_real_time_update_rate, SDFError):
-            return _real_time_update_rate
-        if _real_time_update_rate is not None and cmp_version(version, "1.4") < 0:
-            if _real_time_update_rate != 1000:
-                return SDFError(f"'real_time_update_rate' is not supported in SDF version {version} (added in 1.4)")
-        return cls(sdf_version=version, real_time_update_rate=_real_time_update_rate)
+        _text = el.text or 1.0
+        _real_time_factor = _parse_double(_text)
+        if isinstance(_real_time_factor, SDFError):
+            return _real_time_factor
+        if _real_time_factor is not None and cmp_version(version, "1.4") < 0:
+            if _real_time_factor != 1.0:
+                return SDFError(f"'real_time_factor' is not supported in SDF version {version} (added in 1.4)")
+        return cls(sdf_version=version, real_time_factor=_real_time_factor)
 
 
 class MaxStepSize(BaseModel):
@@ -1853,40 +1887,6 @@ class MaxStepSize(BaseModel):
             if _max_step_size != 0.001:
                 return SDFError(f"'max_step_size' is not supported in SDF version {version} (added in 1.4)")
         return cls(sdf_version=version, max_step_size=_max_step_size)
-
-
-class RealTimeFactor(BaseModel):
-    def __init__(self, sdf_version: str, real_time_factor: float = 1.0):
-        self.__version__ = sdf_version
-        self.real_time_factor = real_time_factor
-
-    def to_version(self, target_version: str) -> "RealTimeFactor":
-        if self.real_time_factor is not None and cmp_version(target_version, "1.4") < 0:
-            raise ValueError(f"'real_time_factor' is not supported in SDF version {target_version} (added in 1.4)")
-        kwargs = {"sdf_version": target_version}
-        kwargs["real_time_factor"] = self.real_time_factor
-        new_obj = self.__class__(**kwargs)
-        return new_obj
-
-    def to_sdf(self, version: str = None) -> ET.Element:
-        if version is not None and version != self.__version__:
-            return self.to_version(version).to_sdf()
-        version = version or self.__version__
-        el = ET.Element("real_time_factor")
-        if self.real_time_factor is not None:
-            el.text = str(self.real_time_factor)
-        return el
-
-    @classmethod
-    def _from_sdf(cls, el: ET.Element, version: str):
-        _text = el.text or 1.0
-        _real_time_factor = _parse_double(_text)
-        if isinstance(_real_time_factor, SDFError):
-            return _real_time_factor
-        if _real_time_factor is not None and cmp_version(version, "1.4") < 0:
-            if _real_time_factor != 1.0:
-                return SDFError(f"'real_time_factor' is not supported in SDF version {version} (added in 1.4)")
-        return cls(sdf_version=version, real_time_factor=_real_time_factor)
 
 
 class MagneticField(BaseModel):
@@ -2087,10 +2087,10 @@ class Physics(BaseModel):
         gravity: "Gravity" = None,
         bullet: "Bullet" = None,
         ode: "Ode" = None,
-        simbody: "Simbody" = None,
         real_time_update_rate: "RealTimeUpdateRate" = None,
-        max_step_size: "MaxStepSize" = None,
+        simbody: "Simbody" = None,
         real_time_factor: "RealTimeFactor" = None,
+        max_step_size: "MaxStepSize" = None,
         magnetic_field: "MagneticField" = None,
         dart: "Dart" = None
     ):
@@ -2103,10 +2103,10 @@ class Physics(BaseModel):
         self.gravity = gravity
         self.bullet = bullet
         self.ode = ode
-        self.simbody = simbody
         self.real_time_update_rate = real_time_update_rate
-        self.max_step_size = max_step_size
+        self.simbody = simbody
         self.real_time_factor = real_time_factor
+        self.max_step_size = max_step_size
         self.magnetic_field = magnetic_field
         self.dart = dart
 
@@ -2119,14 +2119,14 @@ class Physics(BaseModel):
             raise ValueError(f"'default' is not supported in SDF version {target_version} (added in 1.5)")
         if self.gravity is not None and cmp_version(target_version, "1.6") >= 0:
             raise ValueError(f"'gravity' is not supported in SDF version {target_version} (removed in 1.6)")
-        if self.simbody is not None and cmp_version(target_version, "1.4") < 0:
-            raise ValueError(f"'simbody' is not supported in SDF version {target_version} (added in 1.4)")
         if self.real_time_update_rate is not None and cmp_version(target_version, "1.4") < 0:
             raise ValueError(f"'real_time_update_rate' is not supported in SDF version {target_version} (added in 1.4)")
-        if self.max_step_size is not None and cmp_version(target_version, "1.4") < 0:
-            raise ValueError(f"'max_step_size' is not supported in SDF version {target_version} (added in 1.4)")
+        if self.simbody is not None and cmp_version(target_version, "1.4") < 0:
+            raise ValueError(f"'simbody' is not supported in SDF version {target_version} (added in 1.4)")
         if self.real_time_factor is not None and cmp_version(target_version, "1.4") < 0:
             raise ValueError(f"'real_time_factor' is not supported in SDF version {target_version} (added in 1.4)")
+        if self.max_step_size is not None and cmp_version(target_version, "1.4") < 0:
+            raise ValueError(f"'max_step_size' is not supported in SDF version {target_version} (added in 1.4)")
         if self.magnetic_field is not None and cmp_version(target_version, "1.5") < 0:
             raise ValueError(f"'magnetic_field' is not supported in SDF version {target_version} (added in 1.5)")
         if self.magnetic_field is not None and cmp_version(target_version, "1.6") >= 0:
@@ -2142,10 +2142,10 @@ class Physics(BaseModel):
         kwargs["gravity"] = self.gravity.to_version(target_version) if self.gravity is not None else None
         kwargs["bullet"] = self.bullet.to_version(target_version) if self.bullet is not None else None
         kwargs["ode"] = self.ode.to_version(target_version) if self.ode is not None else None
-        kwargs["simbody"] = self.simbody.to_version(target_version) if self.simbody is not None else None
         kwargs["real_time_update_rate"] = self.real_time_update_rate.to_version(target_version) if self.real_time_update_rate is not None else None
-        kwargs["max_step_size"] = self.max_step_size.to_version(target_version) if self.max_step_size is not None else None
+        kwargs["simbody"] = self.simbody.to_version(target_version) if self.simbody is not None else None
         kwargs["real_time_factor"] = self.real_time_factor.to_version(target_version) if self.real_time_factor is not None else None
+        kwargs["max_step_size"] = self.max_step_size.to_version(target_version) if self.max_step_size is not None else None
         kwargs["magnetic_field"] = self.magnetic_field.to_version(target_version) if self.magnetic_field is not None else None
         kwargs["dart"] = self.dart.to_version(target_version) if self.dart is not None else None
         new_obj = self.__class__(**kwargs)
@@ -2173,14 +2173,14 @@ class Physics(BaseModel):
             el.append(self.bullet.to_sdf(version))
         if self.ode is not None:
             el.append(self.ode.to_sdf(version))
-        if self.simbody is not None:
-            el.append(self.simbody.to_sdf(version))
         if self.real_time_update_rate is not None:
             el.append(self.real_time_update_rate.to_sdf(version))
-        if self.max_step_size is not None:
-            el.append(self.max_step_size.to_sdf(version))
+        if self.simbody is not None:
+            el.append(self.simbody.to_sdf(version))
         if self.real_time_factor is not None:
             el.append(self.real_time_factor.to_sdf(version))
+        if self.max_step_size is not None:
+            el.append(self.max_step_size.to_sdf(version))
         if self.magnetic_field is not None:
             el.append(self.magnetic_field.to_sdf(version))
         if self.dart is not None:
@@ -2239,16 +2239,6 @@ class Physics(BaseModel):
             _ode = _res
         else:
             _ode = None
-        _c_simbody = el.find("simbody")
-        if _c_simbody is not None:
-            _res = Simbody._from_sdf(_c_simbody, version)
-            if isinstance(_res, SDFError):
-                return _res.extend("simbody")
-            _simbody = _res
-        else:
-            _simbody = None
-        if _simbody is not None and cmp_version(version, "1.4") < 0:
-            return SDFError(f"'simbody' is not supported in SDF version {version} (added in 1.4)")
         _c_real_time_update_rate = el.find("real_time_update_rate")
         if _c_real_time_update_rate is not None:
             _res = RealTimeUpdateRate._from_sdf(_c_real_time_update_rate, version)
@@ -2259,16 +2249,16 @@ class Physics(BaseModel):
             _real_time_update_rate = None
         if _real_time_update_rate is not None and cmp_version(version, "1.4") < 0:
             return SDFError(f"'real_time_update_rate' is not supported in SDF version {version} (added in 1.4)")
-        _c_max_step_size = el.find("max_step_size")
-        if _c_max_step_size is not None:
-            _res = MaxStepSize._from_sdf(_c_max_step_size, version)
+        _c_simbody = el.find("simbody")
+        if _c_simbody is not None:
+            _res = Simbody._from_sdf(_c_simbody, version)
             if isinstance(_res, SDFError):
-                return _res.extend("max_step_size")
-            _max_step_size = _res
+                return _res.extend("simbody")
+            _simbody = _res
         else:
-            _max_step_size = None
-        if _max_step_size is not None and cmp_version(version, "1.4") < 0:
-            return SDFError(f"'max_step_size' is not supported in SDF version {version} (added in 1.4)")
+            _simbody = None
+        if _simbody is not None and cmp_version(version, "1.4") < 0:
+            return SDFError(f"'simbody' is not supported in SDF version {version} (added in 1.4)")
         _c_real_time_factor = el.find("real_time_factor")
         if _c_real_time_factor is not None:
             _res = RealTimeFactor._from_sdf(_c_real_time_factor, version)
@@ -2279,6 +2269,16 @@ class Physics(BaseModel):
             _real_time_factor = None
         if _real_time_factor is not None and cmp_version(version, "1.4") < 0:
             return SDFError(f"'real_time_factor' is not supported in SDF version {version} (added in 1.4)")
+        _c_max_step_size = el.find("max_step_size")
+        if _c_max_step_size is not None:
+            _res = MaxStepSize._from_sdf(_c_max_step_size, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("max_step_size")
+            _max_step_size = _res
+        else:
+            _max_step_size = None
+        if _max_step_size is not None and cmp_version(version, "1.4") < 0:
+            return SDFError(f"'max_step_size' is not supported in SDF version {version} (added in 1.4)")
         _c_magnetic_field = el.find("magnetic_field")
         if _c_magnetic_field is not None:
             _res = MagneticField._from_sdf(_c_magnetic_field, version)
@@ -2299,4 +2299,4 @@ class Physics(BaseModel):
             _dart = None
         if _dart is not None and cmp_version(version, "1.6") < 0:
             return SDFError(f"'dart' is not supported in SDF version {version} (added in 1.6)")
-        return cls(sdf_version=version, type=_type, update_rate=_update_rate, name=_name, default=_default, max_contacts=_max_contacts, gravity=_gravity, bullet=_bullet, ode=_ode, simbody=_simbody, real_time_update_rate=_real_time_update_rate, max_step_size=_max_step_size, real_time_factor=_real_time_factor, magnetic_field=_magnetic_field, dart=_dart)
+        return cls(sdf_version=version, type=_type, update_rate=_update_rate, name=_name, default=_default, max_contacts=_max_contacts, gravity=_gravity, bullet=_bullet, ode=_ode, real_time_update_rate=_real_time_update_rate, simbody=_simbody, real_time_factor=_real_time_factor, max_step_size=_max_step_size, magnetic_field=_magnetic_field, dart=_dart)

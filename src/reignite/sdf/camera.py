@@ -2216,40 +2216,6 @@ class Frame(BaseModel):
         return cls(sdf_version=version, name=_name, pose=_pose)
 
 
-class VisibilityMask(BaseModel):
-    def __init__(self, sdf_version: str, visibility_mask: int = 4294967295):
-        self.__version__ = sdf_version
-        self.visibility_mask = visibility_mask
-
-    def to_version(self, target_version: str) -> "VisibilityMask":
-        if self.visibility_mask is not None and cmp_version(target_version, "1.7") < 0:
-            raise ValueError(f"'visibility_mask' is not supported in SDF version {target_version} (added in 1.7)")
-        kwargs = {"sdf_version": target_version}
-        kwargs["visibility_mask"] = self.visibility_mask
-        new_obj = self.__class__(**kwargs)
-        return new_obj
-
-    def to_sdf(self, version: str = None) -> ET.Element:
-        if version is not None and version != self.__version__:
-            return self.to_version(version).to_sdf()
-        version = version or self.__version__
-        el = ET.Element("visibility_mask")
-        if self.visibility_mask is not None:
-            el.text = str(self.visibility_mask)
-        return el
-
-    @classmethod
-    def _from_sdf(cls, el: ET.Element, version: str):
-        _text = el.text or 4294967295
-        _visibility_mask = _parse_uint32(_text)
-        if isinstance(_visibility_mask, SDFError):
-            return _visibility_mask
-        if _visibility_mask is not None and cmp_version(version, "1.7") < 0:
-            if _visibility_mask != 4294967295:
-                return SDFError(f"'visibility_mask' is not supported in SDF version {version} (added in 1.7)")
-        return cls(sdf_version=version, visibility_mask=_visibility_mask)
-
-
 class OpticalFrameId(BaseModel):
     def __init__(self, sdf_version: str, optical_frame_id: str = ""):
         self.__version__ = sdf_version
@@ -2318,6 +2284,40 @@ class CameraInfoTopic(BaseModel):
         return cls(sdf_version=version, camera_info_topic=_camera_info_topic)
 
 
+class VisibilityMask(BaseModel):
+    def __init__(self, sdf_version: str, visibility_mask: int = 4294967295):
+        self.__version__ = sdf_version
+        self.visibility_mask = visibility_mask
+
+    def to_version(self, target_version: str) -> "VisibilityMask":
+        if self.visibility_mask is not None and cmp_version(target_version, "1.7") < 0:
+            raise ValueError(f"'visibility_mask' is not supported in SDF version {target_version} (added in 1.7)")
+        kwargs = {"sdf_version": target_version}
+        kwargs["visibility_mask"] = self.visibility_mask
+        new_obj = self.__class__(**kwargs)
+        return new_obj
+
+    def to_sdf(self, version: str = None) -> ET.Element:
+        if version is not None and version != self.__version__:
+            return self.to_version(version).to_sdf()
+        version = version or self.__version__
+        el = ET.Element("visibility_mask")
+        if self.visibility_mask is not None:
+            el.text = str(self.visibility_mask)
+        return el
+
+    @classmethod
+    def _from_sdf(cls, el: ET.Element, version: str):
+        _text = el.text or 4294967295
+        _visibility_mask = _parse_uint32(_text)
+        if isinstance(_visibility_mask, SDFError):
+            return _visibility_mask
+        if _visibility_mask is not None and cmp_version(version, "1.7") < 0:
+            if _visibility_mask != 4294967295:
+                return SDFError(f"'visibility_mask' is not supported in SDF version {version} (added in 1.7)")
+        return cls(sdf_version=version, visibility_mask=_visibility_mask)
+
+
 class SegmentationType(BaseModel):
     def __init__(self, sdf_version: str, segmentation_type: str = "semantic"):
         self.__version__ = sdf_version
@@ -2350,6 +2350,40 @@ class SegmentationType(BaseModel):
             if _segmentation_type != "semantic":
                 return SDFError(f"'segmentation_type' is not supported in SDF version {version} (added in 1.9)")
         return cls(sdf_version=version, segmentation_type=_segmentation_type)
+
+
+class BoxType(BaseModel):
+    def __init__(self, sdf_version: str, box_type: str = "2d"):
+        self.__version__ = sdf_version
+        self.box_type = box_type
+
+    def to_version(self, target_version: str) -> "BoxType":
+        if self.box_type is not None and cmp_version(target_version, "1.9") < 0:
+            raise ValueError(f"'box_type' is not supported in SDF version {target_version} (added in 1.9)")
+        kwargs = {"sdf_version": target_version}
+        kwargs["box_type"] = self.box_type
+        new_obj = self.__class__(**kwargs)
+        return new_obj
+
+    def to_sdf(self, version: str = None) -> ET.Element:
+        if version is not None and version != self.__version__:
+            return self.to_version(version).to_sdf()
+        version = version or self.__version__
+        el = ET.Element("box_type")
+        if self.box_type is not None:
+            el.text = self.box_type
+        return el
+
+    @classmethod
+    def _from_sdf(cls, el: ET.Element, version: str):
+        _text = el.text or "2d"
+        _box_type = _text
+        if isinstance(_box_type, SDFError):
+            return _box_type
+        if _box_type is not None and cmp_version(version, "1.9") < 0:
+            if _box_type != "2d":
+                return SDFError(f"'box_type' is not supported in SDF version {version} (added in 1.9)")
+        return cls(sdf_version=version, box_type=_box_type)
 
 
 class Triggered(BaseModel):
@@ -2420,40 +2454,6 @@ class TriggerTopic(BaseModel):
         return cls(sdf_version=version, trigger_topic=_trigger_topic)
 
 
-class BoxType(BaseModel):
-    def __init__(self, sdf_version: str, box_type: str = "2d"):
-        self.__version__ = sdf_version
-        self.box_type = box_type
-
-    def to_version(self, target_version: str) -> "BoxType":
-        if self.box_type is not None and cmp_version(target_version, "1.9") < 0:
-            raise ValueError(f"'box_type' is not supported in SDF version {target_version} (added in 1.9)")
-        kwargs = {"sdf_version": target_version}
-        kwargs["box_type"] = self.box_type
-        new_obj = self.__class__(**kwargs)
-        return new_obj
-
-    def to_sdf(self, version: str = None) -> ET.Element:
-        if version is not None and version != self.__version__:
-            return self.to_version(version).to_sdf()
-        version = version or self.__version__
-        el = ET.Element("box_type")
-        if self.box_type is not None:
-            el.text = self.box_type
-        return el
-
-    @classmethod
-    def _from_sdf(cls, el: ET.Element, version: str):
-        _text = el.text or "2d"
-        _box_type = _text
-        if isinstance(_box_type, SDFError):
-            return _box_type
-        if _box_type is not None and cmp_version(version, "1.9") < 0:
-            if _box_type != "2d":
-                return SDFError(f"'box_type' is not supported in SDF version {version} (added in 1.9)")
-        return cls(sdf_version=version, box_type=_box_type)
-
-
 class Camera(BaseModel):
     def __init__(
         self,
@@ -2469,13 +2469,13 @@ class Camera(BaseModel):
         lens: "Lens" = None,
         distortion: "Distortion" = None,
         frame: List["Frame"] = None,
-        visibility_mask: "VisibilityMask" = None,
         optical_frame_id: "OpticalFrameId" = None,
         camera_info_topic: "CameraInfoTopic" = None,
+        visibility_mask: "VisibilityMask" = None,
         segmentation_type: "SegmentationType" = None,
+        box_type: "BoxType" = None,
         triggered: "Triggered" = None,
-        trigger_topic: "TriggerTopic" = None,
-        box_type: "BoxType" = None
+        trigger_topic: "TriggerTopic" = None
     ):
         self.__version__ = sdf_version
         self.name = name
@@ -2489,13 +2489,13 @@ class Camera(BaseModel):
         self.lens = lens
         self.distortion = distortion
         self.frame = frame or []
-        self.visibility_mask = visibility_mask
         self.optical_frame_id = optical_frame_id
         self.camera_info_topic = camera_info_topic
+        self.visibility_mask = visibility_mask
         self.segmentation_type = segmentation_type
+        self.box_type = box_type
         self.triggered = triggered
         self.trigger_topic = trigger_topic
-        self.box_type = box_type
 
     def to_version(self, target_version: str) -> "Camera":
         if self.name is not None and cmp_version(target_version, "1.3") < 0:
@@ -2512,20 +2512,20 @@ class Camera(BaseModel):
             raise ValueError(f"'frame' is not supported in SDF version {target_version} (added in 1.5)")
         if self.frame is not None and cmp_version(target_version, "1.7") >= 0:
             raise ValueError(f"'frame' is not supported in SDF version {target_version} (removed in 1.7)")
-        if self.visibility_mask is not None and cmp_version(target_version, "1.7") < 0:
-            raise ValueError(f"'visibility_mask' is not supported in SDF version {target_version} (added in 1.7)")
         if self.optical_frame_id is not None and cmp_version(target_version, "1.7") < 0:
             raise ValueError(f"'optical_frame_id' is not supported in SDF version {target_version} (added in 1.7)")
         if self.camera_info_topic is not None and cmp_version(target_version, "1.7") < 0:
             raise ValueError(f"'camera_info_topic' is not supported in SDF version {target_version} (added in 1.7)")
+        if self.visibility_mask is not None and cmp_version(target_version, "1.7") < 0:
+            raise ValueError(f"'visibility_mask' is not supported in SDF version {target_version} (added in 1.7)")
         if self.segmentation_type is not None and cmp_version(target_version, "1.9") < 0:
             raise ValueError(f"'segmentation_type' is not supported in SDF version {target_version} (added in 1.9)")
+        if self.box_type is not None and cmp_version(target_version, "1.9") < 0:
+            raise ValueError(f"'box_type' is not supported in SDF version {target_version} (added in 1.9)")
         if self.triggered is not None and cmp_version(target_version, "1.9") < 0:
             raise ValueError(f"'triggered' is not supported in SDF version {target_version} (added in 1.9)")
         if self.trigger_topic is not None and cmp_version(target_version, "1.9") < 0:
             raise ValueError(f"'trigger_topic' is not supported in SDF version {target_version} (added in 1.9)")
-        if self.box_type is not None and cmp_version(target_version, "1.9") < 0:
-            raise ValueError(f"'box_type' is not supported in SDF version {target_version} (added in 1.9)")
         kwargs = {"sdf_version": target_version}
         kwargs["name"] = self.name
         kwargs["horizontal_fov"] = self.horizontal_fov.to_version(target_version) if self.horizontal_fov is not None else None
@@ -2538,13 +2538,13 @@ class Camera(BaseModel):
         kwargs["lens"] = self.lens.to_version(target_version) if self.lens is not None else None
         kwargs["distortion"] = self.distortion.to_version(target_version) if self.distortion is not None else None
         kwargs["frame"] = [c.to_version(target_version) for c in (self.frame or [])]
-        kwargs["visibility_mask"] = self.visibility_mask.to_version(target_version) if self.visibility_mask is not None else None
         kwargs["optical_frame_id"] = self.optical_frame_id.to_version(target_version) if self.optical_frame_id is not None else None
         kwargs["camera_info_topic"] = self.camera_info_topic.to_version(target_version) if self.camera_info_topic is not None else None
+        kwargs["visibility_mask"] = self.visibility_mask.to_version(target_version) if self.visibility_mask is not None else None
         kwargs["segmentation_type"] = self.segmentation_type.to_version(target_version) if self.segmentation_type is not None else None
+        kwargs["box_type"] = self.box_type.to_version(target_version) if self.box_type is not None else None
         kwargs["triggered"] = self.triggered.to_version(target_version) if self.triggered is not None else None
         kwargs["trigger_topic"] = self.trigger_topic.to_version(target_version) if self.trigger_topic is not None else None
-        kwargs["box_type"] = self.box_type.to_version(target_version) if self.box_type is not None else None
         new_obj = self.__class__(**kwargs)
         return new_obj
 
@@ -2579,20 +2579,20 @@ class Camera(BaseModel):
             el.append(self.distortion.to_sdf(version))
         for item in (self.frame or []):
             el.append(item.to_sdf(version))
-        if self.visibility_mask is not None:
-            el.append(self.visibility_mask.to_sdf(version))
         if self.optical_frame_id is not None:
             el.append(self.optical_frame_id.to_sdf(version))
         if self.camera_info_topic is not None:
             el.append(self.camera_info_topic.to_sdf(version))
+        if self.visibility_mask is not None:
+            el.append(self.visibility_mask.to_sdf(version))
         if self.segmentation_type is not None:
             el.append(self.segmentation_type.to_sdf(version))
+        if self.box_type is not None:
+            el.append(self.box_type.to_sdf(version))
         if self.triggered is not None:
             el.append(self.triggered.to_sdf(version))
         if self.trigger_topic is not None:
             el.append(self.trigger_topic.to_sdf(version))
-        if self.box_type is not None:
-            el.append(self.box_type.to_sdf(version))
         return el
 
     @classmethod
@@ -2697,16 +2697,6 @@ class Camera(BaseModel):
             _frame.append(_res)
         if _frame and cmp_version(version, "1.5") < 0:
             return SDFError(f"'frame' is not supported in SDF version {version} (added in 1.5)")
-        _c_visibility_mask = el.find("visibility_mask")
-        if _c_visibility_mask is not None:
-            _res = VisibilityMask._from_sdf(_c_visibility_mask, version)
-            if isinstance(_res, SDFError):
-                return _res.extend("visibility_mask")
-            _visibility_mask = _res
-        else:
-            _visibility_mask = None
-        if _visibility_mask is not None and cmp_version(version, "1.7") < 0:
-            return SDFError(f"'visibility_mask' is not supported in SDF version {version} (added in 1.7)")
         _c_optical_frame_id = el.find("optical_frame_id")
         if _c_optical_frame_id is not None:
             _res = OpticalFrameId._from_sdf(_c_optical_frame_id, version)
@@ -2727,6 +2717,16 @@ class Camera(BaseModel):
             _camera_info_topic = None
         if _camera_info_topic is not None and cmp_version(version, "1.7") < 0:
             return SDFError(f"'camera_info_topic' is not supported in SDF version {version} (added in 1.7)")
+        _c_visibility_mask = el.find("visibility_mask")
+        if _c_visibility_mask is not None:
+            _res = VisibilityMask._from_sdf(_c_visibility_mask, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("visibility_mask")
+            _visibility_mask = _res
+        else:
+            _visibility_mask = None
+        if _visibility_mask is not None and cmp_version(version, "1.7") < 0:
+            return SDFError(f"'visibility_mask' is not supported in SDF version {version} (added in 1.7)")
         _c_segmentation_type = el.find("segmentation_type")
         if _c_segmentation_type is not None:
             _res = SegmentationType._from_sdf(_c_segmentation_type, version)
@@ -2737,6 +2737,16 @@ class Camera(BaseModel):
             _segmentation_type = None
         if _segmentation_type is not None and cmp_version(version, "1.9") < 0:
             return SDFError(f"'segmentation_type' is not supported in SDF version {version} (added in 1.9)")
+        _c_box_type = el.find("box_type")
+        if _c_box_type is not None:
+            _res = BoxType._from_sdf(_c_box_type, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("box_type")
+            _box_type = _res
+        else:
+            _box_type = None
+        if _box_type is not None and cmp_version(version, "1.9") < 0:
+            return SDFError(f"'box_type' is not supported in SDF version {version} (added in 1.9)")
         _c_triggered = el.find("triggered")
         if _c_triggered is not None:
             _res = Triggered._from_sdf(_c_triggered, version)
@@ -2757,14 +2767,4 @@ class Camera(BaseModel):
             _trigger_topic = None
         if _trigger_topic is not None and cmp_version(version, "1.9") < 0:
             return SDFError(f"'trigger_topic' is not supported in SDF version {version} (added in 1.9)")
-        _c_box_type = el.find("box_type")
-        if _c_box_type is not None:
-            _res = BoxType._from_sdf(_c_box_type, version)
-            if isinstance(_res, SDFError):
-                return _res.extend("box_type")
-            _box_type = _res
-        else:
-            _box_type = None
-        if _box_type is not None and cmp_version(version, "1.9") < 0:
-            return SDFError(f"'box_type' is not supported in SDF version {version} (added in 1.9)")
-        return cls(sdf_version=version, name=_name, horizontal_fov=_horizontal_fov, image=_image, clip=_clip, save=_save, depth_camera=_depth_camera, pose=_pose, noise=_noise, lens=_lens, distortion=_distortion, frame=_frame, visibility_mask=_visibility_mask, optical_frame_id=_optical_frame_id, camera_info_topic=_camera_info_topic, segmentation_type=_segmentation_type, triggered=_triggered, trigger_topic=_trigger_topic, box_type=_box_type)
+        return cls(sdf_version=version, name=_name, horizontal_fov=_horizontal_fov, image=_image, clip=_clip, save=_save, depth_camera=_depth_camera, pose=_pose, noise=_noise, lens=_lens, distortion=_distortion, frame=_frame, optical_frame_id=_optical_frame_id, camera_info_topic=_camera_info_topic, visibility_mask=_visibility_mask, segmentation_type=_segmentation_type, box_type=_box_type, triggered=_triggered, trigger_topic=_trigger_topic)

@@ -43,6 +43,40 @@ def _parse_double(raw: str) -> float | SDFError:
 
 
 
+class MinContactCount(BaseModel):
+    def __init__(self, sdf_version: str, min_contact_count: int = 2):
+        self.__version__ = sdf_version
+        self.min_contact_count = min_contact_count
+
+    def to_version(self, target_version: str) -> "MinContactCount":
+        if self.min_contact_count is not None and cmp_version(target_version, "1.2") < 0:
+            raise ValueError(f"'min_contact_count' is not supported in SDF version {target_version} (added in 1.2)")
+        kwargs = {"sdf_version": target_version}
+        kwargs["min_contact_count"] = self.min_contact_count
+        new_obj = self.__class__(**kwargs)
+        return new_obj
+
+    def to_sdf(self, version: str = None) -> ET.Element:
+        if version is not None and version != self.__version__:
+            return self.to_version(version).to_sdf()
+        version = version or self.__version__
+        el = ET.Element("min_contact_count")
+        if self.min_contact_count is not None:
+            el.text = str(self.min_contact_count)
+        return el
+
+    @classmethod
+    def _from_sdf(cls, el: ET.Element, version: str):
+        _text = el.text or 2
+        _min_contact_count = _parse_uint32(_text)
+        if isinstance(_min_contact_count, SDFError):
+            return _min_contact_count
+        if _min_contact_count is not None and cmp_version(version, "1.2") < 0:
+            if _min_contact_count != 2:
+                return SDFError(f"'min_contact_count' is not supported in SDF version {version} (added in 1.2)")
+        return cls(sdf_version=version, min_contact_count=_min_contact_count)
+
+
 class AttachSteps(BaseModel):
     def __init__(self, sdf_version: str, attach_steps: int = 20):
         self.__version__ = sdf_version
@@ -109,40 +143,6 @@ class DetachSteps(BaseModel):
             if _detach_steps != 40:
                 return SDFError(f"'detach_steps' is not supported in SDF version {version} (added in 1.2)")
         return cls(sdf_version=version, detach_steps=_detach_steps)
-
-
-class MinContactCount(BaseModel):
-    def __init__(self, sdf_version: str, min_contact_count: int = 2):
-        self.__version__ = sdf_version
-        self.min_contact_count = min_contact_count
-
-    def to_version(self, target_version: str) -> "MinContactCount":
-        if self.min_contact_count is not None and cmp_version(target_version, "1.2") < 0:
-            raise ValueError(f"'min_contact_count' is not supported in SDF version {target_version} (added in 1.2)")
-        kwargs = {"sdf_version": target_version}
-        kwargs["min_contact_count"] = self.min_contact_count
-        new_obj = self.__class__(**kwargs)
-        return new_obj
-
-    def to_sdf(self, version: str = None) -> ET.Element:
-        if version is not None and version != self.__version__:
-            return self.to_version(version).to_sdf()
-        version = version or self.__version__
-        el = ET.Element("min_contact_count")
-        if self.min_contact_count is not None:
-            el.text = str(self.min_contact_count)
-        return el
-
-    @classmethod
-    def _from_sdf(cls, el: ET.Element, version: str):
-        _text = el.text or 2
-        _min_contact_count = _parse_uint32(_text)
-        if isinstance(_min_contact_count, SDFError):
-            return _min_contact_count
-        if _min_contact_count is not None and cmp_version(version, "1.2") < 0:
-            if _min_contact_count != 2:
-                return SDFError(f"'min_contact_count' is not supported in SDF version {version} (added in 1.2)")
-        return cls(sdf_version=version, min_contact_count=_min_contact_count)
 
 
 class GraspCheck(BaseModel):

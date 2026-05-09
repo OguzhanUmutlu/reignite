@@ -196,6 +196,42 @@ class Shadows(BaseModel):
         return cls(sdf_version=version, shadows=_shadows, enabled=_enabled)
 
 
+class Color(BaseModel):
+    def __init__(self, sdf_version: str, color: _SDFColor = None):
+        self.__version__ = sdf_version
+        if color is None:
+            color = _SDFColor.from_sdf("1 1 1 1")
+        self.color = color
+
+    def to_version(self, target_version: str) -> "Color":
+        if self.color is not None and cmp_version(target_version, "1.2") < 0:
+            raise ValueError(f"'color' is not supported in SDF version {target_version} (added in 1.2)")
+        kwargs = {"sdf_version": target_version}
+        kwargs["color"] = self.color
+        new_obj = self.__class__(**kwargs)
+        return new_obj
+
+    def to_sdf(self, version: str = None) -> ET.Element:
+        if version is not None and version != self.__version__:
+            return self.to_version(version).to_sdf()
+        version = version or self.__version__
+        el = ET.Element("color")
+        if self.color is not None:
+            el.text = self.color.to_sdf()
+        return el
+
+    @classmethod
+    def _from_sdf(cls, el: ET.Element, version: str):
+        _text = el.text or "1 1 1 1"
+        _color = _SDFColor._from_sdf(_text, version)
+        if isinstance(_color, SDFError):
+            return _color
+        if _color is not None and cmp_version(version, "1.2") < 0:
+            if _color != "1 1 1 1":
+                return SDFError(f"'color' is not supported in SDF version {version} (added in 1.2)")
+        return cls(sdf_version=version, color=_color)
+
+
 class End(BaseModel):
     def __init__(self, sdf_version: str, end: float = 100.0):
         self.__version__ = sdf_version
@@ -228,40 +264,6 @@ class End(BaseModel):
             if _end != 100.0:
                 return SDFError(f"'end' is not supported in SDF version {version} (added in 1.2)")
         return cls(sdf_version=version, end=_end)
-
-
-class Type(BaseModel):
-    def __init__(self, sdf_version: str, type: str = "none"):
-        self.__version__ = sdf_version
-        self.type = type
-
-    def to_version(self, target_version: str) -> "Type":
-        if self.type is not None and cmp_version(target_version, "1.2") < 0:
-            raise ValueError(f"'type' is not supported in SDF version {target_version} (added in 1.2)")
-        kwargs = {"sdf_version": target_version}
-        kwargs["type"] = self.type
-        new_obj = self.__class__(**kwargs)
-        return new_obj
-
-    def to_sdf(self, version: str = None) -> ET.Element:
-        if version is not None and version != self.__version__:
-            return self.to_version(version).to_sdf()
-        version = version or self.__version__
-        el = ET.Element("type")
-        if self.type is not None:
-            el.text = self.type
-        return el
-
-    @classmethod
-    def _from_sdf(cls, el: ET.Element, version: str):
-        _text = el.text or "none"
-        _type = _text
-        if isinstance(_type, SDFError):
-            return _type
-        if _type is not None and cmp_version(version, "1.2") < 0:
-            if _type != "none":
-                return SDFError(f"'type' is not supported in SDF version {version} (added in 1.2)")
-        return cls(sdf_version=version, type=_type)
 
 
 class Start(BaseModel):
@@ -298,6 +300,40 @@ class Start(BaseModel):
         return cls(sdf_version=version, start=_start)
 
 
+class Type(BaseModel):
+    def __init__(self, sdf_version: str, type: str = "none"):
+        self.__version__ = sdf_version
+        self.type = type
+
+    def to_version(self, target_version: str) -> "Type":
+        if self.type is not None and cmp_version(target_version, "1.2") < 0:
+            raise ValueError(f"'type' is not supported in SDF version {target_version} (added in 1.2)")
+        kwargs = {"sdf_version": target_version}
+        kwargs["type"] = self.type
+        new_obj = self.__class__(**kwargs)
+        return new_obj
+
+    def to_sdf(self, version: str = None) -> ET.Element:
+        if version is not None and version != self.__version__:
+            return self.to_version(version).to_sdf()
+        version = version or self.__version__
+        el = ET.Element("type")
+        if self.type is not None:
+            el.text = self.type
+        return el
+
+    @classmethod
+    def _from_sdf(cls, el: ET.Element, version: str):
+        _text = el.text or "none"
+        _type = _text
+        if isinstance(_type, SDFError):
+            return _type
+        if _type is not None and cmp_version(version, "1.2") < 0:
+            if _type != "none":
+                return SDFError(f"'type' is not supported in SDF version {version} (added in 1.2)")
+        return cls(sdf_version=version, type=_type)
+
+
 class Density(BaseModel):
     def __init__(self, sdf_version: str, density: float = 1.0):
         self.__version__ = sdf_version
@@ -330,42 +366,6 @@ class Density(BaseModel):
             if _density != 1.0:
                 return SDFError(f"'density' is not supported in SDF version {version} (added in 1.2)")
         return cls(sdf_version=version, density=_density)
-
-
-class Color(BaseModel):
-    def __init__(self, sdf_version: str, color: _SDFColor = None):
-        self.__version__ = sdf_version
-        if color is None:
-            color = _SDFColor.from_sdf("1 1 1 1")
-        self.color = color
-
-    def to_version(self, target_version: str) -> "Color":
-        if self.color is not None and cmp_version(target_version, "1.2") < 0:
-            raise ValueError(f"'color' is not supported in SDF version {target_version} (added in 1.2)")
-        kwargs = {"sdf_version": target_version}
-        kwargs["color"] = self.color
-        new_obj = self.__class__(**kwargs)
-        return new_obj
-
-    def to_sdf(self, version: str = None) -> ET.Element:
-        if version is not None and version != self.__version__:
-            return self.to_version(version).to_sdf()
-        version = version or self.__version__
-        el = ET.Element("color")
-        if self.color is not None:
-            el.text = self.color.to_sdf()
-        return el
-
-    @classmethod
-    def _from_sdf(cls, el: ET.Element, version: str):
-        _text = el.text or "1 1 1 1"
-        _color = _SDFColor._from_sdf(_text, version)
-        if isinstance(_color, SDFError):
-            return _color
-        if _color is not None and cmp_version(version, "1.2") < 0:
-            if _color != "1 1 1 1":
-                return SDFError(f"'color' is not supported in SDF version {version} (added in 1.2)")
-        return cls(sdf_version=version, color=_color)
 
 
 class Fog(BaseModel):

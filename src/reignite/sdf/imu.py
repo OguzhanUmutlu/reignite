@@ -473,40 +473,6 @@ class Precision(BaseModel):
         return cls(sdf_version=version, precision=_precision)
 
 
-class DynamicBiasStddev(BaseModel):
-    def __init__(self, sdf_version: str, dynamic_bias_stddev: float = 0.0):
-        self.__version__ = sdf_version
-        self.dynamic_bias_stddev = dynamic_bias_stddev
-
-    def to_version(self, target_version: str) -> "DynamicBiasStddev":
-        if self.dynamic_bias_stddev is not None and cmp_version(target_version, "1.6") < 0:
-            raise ValueError(f"'dynamic_bias_stddev' is not supported in SDF version {target_version} (added in 1.6)")
-        kwargs = {"sdf_version": target_version}
-        kwargs["dynamic_bias_stddev"] = self.dynamic_bias_stddev
-        new_obj = self.__class__(**kwargs)
-        return new_obj
-
-    def to_sdf(self, version: str = None) -> ET.Element:
-        if version is not None and version != self.__version__:
-            return self.to_version(version).to_sdf()
-        version = version or self.__version__
-        el = ET.Element("dynamic_bias_stddev")
-        if self.dynamic_bias_stddev is not None:
-            el.text = str(self.dynamic_bias_stddev)
-        return el
-
-    @classmethod
-    def _from_sdf(cls, el: ET.Element, version: str):
-        _text = el.text or 0.0
-        _dynamic_bias_stddev = _parse_double(_text)
-        if isinstance(_dynamic_bias_stddev, SDFError):
-            return _dynamic_bias_stddev
-        if _dynamic_bias_stddev is not None and cmp_version(version, "1.6") < 0:
-            if _dynamic_bias_stddev != 0.0:
-                return SDFError(f"'dynamic_bias_stddev' is not supported in SDF version {version} (added in 1.6)")
-        return cls(sdf_version=version, dynamic_bias_stddev=_dynamic_bias_stddev)
-
-
 class DynamicBiasCorrelationTime(BaseModel):
     def __init__(self, sdf_version: str, dynamic_bias_correlation_time: float = 0.0):
         self.__version__ = sdf_version
@@ -541,6 +507,40 @@ class DynamicBiasCorrelationTime(BaseModel):
         return cls(sdf_version=version, dynamic_bias_correlation_time=_dynamic_bias_correlation_time)
 
 
+class DynamicBiasStddev(BaseModel):
+    def __init__(self, sdf_version: str, dynamic_bias_stddev: float = 0.0):
+        self.__version__ = sdf_version
+        self.dynamic_bias_stddev = dynamic_bias_stddev
+
+    def to_version(self, target_version: str) -> "DynamicBiasStddev":
+        if self.dynamic_bias_stddev is not None and cmp_version(target_version, "1.6") < 0:
+            raise ValueError(f"'dynamic_bias_stddev' is not supported in SDF version {target_version} (added in 1.6)")
+        kwargs = {"sdf_version": target_version}
+        kwargs["dynamic_bias_stddev"] = self.dynamic_bias_stddev
+        new_obj = self.__class__(**kwargs)
+        return new_obj
+
+    def to_sdf(self, version: str = None) -> ET.Element:
+        if version is not None and version != self.__version__:
+            return self.to_version(version).to_sdf()
+        version = version or self.__version__
+        el = ET.Element("dynamic_bias_stddev")
+        if self.dynamic_bias_stddev is not None:
+            el.text = str(self.dynamic_bias_stddev)
+        return el
+
+    @classmethod
+    def _from_sdf(cls, el: ET.Element, version: str):
+        _text = el.text or 0.0
+        _dynamic_bias_stddev = _parse_double(_text)
+        if isinstance(_dynamic_bias_stddev, SDFError):
+            return _dynamic_bias_stddev
+        if _dynamic_bias_stddev is not None and cmp_version(version, "1.6") < 0:
+            if _dynamic_bias_stddev != 0.0:
+                return SDFError(f"'dynamic_bias_stddev' is not supported in SDF version {version} (added in 1.6)")
+        return cls(sdf_version=version, dynamic_bias_stddev=_dynamic_bias_stddev)
+
+
 class XNoise(BaseModel):
     def __init__(
         self,
@@ -551,8 +551,8 @@ class XNoise(BaseModel):
         bias_mean: "BiasMean" = None,
         bias_stddev: "BiasStddev" = None,
         precision: "Precision" = None,
-        dynamic_bias_stddev: "DynamicBiasStddev" = None,
-        dynamic_bias_correlation_time: "DynamicBiasCorrelationTime" = None
+        dynamic_bias_correlation_time: "DynamicBiasCorrelationTime" = None,
+        dynamic_bias_stddev: "DynamicBiasStddev" = None
     ):
         self.__version__ = sdf_version
         self.type = type
@@ -561,14 +561,14 @@ class XNoise(BaseModel):
         self.bias_mean = bias_mean
         self.bias_stddev = bias_stddev
         self.precision = precision
-        self.dynamic_bias_stddev = dynamic_bias_stddev
         self.dynamic_bias_correlation_time = dynamic_bias_correlation_time
+        self.dynamic_bias_stddev = dynamic_bias_stddev
 
     def to_version(self, target_version: str) -> "XNoise":
-        if self.dynamic_bias_stddev is not None and cmp_version(target_version, "1.6") < 0:
-            raise ValueError(f"'dynamic_bias_stddev' is not supported in SDF version {target_version} (added in 1.6)")
         if self.dynamic_bias_correlation_time is not None and cmp_version(target_version, "1.6") < 0:
             raise ValueError(f"'dynamic_bias_correlation_time' is not supported in SDF version {target_version} (added in 1.6)")
+        if self.dynamic_bias_stddev is not None and cmp_version(target_version, "1.6") < 0:
+            raise ValueError(f"'dynamic_bias_stddev' is not supported in SDF version {target_version} (added in 1.6)")
         kwargs = {"sdf_version": target_version}
         kwargs["type"] = self.type
         kwargs["mean"] = self.mean.to_version(target_version) if self.mean is not None else None
@@ -576,8 +576,8 @@ class XNoise(BaseModel):
         kwargs["bias_mean"] = self.bias_mean.to_version(target_version) if self.bias_mean is not None else None
         kwargs["bias_stddev"] = self.bias_stddev.to_version(target_version) if self.bias_stddev is not None else None
         kwargs["precision"] = self.precision.to_version(target_version) if self.precision is not None else None
-        kwargs["dynamic_bias_stddev"] = self.dynamic_bias_stddev.to_version(target_version) if self.dynamic_bias_stddev is not None else None
         kwargs["dynamic_bias_correlation_time"] = self.dynamic_bias_correlation_time.to_version(target_version) if self.dynamic_bias_correlation_time is not None else None
+        kwargs["dynamic_bias_stddev"] = self.dynamic_bias_stddev.to_version(target_version) if self.dynamic_bias_stddev is not None else None
         new_obj = self.__class__(**kwargs)
         return new_obj
 
@@ -598,10 +598,10 @@ class XNoise(BaseModel):
             el.append(self.bias_stddev.to_sdf(version))
         if self.precision is not None:
             el.append(self.precision.to_sdf(version))
-        if self.dynamic_bias_stddev is not None:
-            el.append(self.dynamic_bias_stddev.to_sdf(version))
         if self.dynamic_bias_correlation_time is not None:
             el.append(self.dynamic_bias_correlation_time.to_sdf(version))
+        if self.dynamic_bias_stddev is not None:
+            el.append(self.dynamic_bias_stddev.to_sdf(version))
         return el
 
     @classmethod
@@ -649,16 +649,6 @@ class XNoise(BaseModel):
             _precision = _res
         else:
             _precision = None
-        _c_dynamic_bias_stddev = el.find("dynamic_bias_stddev")
-        if _c_dynamic_bias_stddev is not None:
-            _res = DynamicBiasStddev._from_sdf(_c_dynamic_bias_stddev, version)
-            if isinstance(_res, SDFError):
-                return _res.extend("dynamic_bias_stddev")
-            _dynamic_bias_stddev = _res
-        else:
-            _dynamic_bias_stddev = None
-        if _dynamic_bias_stddev is not None and cmp_version(version, "1.6") < 0:
-            return SDFError(f"'dynamic_bias_stddev' is not supported in SDF version {version} (added in 1.6)")
         _c_dynamic_bias_correlation_time = el.find("dynamic_bias_correlation_time")
         if _c_dynamic_bias_correlation_time is not None:
             _res = DynamicBiasCorrelationTime._from_sdf(_c_dynamic_bias_correlation_time, version)
@@ -669,7 +659,17 @@ class XNoise(BaseModel):
             _dynamic_bias_correlation_time = None
         if _dynamic_bias_correlation_time is not None and cmp_version(version, "1.6") < 0:
             return SDFError(f"'dynamic_bias_correlation_time' is not supported in SDF version {version} (added in 1.6)")
-        return cls(sdf_version=version, type=_type, mean=_mean, stddev=_stddev, bias_mean=_bias_mean, bias_stddev=_bias_stddev, precision=_precision, dynamic_bias_stddev=_dynamic_bias_stddev, dynamic_bias_correlation_time=_dynamic_bias_correlation_time)
+        _c_dynamic_bias_stddev = el.find("dynamic_bias_stddev")
+        if _c_dynamic_bias_stddev is not None:
+            _res = DynamicBiasStddev._from_sdf(_c_dynamic_bias_stddev, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("dynamic_bias_stddev")
+            _dynamic_bias_stddev = _res
+        else:
+            _dynamic_bias_stddev = None
+        if _dynamic_bias_stddev is not None and cmp_version(version, "1.6") < 0:
+            return SDFError(f"'dynamic_bias_stddev' is not supported in SDF version {version} (added in 1.6)")
+        return cls(sdf_version=version, type=_type, mean=_mean, stddev=_stddev, bias_mean=_bias_mean, bias_stddev=_bias_stddev, precision=_precision, dynamic_bias_correlation_time=_dynamic_bias_correlation_time, dynamic_bias_stddev=_dynamic_bias_stddev)
 
 
 class X(BaseModel):
@@ -715,8 +715,8 @@ class YNoise(BaseModel):
         bias_mean: "BiasMean" = None,
         bias_stddev: "BiasStddev" = None,
         precision: "Precision" = None,
-        dynamic_bias_stddev: "DynamicBiasStddev" = None,
-        dynamic_bias_correlation_time: "DynamicBiasCorrelationTime" = None
+        dynamic_bias_correlation_time: "DynamicBiasCorrelationTime" = None,
+        dynamic_bias_stddev: "DynamicBiasStddev" = None
     ):
         self.__version__ = sdf_version
         self.type = type
@@ -725,14 +725,14 @@ class YNoise(BaseModel):
         self.bias_mean = bias_mean
         self.bias_stddev = bias_stddev
         self.precision = precision
-        self.dynamic_bias_stddev = dynamic_bias_stddev
         self.dynamic_bias_correlation_time = dynamic_bias_correlation_time
+        self.dynamic_bias_stddev = dynamic_bias_stddev
 
     def to_version(self, target_version: str) -> "YNoise":
-        if self.dynamic_bias_stddev is not None and cmp_version(target_version, "1.6") < 0:
-            raise ValueError(f"'dynamic_bias_stddev' is not supported in SDF version {target_version} (added in 1.6)")
         if self.dynamic_bias_correlation_time is not None and cmp_version(target_version, "1.6") < 0:
             raise ValueError(f"'dynamic_bias_correlation_time' is not supported in SDF version {target_version} (added in 1.6)")
+        if self.dynamic_bias_stddev is not None and cmp_version(target_version, "1.6") < 0:
+            raise ValueError(f"'dynamic_bias_stddev' is not supported in SDF version {target_version} (added in 1.6)")
         kwargs = {"sdf_version": target_version}
         kwargs["type"] = self.type
         kwargs["mean"] = self.mean.to_version(target_version) if self.mean is not None else None
@@ -740,8 +740,8 @@ class YNoise(BaseModel):
         kwargs["bias_mean"] = self.bias_mean.to_version(target_version) if self.bias_mean is not None else None
         kwargs["bias_stddev"] = self.bias_stddev.to_version(target_version) if self.bias_stddev is not None else None
         kwargs["precision"] = self.precision.to_version(target_version) if self.precision is not None else None
-        kwargs["dynamic_bias_stddev"] = self.dynamic_bias_stddev.to_version(target_version) if self.dynamic_bias_stddev is not None else None
         kwargs["dynamic_bias_correlation_time"] = self.dynamic_bias_correlation_time.to_version(target_version) if self.dynamic_bias_correlation_time is not None else None
+        kwargs["dynamic_bias_stddev"] = self.dynamic_bias_stddev.to_version(target_version) if self.dynamic_bias_stddev is not None else None
         new_obj = self.__class__(**kwargs)
         return new_obj
 
@@ -762,10 +762,10 @@ class YNoise(BaseModel):
             el.append(self.bias_stddev.to_sdf(version))
         if self.precision is not None:
             el.append(self.precision.to_sdf(version))
-        if self.dynamic_bias_stddev is not None:
-            el.append(self.dynamic_bias_stddev.to_sdf(version))
         if self.dynamic_bias_correlation_time is not None:
             el.append(self.dynamic_bias_correlation_time.to_sdf(version))
+        if self.dynamic_bias_stddev is not None:
+            el.append(self.dynamic_bias_stddev.to_sdf(version))
         return el
 
     @classmethod
@@ -813,16 +813,6 @@ class YNoise(BaseModel):
             _precision = _res
         else:
             _precision = None
-        _c_dynamic_bias_stddev = el.find("dynamic_bias_stddev")
-        if _c_dynamic_bias_stddev is not None:
-            _res = DynamicBiasStddev._from_sdf(_c_dynamic_bias_stddev, version)
-            if isinstance(_res, SDFError):
-                return _res.extend("dynamic_bias_stddev")
-            _dynamic_bias_stddev = _res
-        else:
-            _dynamic_bias_stddev = None
-        if _dynamic_bias_stddev is not None and cmp_version(version, "1.6") < 0:
-            return SDFError(f"'dynamic_bias_stddev' is not supported in SDF version {version} (added in 1.6)")
         _c_dynamic_bias_correlation_time = el.find("dynamic_bias_correlation_time")
         if _c_dynamic_bias_correlation_time is not None:
             _res = DynamicBiasCorrelationTime._from_sdf(_c_dynamic_bias_correlation_time, version)
@@ -833,7 +823,17 @@ class YNoise(BaseModel):
             _dynamic_bias_correlation_time = None
         if _dynamic_bias_correlation_time is not None and cmp_version(version, "1.6") < 0:
             return SDFError(f"'dynamic_bias_correlation_time' is not supported in SDF version {version} (added in 1.6)")
-        return cls(sdf_version=version, type=_type, mean=_mean, stddev=_stddev, bias_mean=_bias_mean, bias_stddev=_bias_stddev, precision=_precision, dynamic_bias_stddev=_dynamic_bias_stddev, dynamic_bias_correlation_time=_dynamic_bias_correlation_time)
+        _c_dynamic_bias_stddev = el.find("dynamic_bias_stddev")
+        if _c_dynamic_bias_stddev is not None:
+            _res = DynamicBiasStddev._from_sdf(_c_dynamic_bias_stddev, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("dynamic_bias_stddev")
+            _dynamic_bias_stddev = _res
+        else:
+            _dynamic_bias_stddev = None
+        if _dynamic_bias_stddev is not None and cmp_version(version, "1.6") < 0:
+            return SDFError(f"'dynamic_bias_stddev' is not supported in SDF version {version} (added in 1.6)")
+        return cls(sdf_version=version, type=_type, mean=_mean, stddev=_stddev, bias_mean=_bias_mean, bias_stddev=_bias_stddev, precision=_precision, dynamic_bias_correlation_time=_dynamic_bias_correlation_time, dynamic_bias_stddev=_dynamic_bias_stddev)
 
 
 class Y(BaseModel):
@@ -879,8 +879,8 @@ class ZNoise(BaseModel):
         bias_mean: "BiasMean" = None,
         bias_stddev: "BiasStddev" = None,
         precision: "Precision" = None,
-        dynamic_bias_stddev: "DynamicBiasStddev" = None,
-        dynamic_bias_correlation_time: "DynamicBiasCorrelationTime" = None
+        dynamic_bias_correlation_time: "DynamicBiasCorrelationTime" = None,
+        dynamic_bias_stddev: "DynamicBiasStddev" = None
     ):
         self.__version__ = sdf_version
         self.type = type
@@ -889,14 +889,14 @@ class ZNoise(BaseModel):
         self.bias_mean = bias_mean
         self.bias_stddev = bias_stddev
         self.precision = precision
-        self.dynamic_bias_stddev = dynamic_bias_stddev
         self.dynamic_bias_correlation_time = dynamic_bias_correlation_time
+        self.dynamic_bias_stddev = dynamic_bias_stddev
 
     def to_version(self, target_version: str) -> "ZNoise":
-        if self.dynamic_bias_stddev is not None and cmp_version(target_version, "1.6") < 0:
-            raise ValueError(f"'dynamic_bias_stddev' is not supported in SDF version {target_version} (added in 1.6)")
         if self.dynamic_bias_correlation_time is not None and cmp_version(target_version, "1.6") < 0:
             raise ValueError(f"'dynamic_bias_correlation_time' is not supported in SDF version {target_version} (added in 1.6)")
+        if self.dynamic_bias_stddev is not None and cmp_version(target_version, "1.6") < 0:
+            raise ValueError(f"'dynamic_bias_stddev' is not supported in SDF version {target_version} (added in 1.6)")
         kwargs = {"sdf_version": target_version}
         kwargs["type"] = self.type
         kwargs["mean"] = self.mean.to_version(target_version) if self.mean is not None else None
@@ -904,8 +904,8 @@ class ZNoise(BaseModel):
         kwargs["bias_mean"] = self.bias_mean.to_version(target_version) if self.bias_mean is not None else None
         kwargs["bias_stddev"] = self.bias_stddev.to_version(target_version) if self.bias_stddev is not None else None
         kwargs["precision"] = self.precision.to_version(target_version) if self.precision is not None else None
-        kwargs["dynamic_bias_stddev"] = self.dynamic_bias_stddev.to_version(target_version) if self.dynamic_bias_stddev is not None else None
         kwargs["dynamic_bias_correlation_time"] = self.dynamic_bias_correlation_time.to_version(target_version) if self.dynamic_bias_correlation_time is not None else None
+        kwargs["dynamic_bias_stddev"] = self.dynamic_bias_stddev.to_version(target_version) if self.dynamic_bias_stddev is not None else None
         new_obj = self.__class__(**kwargs)
         return new_obj
 
@@ -926,10 +926,10 @@ class ZNoise(BaseModel):
             el.append(self.bias_stddev.to_sdf(version))
         if self.precision is not None:
             el.append(self.precision.to_sdf(version))
-        if self.dynamic_bias_stddev is not None:
-            el.append(self.dynamic_bias_stddev.to_sdf(version))
         if self.dynamic_bias_correlation_time is not None:
             el.append(self.dynamic_bias_correlation_time.to_sdf(version))
+        if self.dynamic_bias_stddev is not None:
+            el.append(self.dynamic_bias_stddev.to_sdf(version))
         return el
 
     @classmethod
@@ -977,16 +977,6 @@ class ZNoise(BaseModel):
             _precision = _res
         else:
             _precision = None
-        _c_dynamic_bias_stddev = el.find("dynamic_bias_stddev")
-        if _c_dynamic_bias_stddev is not None:
-            _res = DynamicBiasStddev._from_sdf(_c_dynamic_bias_stddev, version)
-            if isinstance(_res, SDFError):
-                return _res.extend("dynamic_bias_stddev")
-            _dynamic_bias_stddev = _res
-        else:
-            _dynamic_bias_stddev = None
-        if _dynamic_bias_stddev is not None and cmp_version(version, "1.6") < 0:
-            return SDFError(f"'dynamic_bias_stddev' is not supported in SDF version {version} (added in 1.6)")
         _c_dynamic_bias_correlation_time = el.find("dynamic_bias_correlation_time")
         if _c_dynamic_bias_correlation_time is not None:
             _res = DynamicBiasCorrelationTime._from_sdf(_c_dynamic_bias_correlation_time, version)
@@ -997,7 +987,17 @@ class ZNoise(BaseModel):
             _dynamic_bias_correlation_time = None
         if _dynamic_bias_correlation_time is not None and cmp_version(version, "1.6") < 0:
             return SDFError(f"'dynamic_bias_correlation_time' is not supported in SDF version {version} (added in 1.6)")
-        return cls(sdf_version=version, type=_type, mean=_mean, stddev=_stddev, bias_mean=_bias_mean, bias_stddev=_bias_stddev, precision=_precision, dynamic_bias_stddev=_dynamic_bias_stddev, dynamic_bias_correlation_time=_dynamic_bias_correlation_time)
+        _c_dynamic_bias_stddev = el.find("dynamic_bias_stddev")
+        if _c_dynamic_bias_stddev is not None:
+            _res = DynamicBiasStddev._from_sdf(_c_dynamic_bias_stddev, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("dynamic_bias_stddev")
+            _dynamic_bias_stddev = _res
+        else:
+            _dynamic_bias_stddev = None
+        if _dynamic_bias_stddev is not None and cmp_version(version, "1.6") < 0:
+            return SDFError(f"'dynamic_bias_stddev' is not supported in SDF version {version} (added in 1.6)")
+        return cls(sdf_version=version, type=_type, mean=_mean, stddev=_stddev, bias_mean=_bias_mean, bias_stddev=_bias_stddev, precision=_precision, dynamic_bias_correlation_time=_dynamic_bias_correlation_time, dynamic_bias_stddev=_dynamic_bias_stddev)
 
 
 class Z(BaseModel):
@@ -1033,14 +1033,14 @@ class Z(BaseModel):
         return cls(sdf_version=version, noise=_noise)
 
 
-class AngularVelocity(BaseModel):
+class LinearAcceleration(BaseModel):
     def __init__(self, sdf_version: str, x: "X" = None, y: "Y" = None, z: "Z" = None):
         self.__version__ = sdf_version
         self.x = x
         self.y = y
         self.z = z
 
-    def to_version(self, target_version: str) -> "AngularVelocity":
+    def to_version(self, target_version: str) -> "LinearAcceleration":
         kwargs = {"sdf_version": target_version}
         kwargs["x"] = self.x.to_version(target_version) if self.x is not None else None
         kwargs["y"] = self.y.to_version(target_version) if self.y is not None else None
@@ -1052,7 +1052,7 @@ class AngularVelocity(BaseModel):
         if version is not None and version != self.__version__:
             return self.to_version(version).to_sdf()
         version = version or self.__version__
-        el = ET.Element("angular_velocity")
+        el = ET.Element("linear_acceleration")
         if self.x is not None:
             el.append(self.x.to_sdf(version))
         if self.y is not None:
@@ -1090,14 +1090,14 @@ class AngularVelocity(BaseModel):
         return cls(sdf_version=version, x=_x, y=_y, z=_z)
 
 
-class LinearAcceleration(BaseModel):
+class AngularVelocity(BaseModel):
     def __init__(self, sdf_version: str, x: "X" = None, y: "Y" = None, z: "Z" = None):
         self.__version__ = sdf_version
         self.x = x
         self.y = y
         self.z = z
 
-    def to_version(self, target_version: str) -> "LinearAcceleration":
+    def to_version(self, target_version: str) -> "AngularVelocity":
         kwargs = {"sdf_version": target_version}
         kwargs["x"] = self.x.to_version(target_version) if self.x is not None else None
         kwargs["y"] = self.y.to_version(target_version) if self.y is not None else None
@@ -1109,7 +1109,7 @@ class LinearAcceleration(BaseModel):
         if version is not None and version != self.__version__:
             return self.to_version(version).to_sdf()
         version = version or self.__version__
-        el = ET.Element("linear_acceleration")
+        el = ET.Element("angular_velocity")
         if self.x is not None:
             el.append(self.x.to_sdf(version))
         if self.y is not None:
@@ -1357,16 +1357,16 @@ class Imu(BaseModel):
         sdf_version: str,
         topic: "Topic" = None,
         noise: "Noise" = None,
-        angular_velocity: "AngularVelocity" = None,
         linear_acceleration: "LinearAcceleration" = None,
+        angular_velocity: "AngularVelocity" = None,
         enable_orientation: "EnableOrientation" = None,
         orientation_reference_frame: "OrientationReferenceFrame" = None
     ):
         self.__version__ = sdf_version
         self.topic = topic
         self.noise = noise
-        self.angular_velocity = angular_velocity
         self.linear_acceleration = linear_acceleration
+        self.angular_velocity = angular_velocity
         self.enable_orientation = enable_orientation
         self.orientation_reference_frame = orientation_reference_frame
 
@@ -1377,10 +1377,10 @@ class Imu(BaseModel):
             raise ValueError(f"'noise' is not supported in SDF version {target_version} (added in 1.4)")
         if self.noise is not None and cmp_version(target_version, "1.6") >= 0:
             raise ValueError(f"'noise' is not supported in SDF version {target_version} (removed in 1.6)")
-        if self.angular_velocity is not None and cmp_version(target_version, "1.5") < 0:
-            raise ValueError(f"'angular_velocity' is not supported in SDF version {target_version} (added in 1.5)")
         if self.linear_acceleration is not None and cmp_version(target_version, "1.5") < 0:
             raise ValueError(f"'linear_acceleration' is not supported in SDF version {target_version} (added in 1.5)")
+        if self.angular_velocity is not None and cmp_version(target_version, "1.5") < 0:
+            raise ValueError(f"'angular_velocity' is not supported in SDF version {target_version} (added in 1.5)")
         if self.enable_orientation is not None and cmp_version(target_version, "1.6") < 0:
             raise ValueError(f"'enable_orientation' is not supported in SDF version {target_version} (added in 1.6)")
         if self.orientation_reference_frame is not None and cmp_version(target_version, "1.6") < 0:
@@ -1388,8 +1388,8 @@ class Imu(BaseModel):
         kwargs = {"sdf_version": target_version}
         kwargs["topic"] = self.topic.to_version(target_version) if self.topic is not None else None
         kwargs["noise"] = self.noise.to_version(target_version) if self.noise is not None else None
-        kwargs["angular_velocity"] = self.angular_velocity.to_version(target_version) if self.angular_velocity is not None else None
         kwargs["linear_acceleration"] = self.linear_acceleration.to_version(target_version) if self.linear_acceleration is not None else None
+        kwargs["angular_velocity"] = self.angular_velocity.to_version(target_version) if self.angular_velocity is not None else None
         kwargs["enable_orientation"] = self.enable_orientation.to_version(target_version) if self.enable_orientation is not None else None
         kwargs["orientation_reference_frame"] = self.orientation_reference_frame.to_version(target_version) if self.orientation_reference_frame is not None else None
         new_obj = self.__class__(**kwargs)
@@ -1405,10 +1405,10 @@ class Imu(BaseModel):
             el.append(self.topic.to_sdf(version))
         if self.noise is not None:
             el.append(self.noise.to_sdf(version))
-        if self.angular_velocity is not None:
-            el.append(self.angular_velocity.to_sdf(version))
         if self.linear_acceleration is not None:
             el.append(self.linear_acceleration.to_sdf(version))
+        if self.angular_velocity is not None:
+            el.append(self.angular_velocity.to_sdf(version))
         if self.enable_orientation is not None:
             el.append(self.enable_orientation.to_sdf(version))
         if self.orientation_reference_frame is not None:
@@ -1435,16 +1435,6 @@ class Imu(BaseModel):
             _noise = None
         if _noise is not None and cmp_version(version, "1.4") < 0:
             return SDFError(f"'noise' is not supported in SDF version {version} (added in 1.4)")
-        _c_angular_velocity = el.find("angular_velocity")
-        if _c_angular_velocity is not None:
-            _res = AngularVelocity._from_sdf(_c_angular_velocity, version)
-            if isinstance(_res, SDFError):
-                return _res.extend("angular_velocity")
-            _angular_velocity = _res
-        else:
-            _angular_velocity = None
-        if _angular_velocity is not None and cmp_version(version, "1.5") < 0:
-            return SDFError(f"'angular_velocity' is not supported in SDF version {version} (added in 1.5)")
         _c_linear_acceleration = el.find("linear_acceleration")
         if _c_linear_acceleration is not None:
             _res = LinearAcceleration._from_sdf(_c_linear_acceleration, version)
@@ -1455,6 +1445,16 @@ class Imu(BaseModel):
             _linear_acceleration = None
         if _linear_acceleration is not None and cmp_version(version, "1.5") < 0:
             return SDFError(f"'linear_acceleration' is not supported in SDF version {version} (added in 1.5)")
+        _c_angular_velocity = el.find("angular_velocity")
+        if _c_angular_velocity is not None:
+            _res = AngularVelocity._from_sdf(_c_angular_velocity, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("angular_velocity")
+            _angular_velocity = _res
+        else:
+            _angular_velocity = None
+        if _angular_velocity is not None and cmp_version(version, "1.5") < 0:
+            return SDFError(f"'angular_velocity' is not supported in SDF version {version} (added in 1.5)")
         _c_enable_orientation = el.find("enable_orientation")
         if _c_enable_orientation is not None:
             _res = EnableOrientation._from_sdf(_c_enable_orientation, version)
@@ -1475,4 +1475,4 @@ class Imu(BaseModel):
             _orientation_reference_frame = None
         if _orientation_reference_frame is not None and cmp_version(version, "1.6") < 0:
             return SDFError(f"'orientation_reference_frame' is not supported in SDF version {version} (added in 1.6)")
-        return cls(sdf_version=version, topic=_topic, noise=_noise, angular_velocity=_angular_velocity, linear_acceleration=_linear_acceleration, enable_orientation=_enable_orientation, orientation_reference_frame=_orientation_reference_frame)
+        return cls(sdf_version=version, topic=_topic, noise=_noise, linear_acceleration=_linear_acceleration, angular_velocity=_angular_velocity, enable_orientation=_enable_orientation, orientation_reference_frame=_orientation_reference_frame)

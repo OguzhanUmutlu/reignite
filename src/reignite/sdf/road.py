@@ -1208,40 +1208,6 @@ class Pbr(BaseModel):
         return cls(sdf_version=version, metal=_metal, specular=_specular)
 
 
-class RenderOrder(BaseModel):
-    def __init__(self, sdf_version: str, render_order: float = 0.0):
-        self.__version__ = sdf_version
-        self.render_order = render_order
-
-    def to_version(self, target_version: str) -> "RenderOrder":
-        if self.render_order is not None and cmp_version(target_version, "1.7") < 0:
-            raise ValueError(f"'render_order' is not supported in SDF version {target_version} (added in 1.7)")
-        kwargs = {"sdf_version": target_version}
-        kwargs["render_order"] = self.render_order
-        new_obj = self.__class__(**kwargs)
-        return new_obj
-
-    def to_sdf(self, version: str = None) -> ET.Element:
-        if version is not None and version != self.__version__:
-            return self.to_version(version).to_sdf()
-        version = version or self.__version__
-        el = ET.Element("render_order")
-        if self.render_order is not None:
-            el.text = str(self.render_order)
-        return el
-
-    @classmethod
-    def _from_sdf(cls, el: ET.Element, version: str):
-        _text = el.text or 0.0
-        _render_order = _parse_double(_text)
-        if isinstance(_render_order, SDFError):
-            return _render_order
-        if _render_order is not None and cmp_version(version, "1.7") < 0:
-            if _render_order != 0.0:
-                return SDFError(f"'render_order' is not supported in SDF version {version} (added in 1.7)")
-        return cls(sdf_version=version, render_order=_render_order)
-
-
 class Shininess(BaseModel):
     def __init__(self, sdf_version: str, shininess: float = 0):
         self.__version__ = sdf_version
@@ -1310,6 +1276,40 @@ class DoubleSided(BaseModel):
         return cls(sdf_version=version, double_sided=_double_sided)
 
 
+class RenderOrder(BaseModel):
+    def __init__(self, sdf_version: str, render_order: float = 0.0):
+        self.__version__ = sdf_version
+        self.render_order = render_order
+
+    def to_version(self, target_version: str) -> "RenderOrder":
+        if self.render_order is not None and cmp_version(target_version, "1.7") < 0:
+            raise ValueError(f"'render_order' is not supported in SDF version {target_version} (added in 1.7)")
+        kwargs = {"sdf_version": target_version}
+        kwargs["render_order"] = self.render_order
+        new_obj = self.__class__(**kwargs)
+        return new_obj
+
+    def to_sdf(self, version: str = None) -> ET.Element:
+        if version is not None and version != self.__version__:
+            return self.to_version(version).to_sdf()
+        version = version or self.__version__
+        el = ET.Element("render_order")
+        if self.render_order is not None:
+            el.text = str(self.render_order)
+        return el
+
+    @classmethod
+    def _from_sdf(cls, el: ET.Element, version: str):
+        _text = el.text or 0.0
+        _render_order = _parse_double(_text)
+        if isinstance(_render_order, SDFError):
+            return _render_order
+        if _render_order is not None and cmp_version(version, "1.7") < 0:
+            if _render_order != 0.0:
+                return SDFError(f"'render_order' is not supported in SDF version {version} (added in 1.7)")
+        return cls(sdf_version=version, render_order=_render_order)
+
+
 class Material(BaseModel):
     def __init__(
         self,
@@ -1322,9 +1322,9 @@ class Material(BaseModel):
         specular: "Specular" = None,
         emissive: "Emissive" = None,
         pbr: "Pbr" = None,
-        render_order: "RenderOrder" = None,
         shininess: "Shininess" = None,
-        double_sided: "DoubleSided" = None
+        double_sided: "DoubleSided" = None,
+        render_order: "RenderOrder" = None
     ):
         self.__version__ = sdf_version
         self.script = script
@@ -1335,19 +1335,19 @@ class Material(BaseModel):
         self.specular = specular
         self.emissive = emissive
         self.pbr = pbr
-        self.render_order = render_order
         self.shininess = shininess
         self.double_sided = double_sided
+        self.render_order = render_order
 
     def to_version(self, target_version: str) -> "Material":
         if self.pbr is not None and cmp_version(target_version, "1.6") < 0:
             raise ValueError(f"'pbr' is not supported in SDF version {target_version} (added in 1.6)")
-        if self.render_order is not None and cmp_version(target_version, "1.7") < 0:
-            raise ValueError(f"'render_order' is not supported in SDF version {target_version} (added in 1.7)")
         if self.shininess is not None and cmp_version(target_version, "1.7") < 0:
             raise ValueError(f"'shininess' is not supported in SDF version {target_version} (added in 1.7)")
         if self.double_sided is not None and cmp_version(target_version, "1.7") < 0:
             raise ValueError(f"'double_sided' is not supported in SDF version {target_version} (added in 1.7)")
+        if self.render_order is not None and cmp_version(target_version, "1.7") < 0:
+            raise ValueError(f"'render_order' is not supported in SDF version {target_version} (added in 1.7)")
         kwargs = {"sdf_version": target_version}
         kwargs["script"] = self.script.to_version(target_version) if self.script is not None else None
         kwargs["shader"] = self.shader.to_version(target_version) if self.shader is not None else None
@@ -1357,9 +1357,9 @@ class Material(BaseModel):
         kwargs["specular"] = self.specular.to_version(target_version) if self.specular is not None else None
         kwargs["emissive"] = self.emissive.to_version(target_version) if self.emissive is not None else None
         kwargs["pbr"] = self.pbr.to_version(target_version) if self.pbr is not None else None
-        kwargs["render_order"] = self.render_order.to_version(target_version) if self.render_order is not None else None
         kwargs["shininess"] = self.shininess.to_version(target_version) if self.shininess is not None else None
         kwargs["double_sided"] = self.double_sided.to_version(target_version) if self.double_sided is not None else None
+        kwargs["render_order"] = self.render_order.to_version(target_version) if self.render_order is not None else None
         new_obj = self.__class__(**kwargs)
         return new_obj
 
@@ -1384,12 +1384,12 @@ class Material(BaseModel):
             el.append(self.emissive.to_sdf(version))
         if self.pbr is not None:
             el.append(self.pbr.to_sdf(version))
-        if self.render_order is not None:
-            el.append(self.render_order.to_sdf(version))
         if self.shininess is not None:
             el.append(self.shininess.to_sdf(version))
         if self.double_sided is not None:
             el.append(self.double_sided.to_sdf(version))
+        if self.render_order is not None:
+            el.append(self.render_order.to_sdf(version))
         return el
 
     @classmethod
@@ -1460,16 +1460,6 @@ class Material(BaseModel):
             _pbr = None
         if _pbr is not None and cmp_version(version, "1.6") < 0:
             return SDFError(f"'pbr' is not supported in SDF version {version} (added in 1.6)")
-        _c_render_order = el.find("render_order")
-        if _c_render_order is not None:
-            _res = RenderOrder._from_sdf(_c_render_order, version)
-            if isinstance(_res, SDFError):
-                return _res.extend("render_order")
-            _render_order = _res
-        else:
-            _render_order = None
-        if _render_order is not None and cmp_version(version, "1.7") < 0:
-            return SDFError(f"'render_order' is not supported in SDF version {version} (added in 1.7)")
         _c_shininess = el.find("shininess")
         if _c_shininess is not None:
             _res = Shininess._from_sdf(_c_shininess, version)
@@ -1490,7 +1480,17 @@ class Material(BaseModel):
             _double_sided = None
         if _double_sided is not None and cmp_version(version, "1.7") < 0:
             return SDFError(f"'double_sided' is not supported in SDF version {version} (added in 1.7)")
-        return cls(sdf_version=version, script=_script, shader=_shader, lighting=_lighting, ambient=_ambient, diffuse=_diffuse, specular=_specular, emissive=_emissive, pbr=_pbr, render_order=_render_order, shininess=_shininess, double_sided=_double_sided)
+        _c_render_order = el.find("render_order")
+        if _c_render_order is not None:
+            _res = RenderOrder._from_sdf(_c_render_order, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("render_order")
+            _render_order = _res
+        else:
+            _render_order = None
+        if _render_order is not None and cmp_version(version, "1.7") < 0:
+            return SDFError(f"'render_order' is not supported in SDF version {version} (added in 1.7)")
+        return cls(sdf_version=version, script=_script, shader=_shader, lighting=_lighting, ambient=_ambient, diffuse=_diffuse, specular=_specular, emissive=_emissive, pbr=_pbr, shininess=_shininess, double_sided=_double_sided, render_order=_render_order)
 
 
 class Road(BaseModel):

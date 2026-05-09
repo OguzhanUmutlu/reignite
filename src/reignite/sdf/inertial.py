@@ -75,40 +75,6 @@ class Origin(BaseModel):
         return cls(sdf_version=version, pose=_pose)
 
 
-class Ixz(BaseModel):
-    def __init__(self, sdf_version: str, ixz: float = 0.0):
-        self.__version__ = sdf_version
-        self.ixz = ixz
-
-    def to_version(self, target_version: str) -> "Ixz":
-        if self.ixz is not None and cmp_version(target_version, "1.2") < 0:
-            raise ValueError(f"'ixz' is not supported in SDF version {target_version} (added in 1.2)")
-        kwargs = {"sdf_version": target_version}
-        kwargs["ixz"] = self.ixz
-        new_obj = self.__class__(**kwargs)
-        return new_obj
-
-    def to_sdf(self, version: str = None) -> ET.Element:
-        if version is not None and version != self.__version__:
-            return self.to_version(version).to_sdf()
-        version = version or self.__version__
-        el = ET.Element("ixz")
-        if self.ixz is not None:
-            el.text = str(self.ixz)
-        return el
-
-    @classmethod
-    def _from_sdf(cls, el: ET.Element, version: str):
-        _text = el.text or 0.0
-        _ixz = _parse_double(_text)
-        if isinstance(_ixz, SDFError):
-            return _ixz
-        if _ixz is not None and cmp_version(version, "1.2") < 0:
-            if _ixz != 0.0:
-                return SDFError(f"'ixz' is not supported in SDF version {version} (added in 1.2)")
-        return cls(sdf_version=version, ixz=_ixz)
-
-
 class Iyz(BaseModel):
     def __init__(self, sdf_version: str, iyz: float = 0.0):
         self.__version__ = sdf_version
@@ -141,6 +107,40 @@ class Iyz(BaseModel):
             if _iyz != 0.0:
                 return SDFError(f"'iyz' is not supported in SDF version {version} (added in 1.2)")
         return cls(sdf_version=version, iyz=_iyz)
+
+
+class Iyy(BaseModel):
+    def __init__(self, sdf_version: str, iyy: float = 1.0):
+        self.__version__ = sdf_version
+        self.iyy = iyy
+
+    def to_version(self, target_version: str) -> "Iyy":
+        if self.iyy is not None and cmp_version(target_version, "1.2") < 0:
+            raise ValueError(f"'iyy' is not supported in SDF version {target_version} (added in 1.2)")
+        kwargs = {"sdf_version": target_version}
+        kwargs["iyy"] = self.iyy
+        new_obj = self.__class__(**kwargs)
+        return new_obj
+
+    def to_sdf(self, version: str = None) -> ET.Element:
+        if version is not None and version != self.__version__:
+            return self.to_version(version).to_sdf()
+        version = version or self.__version__
+        el = ET.Element("iyy")
+        if self.iyy is not None:
+            el.text = str(self.iyy)
+        return el
+
+    @classmethod
+    def _from_sdf(cls, el: ET.Element, version: str):
+        _text = el.text or 1.0
+        _iyy = _parse_double(_text)
+        if isinstance(_iyy, SDFError):
+            return _iyy
+        if _iyy is not None and cmp_version(version, "1.2") < 0:
+            if _iyy != 1.0:
+                return SDFError(f"'iyy' is not supported in SDF version {version} (added in 1.2)")
+        return cls(sdf_version=version, iyy=_iyy)
 
 
 class Ixy(BaseModel):
@@ -245,16 +245,16 @@ class Izz(BaseModel):
         return cls(sdf_version=version, izz=_izz)
 
 
-class Iyy(BaseModel):
-    def __init__(self, sdf_version: str, iyy: float = 1.0):
+class Ixz(BaseModel):
+    def __init__(self, sdf_version: str, ixz: float = 0.0):
         self.__version__ = sdf_version
-        self.iyy = iyy
+        self.ixz = ixz
 
-    def to_version(self, target_version: str) -> "Iyy":
-        if self.iyy is not None and cmp_version(target_version, "1.2") < 0:
-            raise ValueError(f"'iyy' is not supported in SDF version {target_version} (added in 1.2)")
+    def to_version(self, target_version: str) -> "Ixz":
+        if self.ixz is not None and cmp_version(target_version, "1.2") < 0:
+            raise ValueError(f"'ixz' is not supported in SDF version {target_version} (added in 1.2)")
         kwargs = {"sdf_version": target_version}
-        kwargs["iyy"] = self.iyy
+        kwargs["ixz"] = self.ixz
         new_obj = self.__class__(**kwargs)
         return new_obj
 
@@ -262,21 +262,21 @@ class Iyy(BaseModel):
         if version is not None and version != self.__version__:
             return self.to_version(version).to_sdf()
         version = version or self.__version__
-        el = ET.Element("iyy")
-        if self.iyy is not None:
-            el.text = str(self.iyy)
+        el = ET.Element("ixz")
+        if self.ixz is not None:
+            el.text = str(self.ixz)
         return el
 
     @classmethod
     def _from_sdf(cls, el: ET.Element, version: str):
-        _text = el.text or 1.0
-        _iyy = _parse_double(_text)
-        if isinstance(_iyy, SDFError):
-            return _iyy
-        if _iyy is not None and cmp_version(version, "1.2") < 0:
-            if _iyy != 1.0:
-                return SDFError(f"'iyy' is not supported in SDF version {version} (added in 1.2)")
-        return cls(sdf_version=version, iyy=_iyy)
+        _text = el.text or 0.0
+        _ixz = _parse_double(_text)
+        if isinstance(_ixz, SDFError):
+            return _ixz
+        if _ixz is not None and cmp_version(version, "1.2") < 0:
+            if _ixz != 0.0:
+                return SDFError(f"'ixz' is not supported in SDF version {version} (added in 1.2)")
+        return cls(sdf_version=version, ixz=_ixz)
 
 
 class Inertia(BaseModel):
@@ -361,6 +361,40 @@ class Inertia(BaseModel):
         if isinstance(_izz, SDFError):
             return _izz.extend("@izz")
         return cls(sdf_version=version, ixx=_ixx, ixy=_ixy, ixz=_ixz, iyy=_iyy, iyz=_iyz, izz=_izz)
+
+
+class Mass(BaseModel):
+    def __init__(self, sdf_version: str, mass: float = 1.0):
+        self.__version__ = sdf_version
+        self.mass = mass
+
+    def to_version(self, target_version: str) -> "Mass":
+        if self.mass is not None and cmp_version(target_version, "1.2") < 0:
+            raise ValueError(f"'mass' is not supported in SDF version {target_version} (added in 1.2)")
+        kwargs = {"sdf_version": target_version}
+        kwargs["mass"] = self.mass
+        new_obj = self.__class__(**kwargs)
+        return new_obj
+
+    def to_sdf(self, version: str = None) -> ET.Element:
+        if version is not None and version != self.__version__:
+            return self.to_version(version).to_sdf()
+        version = version or self.__version__
+        el = ET.Element("mass")
+        if self.mass is not None:
+            el.text = str(self.mass)
+        return el
+
+    @classmethod
+    def _from_sdf(cls, el: ET.Element, version: str):
+        _text = el.text or 1.0
+        _mass = _parse_double(_text)
+        if isinstance(_mass, SDFError):
+            return _mass
+        if _mass is not None and cmp_version(version, "1.2") < 0:
+            if _mass != 1.0:
+                return SDFError(f"'mass' is not supported in SDF version {version} (added in 1.2)")
+        return cls(sdf_version=version, mass=_mass)
 
 
 class Pose(BaseModel):
@@ -460,40 +494,6 @@ class Pose(BaseModel):
             if _degrees != False:
                 return SDFError(f"'degrees' is not supported in SDF version {version} (added in 1.9)")
         return cls(sdf_version=version, pose=_pose, frame=_frame, relative_to=_relative_to, rotation_format=_rotation_format, degrees=_degrees)
-
-
-class Mass(BaseModel):
-    def __init__(self, sdf_version: str, mass: float = 1.0):
-        self.__version__ = sdf_version
-        self.mass = mass
-
-    def to_version(self, target_version: str) -> "Mass":
-        if self.mass is not None and cmp_version(target_version, "1.2") < 0:
-            raise ValueError(f"'mass' is not supported in SDF version {target_version} (added in 1.2)")
-        kwargs = {"sdf_version": target_version}
-        kwargs["mass"] = self.mass
-        new_obj = self.__class__(**kwargs)
-        return new_obj
-
-    def to_sdf(self, version: str = None) -> ET.Element:
-        if version is not None and version != self.__version__:
-            return self.to_version(version).to_sdf()
-        version = version or self.__version__
-        el = ET.Element("mass")
-        if self.mass is not None:
-            el.text = str(self.mass)
-        return el
-
-    @classmethod
-    def _from_sdf(cls, el: ET.Element, version: str):
-        _text = el.text or 1.0
-        _mass = _parse_double(_text)
-        if isinstance(_mass, SDFError):
-            return _mass
-        if _mass is not None and cmp_version(version, "1.2") < 0:
-            if _mass != 1.0:
-                return SDFError(f"'mass' is not supported in SDF version {version} (added in 1.2)")
-        return cls(sdf_version=version, mass=_mass)
 
 
 class FramePose(BaseModel):
