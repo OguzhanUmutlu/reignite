@@ -5,22 +5,16 @@ from pathlib import Path
 from xml.etree import ElementTree as ET
 
 
-def _version_dir_name(version: str) -> str:
-    return "sdf" + version.replace(".", "_")
+def _to_classname(s: str) -> str:
+    return "".join(p.capitalize() for p in s.replace("-", "_").split("_"))
 
 
-def _normalize_version(version: str) -> str:
-    return version.replace("_", ".")
-
-
-def _load_version_module(version: str):
-    version = _normalize_version(version)
-    module_name = f"reignite.sdf.{_version_dir_name(version)}"
-    return importlib.import_module(module_name)
+def _load_sdf_module():
+    return importlib.import_module("reignite.sdf")
 
 
 def _select_root_element(root: ET.Element) -> tuple[str, ET.Element]:
-    if root.tag != "sdf":
+    if root.tag not in ("sdf", "gazebo"):
         return root.tag, root
 
     children = [c for c in root if isinstance(c.tag, str)]
@@ -29,28 +23,17 @@ def _select_root_element(root: ET.Element) -> tuple[str, ET.Element]:
 
     if len(children) != 1:
         raise ValueError(
-            "SDF root contains multiple top-level elements; pass tag_name to choose one: "
+            "SDF root contains multiple top-level elements; pass element_name to choose one: "
             f"{[c.tag for c in children]}"
         )
     return children[0].tag, children[0]
 
 
-def _resolve_tag_class(module, tag: str):
-    get_tag_class = getattr(module, "get_tag_class", None)
-    if callable(get_tag_class):
-        return get_tag_class(tag)
-
-    models = getattr(module, "models", None)
-    if models is None:
-        return None
-
-    tag_names = getattr(models, "TAG_NAMES", [])
-    tag_map = {name: getattr(models, _to_classname(name)) for name in tag_names}
-    return tag_map.get(tag)
-
-
-def _to_classname(s: str) -> str:
-    return "".join(p.capitalize() for p in s.replace("-", "_").split("_"))
+def _resolve_element_class(module, element: str):
+    get_element_class = getattr(module, "get_element_class", None)
+    if callable(get_element_class):
+        return get_element_class(element)
+    return None
 
 
 def read_sdf_from_element(root: ET.Element):
@@ -58,14 +41,14 @@ def read_sdf_from_element(root: ET.Element):
     if not version:
         raise ValueError("SDF version attribute not found on root element.")
 
-    tag, element = _select_root_element(root)
-    module = _load_version_module(version)
-    tag_class = _resolve_tag_class(module, tag)
-    if tag_class is None:
-        available = sorted(getattr(module, "TAG_CLASS_MAP", {}).keys())
-        raise ValueError(f"Tag '{tag}' not supported for version {version}. Available: {available}")
+    element_name, element = _select_root_element(root)
+    module = _load_sdf_module()
+    element_class = _resolve_element_class(module, element_name)
+    if element_class is None:
+        available = sorted(getattr(module, "ELEMENT_CLASS_MAP", {}).keys())
+        raise ValueError(f"Element '{element_name}' not supported. Available: {available}")
 
-    return tag_class.from_sdf(element)
+    return element_class.from_sdf(element, version)
 
 
 def read_sdf(source: str | Path):

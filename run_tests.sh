@@ -1,6 +1,6 @@
 #!/bin/bash
 
-python scripts/scrapesdf.py
+python fetchsdf.py
 source venv/bin/activate
 python -m pip install -e ".[test]"
 python -m pytest -q

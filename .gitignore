@@ -5,7 +5,7 @@ __pycache__
 *.pyc
 *.pyo
 *.pyd
-scripts/sdformat
+sdformat
 reignite.egg-info
 reignite-*
 dist
