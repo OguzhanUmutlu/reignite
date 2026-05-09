@@ -3,34 +3,44 @@ from __future__ import annotations
 
 from xml.etree import ElementTree as ET
 
-from ..utils.model import Model
+from ..utils.model import BaseModel
+from ..utils.errors import SDFError
 
 
 import math
 
-def _parse_int32(raw: str) -> int:
-    v = int(raw)
-    if not (-2147483648 <= v <= 2147483647):
-        raise ValueError(f"int32 out of range: {v}")
-    return v
+def _parse_int32(raw: str) -> int | SDFError:
+    try:
+        v = int(raw)
+        if not (-2147483648 <= v <= 2147483647):
+            return SDFError(f"int32 out of range: {v}")
+        return v
+    except ValueError:
+        return SDFError(f"Invalid int32: {raw}")
 
 
-def _parse_uint32(raw: str) -> int:
-    v = int(raw)
-    if not (0 <= v <= 4294967295):
-        raise ValueError(f"uint32 out of range: {v}")
-    return v
+def _parse_uint32(raw: str) -> int | SDFError:
+    try:
+        v = int(raw)
+        if not (0 <= v <= 4294967295):
+            return SDFError(f"uint32 out of range: {v}")
+        return v
+    except ValueError:
+        return SDFError(f"Invalid uint32: {raw}")
 
 
-def _parse_double(raw: str) -> float:
-    v = float(raw)
-    if not math.isfinite(v) or abs(v) > math.inf:
-        raise ValueError(f"double out of range: {raw}")
-    return v
+def _parse_double(raw: str) -> float | SDFError:
+    try:
+        v = float(raw)
+        if not math.isfinite(v) or abs(v) > math.inf:
+            return SDFError(f"double out of range: {raw}")
+        return v
+    except ValueError:
+        return SDFError(f"Invalid double: {raw}")
 
 
 
-class Essid(Model):
+class Essid(BaseModel):
     def __init__(self, sdf_version: str, essid: str = "wireless"):
         self.__version__ = sdf_version
         self.essid = essid
@@ -51,13 +61,15 @@ class Essid(Model):
         return el
 
     @classmethod
-    def from_sdf(cls, el: ET.Element, version: str) -> "Essid":
+    def _from_sdf(cls, el: ET.Element, version: str):
         _text = el.text or "wireless"
         _essid = _text
+        if isinstance(_essid, SDFError):
+            return _essid
         return cls(sdf_version=version, essid=_essid)
 
 
-class Frequency(Model):
+class Frequency(BaseModel):
     def __init__(self, sdf_version: str, frequency: float = 2442):
         self.__version__ = sdf_version
         self.frequency = frequency
@@ -78,13 +90,15 @@ class Frequency(Model):
         return el
 
     @classmethod
-    def from_sdf(cls, el: ET.Element, version: str) -> "Frequency":
+    def _from_sdf(cls, el: ET.Element, version: str):
         _text = el.text or 2442
         _frequency = _parse_double(_text)
+        if isinstance(_frequency, SDFError):
+            return _frequency
         return cls(sdf_version=version, frequency=_frequency)
 
 
-class MinFrequency(Model):
+class MinFrequency(BaseModel):
     def __init__(self, sdf_version: str, min_frequency: float = 2412):
         self.__version__ = sdf_version
         self.min_frequency = min_frequency
@@ -105,13 +119,15 @@ class MinFrequency(Model):
         return el
 
     @classmethod
-    def from_sdf(cls, el: ET.Element, version: str) -> "MinFrequency":
+    def _from_sdf(cls, el: ET.Element, version: str):
         _text = el.text or 2412
         _min_frequency = _parse_double(_text)
+        if isinstance(_min_frequency, SDFError):
+            return _min_frequency
         return cls(sdf_version=version, min_frequency=_min_frequency)
 
 
-class MaxFrequency(Model):
+class MaxFrequency(BaseModel):
     def __init__(self, sdf_version: str, max_frequency: float = 2484):
         self.__version__ = sdf_version
         self.max_frequency = max_frequency
@@ -132,13 +148,15 @@ class MaxFrequency(Model):
         return el
 
     @classmethod
-    def from_sdf(cls, el: ET.Element, version: str) -> "MaxFrequency":
+    def _from_sdf(cls, el: ET.Element, version: str):
         _text = el.text or 2484
         _max_frequency = _parse_double(_text)
+        if isinstance(_max_frequency, SDFError):
+            return _max_frequency
         return cls(sdf_version=version, max_frequency=_max_frequency)
 
 
-class Gain(Model):
+class Gain(BaseModel):
     def __init__(self, sdf_version: str, gain: float = 2.5):
         self.__version__ = sdf_version
         self.gain = gain
@@ -154,18 +172,24 @@ class Gain(Model):
             return self.to_version(version).to_sdf()
         version = version or self.__version__
         el = ET.Element("gain")
+        if self.gain is None:
+            raise ValueError(f"'gain' is required in SDF version {version}")
         if self.gain is not None:
             el.text = str(self.gain)
         return el
 
     @classmethod
-    def from_sdf(cls, el: ET.Element, version: str) -> "Gain":
+    def _from_sdf(cls, el: ET.Element, version: str):
+        if el.text is None:
+            return SDFError(f"'gain' is required in SDF version {version}")
         _text = el.text or 2.5
         _gain = _parse_double(_text)
+        if isinstance(_gain, SDFError):
+            return _gain
         return cls(sdf_version=version, gain=_gain)
 
 
-class Power(Model):
+class Power(BaseModel):
     def __init__(self, sdf_version: str, power: float = 14.50):
         self.__version__ = sdf_version
         self.power = power
@@ -181,18 +205,24 @@ class Power(Model):
             return self.to_version(version).to_sdf()
         version = version or self.__version__
         el = ET.Element("power")
+        if self.power is None:
+            raise ValueError(f"'power' is required in SDF version {version}")
         if self.power is not None:
             el.text = str(self.power)
         return el
 
     @classmethod
-    def from_sdf(cls, el: ET.Element, version: str) -> "Power":
+    def _from_sdf(cls, el: ET.Element, version: str):
+        if el.text is None:
+            return SDFError(f"'power' is required in SDF version {version}")
         _text = el.text or 14.50
         _power = _parse_double(_text)
+        if isinstance(_power, SDFError):
+            return _power
         return cls(sdf_version=version, power=_power)
 
 
-class Sensitivity(Model):
+class Sensitivity(BaseModel):
     def __init__(self, sdf_version: str, sensitivity: float = -90):
         self.__version__ = sdf_version
         self.sensitivity = sensitivity
@@ -213,13 +243,15 @@ class Sensitivity(Model):
         return el
 
     @classmethod
-    def from_sdf(cls, el: ET.Element, version: str) -> "Sensitivity":
+    def _from_sdf(cls, el: ET.Element, version: str):
         _text = el.text or -90
         _sensitivity = _parse_double(_text)
+        if isinstance(_sensitivity, SDFError):
+            return _sensitivity
         return cls(sdf_version=version, sensitivity=_sensitivity)
 
 
-class Transceiver(Model):
+class Transceiver(BaseModel):
     def __init__(
         self,
         sdf_version: str,
@@ -265,8 +297,12 @@ class Transceiver(Model):
             el.append(self.min_frequency.to_sdf(version))
         if self.max_frequency is not None:
             el.append(self.max_frequency.to_sdf(version))
+        if self.gain is None:
+            raise ValueError(f"'gain' is required in SDF version {version}")
         if self.gain is not None:
             el.append(self.gain.to_sdf(version))
+        if self.power is None:
+            raise ValueError(f"'power' is required in SDF version {version}")
         if self.power is not None:
             el.append(self.power.to_sdf(version))
         if self.sensitivity is not None:
@@ -274,19 +310,65 @@ class Transceiver(Model):
         return el
 
     @classmethod
-    def from_sdf(cls, el: ET.Element, version: str) -> "Transceiver":
+    def _from_sdf(cls, el: ET.Element, version: str):
         _c_essid = el.find("essid")
-        _essid = Essid.from_sdf(_c_essid, version) if _c_essid is not None else None
+        if _c_essid is not None:
+            _res = Essid._from_sdf(_c_essid, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("essid")
+            _essid = _res
+        else:
+            _essid = None
         _c_frequency = el.find("frequency")
-        _frequency = Frequency.from_sdf(_c_frequency, version) if _c_frequency is not None else None
+        if _c_frequency is not None:
+            _res = Frequency._from_sdf(_c_frequency, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("frequency")
+            _frequency = _res
+        else:
+            _frequency = None
         _c_min_frequency = el.find("min_frequency")
-        _min_frequency = MinFrequency.from_sdf(_c_min_frequency, version) if _c_min_frequency is not None else None
+        if _c_min_frequency is not None:
+            _res = MinFrequency._from_sdf(_c_min_frequency, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("min_frequency")
+            _min_frequency = _res
+        else:
+            _min_frequency = None
         _c_max_frequency = el.find("max_frequency")
-        _max_frequency = MaxFrequency.from_sdf(_c_max_frequency, version) if _c_max_frequency is not None else None
+        if _c_max_frequency is not None:
+            _res = MaxFrequency._from_sdf(_c_max_frequency, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("max_frequency")
+            _max_frequency = _res
+        else:
+            _max_frequency = None
         _c_gain = el.find("gain")
-        _gain = Gain.from_sdf(_c_gain, version) if _c_gain is not None else None
+        if _c_gain is not None:
+            _res = Gain._from_sdf(_c_gain, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("gain")
+            _gain = _res
+        else:
+            _gain = None
+        if _gain is None:
+            return SDFError(f"'gain' is required in SDF version {version}")
         _c_power = el.find("power")
-        _power = Power.from_sdf(_c_power, version) if _c_power is not None else None
+        if _c_power is not None:
+            _res = Power._from_sdf(_c_power, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("power")
+            _power = _res
+        else:
+            _power = None
+        if _power is None:
+            return SDFError(f"'power' is required in SDF version {version}")
         _c_sensitivity = el.find("sensitivity")
-        _sensitivity = Sensitivity.from_sdf(_c_sensitivity, version) if _c_sensitivity is not None else None
+        if _c_sensitivity is not None:
+            _res = Sensitivity._from_sdf(_c_sensitivity, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("sensitivity")
+            _sensitivity = _res
+        else:
+            _sensitivity = None
         return cls(sdf_version=version, essid=_essid, frequency=_frequency, min_frequency=_min_frequency, max_frequency=_max_frequency, gain=_gain, power=_power, sensitivity=_sensitivity)

@@ -3,12 +3,14 @@ from __future__ import annotations
 
 from xml.etree import ElementTree as ET
 
-from ..utils.model import Model
+from ..utils.model import BaseModel
+from ..utils.errors import SDFError
 from ..utils.pose import Pose
 from ..utils.version import cmp_version
+from ..utils.migration import apply_migrations
 
 
-class Pose(Model):
+class Pose(BaseModel):
     _MIGRATIONS = [{"version": "1.7", "ops": [{"type": "move", "from": "frame", "to": "relative_to"}]}]
 
     def __init__(
@@ -30,6 +32,8 @@ class Pose(Model):
         self.degrees = degrees
 
     def to_version(self, target_version: str) -> "Pose":
+        if self.frame is not None and cmp_version(target_version, "1.7") >= 0:
+            raise ValueError(f"'frame' is not supported in SDF version {target_version} (removed in 1.7)")
         if self.relative_to is not None and cmp_version(target_version, "1.7") < 0:
             raise ValueError(f"'relative_to' is not supported in SDF version {target_version} (added in 1.7)")
         if self.rotation_format is not None and cmp_version(target_version, "1.9") < 0:
@@ -64,26 +68,36 @@ class Pose(Model):
         return el
 
     @classmethod
-    def from_sdf(cls, el: ET.Element, version: str) -> "Pose":
+    def _from_sdf(cls, el: ET.Element, version: str):
         _text = el.text or "0 0 0 0 0 0"
-        _pose = Pose.from_sdf(_text)
+        _pose = Pose._from_sdf(_text, version)
+        if isinstance(_pose, SDFError):
+            return _pose
         _frame = el.get("frame", "")
+        if isinstance(_frame, SDFError):
+            return _frame.extend("@frame")
         _relative_to = el.get("relative_to", "")
+        if isinstance(_relative_to, SDFError):
+            return _relative_to.extend("@relative_to")
         if _relative_to is not None and cmp_version(version, "1.7") < 0:
             if _relative_to != "":
-                raise ValueError(f"'relative_to' is not supported in SDF version {version} (added in 1.7)")
+                return SDFError(f"'relative_to' is not supported in SDF version {version} (added in 1.7)")
         _rotation_format = el.get("rotation_format", "euler_rpy")
+        if isinstance(_rotation_format, SDFError):
+            return _rotation_format.extend("@rotation_format")
         if _rotation_format is not None and cmp_version(version, "1.9") < 0:
             if _rotation_format != "euler_rpy":
-                raise ValueError(f"'rotation_format' is not supported in SDF version {version} (added in 1.9)")
-        _degrees = el.get("degrees", False).strip().lower() == 'true'
+                return SDFError(f"'rotation_format' is not supported in SDF version {version} (added in 1.9)")
+        _degrees = str(el.get("degrees", False)).strip().lower() == 'true'
+        if isinstance(_degrees, SDFError):
+            return _degrees.extend("@degrees")
         if _degrees is not None and cmp_version(version, "1.9") < 0:
             if _degrees != False:
-                raise ValueError(f"'degrees' is not supported in SDF version {version} (added in 1.9)")
+                return SDFError(f"'degrees' is not supported in SDF version {version} (added in 1.9)")
         return cls(sdf_version=version, pose=_pose, frame=_frame, relative_to=_relative_to, rotation_format=_rotation_format, degrees=_degrees)
 
 
-class Frame(Model):
+class Frame(BaseModel):
     def __init__(
         self,
         sdf_version: str,
@@ -111,6 +125,8 @@ class Frame(Model):
             return self.to_version(version).to_sdf()
         version = version or self.__version__
         el = ET.Element("frame")
+        if self.name is None:
+            raise ValueError(f"'name' is required in SDF version {version}")
         if self.name is not None:
             el.set("name", self.name)
         if self.attached_to is not None:
@@ -120,12 +136,24 @@ class Frame(Model):
         return el
 
     @classmethod
-    def from_sdf(cls, el: ET.Element, version: str) -> "Frame":
+    def _from_sdf(cls, el: ET.Element, version: str):
+        if el.get("name") is None:
+            return SDFError(f"'name' is required in SDF version {version}")
         _name = el.get("name", "")
+        if isinstance(_name, SDFError):
+            return _name.extend("@name")
         _attached_to = el.get("attached_to", "")
+        if isinstance(_attached_to, SDFError):
+            return _attached_to.extend("@attached_to")
         if _attached_to is not None and cmp_version(version, "1.7") < 0:
             if _attached_to != "":
-                raise ValueError(f"'attached_to' is not supported in SDF version {version} (added in 1.7)")
+                return SDFError(f"'attached_to' is not supported in SDF version {version} (added in 1.7)")
         _c_pose = el.find("pose")
-        _pose = Pose.from_sdf(_c_pose, version) if _c_pose is not None else None
+        if _c_pose is not None:
+            _res = Pose._from_sdf(_c_pose, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("pose")
+            _pose = _res
+        else:
+            _pose = None
         return cls(sdf_version=version, name=_name, attached_to=_attached_to, pose=_pose)

@@ -5,35 +5,45 @@ from xml.etree import ElementTree as ET
 
 from typing import List
 
-from ..utils.model import Model
+from ..utils.model import BaseModel
+from ..utils.errors import SDFError
 from ..utils.vector2d import Vector2d
 
 
 import math
 
-def _parse_int32(raw: str) -> int:
-    v = int(raw)
-    if not (-2147483648 <= v <= 2147483647):
-        raise ValueError(f"int32 out of range: {v}")
-    return v
+def _parse_int32(raw: str) -> int | SDFError:
+    try:
+        v = int(raw)
+        if not (-2147483648 <= v <= 2147483647):
+            return SDFError(f"int32 out of range: {v}")
+        return v
+    except ValueError:
+        return SDFError(f"Invalid int32: {raw}")
 
 
-def _parse_uint32(raw: str) -> int:
-    v = int(raw)
-    if not (0 <= v <= 4294967295):
-        raise ValueError(f"uint32 out of range: {v}")
-    return v
+def _parse_uint32(raw: str) -> int | SDFError:
+    try:
+        v = int(raw)
+        if not (0 <= v <= 4294967295):
+            return SDFError(f"uint32 out of range: {v}")
+        return v
+    except ValueError:
+        return SDFError(f"Invalid uint32: {raw}")
 
 
-def _parse_double(raw: str) -> float:
-    v = float(raw)
-    if not math.isfinite(v) or abs(v) > math.inf:
-        raise ValueError(f"double out of range: {raw}")
-    return v
+def _parse_double(raw: str) -> float | SDFError:
+    try:
+        v = float(raw)
+        if not math.isfinite(v) or abs(v) > math.inf:
+            return SDFError(f"double out of range: {raw}")
+        return v
+    except ValueError:
+        return SDFError(f"Invalid double: {raw}")
 
 
 
-class Point(Model):
+class Point(BaseModel):
     def __init__(self, sdf_version: str, point: Vector2d = None):
         self.__version__ = sdf_version
         if point is None:
@@ -51,18 +61,24 @@ class Point(Model):
             return self.to_version(version).to_sdf()
         version = version or self.__version__
         el = ET.Element("point")
+        if self.point is None:
+            raise ValueError(f"'point' is required in SDF version {version}")
         if self.point is not None:
             el.text = self.point.to_sdf()
         return el
 
     @classmethod
-    def from_sdf(cls, el: ET.Element, version: str) -> "Point":
+    def _from_sdf(cls, el: ET.Element, version: str):
+        if el.text is None:
+            return SDFError(f"'point' is required in SDF version {version}")
         _text = el.text or "0 0"
-        _point = Vector2d.from_sdf(_text)
+        _point = Vector2d._from_sdf(_text, version)
+        if isinstance(_point, SDFError):
+            return _point
         return cls(sdf_version=version, point=_point)
 
 
-class Height(Model):
+class Height(BaseModel):
     def __init__(self, sdf_version: str, height: float = 1.0):
         self.__version__ = sdf_version
         self.height = height
@@ -78,18 +94,24 @@ class Height(Model):
             return self.to_version(version).to_sdf()
         version = version or self.__version__
         el = ET.Element("height")
+        if self.height is None:
+            raise ValueError(f"'height' is required in SDF version {version}")
         if self.height is not None:
             el.text = str(self.height)
         return el
 
     @classmethod
-    def from_sdf(cls, el: ET.Element, version: str) -> "Height":
+    def _from_sdf(cls, el: ET.Element, version: str):
+        if el.text is None:
+            return SDFError(f"'height' is required in SDF version {version}")
         _text = el.text or 1.0
         _height = _parse_double(_text)
+        if isinstance(_height, SDFError):
+            return _height
         return cls(sdf_version=version, height=_height)
 
 
-class Polyline(Model):
+class Polyline(BaseModel):
     def __init__(self, sdf_version: str, point: List["Point"] = None, height: "Height" = None):
         self.__version__ = sdf_version
         self.point = point or []
@@ -107,15 +129,34 @@ class Polyline(Model):
             return self.to_version(version).to_sdf()
         version = version or self.__version__
         el = ET.Element("polyline")
+        if not self.point:
+            raise ValueError(f"'point' is required in SDF version {version}")
         for item in (self.point or []):
             el.append(item.to_sdf(version))
+        if self.height is None:
+            raise ValueError(f"'height' is required in SDF version {version}")
         if self.height is not None:
             el.append(self.height.to_sdf(version))
         return el
 
     @classmethod
-    def from_sdf(cls, el: ET.Element, version: str) -> "Polyline":
-        _point = [Point.from_sdf(c, version) for c in el.findall("point")]
+    def _from_sdf(cls, el: ET.Element, version: str):
+        _point = []
+        for c in el.findall("point"):
+            _res = Point._from_sdf(c, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("point")
+            _point.append(_res)
+        if not _point:
+            return SDFError(f"'point' is required in SDF version {version}")
         _c_height = el.find("height")
-        _height = Height.from_sdf(_c_height, version) if _c_height is not None else None
+        if _c_height is not None:
+            _res = Height._from_sdf(_c_height, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("height")
+            _height = _res
+        else:
+            _height = None
+        if _height is None:
+            return SDFError(f"'height' is required in SDF version {version}")
         return cls(sdf_version=version, point=_point, height=_height)

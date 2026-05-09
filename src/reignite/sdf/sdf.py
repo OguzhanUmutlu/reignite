@@ -5,39 +5,50 @@ from xml.etree import ElementTree as ET
 
 from typing import List
 
-from ..utils.model import Model
+from ..utils.model import BaseModel
+from ..utils.errors import SDFError
 from ..utils.color import Color
 from ..utils.pose import Pose
 from ..utils.vector2d import Vector2d
 from ..utils.vector3 import Vector3
 from ..utils.version import cmp_version
+from ..utils.migration import apply_migrations
 
 
 import math
 
-def _parse_int32(raw: str) -> int:
-    v = int(raw)
-    if not (-2147483648 <= v <= 2147483647):
-        raise ValueError(f"int32 out of range: {v}")
-    return v
+def _parse_int32(raw: str) -> int | SDFError:
+    try:
+        v = int(raw)
+        if not (-2147483648 <= v <= 2147483647):
+            return SDFError(f"int32 out of range: {v}")
+        return v
+    except ValueError:
+        return SDFError(f"Invalid int32: {raw}")
 
 
-def _parse_uint32(raw: str) -> int:
-    v = int(raw)
-    if not (0 <= v <= 4294967295):
-        raise ValueError(f"uint32 out of range: {v}")
-    return v
+def _parse_uint32(raw: str) -> int | SDFError:
+    try:
+        v = int(raw)
+        if not (0 <= v <= 4294967295):
+            return SDFError(f"uint32 out of range: {v}")
+        return v
+    except ValueError:
+        return SDFError(f"Invalid uint32: {raw}")
 
 
-def _parse_double(raw: str) -> float:
-    v = float(raw)
-    if not math.isfinite(v) or abs(v) > math.inf:
-        raise ValueError(f"double out of range: {raw}")
-    return v
+def _parse_double(raw: str) -> float | SDFError:
+    try:
+        v = float(raw)
+        if not math.isfinite(v) or abs(v) > math.inf:
+            return SDFError(f"double out of range: {raw}")
+        return v
+    except ValueError:
+        return SDFError(f"Invalid double: {raw}")
 
 
 
-class ViewController(Model):
+class ViewController(BaseModel):
     def __init__(self, sdf_version: str, view_controller: str = "orbit"):
         self.__version__ = sdf_version
         self.view_controller = view_controller
@@ -58,13 +69,15 @@ class ViewController(Model):
         return el
 
     @classmethod
-    def from_sdf(cls, el: ET.Element, version: str) -> "ViewController":
+    def _from_sdf(cls, el: ET.Element, version: str):
         _text = el.text or "orbit"
         _view_controller = _text
+        if isinstance(_view_controller, SDFError):
+            return _view_controller
         return cls(sdf_version=version, view_controller=_view_controller)
 
 
-class Pose(Model):
+class Pose(BaseModel):
     _MIGRATIONS = [{"version": "1.7", "ops": [{"type": "move", "from": "frame", "to": "relative_to"}]}]
 
     def __init__(
@@ -88,6 +101,8 @@ class Pose(Model):
     def to_version(self, target_version: str) -> "Pose":
         if self.frame is not None and cmp_version(target_version, "1.5") < 0:
             raise ValueError(f"'frame' is not supported in SDF version {target_version} (added in 1.5)")
+        if self.frame is not None and cmp_version(target_version, "1.7") >= 0:
+            raise ValueError(f"'frame' is not supported in SDF version {target_version} (removed in 1.7)")
         if self.relative_to is not None and cmp_version(target_version, "1.7") < 0:
             raise ValueError(f"'relative_to' is not supported in SDF version {target_version} (added in 1.7)")
         if self.rotation_format is not None and cmp_version(target_version, "1.9") < 0:
@@ -122,29 +137,39 @@ class Pose(Model):
         return el
 
     @classmethod
-    def from_sdf(cls, el: ET.Element, version: str) -> "Pose":
+    def _from_sdf(cls, el: ET.Element, version: str):
         _text = el.text or "0 0 0 0 0 0"
-        _pose = Pose.from_sdf(_text)
+        _pose = Pose._from_sdf(_text, version)
+        if isinstance(_pose, SDFError):
+            return _pose
         _frame = el.get("frame", "")
+        if isinstance(_frame, SDFError):
+            return _frame.extend("@frame")
         if _frame is not None and cmp_version(version, "1.5") < 0:
             if _frame != "":
-                raise ValueError(f"'frame' is not supported in SDF version {version} (added in 1.5)")
+                return SDFError(f"'frame' is not supported in SDF version {version} (added in 1.5)")
         _relative_to = el.get("relative_to", "")
+        if isinstance(_relative_to, SDFError):
+            return _relative_to.extend("@relative_to")
         if _relative_to is not None and cmp_version(version, "1.7") < 0:
             if _relative_to != "":
-                raise ValueError(f"'relative_to' is not supported in SDF version {version} (added in 1.7)")
+                return SDFError(f"'relative_to' is not supported in SDF version {version} (added in 1.7)")
         _rotation_format = el.get("rotation_format", "euler_rpy")
+        if isinstance(_rotation_format, SDFError):
+            return _rotation_format.extend("@rotation_format")
         if _rotation_format is not None and cmp_version(version, "1.9") < 0:
             if _rotation_format != "euler_rpy":
-                raise ValueError(f"'rotation_format' is not supported in SDF version {version} (added in 1.9)")
-        _degrees = el.get("degrees", False).strip().lower() == 'true'
+                return SDFError(f"'rotation_format' is not supported in SDF version {version} (added in 1.9)")
+        _degrees = str(el.get("degrees", False)).strip().lower() == 'true'
+        if isinstance(_degrees, SDFError):
+            return _degrees.extend("@degrees")
         if _degrees is not None and cmp_version(version, "1.9") < 0:
             if _degrees != False:
-                raise ValueError(f"'degrees' is not supported in SDF version {version} (added in 1.9)")
+                return SDFError(f"'degrees' is not supported in SDF version {version} (added in 1.9)")
         return cls(sdf_version=version, pose=_pose, frame=_frame, relative_to=_relative_to, rotation_format=_rotation_format, degrees=_degrees)
 
 
-class Name(Model):
+class Name(BaseModel):
     def __init__(self, sdf_version: str, name: str = "__default__"):
         self.__version__ = sdf_version
         self.name = name
@@ -160,18 +185,26 @@ class Name(Model):
             return self.to_version(version).to_sdf()
         version = version or self.__version__
         el = ET.Element("name")
+        if cmp_version(version, "1.12") < 0:
+            if self.name is None:
+                raise ValueError(f"'name' is required in SDF version {version}")
         if self.name is not None:
             el.text = self.name
         return el
 
     @classmethod
-    def from_sdf(cls, el: ET.Element, version: str) -> "Name":
+    def _from_sdf(cls, el: ET.Element, version: str):
+        if cmp_version(version, "1.12") < 0:
+            if el.text is None:
+                return SDFError(f"'name' is required in SDF version {version}")
         _text = el.text or "__default__"
         _name = _text
+        if isinstance(_name, SDFError):
+            return _name
         return cls(sdf_version=version, name=_name)
 
 
-class MinDist(Model):
+class MinDist(BaseModel):
     def __init__(self, sdf_version: str, min_dist: float = 0):
         self.__version__ = sdf_version
         self.min_dist = min_dist
@@ -192,13 +225,15 @@ class MinDist(Model):
         return el
 
     @classmethod
-    def from_sdf(cls, el: ET.Element, version: str) -> "MinDist":
+    def _from_sdf(cls, el: ET.Element, version: str):
         _text = el.text or 0
         _min_dist = _parse_double(_text)
+        if isinstance(_min_dist, SDFError):
+            return _min_dist
         return cls(sdf_version=version, min_dist=_min_dist)
 
 
-class MaxDist(Model):
+class MaxDist(BaseModel):
     def __init__(self, sdf_version: str, max_dist: float = 0):
         self.__version__ = sdf_version
         self.max_dist = max_dist
@@ -219,13 +254,15 @@ class MaxDist(Model):
         return el
 
     @classmethod
-    def from_sdf(cls, el: ET.Element, version: str) -> "MaxDist":
+    def _from_sdf(cls, el: ET.Element, version: str):
         _text = el.text or 0
         _max_dist = _parse_double(_text)
+        if isinstance(_max_dist, SDFError):
+            return _max_dist
         return cls(sdf_version=version, max_dist=_max_dist)
 
 
-class Static(Model):
+class Static(BaseModel):
     def __init__(self, sdf_version: str, static: bool = False):
         self.__version__ = sdf_version
         self.static = static
@@ -248,48 +285,18 @@ class Static(Model):
         return el
 
     @classmethod
-    def from_sdf(cls, el: ET.Element, version: str) -> "Static":
+    def _from_sdf(cls, el: ET.Element, version: str):
         _text = el.text or False
-        _static = _text.strip().lower() == 'true'
+        _static = str(_text).strip().lower() == 'true'
+        if isinstance(_static, SDFError):
+            return _static
         if _static is not None and cmp_version(version, "1.6") < 0:
             if _static != False:
-                raise ValueError(f"'static' is not supported in SDF version {version} (added in 1.6)")
+                return SDFError(f"'static' is not supported in SDF version {version} (added in 1.6)")
         return cls(sdf_version=version, static=_static)
 
 
-class UseModelFrame(Model):
-    def __init__(self, sdf_version: str, use_model_frame: bool = True):
-        self.__version__ = sdf_version
-        self.use_model_frame = use_model_frame
-
-    def to_version(self, target_version: str) -> "UseModelFrame":
-        if self.use_model_frame is not None and cmp_version(target_version, "1.6") < 0:
-            raise ValueError(f"'use_model_frame' is not supported in SDF version {target_version} (added in 1.6)")
-        kwargs = {"sdf_version": target_version}
-        kwargs["use_model_frame"] = self.use_model_frame
-        new_obj = self.__class__(**kwargs)
-        return new_obj
-
-    def to_sdf(self, version: str = None) -> ET.Element:
-        if version is not None and version != self.__version__:
-            return self.to_version(version).to_sdf()
-        version = version or self.__version__
-        el = ET.Element("use_model_frame")
-        if self.use_model_frame is not None:
-            el.text = str(self.use_model_frame).lower()
-        return el
-
-    @classmethod
-    def from_sdf(cls, el: ET.Element, version: str) -> "UseModelFrame":
-        _text = el.text or True
-        _use_model_frame = _text.strip().lower() == 'true'
-        if _use_model_frame is not None and cmp_version(version, "1.6") < 0:
-            if _use_model_frame != True:
-                raise ValueError(f"'use_model_frame' is not supported in SDF version {version} (added in 1.6)")
-        return cls(sdf_version=version, use_model_frame=_use_model_frame)
-
-
-class Xyz(Model):
+class Xyz(BaseModel):
     def __init__(self, sdf_version: str, xyz: Vector3 = None):
         self.__version__ = sdf_version
         if xyz is None:
@@ -314,16 +321,52 @@ class Xyz(Model):
         return el
 
     @classmethod
-    def from_sdf(cls, el: ET.Element, version: str) -> "Xyz":
+    def _from_sdf(cls, el: ET.Element, version: str):
         _text = el.text or "-5.0 0.0 3.0"
-        _xyz = Vector3.from_sdf(_text)
+        _xyz = Vector3._from_sdf(_text, version)
+        if isinstance(_xyz, SDFError):
+            return _xyz
         if _xyz is not None and cmp_version(version, "1.6") < 0:
             if _xyz != "-5.0 0.0 3.0":
-                raise ValueError(f"'xyz' is not supported in SDF version {version} (added in 1.6)")
+                return SDFError(f"'xyz' is not supported in SDF version {version} (added in 1.6)")
         return cls(sdf_version=version, xyz=_xyz)
 
 
-class InheritYaw(Model):
+class UseModelFrame(BaseModel):
+    def __init__(self, sdf_version: str, use_model_frame: bool = True):
+        self.__version__ = sdf_version
+        self.use_model_frame = use_model_frame
+
+    def to_version(self, target_version: str) -> "UseModelFrame":
+        if self.use_model_frame is not None and cmp_version(target_version, "1.6") < 0:
+            raise ValueError(f"'use_model_frame' is not supported in SDF version {target_version} (added in 1.6)")
+        kwargs = {"sdf_version": target_version}
+        kwargs["use_model_frame"] = self.use_model_frame
+        new_obj = self.__class__(**kwargs)
+        return new_obj
+
+    def to_sdf(self, version: str = None) -> ET.Element:
+        if version is not None and version != self.__version__:
+            return self.to_version(version).to_sdf()
+        version = version or self.__version__
+        el = ET.Element("use_model_frame")
+        if self.use_model_frame is not None:
+            el.text = str(self.use_model_frame).lower()
+        return el
+
+    @classmethod
+    def _from_sdf(cls, el: ET.Element, version: str):
+        _text = el.text or True
+        _use_model_frame = str(_text).strip().lower() == 'true'
+        if isinstance(_use_model_frame, SDFError):
+            return _use_model_frame
+        if _use_model_frame is not None and cmp_version(version, "1.6") < 0:
+            if _use_model_frame != True:
+                return SDFError(f"'use_model_frame' is not supported in SDF version {version} (added in 1.6)")
+        return cls(sdf_version=version, use_model_frame=_use_model_frame)
+
+
+class InheritYaw(BaseModel):
     def __init__(self, sdf_version: str, inherit_yaw: bool = False):
         self.__version__ = sdf_version
         self.inherit_yaw = inherit_yaw
@@ -346,16 +389,18 @@ class InheritYaw(Model):
         return el
 
     @classmethod
-    def from_sdf(cls, el: ET.Element, version: str) -> "InheritYaw":
+    def _from_sdf(cls, el: ET.Element, version: str):
         _text = el.text or False
-        _inherit_yaw = _text.strip().lower() == 'true'
+        _inherit_yaw = str(_text).strip().lower() == 'true'
+        if isinstance(_inherit_yaw, SDFError):
+            return _inherit_yaw
         if _inherit_yaw is not None and cmp_version(version, "1.6") < 0:
             if _inherit_yaw != False:
-                raise ValueError(f"'inherit_yaw' is not supported in SDF version {version} (added in 1.6)")
+                return SDFError(f"'inherit_yaw' is not supported in SDF version {version} (added in 1.6)")
         return cls(sdf_version=version, inherit_yaw=_inherit_yaw)
 
 
-class TrackVisual(Model):
+class TrackVisual(BaseModel):
     def __init__(
         self,
         sdf_version: str,
@@ -363,8 +408,8 @@ class TrackVisual(Model):
         min_dist: "MinDist" = None,
         max_dist: "MaxDist" = None,
         static: "Static" = None,
-        use_model_frame: "UseModelFrame" = None,
         xyz: "Xyz" = None,
+        use_model_frame: "UseModelFrame" = None,
         inherit_yaw: "InheritYaw" = None
     ):
         self.__version__ = sdf_version
@@ -372,17 +417,17 @@ class TrackVisual(Model):
         self.min_dist = min_dist
         self.max_dist = max_dist
         self.static = static
-        self.use_model_frame = use_model_frame
         self.xyz = xyz
+        self.use_model_frame = use_model_frame
         self.inherit_yaw = inherit_yaw
 
     def to_version(self, target_version: str) -> "TrackVisual":
         if self.static is not None and cmp_version(target_version, "1.6") < 0:
             raise ValueError(f"'static' is not supported in SDF version {target_version} (added in 1.6)")
-        if self.use_model_frame is not None and cmp_version(target_version, "1.6") < 0:
-            raise ValueError(f"'use_model_frame' is not supported in SDF version {target_version} (added in 1.6)")
         if self.xyz is not None and cmp_version(target_version, "1.6") < 0:
             raise ValueError(f"'xyz' is not supported in SDF version {target_version} (added in 1.6)")
+        if self.use_model_frame is not None and cmp_version(target_version, "1.6") < 0:
+            raise ValueError(f"'use_model_frame' is not supported in SDF version {target_version} (added in 1.6)")
         if self.inherit_yaw is not None and cmp_version(target_version, "1.6") < 0:
             raise ValueError(f"'inherit_yaw' is not supported in SDF version {target_version} (added in 1.6)")
         kwargs = {"sdf_version": target_version}
@@ -390,8 +435,8 @@ class TrackVisual(Model):
         kwargs["min_dist"] = self.min_dist.to_version(target_version) if self.min_dist is not None else None
         kwargs["max_dist"] = self.max_dist.to_version(target_version) if self.max_dist is not None else None
         kwargs["static"] = self.static.to_version(target_version) if self.static is not None else None
-        kwargs["use_model_frame"] = self.use_model_frame.to_version(target_version) if self.use_model_frame is not None else None
         kwargs["xyz"] = self.xyz.to_version(target_version) if self.xyz is not None else None
+        kwargs["use_model_frame"] = self.use_model_frame.to_version(target_version) if self.use_model_frame is not None else None
         kwargs["inherit_yaw"] = self.inherit_yaw.to_version(target_version) if self.inherit_yaw is not None else None
         new_obj = self.__class__(**kwargs)
         return new_obj
@@ -401,6 +446,9 @@ class TrackVisual(Model):
             return self.to_version(version).to_sdf()
         version = version or self.__version__
         el = ET.Element("track_visual")
+        if cmp_version(version, "1.12") < 0:
+            if self.name is None:
+                raise ValueError(f"'name' is required in SDF version {version}")
         if self.name is not None:
             el.append(self.name.to_sdf(version))
         if self.min_dist is not None:
@@ -409,74 +457,87 @@ class TrackVisual(Model):
             el.append(self.max_dist.to_sdf(version))
         if self.static is not None:
             el.append(self.static.to_sdf(version))
-        if self.use_model_frame is not None:
-            el.append(self.use_model_frame.to_sdf(version))
         if self.xyz is not None:
             el.append(self.xyz.to_sdf(version))
+        if self.use_model_frame is not None:
+            el.append(self.use_model_frame.to_sdf(version))
         if self.inherit_yaw is not None:
             el.append(self.inherit_yaw.to_sdf(version))
         return el
 
     @classmethod
-    def from_sdf(cls, el: ET.Element, version: str) -> "TrackVisual":
+    def _from_sdf(cls, el: ET.Element, version: str):
         _c_name = el.find("name")
-        _name = Name.from_sdf(_c_name, version) if _c_name is not None else None
+        if _c_name is not None:
+            _res = Name._from_sdf(_c_name, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("name")
+            _name = _res
+        else:
+            _name = None
+        if cmp_version(version, "1.12") < 0:
+            if _name is None:
+                return SDFError(f"'name' is required in SDF version {version}")
         _c_min_dist = el.find("min_dist")
-        _min_dist = MinDist.from_sdf(_c_min_dist, version) if _c_min_dist is not None else None
+        if _c_min_dist is not None:
+            _res = MinDist._from_sdf(_c_min_dist, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("min_dist")
+            _min_dist = _res
+        else:
+            _min_dist = None
         _c_max_dist = el.find("max_dist")
-        _max_dist = MaxDist.from_sdf(_c_max_dist, version) if _c_max_dist is not None else None
+        if _c_max_dist is not None:
+            _res = MaxDist._from_sdf(_c_max_dist, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("max_dist")
+            _max_dist = _res
+        else:
+            _max_dist = None
         _c_static = el.find("static")
-        _static = Static.from_sdf(_c_static, version) if _c_static is not None else None
+        if _c_static is not None:
+            _res = Static._from_sdf(_c_static, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("static")
+            _static = _res
+        else:
+            _static = None
         if _static is not None and cmp_version(version, "1.6") < 0:
-            raise ValueError(f"'static' is not supported in SDF version {version} (added in 1.6)")
-        _c_use_model_frame = el.find("use_model_frame")
-        _use_model_frame = UseModelFrame.from_sdf(_c_use_model_frame, version) if _c_use_model_frame is not None else None
-        if _use_model_frame is not None and cmp_version(version, "1.6") < 0:
-            raise ValueError(f"'use_model_frame' is not supported in SDF version {version} (added in 1.6)")
+            return SDFError(f"'static' is not supported in SDF version {version} (added in 1.6)")
         _c_xyz = el.find("xyz")
-        _xyz = Xyz.from_sdf(_c_xyz, version) if _c_xyz is not None else None
+        if _c_xyz is not None:
+            _res = Xyz._from_sdf(_c_xyz, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("xyz")
+            _xyz = _res
+        else:
+            _xyz = None
         if _xyz is not None and cmp_version(version, "1.6") < 0:
-            raise ValueError(f"'xyz' is not supported in SDF version {version} (added in 1.6)")
+            return SDFError(f"'xyz' is not supported in SDF version {version} (added in 1.6)")
+        _c_use_model_frame = el.find("use_model_frame")
+        if _c_use_model_frame is not None:
+            _res = UseModelFrame._from_sdf(_c_use_model_frame, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("use_model_frame")
+            _use_model_frame = _res
+        else:
+            _use_model_frame = None
+        if _use_model_frame is not None and cmp_version(version, "1.6") < 0:
+            return SDFError(f"'use_model_frame' is not supported in SDF version {version} (added in 1.6)")
         _c_inherit_yaw = el.find("inherit_yaw")
-        _inherit_yaw = InheritYaw.from_sdf(_c_inherit_yaw, version) if _c_inherit_yaw is not None else None
+        if _c_inherit_yaw is not None:
+            _res = InheritYaw._from_sdf(_c_inherit_yaw, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("inherit_yaw")
+            _inherit_yaw = _res
+        else:
+            _inherit_yaw = None
         if _inherit_yaw is not None and cmp_version(version, "1.6") < 0:
-            raise ValueError(f"'inherit_yaw' is not supported in SDF version {version} (added in 1.6)")
-        return cls(sdf_version=version, name=_name, min_dist=_min_dist, max_dist=_max_dist, static=_static, use_model_frame=_use_model_frame, xyz=_xyz, inherit_yaw=_inherit_yaw)
+            return SDFError(f"'inherit_yaw' is not supported in SDF version {version} (added in 1.6)")
+        return cls(sdf_version=version, name=_name, min_dist=_min_dist, max_dist=_max_dist, static=_static, xyz=_xyz, use_model_frame=_use_model_frame, inherit_yaw=_inherit_yaw)
 
 
-class Frame(Model):
-    def __init__(self, sdf_version: str, name: str = "", pose: "Pose" = None):
-        self.__version__ = sdf_version
-        self.name = name
-        self.pose = pose
-
-    def to_version(self, target_version: str) -> "Frame":
-        kwargs = {"sdf_version": target_version}
-        kwargs["name"] = self.name
-        kwargs["pose"] = self.pose.to_version(target_version) if self.pose is not None else None
-        new_obj = self.__class__(**kwargs)
-        return new_obj
-
-    def to_sdf(self, version: str = None) -> ET.Element:
-        if version is not None and version != self.__version__:
-            return self.to_version(version).to_sdf()
-        version = version or self.__version__
-        el = ET.Element("frame")
-        if self.name is not None:
-            el.set("name", self.name)
-        if self.pose is not None:
-            el.append(self.pose.to_sdf(version))
-        return el
-
-    @classmethod
-    def from_sdf(cls, el: ET.Element, version: str) -> "Frame":
-        _name = el.get("name", "")
-        _c_pose = el.find("pose")
-        _pose = Pose.from_sdf(_c_pose, version) if _c_pose is not None else None
-        return cls(sdf_version=version, name=_name, pose=_pose)
-
-
-class ProjectionType(Model):
+class ProjectionType(BaseModel):
     def __init__(self, sdf_version: str, projection_type: str = "perspective"):
         self.__version__ = sdf_version
         self.projection_type = projection_type
@@ -499,16 +560,62 @@ class ProjectionType(Model):
         return el
 
     @classmethod
-    def from_sdf(cls, el: ET.Element, version: str) -> "ProjectionType":
+    def _from_sdf(cls, el: ET.Element, version: str):
         _text = el.text or "perspective"
         _projection_type = _text
+        if isinstance(_projection_type, SDFError):
+            return _projection_type
         if _projection_type is not None and cmp_version(version, "1.5") < 0:
             if _projection_type != "perspective":
-                raise ValueError(f"'projection_type' is not supported in SDF version {version} (added in 1.5)")
+                return SDFError(f"'projection_type' is not supported in SDF version {version} (added in 1.5)")
         return cls(sdf_version=version, projection_type=_projection_type)
 
 
-class Camera(Model):
+class Frame(BaseModel):
+    def __init__(self, sdf_version: str, name: str = "", pose: "Pose" = None):
+        self.__version__ = sdf_version
+        self.name = name
+        self.pose = pose
+
+    def to_version(self, target_version: str) -> "Frame":
+        kwargs = {"sdf_version": target_version}
+        kwargs["name"] = self.name
+        kwargs["pose"] = self.pose.to_version(target_version) if self.pose is not None else None
+        new_obj = self.__class__(**kwargs)
+        return new_obj
+
+    def to_sdf(self, version: str = None) -> ET.Element:
+        if version is not None and version != self.__version__:
+            return self.to_version(version).to_sdf()
+        version = version or self.__version__
+        el = ET.Element("frame")
+        if self.name is None:
+            raise ValueError(f"'name' is required in SDF version {version}")
+        if self.name is not None:
+            el.set("name", self.name)
+        if self.pose is not None:
+            el.append(self.pose.to_sdf(version))
+        return el
+
+    @classmethod
+    def _from_sdf(cls, el: ET.Element, version: str):
+        if el.get("name") is None:
+            return SDFError(f"'name' is required in SDF version {version}")
+        _name = el.get("name", "")
+        if isinstance(_name, SDFError):
+            return _name.extend("@name")
+        _c_pose = el.find("pose")
+        if _c_pose is not None:
+            _res = Pose._from_sdf(_c_pose, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("pose")
+            _pose = _res
+        else:
+            _pose = None
+        return cls(sdf_version=version, name=_name, pose=_pose)
+
+
+class Camera(BaseModel):
     def __init__(
         self,
         sdf_version: str,
@@ -516,29 +623,31 @@ class Camera(Model):
         view_controller: "ViewController" = None,
         pose: "Pose" = None,
         track_visual: "TrackVisual" = None,
-        frame: List["Frame"] = None,
-        projection_type: "ProjectionType" = None
+        projection_type: "ProjectionType" = None,
+        frame: List["Frame"] = None
     ):
         self.__version__ = sdf_version
         self.name = name
         self.view_controller = view_controller
         self.pose = pose
         self.track_visual = track_visual
-        self.frame = frame or []
         self.projection_type = projection_type
+        self.frame = frame or []
 
     def to_version(self, target_version: str) -> "Camera":
-        if self.frame is not None and cmp_version(target_version, "1.5") < 0:
-            raise ValueError(f"'frame' is not supported in SDF version {target_version} (added in 1.5)")
         if self.projection_type is not None and cmp_version(target_version, "1.5") < 0:
             raise ValueError(f"'projection_type' is not supported in SDF version {target_version} (added in 1.5)")
+        if self.frame is not None and cmp_version(target_version, "1.5") < 0:
+            raise ValueError(f"'frame' is not supported in SDF version {target_version} (added in 1.5)")
+        if self.frame is not None and cmp_version(target_version, "1.7") >= 0:
+            raise ValueError(f"'frame' is not supported in SDF version {target_version} (removed in 1.7)")
         kwargs = {"sdf_version": target_version}
         kwargs["name"] = self.name
         kwargs["view_controller"] = self.view_controller.to_version(target_version) if self.view_controller is not None else None
         kwargs["pose"] = self.pose.to_version(target_version) if self.pose is not None else None
         kwargs["track_visual"] = self.track_visual.to_version(target_version) if self.track_visual is not None else None
-        kwargs["frame"] = [c.to_version(target_version) for c in (self.frame or [])]
         kwargs["projection_type"] = self.projection_type.to_version(target_version) if self.projection_type is not None else None
+        kwargs["frame"] = [c.to_version(target_version) for c in (self.frame or [])]
         new_obj = self.__class__(**kwargs)
         return new_obj
 
@@ -547,6 +656,8 @@ class Camera(Model):
             return self.to_version(version).to_sdf()
         version = version or self.__version__
         el = ET.Element("camera")
+        if self.name is None:
+            raise ValueError(f"'name' is required in SDF version {version}")
         if self.name is not None:
             el.set("name", self.name)
         if self.view_controller is not None:
@@ -555,32 +666,65 @@ class Camera(Model):
             el.append(self.pose.to_sdf(version))
         if self.track_visual is not None:
             el.append(self.track_visual.to_sdf(version))
-        for item in (self.frame or []):
-            el.append(item.to_sdf(version))
         if self.projection_type is not None:
             el.append(self.projection_type.to_sdf(version))
+        for item in (self.frame or []):
+            el.append(item.to_sdf(version))
         return el
 
     @classmethod
-    def from_sdf(cls, el: ET.Element, version: str) -> "Camera":
+    def _from_sdf(cls, el: ET.Element, version: str):
+        if el.get("name") is None:
+            return SDFError(f"'name' is required in SDF version {version}")
         _name = el.get("name", "user_camera")
+        if isinstance(_name, SDFError):
+            return _name.extend("@name")
         _c_view_controller = el.find("view_controller")
-        _view_controller = ViewController.from_sdf(_c_view_controller, version) if _c_view_controller is not None else None
+        if _c_view_controller is not None:
+            _res = ViewController._from_sdf(_c_view_controller, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("view_controller")
+            _view_controller = _res
+        else:
+            _view_controller = None
         _c_pose = el.find("pose")
-        _pose = Pose.from_sdf(_c_pose, version) if _c_pose is not None else None
+        if _c_pose is not None:
+            _res = Pose._from_sdf(_c_pose, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("pose")
+            _pose = _res
+        else:
+            _pose = None
         _c_track_visual = el.find("track_visual")
-        _track_visual = TrackVisual.from_sdf(_c_track_visual, version) if _c_track_visual is not None else None
-        _frame = [Frame.from_sdf(c, version) for c in el.findall("frame")]
-        if _frame and cmp_version(version, "1.5") < 0:
-            raise ValueError(f"'frame' is not supported in SDF version {version} (added in 1.5)")
+        if _c_track_visual is not None:
+            _res = TrackVisual._from_sdf(_c_track_visual, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("track_visual")
+            _track_visual = _res
+        else:
+            _track_visual = None
         _c_projection_type = el.find("projection_type")
-        _projection_type = ProjectionType.from_sdf(_c_projection_type, version) if _c_projection_type is not None else None
+        if _c_projection_type is not None:
+            _res = ProjectionType._from_sdf(_c_projection_type, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("projection_type")
+            _projection_type = _res
+        else:
+            _projection_type = None
         if _projection_type is not None and cmp_version(version, "1.5") < 0:
-            raise ValueError(f"'projection_type' is not supported in SDF version {version} (added in 1.5)")
-        return cls(sdf_version=version, name=_name, view_controller=_view_controller, pose=_pose, track_visual=_track_visual, frame=_frame, projection_type=_projection_type)
+            return SDFError(f"'projection_type' is not supported in SDF version {version} (added in 1.5)")
+        _frame = []
+        for c in el.findall("frame"):
+            _res = Frame._from_sdf(c, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("frame")
+            _frame.append(_res)
+        if _frame and cmp_version(version, "1.5") < 0:
+            return SDFError(f"'frame' is not supported in SDF version {version} (added in 1.5)")
+        return cls(sdf_version=version, name=_name, view_controller=_view_controller, pose=_pose, track_visual=_track_visual, projection_type=_projection_type, frame=_frame)
 
 
-class Plugin(Model):
+class Plugin(BaseModel):
     def __init__(self, sdf_version: str, name: str = "__default__", filename: str = "__default__"):
         self.__version__ = sdf_version
         self.name = name
@@ -598,20 +742,34 @@ class Plugin(Model):
             return self.to_version(version).to_sdf()
         version = version or self.__version__
         el = ET.Element("plugin")
+        if cmp_version(version, "1.12") < 0:
+            if self.name is None:
+                raise ValueError(f"'name' is required in SDF version {version}")
         if self.name is not None:
             el.set("name", self.name)
+        if self.filename is None:
+            raise ValueError(f"'filename' is required in SDF version {version}")
         if self.filename is not None:
             el.set("filename", self.filename)
         return el
 
     @classmethod
-    def from_sdf(cls, el: ET.Element, version: str) -> "Plugin":
+    def _from_sdf(cls, el: ET.Element, version: str):
+        if cmp_version(version, "1.12") < 0:
+            if el.get("name") is None:
+                return SDFError(f"'name' is required in SDF version {version}")
         _name = el.get("name", "__default__")
+        if isinstance(_name, SDFError):
+            return _name.extend("@name")
+        if el.get("filename") is None:
+            return SDFError(f"'filename' is required in SDF version {version}")
         _filename = el.get("filename", "__default__")
+        if isinstance(_filename, SDFError):
+            return _filename.extend("@filename")
         return cls(sdf_version=version, name=_name, filename=_filename)
 
 
-class Gui(Model):
+class Gui(BaseModel):
     def __init__(
         self,
         sdf_version: str,
@@ -648,22 +806,37 @@ class Gui(Model):
         return el
 
     @classmethod
-    def from_sdf(cls, el: ET.Element, version: str) -> "Gui":
-        _fullscreen = el.get("fullscreen", False).strip().lower() == 'true'
+    def _from_sdf(cls, el: ET.Element, version: str):
+        _fullscreen = str(el.get("fullscreen", False)).strip().lower() == 'true'
+        if isinstance(_fullscreen, SDFError):
+            return _fullscreen.extend("@fullscreen")
         _c_camera = el.find("camera")
-        _camera = Camera.from_sdf(_c_camera, version) if _c_camera is not None else None
-        _plugin = [Plugin.from_sdf(c, version) for c in el.findall("plugin")]
+        if _c_camera is not None:
+            _res = Camera._from_sdf(_c_camera, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("camera")
+            _camera = _res
+        else:
+            _camera = None
+        _plugin = []
+        for c in el.findall("plugin"):
+            _res = Plugin._from_sdf(c, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("plugin")
+            _plugin.append(_res)
         if _plugin and cmp_version(version, "1.5") < 0:
-            raise ValueError(f"'plugin' is not supported in SDF version {version} (added in 1.5)")
+            return SDFError(f"'plugin' is not supported in SDF version {version} (added in 1.5)")
         return cls(sdf_version=version, fullscreen=_fullscreen, camera=_camera, plugin=_plugin)
 
 
-class UpdateRate(Model):
+class UpdateRate(BaseModel):
     def __init__(self, sdf_version: str, update_rate: float = 1000):
         self.__version__ = sdf_version
         self.update_rate = update_rate
 
     def to_version(self, target_version: str) -> "UpdateRate":
+        if self.update_rate is not None and cmp_version(target_version, "1.4") >= 0:
+            raise ValueError(f"'update_rate' is not supported in SDF version {target_version} (removed in 1.4)")
         kwargs = {"sdf_version": target_version}
         kwargs["update_rate"] = self.update_rate
         new_obj = self.__class__(**kwargs)
@@ -674,18 +847,26 @@ class UpdateRate(Model):
             return self.to_version(version).to_sdf()
         version = version or self.__version__
         el = ET.Element("update_rate")
+        if cmp_version(version, "1.4") < 0:
+            if self.update_rate is None:
+                raise ValueError(f"'update_rate' is required in SDF version {version}")
         if self.update_rate is not None:
             el.text = str(self.update_rate)
         return el
 
     @classmethod
-    def from_sdf(cls, el: ET.Element, version: str) -> "UpdateRate":
+    def _from_sdf(cls, el: ET.Element, version: str):
+        if cmp_version(version, "1.4") < 0:
+            if el.text is None:
+                return SDFError(f"'update_rate' is required in SDF version {version}")
         _text = el.text or 1000
         _update_rate = _parse_double(_text)
+        if isinstance(_update_rate, SDFError):
+            return _update_rate
         return cls(sdf_version=version, update_rate=_update_rate)
 
 
-class MaxContacts(Model):
+class MaxContacts(BaseModel):
     def __init__(self, sdf_version: str, max_contacts: int = 20):
         self.__version__ = sdf_version
         self.max_contacts = max_contacts
@@ -706,13 +887,15 @@ class MaxContacts(Model):
         return el
 
     @classmethod
-    def from_sdf(cls, el: ET.Element, version: str) -> "MaxContacts":
+    def _from_sdf(cls, el: ET.Element, version: str):
         _text = el.text or 20
         _max_contacts = _parse_int32(_text)
+        if isinstance(_max_contacts, SDFError):
+            return _max_contacts
         return cls(sdf_version=version, max_contacts=_max_contacts)
 
 
-class Gravity(Model):
+class Gravity(BaseModel):
     def __init__(self, sdf_version: str, gravity: Vector3 = None):
         self.__version__ = sdf_version
         if gravity is None:
@@ -720,6 +903,8 @@ class Gravity(Model):
         self.gravity = gravity
 
     def to_version(self, target_version: str) -> "Gravity":
+        if self.gravity is not None and cmp_version(target_version, "1.6") >= 0:
+            raise ValueError(f"'gravity' is not supported in SDF version {target_version} (removed in 1.6)")
         kwargs = {"sdf_version": target_version}
         kwargs["gravity"] = self.gravity
         new_obj = self.__class__(**kwargs)
@@ -730,23 +915,33 @@ class Gravity(Model):
             return self.to_version(version).to_sdf()
         version = version or self.__version__
         el = ET.Element("gravity")
+        if cmp_version(version, "1.6") < 0:
+            if self.gravity is None:
+                raise ValueError(f"'gravity' is required in SDF version {version}")
         if self.gravity is not None:
             el.text = self.gravity.to_sdf()
         return el
 
     @classmethod
-    def from_sdf(cls, el: ET.Element, version: str) -> "Gravity":
+    def _from_sdf(cls, el: ET.Element, version: str):
+        if cmp_version(version, "1.6") < 0:
+            if el.text is None:
+                return SDFError(f"'gravity' is required in SDF version {version}")
         _text = el.text or "0 0 -9.8"
-        _gravity = Vector3.from_sdf(_text)
+        _gravity = Vector3._from_sdf(_text, version)
+        if isinstance(_gravity, SDFError):
+            return _gravity
         return cls(sdf_version=version, gravity=_gravity)
 
 
-class Dt(Model):
+class Dt(BaseModel):
     def __init__(self, sdf_version: str, dt: float = 0.001):
         self.__version__ = sdf_version
         self.dt = dt
 
     def to_version(self, target_version: str) -> "Dt":
+        if self.dt is not None and cmp_version(target_version, "1.4") >= 0:
+            raise ValueError(f"'dt' is not supported in SDF version {target_version} (removed in 1.4)")
         kwargs = {"sdf_version": target_version}
         kwargs["dt"] = self.dt
         new_obj = self.__class__(**kwargs)
@@ -757,18 +952,26 @@ class Dt(Model):
             return self.to_version(version).to_sdf()
         version = version or self.__version__
         el = ET.Element("dt")
+        if cmp_version(version, "1.4") < 0:
+            if self.dt is None:
+                raise ValueError(f"'dt' is required in SDF version {version}")
         if self.dt is not None:
             el.text = str(self.dt)
         return el
 
     @classmethod
-    def from_sdf(cls, el: ET.Element, version: str) -> "Dt":
+    def _from_sdf(cls, el: ET.Element, version: str):
+        if cmp_version(version, "1.4") < 0:
+            if el.text is None:
+                return SDFError(f"'dt' is required in SDF version {version}")
         _text = el.text or 0.001
         _dt = _parse_double(_text)
+        if isinstance(_dt, SDFError):
+            return _dt
         return cls(sdf_version=version, dt=_dt)
 
 
-class Type(Model):
+class Type(BaseModel):
     def __init__(self, sdf_version: str, type: str = "sequential_impulse"):
         self.__version__ = sdf_version
         self.type = type
@@ -784,18 +987,24 @@ class Type(Model):
             return self.to_version(version).to_sdf()
         version = version or self.__version__
         el = ET.Element("type")
+        if self.type is None:
+            raise ValueError(f"'type' is required in SDF version {version}")
         if self.type is not None:
             el.text = self.type
         return el
 
     @classmethod
-    def from_sdf(cls, el: ET.Element, version: str) -> "Type":
+    def _from_sdf(cls, el: ET.Element, version: str):
+        if el.text is None:
+            return SDFError(f"'type' is required in SDF version {version}")
         _text = el.text or "sequential_impulse"
         _type = _text
+        if isinstance(_type, SDFError):
+            return _type
         return cls(sdf_version=version, type=_type)
 
 
-class MinStepSize(Model):
+class MinStepSize(BaseModel):
     def __init__(self, sdf_version: str, min_step_size: float = 0.0001):
         self.__version__ = sdf_version
         self.min_step_size = min_step_size
@@ -816,13 +1025,15 @@ class MinStepSize(Model):
         return el
 
     @classmethod
-    def from_sdf(cls, el: ET.Element, version: str) -> "MinStepSize":
+    def _from_sdf(cls, el: ET.Element, version: str):
         _text = el.text or 0.0001
         _min_step_size = _parse_double(_text)
+        if isinstance(_min_step_size, SDFError):
+            return _min_step_size
         return cls(sdf_version=version, min_step_size=_min_step_size)
 
 
-class Iters(Model):
+class Iters(BaseModel):
     def __init__(self, sdf_version: str, iters: int = 50):
         self.__version__ = sdf_version
         self.iters = iters
@@ -838,18 +1049,24 @@ class Iters(Model):
             return self.to_version(version).to_sdf()
         version = version or self.__version__
         el = ET.Element("iters")
+        if self.iters is None:
+            raise ValueError(f"'iters' is required in SDF version {version}")
         if self.iters is not None:
             el.text = str(self.iters)
         return el
 
     @classmethod
-    def from_sdf(cls, el: ET.Element, version: str) -> "Iters":
+    def _from_sdf(cls, el: ET.Element, version: str):
+        if el.text is None:
+            return SDFError(f"'iters' is required in SDF version {version}")
         _text = el.text or 50
         _iters = _parse_int32(_text)
+        if isinstance(_iters, SDFError):
+            return _iters
         return cls(sdf_version=version, iters=_iters)
 
 
-class Sor(Model):
+class Sor(BaseModel):
     def __init__(self, sdf_version: str, sor: float = 1.3):
         self.__version__ = sdf_version
         self.sor = sor
@@ -865,18 +1082,24 @@ class Sor(Model):
             return self.to_version(version).to_sdf()
         version = version or self.__version__
         el = ET.Element("sor")
+        if self.sor is None:
+            raise ValueError(f"'sor' is required in SDF version {version}")
         if self.sor is not None:
             el.text = str(self.sor)
         return el
 
     @classmethod
-    def from_sdf(cls, el: ET.Element, version: str) -> "Sor":
+    def _from_sdf(cls, el: ET.Element, version: str):
+        if el.text is None:
+            return SDFError(f"'sor' is required in SDF version {version}")
         _text = el.text or 1.3
         _sor = _parse_double(_text)
+        if isinstance(_sor, SDFError):
+            return _sor
         return cls(sdf_version=version, sor=_sor)
 
 
-class Solver(Model):
+class Solver(BaseModel):
     def __init__(
         self,
         sdf_version: str,
@@ -905,30 +1128,66 @@ class Solver(Model):
             return self.to_version(version).to_sdf()
         version = version or self.__version__
         el = ET.Element("solver")
+        if self.type is None:
+            raise ValueError(f"'type' is required in SDF version {version}")
         if self.type is not None:
             el.append(self.type.to_sdf(version))
         if self.min_step_size is not None:
             el.append(self.min_step_size.to_sdf(version))
+        if self.iters is None:
+            raise ValueError(f"'iters' is required in SDF version {version}")
         if self.iters is not None:
             el.append(self.iters.to_sdf(version))
+        if self.sor is None:
+            raise ValueError(f"'sor' is required in SDF version {version}")
         if self.sor is not None:
             el.append(self.sor.to_sdf(version))
         return el
 
     @classmethod
-    def from_sdf(cls, el: ET.Element, version: str) -> "Solver":
+    def _from_sdf(cls, el: ET.Element, version: str):
         _c_type = el.find("type")
-        _type = Type.from_sdf(_c_type, version) if _c_type is not None else None
+        if _c_type is not None:
+            _res = Type._from_sdf(_c_type, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("type")
+            _type = _res
+        else:
+            _type = None
+        if _type is None:
+            return SDFError(f"'type' is required in SDF version {version}")
         _c_min_step_size = el.find("min_step_size")
-        _min_step_size = MinStepSize.from_sdf(_c_min_step_size, version) if _c_min_step_size is not None else None
+        if _c_min_step_size is not None:
+            _res = MinStepSize._from_sdf(_c_min_step_size, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("min_step_size")
+            _min_step_size = _res
+        else:
+            _min_step_size = None
         _c_iters = el.find("iters")
-        _iters = Iters.from_sdf(_c_iters, version) if _c_iters is not None else None
+        if _c_iters is not None:
+            _res = Iters._from_sdf(_c_iters, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("iters")
+            _iters = _res
+        else:
+            _iters = None
+        if _iters is None:
+            return SDFError(f"'iters' is required in SDF version {version}")
         _c_sor = el.find("sor")
-        _sor = Sor.from_sdf(_c_sor, version) if _c_sor is not None else None
+        if _c_sor is not None:
+            _res = Sor._from_sdf(_c_sor, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("sor")
+            _sor = _res
+        else:
+            _sor = None
+        if _sor is None:
+            return SDFError(f"'sor' is required in SDF version {version}")
         return cls(sdf_version=version, type=_type, min_step_size=_min_step_size, iters=_iters, sor=_sor)
 
 
-class Cfm(Model):
+class Cfm(BaseModel):
     def __init__(self, sdf_version: str, cfm: float = 0):
         self.__version__ = sdf_version
         self.cfm = cfm
@@ -944,18 +1203,24 @@ class Cfm(Model):
             return self.to_version(version).to_sdf()
         version = version or self.__version__
         el = ET.Element("cfm")
+        if self.cfm is None:
+            raise ValueError(f"'cfm' is required in SDF version {version}")
         if self.cfm is not None:
             el.text = str(self.cfm)
         return el
 
     @classmethod
-    def from_sdf(cls, el: ET.Element, version: str) -> "Cfm":
+    def _from_sdf(cls, el: ET.Element, version: str):
+        if el.text is None:
+            return SDFError(f"'cfm' is required in SDF version {version}")
         _text = el.text or 0
         _cfm = _parse_double(_text)
+        if isinstance(_cfm, SDFError):
+            return _cfm
         return cls(sdf_version=version, cfm=_cfm)
 
 
-class Erp(Model):
+class Erp(BaseModel):
     def __init__(self, sdf_version: str, erp: float = 0.2):
         self.__version__ = sdf_version
         self.erp = erp
@@ -971,18 +1236,24 @@ class Erp(Model):
             return self.to_version(version).to_sdf()
         version = version or self.__version__
         el = ET.Element("erp")
+        if self.erp is None:
+            raise ValueError(f"'erp' is required in SDF version {version}")
         if self.erp is not None:
             el.text = str(self.erp)
         return el
 
     @classmethod
-    def from_sdf(cls, el: ET.Element, version: str) -> "Erp":
+    def _from_sdf(cls, el: ET.Element, version: str):
+        if el.text is None:
+            return SDFError(f"'erp' is required in SDF version {version}")
         _text = el.text or 0.2
         _erp = _parse_double(_text)
+        if isinstance(_erp, SDFError):
+            return _erp
         return cls(sdf_version=version, erp=_erp)
 
 
-class ContactSurfaceLayer(Model):
+class ContactSurfaceLayer(BaseModel):
     def __init__(self, sdf_version: str, contact_surface_layer: float = 0.001):
         self.__version__ = sdf_version
         self.contact_surface_layer = contact_surface_layer
@@ -998,18 +1269,24 @@ class ContactSurfaceLayer(Model):
             return self.to_version(version).to_sdf()
         version = version or self.__version__
         el = ET.Element("contact_surface_layer")
+        if self.contact_surface_layer is None:
+            raise ValueError(f"'contact_surface_layer' is required in SDF version {version}")
         if self.contact_surface_layer is not None:
             el.text = str(self.contact_surface_layer)
         return el
 
     @classmethod
-    def from_sdf(cls, el: ET.Element, version: str) -> "ContactSurfaceLayer":
+    def _from_sdf(cls, el: ET.Element, version: str):
+        if el.text is None:
+            return SDFError(f"'contact_surface_layer' is required in SDF version {version}")
         _text = el.text or 0.001
         _contact_surface_layer = _parse_double(_text)
+        if isinstance(_contact_surface_layer, SDFError):
+            return _contact_surface_layer
         return cls(sdf_version=version, contact_surface_layer=_contact_surface_layer)
 
 
-class SplitImpulse(Model):
+class SplitImpulse(BaseModel):
     def __init__(self, sdf_version: str, split_impulse: bool = True):
         self.__version__ = sdf_version
         self.split_impulse = split_impulse
@@ -1025,18 +1302,24 @@ class SplitImpulse(Model):
             return self.to_version(version).to_sdf()
         version = version or self.__version__
         el = ET.Element("split_impulse")
+        if self.split_impulse is None:
+            raise ValueError(f"'split_impulse' is required in SDF version {version}")
         if self.split_impulse is not None:
             el.text = str(self.split_impulse).lower()
         return el
 
     @classmethod
-    def from_sdf(cls, el: ET.Element, version: str) -> "SplitImpulse":
+    def _from_sdf(cls, el: ET.Element, version: str):
+        if el.text is None:
+            return SDFError(f"'split_impulse' is required in SDF version {version}")
         _text = el.text or True
-        _split_impulse = _text.strip().lower() == 'true'
+        _split_impulse = str(_text).strip().lower() == 'true'
+        if isinstance(_split_impulse, SDFError):
+            return _split_impulse
         return cls(sdf_version=version, split_impulse=_split_impulse)
 
 
-class SplitImpulsePenetrationThreshold(Model):
+class SplitImpulsePenetrationThreshold(BaseModel):
     def __init__(self, sdf_version: str, split_impulse_penetration_threshold: float = -0.01):
         self.__version__ = sdf_version
         self.split_impulse_penetration_threshold = split_impulse_penetration_threshold
@@ -1052,18 +1335,24 @@ class SplitImpulsePenetrationThreshold(Model):
             return self.to_version(version).to_sdf()
         version = version or self.__version__
         el = ET.Element("split_impulse_penetration_threshold")
+        if self.split_impulse_penetration_threshold is None:
+            raise ValueError(f"'split_impulse_penetration_threshold' is required in SDF version {version}")
         if self.split_impulse_penetration_threshold is not None:
             el.text = str(self.split_impulse_penetration_threshold)
         return el
 
     @classmethod
-    def from_sdf(cls, el: ET.Element, version: str) -> "SplitImpulsePenetrationThreshold":
+    def _from_sdf(cls, el: ET.Element, version: str):
+        if el.text is None:
+            return SDFError(f"'split_impulse_penetration_threshold' is required in SDF version {version}")
         _text = el.text or -0.01
         _split_impulse_penetration_threshold = _parse_double(_text)
+        if isinstance(_split_impulse_penetration_threshold, SDFError):
+            return _split_impulse_penetration_threshold
         return cls(sdf_version=version, split_impulse_penetration_threshold=_split_impulse_penetration_threshold)
 
 
-class Constraints(Model):
+class Constraints(BaseModel):
     def __init__(
         self,
         sdf_version: str,
@@ -1095,34 +1384,84 @@ class Constraints(Model):
             return self.to_version(version).to_sdf()
         version = version or self.__version__
         el = ET.Element("constraints")
+        if self.cfm is None:
+            raise ValueError(f"'cfm' is required in SDF version {version}")
         if self.cfm is not None:
             el.append(self.cfm.to_sdf(version))
+        if self.erp is None:
+            raise ValueError(f"'erp' is required in SDF version {version}")
         if self.erp is not None:
             el.append(self.erp.to_sdf(version))
+        if self.contact_surface_layer is None:
+            raise ValueError(f"'contact_surface_layer' is required in SDF version {version}")
         if self.contact_surface_layer is not None:
             el.append(self.contact_surface_layer.to_sdf(version))
+        if self.split_impulse is None:
+            raise ValueError(f"'split_impulse' is required in SDF version {version}")
         if self.split_impulse is not None:
             el.append(self.split_impulse.to_sdf(version))
+        if self.split_impulse_penetration_threshold is None:
+            raise ValueError(f"'split_impulse_penetration_threshold' is required in SDF version {version}")
         if self.split_impulse_penetration_threshold is not None:
             el.append(self.split_impulse_penetration_threshold.to_sdf(version))
         return el
 
     @classmethod
-    def from_sdf(cls, el: ET.Element, version: str) -> "Constraints":
+    def _from_sdf(cls, el: ET.Element, version: str):
         _c_cfm = el.find("cfm")
-        _cfm = Cfm.from_sdf(_c_cfm, version) if _c_cfm is not None else None
+        if _c_cfm is not None:
+            _res = Cfm._from_sdf(_c_cfm, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("cfm")
+            _cfm = _res
+        else:
+            _cfm = None
+        if _cfm is None:
+            return SDFError(f"'cfm' is required in SDF version {version}")
         _c_erp = el.find("erp")
-        _erp = Erp.from_sdf(_c_erp, version) if _c_erp is not None else None
+        if _c_erp is not None:
+            _res = Erp._from_sdf(_c_erp, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("erp")
+            _erp = _res
+        else:
+            _erp = None
+        if _erp is None:
+            return SDFError(f"'erp' is required in SDF version {version}")
         _c_contact_surface_layer = el.find("contact_surface_layer")
-        _contact_surface_layer = ContactSurfaceLayer.from_sdf(_c_contact_surface_layer, version) if _c_contact_surface_layer is not None else None
+        if _c_contact_surface_layer is not None:
+            _res = ContactSurfaceLayer._from_sdf(_c_contact_surface_layer, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("contact_surface_layer")
+            _contact_surface_layer = _res
+        else:
+            _contact_surface_layer = None
+        if _contact_surface_layer is None:
+            return SDFError(f"'contact_surface_layer' is required in SDF version {version}")
         _c_split_impulse = el.find("split_impulse")
-        _split_impulse = SplitImpulse.from_sdf(_c_split_impulse, version) if _c_split_impulse is not None else None
+        if _c_split_impulse is not None:
+            _res = SplitImpulse._from_sdf(_c_split_impulse, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("split_impulse")
+            _split_impulse = _res
+        else:
+            _split_impulse = None
+        if _split_impulse is None:
+            return SDFError(f"'split_impulse' is required in SDF version {version}")
         _c_split_impulse_penetration_threshold = el.find("split_impulse_penetration_threshold")
-        _split_impulse_penetration_threshold = SplitImpulsePenetrationThreshold.from_sdf(_c_split_impulse_penetration_threshold, version) if _c_split_impulse_penetration_threshold is not None else None
+        if _c_split_impulse_penetration_threshold is not None:
+            _res = SplitImpulsePenetrationThreshold._from_sdf(_c_split_impulse_penetration_threshold, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("split_impulse_penetration_threshold")
+            _split_impulse_penetration_threshold = _res
+        else:
+            _split_impulse_penetration_threshold = None
+        if _split_impulse_penetration_threshold is None:
+            return SDFError(f"'split_impulse_penetration_threshold' is required in SDF version {version}")
         return cls(sdf_version=version, cfm=_cfm, erp=_erp, contact_surface_layer=_contact_surface_layer, split_impulse=_split_impulse, split_impulse_penetration_threshold=_split_impulse_penetration_threshold)
 
 
-class Bullet(Model):
+class Bullet(BaseModel):
     def __init__(
         self,
         sdf_version: str,
@@ -1136,6 +1475,8 @@ class Bullet(Model):
         self.constraints = constraints
 
     def to_version(self, target_version: str) -> "Bullet":
+        if self.dt is not None and cmp_version(target_version, "1.4") >= 0:
+            raise ValueError(f"'dt' is not supported in SDF version {target_version} (removed in 1.4)")
         if self.solver is not None and cmp_version(target_version, "1.4") < 0:
             raise ValueError(f"'solver' is not supported in SDF version {target_version} (added in 1.4)")
         if self.constraints is not None and cmp_version(target_version, "1.4") < 0:
@@ -1152,30 +1493,66 @@ class Bullet(Model):
             return self.to_version(version).to_sdf()
         version = version or self.__version__
         el = ET.Element("bullet")
+        if cmp_version(version, "1.4") < 0:
+            if self.dt is None:
+                raise ValueError(f"'dt' is required in SDF version {version}")
         if self.dt is not None:
             el.append(self.dt.to_sdf(version))
+        if cmp_version(version, "1.4") >= 0:
+            if self.solver is None:
+                raise ValueError(f"'solver' is required in SDF version {version}")
         if self.solver is not None:
             el.append(self.solver.to_sdf(version))
+        if cmp_version(version, "1.4") >= 0:
+            if self.constraints is None:
+                raise ValueError(f"'constraints' is required in SDF version {version}")
         if self.constraints is not None:
             el.append(self.constraints.to_sdf(version))
         return el
 
     @classmethod
-    def from_sdf(cls, el: ET.Element, version: str) -> "Bullet":
+    def _from_sdf(cls, el: ET.Element, version: str):
         _c_dt = el.find("dt")
-        _dt = Dt.from_sdf(_c_dt, version) if _c_dt is not None else None
+        if _c_dt is not None:
+            _res = Dt._from_sdf(_c_dt, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("dt")
+            _dt = _res
+        else:
+            _dt = None
+        if cmp_version(version, "1.4") < 0:
+            if _dt is None:
+                return SDFError(f"'dt' is required in SDF version {version}")
         _c_solver = el.find("solver")
-        _solver = Solver.from_sdf(_c_solver, version) if _c_solver is not None else None
+        if _c_solver is not None:
+            _res = Solver._from_sdf(_c_solver, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("solver")
+            _solver = _res
+        else:
+            _solver = None
+        if cmp_version(version, "1.4") >= 0:
+            if _solver is None:
+                return SDFError(f"'solver' is required in SDF version {version}")
         if _solver is not None and cmp_version(version, "1.4") < 0:
-            raise ValueError(f"'solver' is not supported in SDF version {version} (added in 1.4)")
+            return SDFError(f"'solver' is not supported in SDF version {version} (added in 1.4)")
         _c_constraints = el.find("constraints")
-        _constraints = Constraints.from_sdf(_c_constraints, version) if _c_constraints is not None else None
+        if _c_constraints is not None:
+            _res = Constraints._from_sdf(_c_constraints, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("constraints")
+            _constraints = _res
+        else:
+            _constraints = None
+        if cmp_version(version, "1.4") >= 0:
+            if _constraints is None:
+                return SDFError(f"'constraints' is required in SDF version {version}")
         if _constraints is not None and cmp_version(version, "1.4") < 0:
-            raise ValueError(f"'constraints' is not supported in SDF version {version} (added in 1.4)")
+            return SDFError(f"'constraints' is not supported in SDF version {version} (added in 1.4)")
         return cls(sdf_version=version, dt=_dt, solver=_solver, constraints=_constraints)
 
 
-class Ode(Model):
+class Ode(BaseModel):
     def __init__(
         self,
         sdf_version: str,
@@ -1198,86 +1575,42 @@ class Ode(Model):
             return self.to_version(version).to_sdf()
         version = version or self.__version__
         el = ET.Element("ode")
+        if self.solver is None:
+            raise ValueError(f"'solver' is required in SDF version {version}")
         if self.solver is not None:
             el.append(self.solver.to_sdf(version))
+        if self.constraints is None:
+            raise ValueError(f"'constraints' is required in SDF version {version}")
         if self.constraints is not None:
             el.append(self.constraints.to_sdf(version))
         return el
 
     @classmethod
-    def from_sdf(cls, el: ET.Element, version: str) -> "Ode":
+    def _from_sdf(cls, el: ET.Element, version: str):
         _c_solver = el.find("solver")
-        _solver = Solver.from_sdf(_c_solver, version) if _c_solver is not None else None
+        if _c_solver is not None:
+            _res = Solver._from_sdf(_c_solver, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("solver")
+            _solver = _res
+        else:
+            _solver = None
+        if _solver is None:
+            return SDFError(f"'solver' is required in SDF version {version}")
         _c_constraints = el.find("constraints")
-        _constraints = Constraints.from_sdf(_c_constraints, version) if _c_constraints is not None else None
+        if _c_constraints is not None:
+            _res = Constraints._from_sdf(_c_constraints, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("constraints")
+            _constraints = _res
+        else:
+            _constraints = None
+        if _constraints is None:
+            return SDFError(f"'constraints' is required in SDF version {version}")
         return cls(sdf_version=version, solver=_solver, constraints=_constraints)
 
 
-class MaxStepSize(Model):
-    def __init__(self, sdf_version: str, max_step_size: float = 0.001):
-        self.__version__ = sdf_version
-        self.max_step_size = max_step_size
-
-    def to_version(self, target_version: str) -> "MaxStepSize":
-        if self.max_step_size is not None and cmp_version(target_version, "1.4") < 0:
-            raise ValueError(f"'max_step_size' is not supported in SDF version {target_version} (added in 1.4)")
-        kwargs = {"sdf_version": target_version}
-        kwargs["max_step_size"] = self.max_step_size
-        new_obj = self.__class__(**kwargs)
-        return new_obj
-
-    def to_sdf(self, version: str = None) -> ET.Element:
-        if version is not None and version != self.__version__:
-            return self.to_version(version).to_sdf()
-        version = version or self.__version__
-        el = ET.Element("max_step_size")
-        if self.max_step_size is not None:
-            el.text = str(self.max_step_size)
-        return el
-
-    @classmethod
-    def from_sdf(cls, el: ET.Element, version: str) -> "MaxStepSize":
-        _text = el.text or 0.001
-        _max_step_size = _parse_double(_text)
-        if _max_step_size is not None and cmp_version(version, "1.4") < 0:
-            if _max_step_size != 0.001:
-                raise ValueError(f"'max_step_size' is not supported in SDF version {version} (added in 1.4)")
-        return cls(sdf_version=version, max_step_size=_max_step_size)
-
-
-class RealTimeFactor(Model):
-    def __init__(self, sdf_version: str, real_time_factor: float = 1.0):
-        self.__version__ = sdf_version
-        self.real_time_factor = real_time_factor
-
-    def to_version(self, target_version: str) -> "RealTimeFactor":
-        if self.real_time_factor is not None and cmp_version(target_version, "1.4") < 0:
-            raise ValueError(f"'real_time_factor' is not supported in SDF version {target_version} (added in 1.4)")
-        kwargs = {"sdf_version": target_version}
-        kwargs["real_time_factor"] = self.real_time_factor
-        new_obj = self.__class__(**kwargs)
-        return new_obj
-
-    def to_sdf(self, version: str = None) -> ET.Element:
-        if version is not None and version != self.__version__:
-            return self.to_version(version).to_sdf()
-        version = version or self.__version__
-        el = ET.Element("real_time_factor")
-        if self.real_time_factor is not None:
-            el.text = str(self.real_time_factor)
-        return el
-
-    @classmethod
-    def from_sdf(cls, el: ET.Element, version: str) -> "RealTimeFactor":
-        _text = el.text or 1.0
-        _real_time_factor = _parse_double(_text)
-        if _real_time_factor is not None and cmp_version(version, "1.4") < 0:
-            if _real_time_factor != 1.0:
-                raise ValueError(f"'real_time_factor' is not supported in SDF version {version} (added in 1.4)")
-        return cls(sdf_version=version, real_time_factor=_real_time_factor)
-
-
-class RealTimeUpdateRate(Model):
+class RealTimeUpdateRate(BaseModel):
     def __init__(self, sdf_version: str, real_time_update_rate: float = 1000):
         self.__version__ = sdf_version
         self.real_time_update_rate = real_time_update_rate
@@ -1295,21 +1628,29 @@ class RealTimeUpdateRate(Model):
             return self.to_version(version).to_sdf()
         version = version or self.__version__
         el = ET.Element("real_time_update_rate")
+        if cmp_version(version, "1.4") >= 0:
+            if self.real_time_update_rate is None:
+                raise ValueError(f"'real_time_update_rate' is required in SDF version {version}")
         if self.real_time_update_rate is not None:
             el.text = str(self.real_time_update_rate)
         return el
 
     @classmethod
-    def from_sdf(cls, el: ET.Element, version: str) -> "RealTimeUpdateRate":
+    def _from_sdf(cls, el: ET.Element, version: str):
+        if cmp_version(version, "1.4") >= 0:
+            if el.text is None:
+                return SDFError(f"'real_time_update_rate' is required in SDF version {version}")
         _text = el.text or 1000
         _real_time_update_rate = _parse_double(_text)
+        if isinstance(_real_time_update_rate, SDFError):
+            return _real_time_update_rate
         if _real_time_update_rate is not None and cmp_version(version, "1.4") < 0:
             if _real_time_update_rate != 1000:
-                raise ValueError(f"'real_time_update_rate' is not supported in SDF version {version} (added in 1.4)")
+                return SDFError(f"'real_time_update_rate' is not supported in SDF version {version} (added in 1.4)")
         return cls(sdf_version=version, real_time_update_rate=_real_time_update_rate)
 
 
-class Accuracy(Model):
+class Accuracy(BaseModel):
     def __init__(self, sdf_version: str, accuracy: float = 1e-3):
         self.__version__ = sdf_version
         self.accuracy = accuracy
@@ -1330,13 +1671,15 @@ class Accuracy(Model):
         return el
 
     @classmethod
-    def from_sdf(cls, el: ET.Element, version: str) -> "Accuracy":
+    def _from_sdf(cls, el: ET.Element, version: str):
         _text = el.text or 1e-3
         _accuracy = _parse_double(_text)
+        if isinstance(_accuracy, SDFError):
+            return _accuracy
         return cls(sdf_version=version, accuracy=_accuracy)
 
 
-class MaxTransientVelocity(Model):
+class MaxTransientVelocity(BaseModel):
     def __init__(self, sdf_version: str, max_transient_velocity: float = 0.01):
         self.__version__ = sdf_version
         self.max_transient_velocity = max_transient_velocity
@@ -1357,13 +1700,15 @@ class MaxTransientVelocity(Model):
         return el
 
     @classmethod
-    def from_sdf(cls, el: ET.Element, version: str) -> "MaxTransientVelocity":
+    def _from_sdf(cls, el: ET.Element, version: str):
         _text = el.text or 0.01
         _max_transient_velocity = _parse_double(_text)
+        if isinstance(_max_transient_velocity, SDFError):
+            return _max_transient_velocity
         return cls(sdf_version=version, max_transient_velocity=_max_transient_velocity)
 
 
-class Stiffness(Model):
+class Stiffness(BaseModel):
     def __init__(self, sdf_version: str, stiffness: float = 1e8):
         self.__version__ = sdf_version
         self.stiffness = stiffness
@@ -1384,13 +1729,15 @@ class Stiffness(Model):
         return el
 
     @classmethod
-    def from_sdf(cls, el: ET.Element, version: str) -> "Stiffness":
+    def _from_sdf(cls, el: ET.Element, version: str):
         _text = el.text or 1e8
         _stiffness = _parse_double(_text)
+        if isinstance(_stiffness, SDFError):
+            return _stiffness
         return cls(sdf_version=version, stiffness=_stiffness)
 
 
-class Dissipation(Model):
+class Dissipation(BaseModel):
     def __init__(self, sdf_version: str, dissipation: float = 100):
         self.__version__ = sdf_version
         self.dissipation = dissipation
@@ -1411,13 +1758,15 @@ class Dissipation(Model):
         return el
 
     @classmethod
-    def from_sdf(cls, el: ET.Element, version: str) -> "Dissipation":
+    def _from_sdf(cls, el: ET.Element, version: str):
         _text = el.text or 100
         _dissipation = _parse_double(_text)
+        if isinstance(_dissipation, SDFError):
+            return _dissipation
         return cls(sdf_version=version, dissipation=_dissipation)
 
 
-class PlasticCoefRestitution(Model):
+class PlasticCoefRestitution(BaseModel):
     def __init__(self, sdf_version: str, plastic_coef_restitution: float = 0.5):
         self.__version__ = sdf_version
         self.plastic_coef_restitution = plastic_coef_restitution
@@ -1438,13 +1787,15 @@ class PlasticCoefRestitution(Model):
         return el
 
     @classmethod
-    def from_sdf(cls, el: ET.Element, version: str) -> "PlasticCoefRestitution":
+    def _from_sdf(cls, el: ET.Element, version: str):
         _text = el.text or 0.5
         _plastic_coef_restitution = _parse_double(_text)
+        if isinstance(_plastic_coef_restitution, SDFError):
+            return _plastic_coef_restitution
         return cls(sdf_version=version, plastic_coef_restitution=_plastic_coef_restitution)
 
 
-class PlasticImpactVelocity(Model):
+class PlasticImpactVelocity(BaseModel):
     def __init__(self, sdf_version: str, plastic_impact_velocity: float = 0.5):
         self.__version__ = sdf_version
         self.plastic_impact_velocity = plastic_impact_velocity
@@ -1465,13 +1816,15 @@ class PlasticImpactVelocity(Model):
         return el
 
     @classmethod
-    def from_sdf(cls, el: ET.Element, version: str) -> "PlasticImpactVelocity":
+    def _from_sdf(cls, el: ET.Element, version: str):
         _text = el.text or 0.5
         _plastic_impact_velocity = _parse_double(_text)
+        if isinstance(_plastic_impact_velocity, SDFError):
+            return _plastic_impact_velocity
         return cls(sdf_version=version, plastic_impact_velocity=_plastic_impact_velocity)
 
 
-class StaticFriction(Model):
+class StaticFriction(BaseModel):
     def __init__(self, sdf_version: str, static_friction: float = 0.9):
         self.__version__ = sdf_version
         self.static_friction = static_friction
@@ -1492,13 +1845,15 @@ class StaticFriction(Model):
         return el
 
     @classmethod
-    def from_sdf(cls, el: ET.Element, version: str) -> "StaticFriction":
+    def _from_sdf(cls, el: ET.Element, version: str):
         _text = el.text or 0.9
         _static_friction = _parse_double(_text)
+        if isinstance(_static_friction, SDFError):
+            return _static_friction
         return cls(sdf_version=version, static_friction=_static_friction)
 
 
-class DynamicFriction(Model):
+class DynamicFriction(BaseModel):
     def __init__(self, sdf_version: str, dynamic_friction: float = 0.9):
         self.__version__ = sdf_version
         self.dynamic_friction = dynamic_friction
@@ -1519,13 +1874,15 @@ class DynamicFriction(Model):
         return el
 
     @classmethod
-    def from_sdf(cls, el: ET.Element, version: str) -> "DynamicFriction":
+    def _from_sdf(cls, el: ET.Element, version: str):
         _text = el.text or 0.9
         _dynamic_friction = _parse_double(_text)
+        if isinstance(_dynamic_friction, SDFError):
+            return _dynamic_friction
         return cls(sdf_version=version, dynamic_friction=_dynamic_friction)
 
 
-class ViscousFriction(Model):
+class ViscousFriction(BaseModel):
     def __init__(self, sdf_version: str, viscous_friction: float = 0.0):
         self.__version__ = sdf_version
         self.viscous_friction = viscous_friction
@@ -1546,13 +1903,15 @@ class ViscousFriction(Model):
         return el
 
     @classmethod
-    def from_sdf(cls, el: ET.Element, version: str) -> "ViscousFriction":
+    def _from_sdf(cls, el: ET.Element, version: str):
         _text = el.text or 0.0
         _viscous_friction = _parse_double(_text)
+        if isinstance(_viscous_friction, SDFError):
+            return _viscous_friction
         return cls(sdf_version=version, viscous_friction=_viscous_friction)
 
 
-class OverrideImpactCaptureVelocity(Model):
+class OverrideImpactCaptureVelocity(BaseModel):
     def __init__(self, sdf_version: str, override_impact_capture_velocity: float = 0.001):
         self.__version__ = sdf_version
         self.override_impact_capture_velocity = override_impact_capture_velocity
@@ -1573,13 +1932,15 @@ class OverrideImpactCaptureVelocity(Model):
         return el
 
     @classmethod
-    def from_sdf(cls, el: ET.Element, version: str) -> "OverrideImpactCaptureVelocity":
+    def _from_sdf(cls, el: ET.Element, version: str):
         _text = el.text or 0.001
         _override_impact_capture_velocity = _parse_double(_text)
+        if isinstance(_override_impact_capture_velocity, SDFError):
+            return _override_impact_capture_velocity
         return cls(sdf_version=version, override_impact_capture_velocity=_override_impact_capture_velocity)
 
 
-class OverrideStictionTransitionVelocity(Model):
+class OverrideStictionTransitionVelocity(BaseModel):
     def __init__(self, sdf_version: str, override_stiction_transition_velocity: float = 0.001):
         self.__version__ = sdf_version
         self.override_stiction_transition_velocity = override_stiction_transition_velocity
@@ -1600,13 +1961,15 @@ class OverrideStictionTransitionVelocity(Model):
         return el
 
     @classmethod
-    def from_sdf(cls, el: ET.Element, version: str) -> "OverrideStictionTransitionVelocity":
+    def _from_sdf(cls, el: ET.Element, version: str):
         _text = el.text or 0.001
         _override_stiction_transition_velocity = _parse_double(_text)
+        if isinstance(_override_stiction_transition_velocity, SDFError):
+            return _override_stiction_transition_velocity
         return cls(sdf_version=version, override_stiction_transition_velocity=_override_stiction_transition_velocity)
 
 
-class Contact(Model):
+class Contact(BaseModel):
     def __init__(
         self,
         sdf_version: str,
@@ -1671,29 +2034,83 @@ class Contact(Model):
         return el
 
     @classmethod
-    def from_sdf(cls, el: ET.Element, version: str) -> "Contact":
+    def _from_sdf(cls, el: ET.Element, version: str):
         _c_stiffness = el.find("stiffness")
-        _stiffness = Stiffness.from_sdf(_c_stiffness, version) if _c_stiffness is not None else None
+        if _c_stiffness is not None:
+            _res = Stiffness._from_sdf(_c_stiffness, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("stiffness")
+            _stiffness = _res
+        else:
+            _stiffness = None
         _c_dissipation = el.find("dissipation")
-        _dissipation = Dissipation.from_sdf(_c_dissipation, version) if _c_dissipation is not None else None
+        if _c_dissipation is not None:
+            _res = Dissipation._from_sdf(_c_dissipation, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("dissipation")
+            _dissipation = _res
+        else:
+            _dissipation = None
         _c_plastic_coef_restitution = el.find("plastic_coef_restitution")
-        _plastic_coef_restitution = PlasticCoefRestitution.from_sdf(_c_plastic_coef_restitution, version) if _c_plastic_coef_restitution is not None else None
+        if _c_plastic_coef_restitution is not None:
+            _res = PlasticCoefRestitution._from_sdf(_c_plastic_coef_restitution, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("plastic_coef_restitution")
+            _plastic_coef_restitution = _res
+        else:
+            _plastic_coef_restitution = None
         _c_plastic_impact_velocity = el.find("plastic_impact_velocity")
-        _plastic_impact_velocity = PlasticImpactVelocity.from_sdf(_c_plastic_impact_velocity, version) if _c_plastic_impact_velocity is not None else None
+        if _c_plastic_impact_velocity is not None:
+            _res = PlasticImpactVelocity._from_sdf(_c_plastic_impact_velocity, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("plastic_impact_velocity")
+            _plastic_impact_velocity = _res
+        else:
+            _plastic_impact_velocity = None
         _c_static_friction = el.find("static_friction")
-        _static_friction = StaticFriction.from_sdf(_c_static_friction, version) if _c_static_friction is not None else None
+        if _c_static_friction is not None:
+            _res = StaticFriction._from_sdf(_c_static_friction, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("static_friction")
+            _static_friction = _res
+        else:
+            _static_friction = None
         _c_dynamic_friction = el.find("dynamic_friction")
-        _dynamic_friction = DynamicFriction.from_sdf(_c_dynamic_friction, version) if _c_dynamic_friction is not None else None
+        if _c_dynamic_friction is not None:
+            _res = DynamicFriction._from_sdf(_c_dynamic_friction, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("dynamic_friction")
+            _dynamic_friction = _res
+        else:
+            _dynamic_friction = None
         _c_viscous_friction = el.find("viscous_friction")
-        _viscous_friction = ViscousFriction.from_sdf(_c_viscous_friction, version) if _c_viscous_friction is not None else None
+        if _c_viscous_friction is not None:
+            _res = ViscousFriction._from_sdf(_c_viscous_friction, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("viscous_friction")
+            _viscous_friction = _res
+        else:
+            _viscous_friction = None
         _c_override_impact_capture_velocity = el.find("override_impact_capture_velocity")
-        _override_impact_capture_velocity = OverrideImpactCaptureVelocity.from_sdf(_c_override_impact_capture_velocity, version) if _c_override_impact_capture_velocity is not None else None
+        if _c_override_impact_capture_velocity is not None:
+            _res = OverrideImpactCaptureVelocity._from_sdf(_c_override_impact_capture_velocity, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("override_impact_capture_velocity")
+            _override_impact_capture_velocity = _res
+        else:
+            _override_impact_capture_velocity = None
         _c_override_stiction_transition_velocity = el.find("override_stiction_transition_velocity")
-        _override_stiction_transition_velocity = OverrideStictionTransitionVelocity.from_sdf(_c_override_stiction_transition_velocity, version) if _c_override_stiction_transition_velocity is not None else None
+        if _c_override_stiction_transition_velocity is not None:
+            _res = OverrideStictionTransitionVelocity._from_sdf(_c_override_stiction_transition_velocity, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("override_stiction_transition_velocity")
+            _override_stiction_transition_velocity = _res
+        else:
+            _override_stiction_transition_velocity = None
         return cls(sdf_version=version, stiffness=_stiffness, dissipation=_dissipation, plastic_coef_restitution=_plastic_coef_restitution, plastic_impact_velocity=_plastic_impact_velocity, static_friction=_static_friction, dynamic_friction=_dynamic_friction, viscous_friction=_viscous_friction, override_impact_capture_velocity=_override_impact_capture_velocity, override_stiction_transition_velocity=_override_stiction_transition_velocity)
 
 
-class Simbody(Model):
+class Simbody(BaseModel):
     def __init__(
         self,
         sdf_version: str,
@@ -1733,19 +2150,123 @@ class Simbody(Model):
         return el
 
     @classmethod
-    def from_sdf(cls, el: ET.Element, version: str) -> "Simbody":
+    def _from_sdf(cls, el: ET.Element, version: str):
         _c_min_step_size = el.find("min_step_size")
-        _min_step_size = MinStepSize.from_sdf(_c_min_step_size, version) if _c_min_step_size is not None else None
+        if _c_min_step_size is not None:
+            _res = MinStepSize._from_sdf(_c_min_step_size, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("min_step_size")
+            _min_step_size = _res
+        else:
+            _min_step_size = None
         _c_accuracy = el.find("accuracy")
-        _accuracy = Accuracy.from_sdf(_c_accuracy, version) if _c_accuracy is not None else None
+        if _c_accuracy is not None:
+            _res = Accuracy._from_sdf(_c_accuracy, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("accuracy")
+            _accuracy = _res
+        else:
+            _accuracy = None
         _c_max_transient_velocity = el.find("max_transient_velocity")
-        _max_transient_velocity = MaxTransientVelocity.from_sdf(_c_max_transient_velocity, version) if _c_max_transient_velocity is not None else None
+        if _c_max_transient_velocity is not None:
+            _res = MaxTransientVelocity._from_sdf(_c_max_transient_velocity, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("max_transient_velocity")
+            _max_transient_velocity = _res
+        else:
+            _max_transient_velocity = None
         _c_contact = el.find("contact")
-        _contact = Contact.from_sdf(_c_contact, version) if _c_contact is not None else None
+        if _c_contact is not None:
+            _res = Contact._from_sdf(_c_contact, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("contact")
+            _contact = _res
+        else:
+            _contact = None
         return cls(sdf_version=version, min_step_size=_min_step_size, accuracy=_accuracy, max_transient_velocity=_max_transient_velocity, contact=_contact)
 
 
-class MagneticField(Model):
+class RealTimeFactor(BaseModel):
+    def __init__(self, sdf_version: str, real_time_factor: float = 1.0):
+        self.__version__ = sdf_version
+        self.real_time_factor = real_time_factor
+
+    def to_version(self, target_version: str) -> "RealTimeFactor":
+        if self.real_time_factor is not None and cmp_version(target_version, "1.4") < 0:
+            raise ValueError(f"'real_time_factor' is not supported in SDF version {target_version} (added in 1.4)")
+        kwargs = {"sdf_version": target_version}
+        kwargs["real_time_factor"] = self.real_time_factor
+        new_obj = self.__class__(**kwargs)
+        return new_obj
+
+    def to_sdf(self, version: str = None) -> ET.Element:
+        if version is not None and version != self.__version__:
+            return self.to_version(version).to_sdf()
+        version = version or self.__version__
+        el = ET.Element("real_time_factor")
+        if cmp_version(version, "1.4") >= 0:
+            if self.real_time_factor is None:
+                raise ValueError(f"'real_time_factor' is required in SDF version {version}")
+        if self.real_time_factor is not None:
+            el.text = str(self.real_time_factor)
+        return el
+
+    @classmethod
+    def _from_sdf(cls, el: ET.Element, version: str):
+        if cmp_version(version, "1.4") >= 0:
+            if el.text is None:
+                return SDFError(f"'real_time_factor' is required in SDF version {version}")
+        _text = el.text or 1.0
+        _real_time_factor = _parse_double(_text)
+        if isinstance(_real_time_factor, SDFError):
+            return _real_time_factor
+        if _real_time_factor is not None and cmp_version(version, "1.4") < 0:
+            if _real_time_factor != 1.0:
+                return SDFError(f"'real_time_factor' is not supported in SDF version {version} (added in 1.4)")
+        return cls(sdf_version=version, real_time_factor=_real_time_factor)
+
+
+class MaxStepSize(BaseModel):
+    def __init__(self, sdf_version: str, max_step_size: float = 0.001):
+        self.__version__ = sdf_version
+        self.max_step_size = max_step_size
+
+    def to_version(self, target_version: str) -> "MaxStepSize":
+        if self.max_step_size is not None and cmp_version(target_version, "1.4") < 0:
+            raise ValueError(f"'max_step_size' is not supported in SDF version {target_version} (added in 1.4)")
+        kwargs = {"sdf_version": target_version}
+        kwargs["max_step_size"] = self.max_step_size
+        new_obj = self.__class__(**kwargs)
+        return new_obj
+
+    def to_sdf(self, version: str = None) -> ET.Element:
+        if version is not None and version != self.__version__:
+            return self.to_version(version).to_sdf()
+        version = version or self.__version__
+        el = ET.Element("max_step_size")
+        if cmp_version(version, "1.4") >= 0:
+            if self.max_step_size is None:
+                raise ValueError(f"'max_step_size' is required in SDF version {version}")
+        if self.max_step_size is not None:
+            el.text = str(self.max_step_size)
+        return el
+
+    @classmethod
+    def _from_sdf(cls, el: ET.Element, version: str):
+        if cmp_version(version, "1.4") >= 0:
+            if el.text is None:
+                return SDFError(f"'max_step_size' is required in SDF version {version}")
+        _text = el.text or 0.001
+        _max_step_size = _parse_double(_text)
+        if isinstance(_max_step_size, SDFError):
+            return _max_step_size
+        if _max_step_size is not None and cmp_version(version, "1.4") < 0:
+            if _max_step_size != 0.001:
+                return SDFError(f"'max_step_size' is not supported in SDF version {version} (added in 1.4)")
+        return cls(sdf_version=version, max_step_size=_max_step_size)
+
+
+class MagneticField(BaseModel):
     def __init__(self, sdf_version: str, magnetic_field: Vector3 = None):
         self.__version__ = sdf_version
         if magnetic_field is None:
@@ -1755,6 +2276,8 @@ class MagneticField(Model):
     def to_version(self, target_version: str) -> "MagneticField":
         if self.magnetic_field is not None and cmp_version(target_version, "1.5") < 0:
             raise ValueError(f"'magnetic_field' is not supported in SDF version {target_version} (added in 1.5)")
+        if self.magnetic_field is not None and cmp_version(target_version, "1.6") >= 0:
+            raise ValueError(f"'magnetic_field' is not supported in SDF version {target_version} (removed in 1.6)")
         kwargs = {"sdf_version": target_version}
         kwargs["magnetic_field"] = self.magnetic_field
         new_obj = self.__class__(**kwargs)
@@ -1765,21 +2288,29 @@ class MagneticField(Model):
             return self.to_version(version).to_sdf()
         version = version or self.__version__
         el = ET.Element("magnetic_field")
+        if cmp_version(version, "1.5") >= 0 and cmp_version(version, "1.6") < 0:
+            if self.magnetic_field is None:
+                raise ValueError(f"'magnetic_field' is required in SDF version {version}")
         if self.magnetic_field is not None:
             el.text = self.magnetic_field.to_sdf()
         return el
 
     @classmethod
-    def from_sdf(cls, el: ET.Element, version: str) -> "MagneticField":
+    def _from_sdf(cls, el: ET.Element, version: str):
+        if cmp_version(version, "1.5") >= 0 and cmp_version(version, "1.6") < 0:
+            if el.text is None:
+                return SDFError(f"'magnetic_field' is required in SDF version {version}")
         _text = el.text or "5.5645e-6 22.8758e-6 -42.3884e-6"
-        _magnetic_field = Vector3.from_sdf(_text)
+        _magnetic_field = Vector3._from_sdf(_text, version)
+        if isinstance(_magnetic_field, SDFError):
+            return _magnetic_field
         if _magnetic_field is not None and cmp_version(version, "1.5") < 0:
             if _magnetic_field != "5.5645e-6 22.8758e-6 -42.3884e-6":
-                raise ValueError(f"'magnetic_field' is not supported in SDF version {version} (added in 1.5)")
+                return SDFError(f"'magnetic_field' is not supported in SDF version {version} (added in 1.5)")
         return cls(sdf_version=version, magnetic_field=_magnetic_field)
 
 
-class CollisionDetector(Model):
+class CollisionDetector(BaseModel):
     def __init__(self, sdf_version: str, collision_detector: str = "fcl"):
         self.__version__ = sdf_version
         self.collision_detector = collision_detector
@@ -1800,13 +2331,15 @@ class CollisionDetector(Model):
         return el
 
     @classmethod
-    def from_sdf(cls, el: ET.Element, version: str) -> "CollisionDetector":
+    def _from_sdf(cls, el: ET.Element, version: str):
         _text = el.text or "fcl"
         _collision_detector = _text
+        if isinstance(_collision_detector, SDFError):
+            return _collision_detector
         return cls(sdf_version=version, collision_detector=_collision_detector)
 
 
-class Dart(Model):
+class Dart(BaseModel):
     def __init__(
         self,
         sdf_version: str,
@@ -1829,6 +2362,8 @@ class Dart(Model):
             return self.to_version(version).to_sdf()
         version = version or self.__version__
         el = ET.Element("dart")
+        if self.solver is None:
+            raise ValueError(f"'solver' is required in SDF version {version}")
         if self.solver is not None:
             el.append(self.solver.to_sdf(version))
         if self.collision_detector is not None:
@@ -1836,15 +2371,29 @@ class Dart(Model):
         return el
 
     @classmethod
-    def from_sdf(cls, el: ET.Element, version: str) -> "Dart":
+    def _from_sdf(cls, el: ET.Element, version: str):
         _c_solver = el.find("solver")
-        _solver = Solver.from_sdf(_c_solver, version) if _c_solver is not None else None
+        if _c_solver is not None:
+            _res = Solver._from_sdf(_c_solver, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("solver")
+            _solver = _res
+        else:
+            _solver = None
+        if _solver is None:
+            return SDFError(f"'solver' is required in SDF version {version}")
         _c_collision_detector = el.find("collision_detector")
-        _collision_detector = CollisionDetector.from_sdf(_c_collision_detector, version) if _c_collision_detector is not None else None
+        if _c_collision_detector is not None:
+            _res = CollisionDetector._from_sdf(_c_collision_detector, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("collision_detector")
+            _collision_detector = _res
+        else:
+            _collision_detector = None
         return cls(sdf_version=version, solver=_solver, collision_detector=_collision_detector)
 
 
-class Physics(Model):
+class Physics(BaseModel):
     _MIGRATIONS = [{"version": "1.4", "ops": [{"type": "move", "from": "update_rate", "to": "real_time_update_rate"}, {"type": "move", "from": "ode::solver::dt", "to": "max_step_size"}, {"type": "move", "from": "bullet::dt", "to": "max_step_size"}]}]
 
     def __init__(
@@ -1858,10 +2407,10 @@ class Physics(Model):
         gravity: "Gravity" = None,
         bullet: "Bullet" = None,
         ode: "Ode" = None,
-        max_step_size: "MaxStepSize" = None,
-        real_time_factor: "RealTimeFactor" = None,
         real_time_update_rate: "RealTimeUpdateRate" = None,
         simbody: "Simbody" = None,
+        real_time_factor: "RealTimeFactor" = None,
+        max_step_size: "MaxStepSize" = None,
         magnetic_field: "MagneticField" = None,
         dart: "Dart" = None
     ):
@@ -1874,10 +2423,10 @@ class Physics(Model):
         self.gravity = gravity
         self.bullet = bullet
         self.ode = ode
-        self.max_step_size = max_step_size
-        self.real_time_factor = real_time_factor
         self.real_time_update_rate = real_time_update_rate
         self.simbody = simbody
+        self.real_time_factor = real_time_factor
+        self.max_step_size = max_step_size
         self.magnetic_field = magnetic_field
         self.dart = dart
 
@@ -1886,16 +2435,22 @@ class Physics(Model):
             raise ValueError(f"'name' is not supported in SDF version {target_version} (added in 1.5)")
         if self.default is not None and cmp_version(target_version, "1.5") < 0:
             raise ValueError(f"'default' is not supported in SDF version {target_version} (added in 1.5)")
-        if self.max_step_size is not None and cmp_version(target_version, "1.4") < 0:
-            raise ValueError(f"'max_step_size' is not supported in SDF version {target_version} (added in 1.4)")
-        if self.real_time_factor is not None and cmp_version(target_version, "1.4") < 0:
-            raise ValueError(f"'real_time_factor' is not supported in SDF version {target_version} (added in 1.4)")
+        if self.update_rate is not None and cmp_version(target_version, "1.4") >= 0:
+            raise ValueError(f"'update_rate' is not supported in SDF version {target_version} (removed in 1.4)")
+        if self.gravity is not None and cmp_version(target_version, "1.6") >= 0:
+            raise ValueError(f"'gravity' is not supported in SDF version {target_version} (removed in 1.6)")
         if self.real_time_update_rate is not None and cmp_version(target_version, "1.4") < 0:
             raise ValueError(f"'real_time_update_rate' is not supported in SDF version {target_version} (added in 1.4)")
         if self.simbody is not None and cmp_version(target_version, "1.4") < 0:
             raise ValueError(f"'simbody' is not supported in SDF version {target_version} (added in 1.4)")
+        if self.real_time_factor is not None and cmp_version(target_version, "1.4") < 0:
+            raise ValueError(f"'real_time_factor' is not supported in SDF version {target_version} (added in 1.4)")
+        if self.max_step_size is not None and cmp_version(target_version, "1.4") < 0:
+            raise ValueError(f"'max_step_size' is not supported in SDF version {target_version} (added in 1.4)")
         if self.magnetic_field is not None and cmp_version(target_version, "1.5") < 0:
             raise ValueError(f"'magnetic_field' is not supported in SDF version {target_version} (added in 1.5)")
+        if self.magnetic_field is not None and cmp_version(target_version, "1.6") >= 0:
+            raise ValueError(f"'magnetic_field' is not supported in SDF version {target_version} (removed in 1.6)")
         if self.dart is not None and cmp_version(target_version, "1.6") < 0:
             raise ValueError(f"'dart' is not supported in SDF version {target_version} (added in 1.6)")
         kwargs = {"sdf_version": target_version}
@@ -1907,10 +2462,10 @@ class Physics(Model):
         kwargs["gravity"] = self.gravity.to_version(target_version) if self.gravity is not None else None
         kwargs["bullet"] = self.bullet.to_version(target_version) if self.bullet is not None else None
         kwargs["ode"] = self.ode.to_version(target_version) if self.ode is not None else None
-        kwargs["max_step_size"] = self.max_step_size.to_version(target_version) if self.max_step_size is not None else None
-        kwargs["real_time_factor"] = self.real_time_factor.to_version(target_version) if self.real_time_factor is not None else None
         kwargs["real_time_update_rate"] = self.real_time_update_rate.to_version(target_version) if self.real_time_update_rate is not None else None
         kwargs["simbody"] = self.simbody.to_version(target_version) if self.simbody is not None else None
+        kwargs["real_time_factor"] = self.real_time_factor.to_version(target_version) if self.real_time_factor is not None else None
+        kwargs["max_step_size"] = self.max_step_size.to_version(target_version) if self.max_step_size is not None else None
         kwargs["magnetic_field"] = self.magnetic_field.to_version(target_version) if self.magnetic_field is not None else None
         kwargs["dart"] = self.dart.to_version(target_version) if self.dart is not None else None
         new_obj = self.__class__(**kwargs)
@@ -1922,30 +2477,50 @@ class Physics(Model):
             return self.to_version(version).to_sdf()
         version = version or self.__version__
         el = ET.Element("physics")
+        if self.type is None:
+            raise ValueError(f"'type' is required in SDF version {version}")
         if self.type is not None:
             el.set("type", self.type)
         if self.name is not None:
             el.set("name", self.name)
         if self.default is not None:
             el.set("default", str(self.default).lower())
+        if cmp_version(version, "1.4") < 0:
+            if self.update_rate is None:
+                raise ValueError(f"'update_rate' is required in SDF version {version}")
         if self.update_rate is not None:
             el.append(self.update_rate.to_sdf(version))
         if self.max_contacts is not None:
             el.append(self.max_contacts.to_sdf(version))
+        if cmp_version(version, "1.6") < 0:
+            if self.gravity is None:
+                raise ValueError(f"'gravity' is required in SDF version {version}")
         if self.gravity is not None:
             el.append(self.gravity.to_sdf(version))
         if self.bullet is not None:
             el.append(self.bullet.to_sdf(version))
         if self.ode is not None:
             el.append(self.ode.to_sdf(version))
-        if self.max_step_size is not None:
-            el.append(self.max_step_size.to_sdf(version))
-        if self.real_time_factor is not None:
-            el.append(self.real_time_factor.to_sdf(version))
+        if cmp_version(version, "1.4") >= 0:
+            if self.real_time_update_rate is None:
+                raise ValueError(f"'real_time_update_rate' is required in SDF version {version}")
         if self.real_time_update_rate is not None:
             el.append(self.real_time_update_rate.to_sdf(version))
         if self.simbody is not None:
             el.append(self.simbody.to_sdf(version))
+        if cmp_version(version, "1.4") >= 0:
+            if self.real_time_factor is None:
+                raise ValueError(f"'real_time_factor' is required in SDF version {version}")
+        if self.real_time_factor is not None:
+            el.append(self.real_time_factor.to_sdf(version))
+        if cmp_version(version, "1.4") >= 0:
+            if self.max_step_size is None:
+                raise ValueError(f"'max_step_size' is required in SDF version {version}")
+        if self.max_step_size is not None:
+            el.append(self.max_step_size.to_sdf(version))
+        if cmp_version(version, "1.5") >= 0 and cmp_version(version, "1.6") < 0:
+            if self.magnetic_field is None:
+                raise ValueError(f"'magnetic_field' is required in SDF version {version}")
         if self.magnetic_field is not None:
             el.append(self.magnetic_field.to_sdf(version))
         if self.dart is not None:
@@ -1953,54 +2528,146 @@ class Physics(Model):
         return el
 
     @classmethod
-    def from_sdf(cls, el: ET.Element, version: str) -> "Physics":
+    def _from_sdf(cls, el: ET.Element, version: str):
+        if el.get("type") is None:
+            return SDFError(f"'type' is required in SDF version {version}")
         _type = el.get("type", "ode")
+        if isinstance(_type, SDFError):
+            return _type.extend("@type")
         _name = el.get("name", "default_physics")
+        if isinstance(_name, SDFError):
+            return _name.extend("@name")
         if _name is not None and cmp_version(version, "1.5") < 0:
             if _name != "default_physics":
-                raise ValueError(f"'name' is not supported in SDF version {version} (added in 1.5)")
-        _default = el.get("default", False).strip().lower() == 'true'
+                return SDFError(f"'name' is not supported in SDF version {version} (added in 1.5)")
+        _default = str(el.get("default", False)).strip().lower() == 'true'
+        if isinstance(_default, SDFError):
+            return _default.extend("@default")
         if _default is not None and cmp_version(version, "1.5") < 0:
             if _default != False:
-                raise ValueError(f"'default' is not supported in SDF version {version} (added in 1.5)")
+                return SDFError(f"'default' is not supported in SDF version {version} (added in 1.5)")
         _c_update_rate = el.find("update_rate")
-        _update_rate = UpdateRate.from_sdf(_c_update_rate, version) if _c_update_rate is not None else None
+        if _c_update_rate is not None:
+            _res = UpdateRate._from_sdf(_c_update_rate, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("update_rate")
+            _update_rate = _res
+        else:
+            _update_rate = None
+        if cmp_version(version, "1.4") < 0:
+            if _update_rate is None:
+                return SDFError(f"'update_rate' is required in SDF version {version}")
         _c_max_contacts = el.find("max_contacts")
-        _max_contacts = MaxContacts.from_sdf(_c_max_contacts, version) if _c_max_contacts is not None else None
+        if _c_max_contacts is not None:
+            _res = MaxContacts._from_sdf(_c_max_contacts, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("max_contacts")
+            _max_contacts = _res
+        else:
+            _max_contacts = None
         _c_gravity = el.find("gravity")
-        _gravity = Gravity.from_sdf(_c_gravity, version) if _c_gravity is not None else None
+        if _c_gravity is not None:
+            _res = Gravity._from_sdf(_c_gravity, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("gravity")
+            _gravity = _res
+        else:
+            _gravity = None
+        if cmp_version(version, "1.6") < 0:
+            if _gravity is None:
+                return SDFError(f"'gravity' is required in SDF version {version}")
         _c_bullet = el.find("bullet")
-        _bullet = Bullet.from_sdf(_c_bullet, version) if _c_bullet is not None else None
+        if _c_bullet is not None:
+            _res = Bullet._from_sdf(_c_bullet, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("bullet")
+            _bullet = _res
+        else:
+            _bullet = None
         _c_ode = el.find("ode")
-        _ode = Ode.from_sdf(_c_ode, version) if _c_ode is not None else None
-        _c_max_step_size = el.find("max_step_size")
-        _max_step_size = MaxStepSize.from_sdf(_c_max_step_size, version) if _c_max_step_size is not None else None
-        if _max_step_size is not None and cmp_version(version, "1.4") < 0:
-            raise ValueError(f"'max_step_size' is not supported in SDF version {version} (added in 1.4)")
-        _c_real_time_factor = el.find("real_time_factor")
-        _real_time_factor = RealTimeFactor.from_sdf(_c_real_time_factor, version) if _c_real_time_factor is not None else None
-        if _real_time_factor is not None and cmp_version(version, "1.4") < 0:
-            raise ValueError(f"'real_time_factor' is not supported in SDF version {version} (added in 1.4)")
+        if _c_ode is not None:
+            _res = Ode._from_sdf(_c_ode, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("ode")
+            _ode = _res
+        else:
+            _ode = None
         _c_real_time_update_rate = el.find("real_time_update_rate")
-        _real_time_update_rate = RealTimeUpdateRate.from_sdf(_c_real_time_update_rate, version) if _c_real_time_update_rate is not None else None
+        if _c_real_time_update_rate is not None:
+            _res = RealTimeUpdateRate._from_sdf(_c_real_time_update_rate, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("real_time_update_rate")
+            _real_time_update_rate = _res
+        else:
+            _real_time_update_rate = None
+        if cmp_version(version, "1.4") >= 0:
+            if _real_time_update_rate is None:
+                return SDFError(f"'real_time_update_rate' is required in SDF version {version}")
         if _real_time_update_rate is not None and cmp_version(version, "1.4") < 0:
-            raise ValueError(f"'real_time_update_rate' is not supported in SDF version {version} (added in 1.4)")
+            return SDFError(f"'real_time_update_rate' is not supported in SDF version {version} (added in 1.4)")
         _c_simbody = el.find("simbody")
-        _simbody = Simbody.from_sdf(_c_simbody, version) if _c_simbody is not None else None
+        if _c_simbody is not None:
+            _res = Simbody._from_sdf(_c_simbody, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("simbody")
+            _simbody = _res
+        else:
+            _simbody = None
         if _simbody is not None and cmp_version(version, "1.4") < 0:
-            raise ValueError(f"'simbody' is not supported in SDF version {version} (added in 1.4)")
+            return SDFError(f"'simbody' is not supported in SDF version {version} (added in 1.4)")
+        _c_real_time_factor = el.find("real_time_factor")
+        if _c_real_time_factor is not None:
+            _res = RealTimeFactor._from_sdf(_c_real_time_factor, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("real_time_factor")
+            _real_time_factor = _res
+        else:
+            _real_time_factor = None
+        if cmp_version(version, "1.4") >= 0:
+            if _real_time_factor is None:
+                return SDFError(f"'real_time_factor' is required in SDF version {version}")
+        if _real_time_factor is not None and cmp_version(version, "1.4") < 0:
+            return SDFError(f"'real_time_factor' is not supported in SDF version {version} (added in 1.4)")
+        _c_max_step_size = el.find("max_step_size")
+        if _c_max_step_size is not None:
+            _res = MaxStepSize._from_sdf(_c_max_step_size, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("max_step_size")
+            _max_step_size = _res
+        else:
+            _max_step_size = None
+        if cmp_version(version, "1.4") >= 0:
+            if _max_step_size is None:
+                return SDFError(f"'max_step_size' is required in SDF version {version}")
+        if _max_step_size is not None and cmp_version(version, "1.4") < 0:
+            return SDFError(f"'max_step_size' is not supported in SDF version {version} (added in 1.4)")
         _c_magnetic_field = el.find("magnetic_field")
-        _magnetic_field = MagneticField.from_sdf(_c_magnetic_field, version) if _c_magnetic_field is not None else None
+        if _c_magnetic_field is not None:
+            _res = MagneticField._from_sdf(_c_magnetic_field, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("magnetic_field")
+            _magnetic_field = _res
+        else:
+            _magnetic_field = None
+        if cmp_version(version, "1.5") >= 0 and cmp_version(version, "1.6") < 0:
+            if _magnetic_field is None:
+                return SDFError(f"'magnetic_field' is required in SDF version {version}")
         if _magnetic_field is not None and cmp_version(version, "1.5") < 0:
-            raise ValueError(f"'magnetic_field' is not supported in SDF version {version} (added in 1.5)")
+            return SDFError(f"'magnetic_field' is not supported in SDF version {version} (added in 1.5)")
         _c_dart = el.find("dart")
-        _dart = Dart.from_sdf(_c_dart, version) if _c_dart is not None else None
+        if _c_dart is not None:
+            _res = Dart._from_sdf(_c_dart, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("dart")
+            _dart = _res
+        else:
+            _dart = None
         if _dart is not None and cmp_version(version, "1.6") < 0:
-            raise ValueError(f"'dart' is not supported in SDF version {version} (added in 1.6)")
-        return cls(sdf_version=version, type=_type, name=_name, default=_default, update_rate=_update_rate, max_contacts=_max_contacts, gravity=_gravity, bullet=_bullet, ode=_ode, max_step_size=_max_step_size, real_time_factor=_real_time_factor, real_time_update_rate=_real_time_update_rate, simbody=_simbody, magnetic_field=_magnetic_field, dart=_dart)
+            return SDFError(f"'dart' is not supported in SDF version {version} (added in 1.6)")
+        return cls(sdf_version=version, type=_type, name=_name, default=_default, update_rate=_update_rate, max_contacts=_max_contacts, gravity=_gravity, bullet=_bullet, ode=_ode, real_time_update_rate=_real_time_update_rate, simbody=_simbody, real_time_factor=_real_time_factor, max_step_size=_max_step_size, magnetic_field=_magnetic_field, dart=_dart)
 
 
-class Ambient(Model):
+class Ambient(BaseModel):
     def __init__(self, sdf_version: str, ambient: Color = None):
         self.__version__ = sdf_version
         if ambient is None:
@@ -2018,18 +2685,24 @@ class Ambient(Model):
             return self.to_version(version).to_sdf()
         version = version or self.__version__
         el = ET.Element("ambient")
+        if self.ambient is None:
+            raise ValueError(f"'ambient' is required in SDF version {version}")
         if self.ambient is not None:
             el.text = self.ambient.to_sdf()
         return el
 
     @classmethod
-    def from_sdf(cls, el: ET.Element, version: str) -> "Ambient":
+    def _from_sdf(cls, el: ET.Element, version: str):
+        if el.text is None:
+            return SDFError(f"'ambient' is required in SDF version {version}")
         _text = el.text or "0.2 0.2 0.2 1.0"
-        _ambient = Color.from_sdf(_text)
+        _ambient = Color._from_sdf(_text, version)
+        if isinstance(_ambient, SDFError):
+            return _ambient
         return cls(sdf_version=version, ambient=_ambient)
 
 
-class Background(Model):
+class Background(BaseModel):
     def __init__(self, sdf_version: str, background: Color = None):
         self.__version__ = sdf_version
         if background is None:
@@ -2047,18 +2720,24 @@ class Background(Model):
             return self.to_version(version).to_sdf()
         version = version or self.__version__
         el = ET.Element("background")
+        if self.background is None:
+            raise ValueError(f"'background' is required in SDF version {version}")
         if self.background is not None:
             el.text = self.background.to_sdf()
         return el
 
     @classmethod
-    def from_sdf(cls, el: ET.Element, version: str) -> "Background":
+    def _from_sdf(cls, el: ET.Element, version: str):
+        if el.text is None:
+            return SDFError(f"'background' is required in SDF version {version}")
         _text = el.text or ".7 .7 .7 1"
-        _background = Color.from_sdf(_text)
+        _background = Color._from_sdf(_text, version)
+        if isinstance(_background, SDFError):
+            return _background
         return cls(sdf_version=version, background=_background)
 
 
-class Time(Model):
+class Time(BaseModel):
     def __init__(self, sdf_version: str, time: float = 10.0):
         self.__version__ = sdf_version
         self.time = time
@@ -2079,13 +2758,15 @@ class Time(Model):
         return el
 
     @classmethod
-    def from_sdf(cls, el: ET.Element, version: str) -> "Time":
+    def _from_sdf(cls, el: ET.Element, version: str):
         _text = el.text or 10.0
         _time = _parse_double(_text)
+        if isinstance(_time, SDFError):
+            return _time
         return cls(sdf_version=version, time=_time)
 
 
-class Sunrise(Model):
+class Sunrise(BaseModel):
     def __init__(self, sdf_version: str, sunrise: float = 6.0):
         self.__version__ = sdf_version
         self.sunrise = sunrise
@@ -2106,13 +2787,15 @@ class Sunrise(Model):
         return el
 
     @classmethod
-    def from_sdf(cls, el: ET.Element, version: str) -> "Sunrise":
+    def _from_sdf(cls, el: ET.Element, version: str):
         _text = el.text or 6.0
         _sunrise = _parse_double(_text)
+        if isinstance(_sunrise, SDFError):
+            return _sunrise
         return cls(sdf_version=version, sunrise=_sunrise)
 
 
-class Sunset(Model):
+class Sunset(BaseModel):
     def __init__(self, sdf_version: str, sunset: float = 20.0):
         self.__version__ = sdf_version
         self.sunset = sunset
@@ -2133,13 +2816,15 @@ class Sunset(Model):
         return el
 
     @classmethod
-    def from_sdf(cls, el: ET.Element, version: str) -> "Sunset":
+    def _from_sdf(cls, el: ET.Element, version: str):
         _text = el.text or 20.0
         _sunset = _parse_double(_text)
+        if isinstance(_sunset, SDFError):
+            return _sunset
         return cls(sdf_version=version, sunset=_sunset)
 
 
-class Speed(Model):
+class Speed(BaseModel):
     def __init__(self, sdf_version: str, speed: float = 0.6):
         self.__version__ = sdf_version
         self.speed = speed
@@ -2160,13 +2845,15 @@ class Speed(Model):
         return el
 
     @classmethod
-    def from_sdf(cls, el: ET.Element, version: str) -> "Speed":
+    def _from_sdf(cls, el: ET.Element, version: str):
         _text = el.text or 0.6
         _speed = _parse_double(_text)
+        if isinstance(_speed, SDFError):
+            return _speed
         return cls(sdf_version=version, speed=_speed)
 
 
-class Direction(Model):
+class Direction(BaseModel):
     def __init__(self, sdf_version: str, direction: float = 0.0):
         self.__version__ = sdf_version
         self.direction = direction
@@ -2187,13 +2874,15 @@ class Direction(Model):
         return el
 
     @classmethod
-    def from_sdf(cls, el: ET.Element, version: str) -> "Direction":
+    def _from_sdf(cls, el: ET.Element, version: str):
         _text = el.text or 0.0
         _direction = _parse_double(_text)
+        if isinstance(_direction, SDFError):
+            return _direction
         return cls(sdf_version=version, direction=_direction)
 
 
-class Humidity(Model):
+class Humidity(BaseModel):
     def __init__(self, sdf_version: str, humidity: float = 0.5):
         self.__version__ = sdf_version
         self.humidity = humidity
@@ -2214,13 +2903,15 @@ class Humidity(Model):
         return el
 
     @classmethod
-    def from_sdf(cls, el: ET.Element, version: str) -> "Humidity":
+    def _from_sdf(cls, el: ET.Element, version: str):
         _text = el.text or 0.5
         _humidity = _parse_double(_text)
+        if isinstance(_humidity, SDFError):
+            return _humidity
         return cls(sdf_version=version, humidity=_humidity)
 
 
-class MeanSize(Model):
+class MeanSize(BaseModel):
     def __init__(self, sdf_version: str, mean_size: float = 0.5):
         self.__version__ = sdf_version
         self.mean_size = mean_size
@@ -2241,13 +2932,15 @@ class MeanSize(Model):
         return el
 
     @classmethod
-    def from_sdf(cls, el: ET.Element, version: str) -> "MeanSize":
+    def _from_sdf(cls, el: ET.Element, version: str):
         _text = el.text or 0.5
         _mean_size = _parse_double(_text)
+        if isinstance(_mean_size, SDFError):
+            return _mean_size
         return cls(sdf_version=version, mean_size=_mean_size)
 
 
-class Clouds(Model):
+class Clouds(BaseModel):
     def __init__(
         self,
         sdf_version: str,
@@ -2292,21 +2985,51 @@ class Clouds(Model):
         return el
 
     @classmethod
-    def from_sdf(cls, el: ET.Element, version: str) -> "Clouds":
+    def _from_sdf(cls, el: ET.Element, version: str):
         _c_speed = el.find("speed")
-        _speed = Speed.from_sdf(_c_speed, version) if _c_speed is not None else None
+        if _c_speed is not None:
+            _res = Speed._from_sdf(_c_speed, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("speed")
+            _speed = _res
+        else:
+            _speed = None
         _c_direction = el.find("direction")
-        _direction = Direction.from_sdf(_c_direction, version) if _c_direction is not None else None
+        if _c_direction is not None:
+            _res = Direction._from_sdf(_c_direction, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("direction")
+            _direction = _res
+        else:
+            _direction = None
         _c_humidity = el.find("humidity")
-        _humidity = Humidity.from_sdf(_c_humidity, version) if _c_humidity is not None else None
+        if _c_humidity is not None:
+            _res = Humidity._from_sdf(_c_humidity, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("humidity")
+            _humidity = _res
+        else:
+            _humidity = None
         _c_mean_size = el.find("mean_size")
-        _mean_size = MeanSize.from_sdf(_c_mean_size, version) if _c_mean_size is not None else None
+        if _c_mean_size is not None:
+            _res = MeanSize._from_sdf(_c_mean_size, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("mean_size")
+            _mean_size = _res
+        else:
+            _mean_size = None
         _c_ambient = el.find("ambient")
-        _ambient = Ambient.from_sdf(_c_ambient, version) if _c_ambient is not None else None
+        if _c_ambient is not None:
+            _res = Ambient._from_sdf(_c_ambient, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("ambient")
+            _ambient = _res
+        else:
+            _ambient = None
         return cls(sdf_version=version, speed=_speed, direction=_direction, humidity=_humidity, mean_size=_mean_size, ambient=_ambient)
 
 
-class CubemapUri(Model):
+class CubemapUri(BaseModel):
     def __init__(self, sdf_version: str, cubemap_uri: str = ""):
         self.__version__ = sdf_version
         self.cubemap_uri = cubemap_uri
@@ -2329,16 +3052,18 @@ class CubemapUri(Model):
         return el
 
     @classmethod
-    def from_sdf(cls, el: ET.Element, version: str) -> "CubemapUri":
+    def _from_sdf(cls, el: ET.Element, version: str):
         _text = el.text or ""
         _cubemap_uri = _text
+        if isinstance(_cubemap_uri, SDFError):
+            return _cubemap_uri
         if _cubemap_uri is not None and cmp_version(version, "1.9") < 0:
             if _cubemap_uri != "":
-                raise ValueError(f"'cubemap_uri' is not supported in SDF version {version} (added in 1.9)")
+                return SDFError(f"'cubemap_uri' is not supported in SDF version {version} (added in 1.9)")
         return cls(sdf_version=version, cubemap_uri=_cubemap_uri)
 
 
-class Sky(Model):
+class Sky(BaseModel):
     def __init__(
         self,
         sdf_version: str,
@@ -2385,23 +3110,53 @@ class Sky(Model):
         return el
 
     @classmethod
-    def from_sdf(cls, el: ET.Element, version: str) -> "Sky":
+    def _from_sdf(cls, el: ET.Element, version: str):
         _c_time = el.find("time")
-        _time = Time.from_sdf(_c_time, version) if _c_time is not None else None
+        if _c_time is not None:
+            _res = Time._from_sdf(_c_time, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("time")
+            _time = _res
+        else:
+            _time = None
         _c_sunrise = el.find("sunrise")
-        _sunrise = Sunrise.from_sdf(_c_sunrise, version) if _c_sunrise is not None else None
+        if _c_sunrise is not None:
+            _res = Sunrise._from_sdf(_c_sunrise, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("sunrise")
+            _sunrise = _res
+        else:
+            _sunrise = None
         _c_sunset = el.find("sunset")
-        _sunset = Sunset.from_sdf(_c_sunset, version) if _c_sunset is not None else None
+        if _c_sunset is not None:
+            _res = Sunset._from_sdf(_c_sunset, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("sunset")
+            _sunset = _res
+        else:
+            _sunset = None
         _c_clouds = el.find("clouds")
-        _clouds = Clouds.from_sdf(_c_clouds, version) if _c_clouds is not None else None
+        if _c_clouds is not None:
+            _res = Clouds._from_sdf(_c_clouds, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("clouds")
+            _clouds = _res
+        else:
+            _clouds = None
         _c_cubemap_uri = el.find("cubemap_uri")
-        _cubemap_uri = CubemapUri.from_sdf(_c_cubemap_uri, version) if _c_cubemap_uri is not None else None
+        if _c_cubemap_uri is not None:
+            _res = CubemapUri._from_sdf(_c_cubemap_uri, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("cubemap_uri")
+            _cubemap_uri = _res
+        else:
+            _cubemap_uri = None
         if _cubemap_uri is not None and cmp_version(version, "1.9") < 0:
-            raise ValueError(f"'cubemap_uri' is not supported in SDF version {version} (added in 1.9)")
+            return SDFError(f"'cubemap_uri' is not supported in SDF version {version} (added in 1.9)")
         return cls(sdf_version=version, time=_time, sunrise=_sunrise, sunset=_sunset, clouds=_clouds, cubemap_uri=_cubemap_uri)
 
 
-class Shadows(Model):
+class Shadows(BaseModel):
     def __init__(self, sdf_version: str, shadows: bool = True):
         self.__version__ = sdf_version
         self.shadows = shadows
@@ -2417,18 +3172,24 @@ class Shadows(Model):
             return self.to_version(version).to_sdf()
         version = version or self.__version__
         el = ET.Element("shadows")
+        if self.shadows is None:
+            raise ValueError(f"'shadows' is required in SDF version {version}")
         if self.shadows is not None:
             el.text = str(self.shadows).lower()
         return el
 
     @classmethod
-    def from_sdf(cls, el: ET.Element, version: str) -> "Shadows":
+    def _from_sdf(cls, el: ET.Element, version: str):
+        if el.text is None:
+            return SDFError(f"'shadows' is required in SDF version {version}")
         _text = el.text or True
-        _shadows = _text.strip().lower() == 'true'
+        _shadows = str(_text).strip().lower() == 'true'
+        if isinstance(_shadows, SDFError):
+            return _shadows
         return cls(sdf_version=version, shadows=_shadows)
 
 
-class Color(Model):
+class Color(BaseModel):
     def __init__(self, sdf_version: str, color: Color = None):
         self.__version__ = sdf_version
         if color is None:
@@ -2451,13 +3212,15 @@ class Color(Model):
         return el
 
     @classmethod
-    def from_sdf(cls, el: ET.Element, version: str) -> "Color":
+    def _from_sdf(cls, el: ET.Element, version: str):
         _text = el.text or "1 1 1 1"
-        _color = Color.from_sdf(_text)
+        _color = Color._from_sdf(_text, version)
+        if isinstance(_color, SDFError):
+            return _color
         return cls(sdf_version=version, color=_color)
 
 
-class Start(Model):
+class Start(BaseModel):
     def __init__(self, sdf_version: str, start: float = 1.0):
         self.__version__ = sdf_version
         self.start = start
@@ -2478,13 +3241,15 @@ class Start(Model):
         return el
 
     @classmethod
-    def from_sdf(cls, el: ET.Element, version: str) -> "Start":
+    def _from_sdf(cls, el: ET.Element, version: str):
         _text = el.text or 1.0
         _start = _parse_double(_text)
+        if isinstance(_start, SDFError):
+            return _start
         return cls(sdf_version=version, start=_start)
 
 
-class End(Model):
+class End(BaseModel):
     def __init__(self, sdf_version: str, end: float = 100.0):
         self.__version__ = sdf_version
         self.end = end
@@ -2505,13 +3270,15 @@ class End(Model):
         return el
 
     @classmethod
-    def from_sdf(cls, el: ET.Element, version: str) -> "End":
+    def _from_sdf(cls, el: ET.Element, version: str):
         _text = el.text or 100.0
         _end = _parse_double(_text)
+        if isinstance(_end, SDFError):
+            return _end
         return cls(sdf_version=version, end=_end)
 
 
-class Density(Model):
+class Density(BaseModel):
     def __init__(self, sdf_version: str, density: float = 1.0):
         self.__version__ = sdf_version
         self.density = density
@@ -2532,13 +3299,15 @@ class Density(Model):
         return el
 
     @classmethod
-    def from_sdf(cls, el: ET.Element, version: str) -> "Density":
+    def _from_sdf(cls, el: ET.Element, version: str):
         _text = el.text or 1.0
         _density = _parse_double(_text)
+        if isinstance(_density, SDFError):
+            return _density
         return cls(sdf_version=version, density=_density)
 
 
-class Fog(Model):
+class Fog(BaseModel):
     def __init__(
         self,
         sdf_version: str,
@@ -2583,21 +3352,51 @@ class Fog(Model):
         return el
 
     @classmethod
-    def from_sdf(cls, el: ET.Element, version: str) -> "Fog":
+    def _from_sdf(cls, el: ET.Element, version: str):
         _c_color = el.find("color")
-        _color = Color.from_sdf(_c_color, version) if _c_color is not None else None
+        if _c_color is not None:
+            _res = Color._from_sdf(_c_color, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("color")
+            _color = _res
+        else:
+            _color = None
         _c_type = el.find("type")
-        _type = Type.from_sdf(_c_type, version) if _c_type is not None else None
+        if _c_type is not None:
+            _res = Type._from_sdf(_c_type, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("type")
+            _type = _res
+        else:
+            _type = None
         _c_start = el.find("start")
-        _start = Start.from_sdf(_c_start, version) if _c_start is not None else None
+        if _c_start is not None:
+            _res = Start._from_sdf(_c_start, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("start")
+            _start = _res
+        else:
+            _start = None
         _c_end = el.find("end")
-        _end = End.from_sdf(_c_end, version) if _c_end is not None else None
+        if _c_end is not None:
+            _res = End._from_sdf(_c_end, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("end")
+            _end = _res
+        else:
+            _end = None
         _c_density = el.find("density")
-        _density = Density.from_sdf(_c_density, version) if _c_density is not None else None
+        if _c_density is not None:
+            _res = Density._from_sdf(_c_density, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("density")
+            _density = _res
+        else:
+            _density = None
         return cls(sdf_version=version, color=_color, type=_type, start=_start, end=_end, density=_density)
 
 
-class Grid(Model):
+class Grid(BaseModel):
     def __init__(self, sdf_version: str, grid: bool = True):
         self.__version__ = sdf_version
         self.grid = grid
@@ -2618,13 +3417,15 @@ class Grid(Model):
         return el
 
     @classmethod
-    def from_sdf(cls, el: ET.Element, version: str) -> "Grid":
+    def _from_sdf(cls, el: ET.Element, version: str):
         _text = el.text or True
-        _grid = _text.strip().lower() == 'true'
+        _grid = str(_text).strip().lower() == 'true'
+        if isinstance(_grid, SDFError):
+            return _grid
         return cls(sdf_version=version, grid=_grid)
 
 
-class OriginVisual(Model):
+class OriginVisual(BaseModel):
     def __init__(self, sdf_version: str, origin_visual: bool = True):
         self.__version__ = sdf_version
         self.origin_visual = origin_visual
@@ -2647,16 +3448,18 @@ class OriginVisual(Model):
         return el
 
     @classmethod
-    def from_sdf(cls, el: ET.Element, version: str) -> "OriginVisual":
+    def _from_sdf(cls, el: ET.Element, version: str):
         _text = el.text or True
-        _origin_visual = _text.strip().lower() == 'true'
+        _origin_visual = str(_text).strip().lower() == 'true'
+        if isinstance(_origin_visual, SDFError):
+            return _origin_visual
         if _origin_visual is not None and cmp_version(version, "1.5") < 0:
             if _origin_visual != True:
-                raise ValueError(f"'origin_visual' is not supported in SDF version {version} (added in 1.5)")
+                return SDFError(f"'origin_visual' is not supported in SDF version {version} (added in 1.5)")
         return cls(sdf_version=version, origin_visual=_origin_visual)
 
 
-class Scene(Model):
+class Scene(BaseModel):
     def __init__(
         self,
         sdf_version: str,
@@ -2696,12 +3499,18 @@ class Scene(Model):
             return self.to_version(version).to_sdf()
         version = version or self.__version__
         el = ET.Element("scene")
+        if self.ambient is None:
+            raise ValueError(f"'ambient' is required in SDF version {version}")
         if self.ambient is not None:
             el.append(self.ambient.to_sdf(version))
+        if self.background is None:
+            raise ValueError(f"'background' is required in SDF version {version}")
         if self.background is not None:
             el.append(self.background.to_sdf(version))
         if self.sky is not None:
             el.append(self.sky.to_sdf(version))
+        if self.shadows is None:
+            raise ValueError(f"'shadows' is required in SDF version {version}")
         if self.shadows is not None:
             el.append(self.shadows.to_sdf(version))
         if self.fog is not None:
@@ -2713,27 +3522,75 @@ class Scene(Model):
         return el
 
     @classmethod
-    def from_sdf(cls, el: ET.Element, version: str) -> "Scene":
+    def _from_sdf(cls, el: ET.Element, version: str):
         _c_ambient = el.find("ambient")
-        _ambient = Ambient.from_sdf(_c_ambient, version) if _c_ambient is not None else None
+        if _c_ambient is not None:
+            _res = Ambient._from_sdf(_c_ambient, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("ambient")
+            _ambient = _res
+        else:
+            _ambient = None
+        if _ambient is None:
+            return SDFError(f"'ambient' is required in SDF version {version}")
         _c_background = el.find("background")
-        _background = Background.from_sdf(_c_background, version) if _c_background is not None else None
+        if _c_background is not None:
+            _res = Background._from_sdf(_c_background, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("background")
+            _background = _res
+        else:
+            _background = None
+        if _background is None:
+            return SDFError(f"'background' is required in SDF version {version}")
         _c_sky = el.find("sky")
-        _sky = Sky.from_sdf(_c_sky, version) if _c_sky is not None else None
+        if _c_sky is not None:
+            _res = Sky._from_sdf(_c_sky, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("sky")
+            _sky = _res
+        else:
+            _sky = None
         _c_shadows = el.find("shadows")
-        _shadows = Shadows.from_sdf(_c_shadows, version) if _c_shadows is not None else None
+        if _c_shadows is not None:
+            _res = Shadows._from_sdf(_c_shadows, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("shadows")
+            _shadows = _res
+        else:
+            _shadows = None
+        if _shadows is None:
+            return SDFError(f"'shadows' is required in SDF version {version}")
         _c_fog = el.find("fog")
-        _fog = Fog.from_sdf(_c_fog, version) if _c_fog is not None else None
+        if _c_fog is not None:
+            _res = Fog._from_sdf(_c_fog, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("fog")
+            _fog = _res
+        else:
+            _fog = None
         _c_grid = el.find("grid")
-        _grid = Grid.from_sdf(_c_grid, version) if _c_grid is not None else None
+        if _c_grid is not None:
+            _res = Grid._from_sdf(_c_grid, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("grid")
+            _grid = _res
+        else:
+            _grid = None
         _c_origin_visual = el.find("origin_visual")
-        _origin_visual = OriginVisual.from_sdf(_c_origin_visual, version) if _c_origin_visual is not None else None
+        if _c_origin_visual is not None:
+            _res = OriginVisual._from_sdf(_c_origin_visual, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("origin_visual")
+            _origin_visual = _res
+        else:
+            _origin_visual = None
         if _origin_visual is not None and cmp_version(version, "1.5") < 0:
-            raise ValueError(f"'origin_visual' is not supported in SDF version {version} (added in 1.5)")
+            return SDFError(f"'origin_visual' is not supported in SDF version {version} (added in 1.5)")
         return cls(sdf_version=version, ambient=_ambient, background=_background, sky=_sky, shadows=_shadows, fog=_fog, grid=_grid, origin_visual=_origin_visual)
 
 
-class CastShadows(Model):
+class CastShadows(BaseModel):
     def __init__(self, sdf_version: str, cast_shadows: bool = False):
         self.__version__ = sdf_version
         self.cast_shadows = cast_shadows
@@ -2754,13 +3611,15 @@ class CastShadows(Model):
         return el
 
     @classmethod
-    def from_sdf(cls, el: ET.Element, version: str) -> "CastShadows":
+    def _from_sdf(cls, el: ET.Element, version: str):
         _text = el.text or False
-        _cast_shadows = _text.strip().lower() == 'true'
+        _cast_shadows = str(_text).strip().lower() == 'true'
+        if isinstance(_cast_shadows, SDFError):
+            return _cast_shadows
         return cls(sdf_version=version, cast_shadows=_cast_shadows)
 
 
-class Diffuse(Model):
+class Diffuse(BaseModel):
     def __init__(self, sdf_version: str, diffuse: Color = None):
         self.__version__ = sdf_version
         if diffuse is None:
@@ -2778,18 +3637,26 @@ class Diffuse(Model):
             return self.to_version(version).to_sdf()
         version = version or self.__version__
         el = ET.Element("diffuse")
+        if cmp_version(version, "1.12") < 0:
+            if self.diffuse is None:
+                raise ValueError(f"'diffuse' is required in SDF version {version}")
         if self.diffuse is not None:
             el.text = self.diffuse.to_sdf()
         return el
 
     @classmethod
-    def from_sdf(cls, el: ET.Element, version: str) -> "Diffuse":
+    def _from_sdf(cls, el: ET.Element, version: str):
+        if cmp_version(version, "1.12") < 0:
+            if el.text is None:
+                return SDFError(f"'diffuse' is required in SDF version {version}")
         _text = el.text or "1 1 1 1"
-        _diffuse = Color.from_sdf(_text)
+        _diffuse = Color._from_sdf(_text, version)
+        if isinstance(_diffuse, SDFError):
+            return _diffuse
         return cls(sdf_version=version, diffuse=_diffuse)
 
 
-class Specular(Model):
+class Specular(BaseModel):
     def __init__(self, sdf_version: str, specular: Color = None):
         self.__version__ = sdf_version
         if specular is None:
@@ -2807,18 +3674,26 @@ class Specular(Model):
             return self.to_version(version).to_sdf()
         version = version or self.__version__
         el = ET.Element("specular")
+        if cmp_version(version, "1.12") < 0:
+            if self.specular is None:
+                raise ValueError(f"'specular' is required in SDF version {version}")
         if self.specular is not None:
             el.text = self.specular.to_sdf()
         return el
 
     @classmethod
-    def from_sdf(cls, el: ET.Element, version: str) -> "Specular":
+    def _from_sdf(cls, el: ET.Element, version: str):
+        if cmp_version(version, "1.12") < 0:
+            if el.text is None:
+                return SDFError(f"'specular' is required in SDF version {version}")
         _text = el.text or ".1 .1 .1 1"
-        _specular = Color.from_sdf(_text)
+        _specular = Color._from_sdf(_text, version)
+        if isinstance(_specular, SDFError):
+            return _specular
         return cls(sdf_version=version, specular=_specular)
 
 
-class Range(Model):
+class Range(BaseModel):
     def __init__(self, sdf_version: str, range: float = 10):
         self.__version__ = sdf_version
         self.range = range
@@ -2834,18 +3709,24 @@ class Range(Model):
             return self.to_version(version).to_sdf()
         version = version or self.__version__
         el = ET.Element("range")
+        if self.range is None:
+            raise ValueError(f"'range' is required in SDF version {version}")
         if self.range is not None:
             el.text = str(self.range)
         return el
 
     @classmethod
-    def from_sdf(cls, el: ET.Element, version: str) -> "Range":
+    def _from_sdf(cls, el: ET.Element, version: str):
+        if el.text is None:
+            return SDFError(f"'range' is required in SDF version {version}")
         _text = el.text or 10
         _range = _parse_double(_text)
+        if isinstance(_range, SDFError):
+            return _range
         return cls(sdf_version=version, range=_range)
 
 
-class Linear(Model):
+class Linear(BaseModel):
     def __init__(self, sdf_version: str, linear: float = 1):
         self.__version__ = sdf_version
         self.linear = linear
@@ -2866,13 +3747,15 @@ class Linear(Model):
         return el
 
     @classmethod
-    def from_sdf(cls, el: ET.Element, version: str) -> "Linear":
+    def _from_sdf(cls, el: ET.Element, version: str):
         _text = el.text or 1
         _linear = _parse_double(_text)
+        if isinstance(_linear, SDFError):
+            return _linear
         return cls(sdf_version=version, linear=_linear)
 
 
-class Constant(Model):
+class Constant(BaseModel):
     def __init__(self, sdf_version: str, constant: float = 1):
         self.__version__ = sdf_version
         self.constant = constant
@@ -2893,13 +3776,15 @@ class Constant(Model):
         return el
 
     @classmethod
-    def from_sdf(cls, el: ET.Element, version: str) -> "Constant":
+    def _from_sdf(cls, el: ET.Element, version: str):
         _text = el.text or 1
         _constant = _parse_double(_text)
+        if isinstance(_constant, SDFError):
+            return _constant
         return cls(sdf_version=version, constant=_constant)
 
 
-class Quadratic(Model):
+class Quadratic(BaseModel):
     def __init__(self, sdf_version: str, quadratic: float = 0):
         self.__version__ = sdf_version
         self.quadratic = quadratic
@@ -2920,13 +3805,15 @@ class Quadratic(Model):
         return el
 
     @classmethod
-    def from_sdf(cls, el: ET.Element, version: str) -> "Quadratic":
+    def _from_sdf(cls, el: ET.Element, version: str):
         _text = el.text or 0
         _quadratic = _parse_double(_text)
+        if isinstance(_quadratic, SDFError):
+            return _quadratic
         return cls(sdf_version=version, quadratic=_quadratic)
 
 
-class Attenuation(Model):
+class Attenuation(BaseModel):
     def __init__(
         self,
         sdf_version: str,
@@ -2955,6 +3842,8 @@ class Attenuation(Model):
             return self.to_version(version).to_sdf()
         version = version or self.__version__
         el = ET.Element("attenuation")
+        if self.range is None:
+            raise ValueError(f"'range' is required in SDF version {version}")
         if self.range is not None:
             el.append(self.range.to_sdf(version))
         if self.linear is not None:
@@ -2966,19 +3855,45 @@ class Attenuation(Model):
         return el
 
     @classmethod
-    def from_sdf(cls, el: ET.Element, version: str) -> "Attenuation":
+    def _from_sdf(cls, el: ET.Element, version: str):
         _c_range = el.find("range")
-        _range = Range.from_sdf(_c_range, version) if _c_range is not None else None
+        if _c_range is not None:
+            _res = Range._from_sdf(_c_range, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("range")
+            _range = _res
+        else:
+            _range = None
+        if _range is None:
+            return SDFError(f"'range' is required in SDF version {version}")
         _c_linear = el.find("linear")
-        _linear = Linear.from_sdf(_c_linear, version) if _c_linear is not None else None
+        if _c_linear is not None:
+            _res = Linear._from_sdf(_c_linear, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("linear")
+            _linear = _res
+        else:
+            _linear = None
         _c_constant = el.find("constant")
-        _constant = Constant.from_sdf(_c_constant, version) if _c_constant is not None else None
+        if _c_constant is not None:
+            _res = Constant._from_sdf(_c_constant, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("constant")
+            _constant = _res
+        else:
+            _constant = None
         _c_quadratic = el.find("quadratic")
-        _quadratic = Quadratic.from_sdf(_c_quadratic, version) if _c_quadratic is not None else None
+        if _c_quadratic is not None:
+            _res = Quadratic._from_sdf(_c_quadratic, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("quadratic")
+            _quadratic = _res
+        else:
+            _quadratic = None
         return cls(sdf_version=version, range=_range, linear=_linear, constant=_constant, quadratic=_quadratic)
 
 
-class InnerAngle(Model):
+class InnerAngle(BaseModel):
     def __init__(self, sdf_version: str, inner_angle: float = 0):
         self.__version__ = sdf_version
         self.inner_angle = inner_angle
@@ -2994,18 +3909,24 @@ class InnerAngle(Model):
             return self.to_version(version).to_sdf()
         version = version or self.__version__
         el = ET.Element("inner_angle")
+        if self.inner_angle is None:
+            raise ValueError(f"'inner_angle' is required in SDF version {version}")
         if self.inner_angle is not None:
             el.text = str(self.inner_angle)
         return el
 
     @classmethod
-    def from_sdf(cls, el: ET.Element, version: str) -> "InnerAngle":
+    def _from_sdf(cls, el: ET.Element, version: str):
+        if el.text is None:
+            return SDFError(f"'inner_angle' is required in SDF version {version}")
         _text = el.text or 0
         _inner_angle = _parse_double(_text)
+        if isinstance(_inner_angle, SDFError):
+            return _inner_angle
         return cls(sdf_version=version, inner_angle=_inner_angle)
 
 
-class OuterAngle(Model):
+class OuterAngle(BaseModel):
     def __init__(self, sdf_version: str, outer_angle: float = 0):
         self.__version__ = sdf_version
         self.outer_angle = outer_angle
@@ -3021,18 +3942,24 @@ class OuterAngle(Model):
             return self.to_version(version).to_sdf()
         version = version or self.__version__
         el = ET.Element("outer_angle")
+        if self.outer_angle is None:
+            raise ValueError(f"'outer_angle' is required in SDF version {version}")
         if self.outer_angle is not None:
             el.text = str(self.outer_angle)
         return el
 
     @classmethod
-    def from_sdf(cls, el: ET.Element, version: str) -> "OuterAngle":
+    def _from_sdf(cls, el: ET.Element, version: str):
+        if el.text is None:
+            return SDFError(f"'outer_angle' is required in SDF version {version}")
         _text = el.text or 0
         _outer_angle = _parse_double(_text)
+        if isinstance(_outer_angle, SDFError):
+            return _outer_angle
         return cls(sdf_version=version, outer_angle=_outer_angle)
 
 
-class Falloff(Model):
+class Falloff(BaseModel):
     def __init__(self, sdf_version: str, falloff: float = 0):
         self.__version__ = sdf_version
         self.falloff = falloff
@@ -3048,18 +3975,24 @@ class Falloff(Model):
             return self.to_version(version).to_sdf()
         version = version or self.__version__
         el = ET.Element("falloff")
+        if self.falloff is None:
+            raise ValueError(f"'falloff' is required in SDF version {version}")
         if self.falloff is not None:
             el.text = str(self.falloff)
         return el
 
     @classmethod
-    def from_sdf(cls, el: ET.Element, version: str) -> "Falloff":
+    def _from_sdf(cls, el: ET.Element, version: str):
+        if el.text is None:
+            return SDFError(f"'falloff' is required in SDF version {version}")
         _text = el.text or 0
         _falloff = _parse_double(_text)
+        if isinstance(_falloff, SDFError):
+            return _falloff
         return cls(sdf_version=version, falloff=_falloff)
 
 
-class Spot(Model):
+class Spot(BaseModel):
     def __init__(
         self,
         sdf_version: str,
@@ -3085,90 +4018,56 @@ class Spot(Model):
             return self.to_version(version).to_sdf()
         version = version or self.__version__
         el = ET.Element("spot")
+        if self.inner_angle is None:
+            raise ValueError(f"'inner_angle' is required in SDF version {version}")
         if self.inner_angle is not None:
             el.append(self.inner_angle.to_sdf(version))
+        if self.outer_angle is None:
+            raise ValueError(f"'outer_angle' is required in SDF version {version}")
         if self.outer_angle is not None:
             el.append(self.outer_angle.to_sdf(version))
+        if self.falloff is None:
+            raise ValueError(f"'falloff' is required in SDF version {version}")
         if self.falloff is not None:
             el.append(self.falloff.to_sdf(version))
         return el
 
     @classmethod
-    def from_sdf(cls, el: ET.Element, version: str) -> "Spot":
+    def _from_sdf(cls, el: ET.Element, version: str):
         _c_inner_angle = el.find("inner_angle")
-        _inner_angle = InnerAngle.from_sdf(_c_inner_angle, version) if _c_inner_angle is not None else None
+        if _c_inner_angle is not None:
+            _res = InnerAngle._from_sdf(_c_inner_angle, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("inner_angle")
+            _inner_angle = _res
+        else:
+            _inner_angle = None
+        if _inner_angle is None:
+            return SDFError(f"'inner_angle' is required in SDF version {version}")
         _c_outer_angle = el.find("outer_angle")
-        _outer_angle = OuterAngle.from_sdf(_c_outer_angle, version) if _c_outer_angle is not None else None
+        if _c_outer_angle is not None:
+            _res = OuterAngle._from_sdf(_c_outer_angle, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("outer_angle")
+            _outer_angle = _res
+        else:
+            _outer_angle = None
+        if _outer_angle is None:
+            return SDFError(f"'outer_angle' is required in SDF version {version}")
         _c_falloff = el.find("falloff")
-        _falloff = Falloff.from_sdf(_c_falloff, version) if _c_falloff is not None else None
+        if _c_falloff is not None:
+            _res = Falloff._from_sdf(_c_falloff, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("falloff")
+            _falloff = _res
+        else:
+            _falloff = None
+        if _falloff is None:
+            return SDFError(f"'falloff' is required in SDF version {version}")
         return cls(sdf_version=version, inner_angle=_inner_angle, outer_angle=_outer_angle, falloff=_falloff)
 
 
-class LightOn(Model):
-    def __init__(self, sdf_version: str, light_on: bool = True):
-        self.__version__ = sdf_version
-        self.light_on = light_on
-
-    def to_version(self, target_version: str) -> "LightOn":
-        if self.light_on is not None and cmp_version(target_version, "1.8") < 0:
-            raise ValueError(f"'light_on' is not supported in SDF version {target_version} (added in 1.8)")
-        kwargs = {"sdf_version": target_version}
-        kwargs["light_on"] = self.light_on
-        new_obj = self.__class__(**kwargs)
-        return new_obj
-
-    def to_sdf(self, version: str = None) -> ET.Element:
-        if version is not None and version != self.__version__:
-            return self.to_version(version).to_sdf()
-        version = version or self.__version__
-        el = ET.Element("light_on")
-        if self.light_on is not None:
-            el.text = str(self.light_on).lower()
-        return el
-
-    @classmethod
-    def from_sdf(cls, el: ET.Element, version: str) -> "LightOn":
-        _text = el.text or True
-        _light_on = _text.strip().lower() == 'true'
-        if _light_on is not None and cmp_version(version, "1.8") < 0:
-            if _light_on != True:
-                raise ValueError(f"'light_on' is not supported in SDF version {version} (added in 1.8)")
-        return cls(sdf_version=version, light_on=_light_on)
-
-
-class Visualize(Model):
-    def __init__(self, sdf_version: str, visualize: bool = True):
-        self.__version__ = sdf_version
-        self.visualize = visualize
-
-    def to_version(self, target_version: str) -> "Visualize":
-        if self.visualize is not None and cmp_version(target_version, "1.8") < 0:
-            raise ValueError(f"'visualize' is not supported in SDF version {target_version} (added in 1.8)")
-        kwargs = {"sdf_version": target_version}
-        kwargs["visualize"] = self.visualize
-        new_obj = self.__class__(**kwargs)
-        return new_obj
-
-    def to_sdf(self, version: str = None) -> ET.Element:
-        if version is not None and version != self.__version__:
-            return self.to_version(version).to_sdf()
-        version = version or self.__version__
-        el = ET.Element("visualize")
-        if self.visualize is not None:
-            el.text = str(self.visualize).lower()
-        return el
-
-    @classmethod
-    def from_sdf(cls, el: ET.Element, version: str) -> "Visualize":
-        _text = el.text or True
-        _visualize = _text.strip().lower() == 'true'
-        if _visualize is not None and cmp_version(version, "1.8") < 0:
-            if _visualize != True:
-                raise ValueError(f"'visualize' is not supported in SDF version {version} (added in 1.8)")
-        return cls(sdf_version=version, visualize=_visualize)
-
-
-class Intensity(Model):
+class Intensity(BaseModel):
     def __init__(self, sdf_version: str, intensity: float = 1):
         self.__version__ = sdf_version
         self.intensity = intensity
@@ -3191,16 +4090,86 @@ class Intensity(Model):
         return el
 
     @classmethod
-    def from_sdf(cls, el: ET.Element, version: str) -> "Intensity":
+    def _from_sdf(cls, el: ET.Element, version: str):
         _text = el.text or 1
         _intensity = _parse_double(_text)
+        if isinstance(_intensity, SDFError):
+            return _intensity
         if _intensity is not None and cmp_version(version, "1.8") < 0:
             if _intensity != 1:
-                raise ValueError(f"'intensity' is not supported in SDF version {version} (added in 1.8)")
+                return SDFError(f"'intensity' is not supported in SDF version {version} (added in 1.8)")
         return cls(sdf_version=version, intensity=_intensity)
 
 
-class Light(Model):
+class LightOn(BaseModel):
+    def __init__(self, sdf_version: str, light_on: bool = True):
+        self.__version__ = sdf_version
+        self.light_on = light_on
+
+    def to_version(self, target_version: str) -> "LightOn":
+        if self.light_on is not None and cmp_version(target_version, "1.8") < 0:
+            raise ValueError(f"'light_on' is not supported in SDF version {target_version} (added in 1.8)")
+        kwargs = {"sdf_version": target_version}
+        kwargs["light_on"] = self.light_on
+        new_obj = self.__class__(**kwargs)
+        return new_obj
+
+    def to_sdf(self, version: str = None) -> ET.Element:
+        if version is not None and version != self.__version__:
+            return self.to_version(version).to_sdf()
+        version = version or self.__version__
+        el = ET.Element("light_on")
+        if self.light_on is not None:
+            el.text = str(self.light_on).lower()
+        return el
+
+    @classmethod
+    def _from_sdf(cls, el: ET.Element, version: str):
+        _text = el.text or True
+        _light_on = str(_text).strip().lower() == 'true'
+        if isinstance(_light_on, SDFError):
+            return _light_on
+        if _light_on is not None and cmp_version(version, "1.8") < 0:
+            if _light_on != True:
+                return SDFError(f"'light_on' is not supported in SDF version {version} (added in 1.8)")
+        return cls(sdf_version=version, light_on=_light_on)
+
+
+class Visualize(BaseModel):
+    def __init__(self, sdf_version: str, visualize: bool = True):
+        self.__version__ = sdf_version
+        self.visualize = visualize
+
+    def to_version(self, target_version: str) -> "Visualize":
+        if self.visualize is not None and cmp_version(target_version, "1.8") < 0:
+            raise ValueError(f"'visualize' is not supported in SDF version {target_version} (added in 1.8)")
+        kwargs = {"sdf_version": target_version}
+        kwargs["visualize"] = self.visualize
+        new_obj = self.__class__(**kwargs)
+        return new_obj
+
+    def to_sdf(self, version: str = None) -> ET.Element:
+        if version is not None and version != self.__version__:
+            return self.to_version(version).to_sdf()
+        version = version or self.__version__
+        el = ET.Element("visualize")
+        if self.visualize is not None:
+            el.text = str(self.visualize).lower()
+        return el
+
+    @classmethod
+    def _from_sdf(cls, el: ET.Element, version: str):
+        _text = el.text or True
+        _visualize = str(_text).strip().lower() == 'true'
+        if isinstance(_visualize, SDFError):
+            return _visualize
+        if _visualize is not None and cmp_version(version, "1.8") < 0:
+            if _visualize != True:
+                return SDFError(f"'visualize' is not supported in SDF version {version} (added in 1.8)")
+        return cls(sdf_version=version, visualize=_visualize)
+
+
+class Light(BaseModel):
     def __init__(
         self,
         sdf_version: str,
@@ -3214,9 +4183,9 @@ class Light(Model):
         direction: "Direction" = None,
         spot: "Spot" = None,
         frame: List["Frame"] = None,
+        intensity: "Intensity" = None,
         light_on: "LightOn" = None,
-        visualize: "Visualize" = None,
-        intensity: "Intensity" = None
+        visualize: "Visualize" = None
     ):
         self.__version__ = sdf_version
         self.name = name
@@ -3229,19 +4198,21 @@ class Light(Model):
         self.direction = direction
         self.spot = spot
         self.frame = frame or []
+        self.intensity = intensity
         self.light_on = light_on
         self.visualize = visualize
-        self.intensity = intensity
 
     def to_version(self, target_version: str) -> "Light":
         if self.frame is not None and cmp_version(target_version, "1.5") < 0:
             raise ValueError(f"'frame' is not supported in SDF version {target_version} (added in 1.5)")
+        if self.frame is not None and cmp_version(target_version, "1.7") >= 0:
+            raise ValueError(f"'frame' is not supported in SDF version {target_version} (removed in 1.7)")
+        if self.intensity is not None and cmp_version(target_version, "1.8") < 0:
+            raise ValueError(f"'intensity' is not supported in SDF version {target_version} (added in 1.8)")
         if self.light_on is not None and cmp_version(target_version, "1.8") < 0:
             raise ValueError(f"'light_on' is not supported in SDF version {target_version} (added in 1.8)")
         if self.visualize is not None and cmp_version(target_version, "1.8") < 0:
             raise ValueError(f"'visualize' is not supported in SDF version {target_version} (added in 1.8)")
-        if self.intensity is not None and cmp_version(target_version, "1.8") < 0:
-            raise ValueError(f"'intensity' is not supported in SDF version {target_version} (added in 1.8)")
         kwargs = {"sdf_version": target_version}
         kwargs["name"] = self.name
         kwargs["type"] = self.type
@@ -3253,9 +4224,9 @@ class Light(Model):
         kwargs["direction"] = self.direction.to_version(target_version) if self.direction is not None else None
         kwargs["spot"] = self.spot.to_version(target_version) if self.spot is not None else None
         kwargs["frame"] = [c.to_version(target_version) for c in (self.frame or [])]
+        kwargs["intensity"] = self.intensity.to_version(target_version) if self.intensity is not None else None
         kwargs["light_on"] = self.light_on.to_version(target_version) if self.light_on is not None else None
         kwargs["visualize"] = self.visualize.to_version(target_version) if self.visualize is not None else None
-        kwargs["intensity"] = self.intensity.to_version(target_version) if self.intensity is not None else None
         new_obj = self.__class__(**kwargs)
         return new_obj
 
@@ -3266,69 +4237,158 @@ class Light(Model):
         el = ET.Element("light")
         if self.name is not None:
             el.set("name", self.name)
+        if self.type is None:
+            raise ValueError(f"'type' is required in SDF version {version}")
         if self.type is not None:
             el.set("type", self.type)
         if self.cast_shadows is not None:
             el.append(self.cast_shadows.to_sdf(version))
         if self.pose is not None:
             el.append(self.pose.to_sdf(version))
+        if cmp_version(version, "1.12") < 0:
+            if self.diffuse is None:
+                raise ValueError(f"'diffuse' is required in SDF version {version}")
         if self.diffuse is not None:
             el.append(self.diffuse.to_sdf(version))
+        if cmp_version(version, "1.12") < 0:
+            if self.specular is None:
+                raise ValueError(f"'specular' is required in SDF version {version}")
         if self.specular is not None:
             el.append(self.specular.to_sdf(version))
         if self.attenuation is not None:
             el.append(self.attenuation.to_sdf(version))
+        if self.direction is None:
+            raise ValueError(f"'direction' is required in SDF version {version}")
         if self.direction is not None:
             el.append(self.direction.to_sdf(version))
         if self.spot is not None:
             el.append(self.spot.to_sdf(version))
         for item in (self.frame or []):
             el.append(item.to_sdf(version))
+        if self.intensity is not None:
+            el.append(self.intensity.to_sdf(version))
         if self.light_on is not None:
             el.append(self.light_on.to_sdf(version))
         if self.visualize is not None:
             el.append(self.visualize.to_sdf(version))
-        if self.intensity is not None:
-            el.append(self.intensity.to_sdf(version))
         return el
 
     @classmethod
-    def from_sdf(cls, el: ET.Element, version: str) -> "Light":
+    def _from_sdf(cls, el: ET.Element, version: str):
         _name = el.get("name", "__default__")
+        if isinstance(_name, SDFError):
+            return _name.extend("@name")
+        if el.get("type") is None:
+            return SDFError(f"'type' is required in SDF version {version}")
         _type = el.get("type", "point")
+        if isinstance(_type, SDFError):
+            return _type.extend("@type")
         _c_cast_shadows = el.find("cast_shadows")
-        _cast_shadows = CastShadows.from_sdf(_c_cast_shadows, version) if _c_cast_shadows is not None else None
+        if _c_cast_shadows is not None:
+            _res = CastShadows._from_sdf(_c_cast_shadows, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("cast_shadows")
+            _cast_shadows = _res
+        else:
+            _cast_shadows = None
         _c_pose = el.find("pose")
-        _pose = Pose.from_sdf(_c_pose, version) if _c_pose is not None else None
+        if _c_pose is not None:
+            _res = Pose._from_sdf(_c_pose, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("pose")
+            _pose = _res
+        else:
+            _pose = None
         _c_diffuse = el.find("diffuse")
-        _diffuse = Diffuse.from_sdf(_c_diffuse, version) if _c_diffuse is not None else None
+        if _c_diffuse is not None:
+            _res = Diffuse._from_sdf(_c_diffuse, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("diffuse")
+            _diffuse = _res
+        else:
+            _diffuse = None
+        if cmp_version(version, "1.12") < 0:
+            if _diffuse is None:
+                return SDFError(f"'diffuse' is required in SDF version {version}")
         _c_specular = el.find("specular")
-        _specular = Specular.from_sdf(_c_specular, version) if _c_specular is not None else None
+        if _c_specular is not None:
+            _res = Specular._from_sdf(_c_specular, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("specular")
+            _specular = _res
+        else:
+            _specular = None
+        if cmp_version(version, "1.12") < 0:
+            if _specular is None:
+                return SDFError(f"'specular' is required in SDF version {version}")
         _c_attenuation = el.find("attenuation")
-        _attenuation = Attenuation.from_sdf(_c_attenuation, version) if _c_attenuation is not None else None
+        if _c_attenuation is not None:
+            _res = Attenuation._from_sdf(_c_attenuation, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("attenuation")
+            _attenuation = _res
+        else:
+            _attenuation = None
         _c_direction = el.find("direction")
-        _direction = Direction.from_sdf(_c_direction, version) if _c_direction is not None else None
+        if _c_direction is not None:
+            _res = Direction._from_sdf(_c_direction, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("direction")
+            _direction = _res
+        else:
+            _direction = None
+        if _direction is None:
+            return SDFError(f"'direction' is required in SDF version {version}")
         _c_spot = el.find("spot")
-        _spot = Spot.from_sdf(_c_spot, version) if _c_spot is not None else None
-        _frame = [Frame.from_sdf(c, version) for c in el.findall("frame")]
+        if _c_spot is not None:
+            _res = Spot._from_sdf(_c_spot, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("spot")
+            _spot = _res
+        else:
+            _spot = None
+        _frame = []
+        for c in el.findall("frame"):
+            _res = Frame._from_sdf(c, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("frame")
+            _frame.append(_res)
         if _frame and cmp_version(version, "1.5") < 0:
-            raise ValueError(f"'frame' is not supported in SDF version {version} (added in 1.5)")
-        _c_light_on = el.find("light_on")
-        _light_on = LightOn.from_sdf(_c_light_on, version) if _c_light_on is not None else None
-        if _light_on is not None and cmp_version(version, "1.8") < 0:
-            raise ValueError(f"'light_on' is not supported in SDF version {version} (added in 1.8)")
-        _c_visualize = el.find("visualize")
-        _visualize = Visualize.from_sdf(_c_visualize, version) if _c_visualize is not None else None
-        if _visualize is not None and cmp_version(version, "1.8") < 0:
-            raise ValueError(f"'visualize' is not supported in SDF version {version} (added in 1.8)")
+            return SDFError(f"'frame' is not supported in SDF version {version} (added in 1.5)")
         _c_intensity = el.find("intensity")
-        _intensity = Intensity.from_sdf(_c_intensity, version) if _c_intensity is not None else None
+        if _c_intensity is not None:
+            _res = Intensity._from_sdf(_c_intensity, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("intensity")
+            _intensity = _res
+        else:
+            _intensity = None
         if _intensity is not None and cmp_version(version, "1.8") < 0:
-            raise ValueError(f"'intensity' is not supported in SDF version {version} (added in 1.8)")
-        return cls(sdf_version=version, name=_name, type=_type, cast_shadows=_cast_shadows, pose=_pose, diffuse=_diffuse, specular=_specular, attenuation=_attenuation, direction=_direction, spot=_spot, frame=_frame, light_on=_light_on, visualize=_visualize, intensity=_intensity)
+            return SDFError(f"'intensity' is not supported in SDF version {version} (added in 1.8)")
+        _c_light_on = el.find("light_on")
+        if _c_light_on is not None:
+            _res = LightOn._from_sdf(_c_light_on, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("light_on")
+            _light_on = _res
+        else:
+            _light_on = None
+        if _light_on is not None and cmp_version(version, "1.8") < 0:
+            return SDFError(f"'light_on' is not supported in SDF version {version} (added in 1.8)")
+        _c_visualize = el.find("visualize")
+        if _c_visualize is not None:
+            _res = Visualize._from_sdf(_c_visualize, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("visualize")
+            _visualize = _res
+        else:
+            _visualize = None
+        if _visualize is not None and cmp_version(version, "1.8") < 0:
+            return SDFError(f"'visualize' is not supported in SDF version {version} (added in 1.8)")
+        return cls(sdf_version=version, name=_name, type=_type, cast_shadows=_cast_shadows, pose=_pose, diffuse=_diffuse, specular=_specular, attenuation=_attenuation, direction=_direction, spot=_spot, frame=_frame, intensity=_intensity, light_on=_light_on, visualize=_visualize)
 
 
-class Mass(Model):
+class Mass(BaseModel):
     def __init__(self, sdf_version: str, mass: float = 1.0):
         self.__version__ = sdf_version
         self.mass = mass
@@ -3349,13 +4409,15 @@ class Mass(Model):
         return el
 
     @classmethod
-    def from_sdf(cls, el: ET.Element, version: str) -> "Mass":
+    def _from_sdf(cls, el: ET.Element, version: str):
         _text = el.text or 1.0
         _mass = _parse_double(_text)
+        if isinstance(_mass, SDFError):
+            return _mass
         return cls(sdf_version=version, mass=_mass)
 
 
-class Ixx(Model):
+class Ixx(BaseModel):
     def __init__(self, sdf_version: str, ixx: float = 1.0):
         self.__version__ = sdf_version
         self.ixx = ixx
@@ -3371,18 +4433,24 @@ class Ixx(Model):
             return self.to_version(version).to_sdf()
         version = version or self.__version__
         el = ET.Element("ixx")
+        if self.ixx is None:
+            raise ValueError(f"'ixx' is required in SDF version {version}")
         if self.ixx is not None:
             el.text = str(self.ixx)
         return el
 
     @classmethod
-    def from_sdf(cls, el: ET.Element, version: str) -> "Ixx":
+    def _from_sdf(cls, el: ET.Element, version: str):
+        if el.text is None:
+            return SDFError(f"'ixx' is required in SDF version {version}")
         _text = el.text or 1.0
         _ixx = _parse_double(_text)
+        if isinstance(_ixx, SDFError):
+            return _ixx
         return cls(sdf_version=version, ixx=_ixx)
 
 
-class Ixy(Model):
+class Ixy(BaseModel):
     def __init__(self, sdf_version: str, ixy: float = 0.0):
         self.__version__ = sdf_version
         self.ixy = ixy
@@ -3398,18 +4466,24 @@ class Ixy(Model):
             return self.to_version(version).to_sdf()
         version = version or self.__version__
         el = ET.Element("ixy")
+        if self.ixy is None:
+            raise ValueError(f"'ixy' is required in SDF version {version}")
         if self.ixy is not None:
             el.text = str(self.ixy)
         return el
 
     @classmethod
-    def from_sdf(cls, el: ET.Element, version: str) -> "Ixy":
+    def _from_sdf(cls, el: ET.Element, version: str):
+        if el.text is None:
+            return SDFError(f"'ixy' is required in SDF version {version}")
         _text = el.text or 0.0
         _ixy = _parse_double(_text)
+        if isinstance(_ixy, SDFError):
+            return _ixy
         return cls(sdf_version=version, ixy=_ixy)
 
 
-class Ixz(Model):
+class Ixz(BaseModel):
     def __init__(self, sdf_version: str, ixz: float = 0.0):
         self.__version__ = sdf_version
         self.ixz = ixz
@@ -3425,18 +4499,24 @@ class Ixz(Model):
             return self.to_version(version).to_sdf()
         version = version or self.__version__
         el = ET.Element("ixz")
+        if self.ixz is None:
+            raise ValueError(f"'ixz' is required in SDF version {version}")
         if self.ixz is not None:
             el.text = str(self.ixz)
         return el
 
     @classmethod
-    def from_sdf(cls, el: ET.Element, version: str) -> "Ixz":
+    def _from_sdf(cls, el: ET.Element, version: str):
+        if el.text is None:
+            return SDFError(f"'ixz' is required in SDF version {version}")
         _text = el.text or 0.0
         _ixz = _parse_double(_text)
+        if isinstance(_ixz, SDFError):
+            return _ixz
         return cls(sdf_version=version, ixz=_ixz)
 
 
-class Iyy(Model):
+class Iyy(BaseModel):
     def __init__(self, sdf_version: str, iyy: float = 1.0):
         self.__version__ = sdf_version
         self.iyy = iyy
@@ -3452,18 +4532,24 @@ class Iyy(Model):
             return self.to_version(version).to_sdf()
         version = version or self.__version__
         el = ET.Element("iyy")
+        if self.iyy is None:
+            raise ValueError(f"'iyy' is required in SDF version {version}")
         if self.iyy is not None:
             el.text = str(self.iyy)
         return el
 
     @classmethod
-    def from_sdf(cls, el: ET.Element, version: str) -> "Iyy":
+    def _from_sdf(cls, el: ET.Element, version: str):
+        if el.text is None:
+            return SDFError(f"'iyy' is required in SDF version {version}")
         _text = el.text or 1.0
         _iyy = _parse_double(_text)
+        if isinstance(_iyy, SDFError):
+            return _iyy
         return cls(sdf_version=version, iyy=_iyy)
 
 
-class Iyz(Model):
+class Iyz(BaseModel):
     def __init__(self, sdf_version: str, iyz: float = 0.0):
         self.__version__ = sdf_version
         self.iyz = iyz
@@ -3479,18 +4565,24 @@ class Iyz(Model):
             return self.to_version(version).to_sdf()
         version = version or self.__version__
         el = ET.Element("iyz")
+        if self.iyz is None:
+            raise ValueError(f"'iyz' is required in SDF version {version}")
         if self.iyz is not None:
             el.text = str(self.iyz)
         return el
 
     @classmethod
-    def from_sdf(cls, el: ET.Element, version: str) -> "Iyz":
+    def _from_sdf(cls, el: ET.Element, version: str):
+        if el.text is None:
+            return SDFError(f"'iyz' is required in SDF version {version}")
         _text = el.text or 0.0
         _iyz = _parse_double(_text)
+        if isinstance(_iyz, SDFError):
+            return _iyz
         return cls(sdf_version=version, iyz=_iyz)
 
 
-class Izz(Model):
+class Izz(BaseModel):
     def __init__(self, sdf_version: str, izz: float = 1.0):
         self.__version__ = sdf_version
         self.izz = izz
@@ -3506,18 +4598,24 @@ class Izz(Model):
             return self.to_version(version).to_sdf()
         version = version or self.__version__
         el = ET.Element("izz")
+        if self.izz is None:
+            raise ValueError(f"'izz' is required in SDF version {version}")
         if self.izz is not None:
             el.text = str(self.izz)
         return el
 
     @classmethod
-    def from_sdf(cls, el: ET.Element, version: str) -> "Izz":
+    def _from_sdf(cls, el: ET.Element, version: str):
+        if el.text is None:
+            return SDFError(f"'izz' is required in SDF version {version}")
         _text = el.text or 1.0
         _izz = _parse_double(_text)
+        if isinstance(_izz, SDFError):
+            return _izz
         return cls(sdf_version=version, izz=_izz)
 
 
-class Inertia(Model):
+class Inertia(BaseModel):
     def __init__(
         self,
         sdf_version: str,
@@ -3552,38 +4650,98 @@ class Inertia(Model):
             return self.to_version(version).to_sdf()
         version = version or self.__version__
         el = ET.Element("inertia")
+        if self.ixx is None:
+            raise ValueError(f"'ixx' is required in SDF version {version}")
         if self.ixx is not None:
             el.append(self.ixx.to_sdf(version))
+        if self.ixy is None:
+            raise ValueError(f"'ixy' is required in SDF version {version}")
         if self.ixy is not None:
             el.append(self.ixy.to_sdf(version))
+        if self.ixz is None:
+            raise ValueError(f"'ixz' is required in SDF version {version}")
         if self.ixz is not None:
             el.append(self.ixz.to_sdf(version))
+        if self.iyy is None:
+            raise ValueError(f"'iyy' is required in SDF version {version}")
         if self.iyy is not None:
             el.append(self.iyy.to_sdf(version))
+        if self.iyz is None:
+            raise ValueError(f"'iyz' is required in SDF version {version}")
         if self.iyz is not None:
             el.append(self.iyz.to_sdf(version))
+        if self.izz is None:
+            raise ValueError(f"'izz' is required in SDF version {version}")
         if self.izz is not None:
             el.append(self.izz.to_sdf(version))
         return el
 
     @classmethod
-    def from_sdf(cls, el: ET.Element, version: str) -> "Inertia":
+    def _from_sdf(cls, el: ET.Element, version: str):
         _c_ixx = el.find("ixx")
-        _ixx = Ixx.from_sdf(_c_ixx, version) if _c_ixx is not None else None
+        if _c_ixx is not None:
+            _res = Ixx._from_sdf(_c_ixx, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("ixx")
+            _ixx = _res
+        else:
+            _ixx = None
+        if _ixx is None:
+            return SDFError(f"'ixx' is required in SDF version {version}")
         _c_ixy = el.find("ixy")
-        _ixy = Ixy.from_sdf(_c_ixy, version) if _c_ixy is not None else None
+        if _c_ixy is not None:
+            _res = Ixy._from_sdf(_c_ixy, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("ixy")
+            _ixy = _res
+        else:
+            _ixy = None
+        if _ixy is None:
+            return SDFError(f"'ixy' is required in SDF version {version}")
         _c_ixz = el.find("ixz")
-        _ixz = Ixz.from_sdf(_c_ixz, version) if _c_ixz is not None else None
+        if _c_ixz is not None:
+            _res = Ixz._from_sdf(_c_ixz, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("ixz")
+            _ixz = _res
+        else:
+            _ixz = None
+        if _ixz is None:
+            return SDFError(f"'ixz' is required in SDF version {version}")
         _c_iyy = el.find("iyy")
-        _iyy = Iyy.from_sdf(_c_iyy, version) if _c_iyy is not None else None
+        if _c_iyy is not None:
+            _res = Iyy._from_sdf(_c_iyy, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("iyy")
+            _iyy = _res
+        else:
+            _iyy = None
+        if _iyy is None:
+            return SDFError(f"'iyy' is required in SDF version {version}")
         _c_iyz = el.find("iyz")
-        _iyz = Iyz.from_sdf(_c_iyz, version) if _c_iyz is not None else None
+        if _c_iyz is not None:
+            _res = Iyz._from_sdf(_c_iyz, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("iyz")
+            _iyz = _res
+        else:
+            _iyz = None
+        if _iyz is None:
+            return SDFError(f"'iyz' is required in SDF version {version}")
         _c_izz = el.find("izz")
-        _izz = Izz.from_sdf(_c_izz, version) if _c_izz is not None else None
+        if _c_izz is not None:
+            _res = Izz._from_sdf(_c_izz, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("izz")
+            _izz = _res
+        else:
+            _izz = None
+        if _izz is None:
+            return SDFError(f"'izz' is required in SDF version {version}")
         return cls(sdf_version=version, ixx=_ixx, ixy=_ixy, ixz=_ixz, iyy=_iyy, iyz=_iyz, izz=_izz)
 
 
-class Xx(Model):
+class Xx(BaseModel):
     def __init__(self, sdf_version: str, xx: float = 0.0):
         self.__version__ = sdf_version
         self.xx = xx
@@ -3604,13 +4762,15 @@ class Xx(Model):
         return el
 
     @classmethod
-    def from_sdf(cls, el: ET.Element, version: str) -> "Xx":
+    def _from_sdf(cls, el: ET.Element, version: str):
         _text = el.text or 0.0
         _xx = _parse_double(_text)
+        if isinstance(_xx, SDFError):
+            return _xx
         return cls(sdf_version=version, xx=_xx)
 
 
-class Xy(Model):
+class Xy(BaseModel):
     def __init__(self, sdf_version: str, xy: float = 0.0):
         self.__version__ = sdf_version
         self.xy = xy
@@ -3631,13 +4791,15 @@ class Xy(Model):
         return el
 
     @classmethod
-    def from_sdf(cls, el: ET.Element, version: str) -> "Xy":
+    def _from_sdf(cls, el: ET.Element, version: str):
         _text = el.text or 0.0
         _xy = _parse_double(_text)
+        if isinstance(_xy, SDFError):
+            return _xy
         return cls(sdf_version=version, xy=_xy)
 
 
-class Xz(Model):
+class Xz(BaseModel):
     def __init__(self, sdf_version: str, xz: float = 0.0):
         self.__version__ = sdf_version
         self.xz = xz
@@ -3658,13 +4820,15 @@ class Xz(Model):
         return el
 
     @classmethod
-    def from_sdf(cls, el: ET.Element, version: str) -> "Xz":
+    def _from_sdf(cls, el: ET.Element, version: str):
         _text = el.text or 0.0
         _xz = _parse_double(_text)
+        if isinstance(_xz, SDFError):
+            return _xz
         return cls(sdf_version=version, xz=_xz)
 
 
-class Xp(Model):
+class Xp(BaseModel):
     def __init__(self, sdf_version: str, xp: float = 0.0):
         self.__version__ = sdf_version
         self.xp = xp
@@ -3685,13 +4849,15 @@ class Xp(Model):
         return el
 
     @classmethod
-    def from_sdf(cls, el: ET.Element, version: str) -> "Xp":
+    def _from_sdf(cls, el: ET.Element, version: str):
         _text = el.text or 0.0
         _xp = _parse_double(_text)
+        if isinstance(_xp, SDFError):
+            return _xp
         return cls(sdf_version=version, xp=_xp)
 
 
-class Xq(Model):
+class Xq(BaseModel):
     def __init__(self, sdf_version: str, xq: float = 0.0):
         self.__version__ = sdf_version
         self.xq = xq
@@ -3712,13 +4878,15 @@ class Xq(Model):
         return el
 
     @classmethod
-    def from_sdf(cls, el: ET.Element, version: str) -> "Xq":
+    def _from_sdf(cls, el: ET.Element, version: str):
         _text = el.text or 0.0
         _xq = _parse_double(_text)
+        if isinstance(_xq, SDFError):
+            return _xq
         return cls(sdf_version=version, xq=_xq)
 
 
-class Xr(Model):
+class Xr(BaseModel):
     def __init__(self, sdf_version: str, xr: float = 0.0):
         self.__version__ = sdf_version
         self.xr = xr
@@ -3739,13 +4907,15 @@ class Xr(Model):
         return el
 
     @classmethod
-    def from_sdf(cls, el: ET.Element, version: str) -> "Xr":
+    def _from_sdf(cls, el: ET.Element, version: str):
         _text = el.text or 0.0
         _xr = _parse_double(_text)
+        if isinstance(_xr, SDFError):
+            return _xr
         return cls(sdf_version=version, xr=_xr)
 
 
-class Yy(Model):
+class Yy(BaseModel):
     def __init__(self, sdf_version: str, yy: float = 0.0):
         self.__version__ = sdf_version
         self.yy = yy
@@ -3766,13 +4936,15 @@ class Yy(Model):
         return el
 
     @classmethod
-    def from_sdf(cls, el: ET.Element, version: str) -> "Yy":
+    def _from_sdf(cls, el: ET.Element, version: str):
         _text = el.text or 0.0
         _yy = _parse_double(_text)
+        if isinstance(_yy, SDFError):
+            return _yy
         return cls(sdf_version=version, yy=_yy)
 
 
-class Yz(Model):
+class Yz(BaseModel):
     def __init__(self, sdf_version: str, yz: float = 0.0):
         self.__version__ = sdf_version
         self.yz = yz
@@ -3793,13 +4965,15 @@ class Yz(Model):
         return el
 
     @classmethod
-    def from_sdf(cls, el: ET.Element, version: str) -> "Yz":
+    def _from_sdf(cls, el: ET.Element, version: str):
         _text = el.text or 0.0
         _yz = _parse_double(_text)
+        if isinstance(_yz, SDFError):
+            return _yz
         return cls(sdf_version=version, yz=_yz)
 
 
-class Yp(Model):
+class Yp(BaseModel):
     def __init__(self, sdf_version: str, yp: float = 0.0):
         self.__version__ = sdf_version
         self.yp = yp
@@ -3820,13 +4994,15 @@ class Yp(Model):
         return el
 
     @classmethod
-    def from_sdf(cls, el: ET.Element, version: str) -> "Yp":
+    def _from_sdf(cls, el: ET.Element, version: str):
         _text = el.text or 0.0
         _yp = _parse_double(_text)
+        if isinstance(_yp, SDFError):
+            return _yp
         return cls(sdf_version=version, yp=_yp)
 
 
-class Yq(Model):
+class Yq(BaseModel):
     def __init__(self, sdf_version: str, yq: float = 0.0):
         self.__version__ = sdf_version
         self.yq = yq
@@ -3847,13 +5023,15 @@ class Yq(Model):
         return el
 
     @classmethod
-    def from_sdf(cls, el: ET.Element, version: str) -> "Yq":
+    def _from_sdf(cls, el: ET.Element, version: str):
         _text = el.text or 0.0
         _yq = _parse_double(_text)
+        if isinstance(_yq, SDFError):
+            return _yq
         return cls(sdf_version=version, yq=_yq)
 
 
-class Yr(Model):
+class Yr(BaseModel):
     def __init__(self, sdf_version: str, yr: float = 0.0):
         self.__version__ = sdf_version
         self.yr = yr
@@ -3874,13 +5052,15 @@ class Yr(Model):
         return el
 
     @classmethod
-    def from_sdf(cls, el: ET.Element, version: str) -> "Yr":
+    def _from_sdf(cls, el: ET.Element, version: str):
         _text = el.text or 0.0
         _yr = _parse_double(_text)
+        if isinstance(_yr, SDFError):
+            return _yr
         return cls(sdf_version=version, yr=_yr)
 
 
-class Zz(Model):
+class Zz(BaseModel):
     def __init__(self, sdf_version: str, zz: float = 0.0):
         self.__version__ = sdf_version
         self.zz = zz
@@ -3901,13 +5081,15 @@ class Zz(Model):
         return el
 
     @classmethod
-    def from_sdf(cls, el: ET.Element, version: str) -> "Zz":
+    def _from_sdf(cls, el: ET.Element, version: str):
         _text = el.text or 0.0
         _zz = _parse_double(_text)
+        if isinstance(_zz, SDFError):
+            return _zz
         return cls(sdf_version=version, zz=_zz)
 
 
-class Zp(Model):
+class Zp(BaseModel):
     def __init__(self, sdf_version: str, zp: float = 0.0):
         self.__version__ = sdf_version
         self.zp = zp
@@ -3928,13 +5110,15 @@ class Zp(Model):
         return el
 
     @classmethod
-    def from_sdf(cls, el: ET.Element, version: str) -> "Zp":
+    def _from_sdf(cls, el: ET.Element, version: str):
         _text = el.text or 0.0
         _zp = _parse_double(_text)
+        if isinstance(_zp, SDFError):
+            return _zp
         return cls(sdf_version=version, zp=_zp)
 
 
-class Zq(Model):
+class Zq(BaseModel):
     def __init__(self, sdf_version: str, zq: float = 0.0):
         self.__version__ = sdf_version
         self.zq = zq
@@ -3955,13 +5139,15 @@ class Zq(Model):
         return el
 
     @classmethod
-    def from_sdf(cls, el: ET.Element, version: str) -> "Zq":
+    def _from_sdf(cls, el: ET.Element, version: str):
         _text = el.text or 0.0
         _zq = _parse_double(_text)
+        if isinstance(_zq, SDFError):
+            return _zq
         return cls(sdf_version=version, zq=_zq)
 
 
-class Zr(Model):
+class Zr(BaseModel):
     def __init__(self, sdf_version: str, zr: float = 0.0):
         self.__version__ = sdf_version
         self.zr = zr
@@ -3982,13 +5168,15 @@ class Zr(Model):
         return el
 
     @classmethod
-    def from_sdf(cls, el: ET.Element, version: str) -> "Zr":
+    def _from_sdf(cls, el: ET.Element, version: str):
         _text = el.text or 0.0
         _zr = _parse_double(_text)
+        if isinstance(_zr, SDFError):
+            return _zr
         return cls(sdf_version=version, zr=_zr)
 
 
-class Pp(Model):
+class Pp(BaseModel):
     def __init__(self, sdf_version: str, pp: float = 0.0):
         self.__version__ = sdf_version
         self.pp = pp
@@ -4009,13 +5197,15 @@ class Pp(Model):
         return el
 
     @classmethod
-    def from_sdf(cls, el: ET.Element, version: str) -> "Pp":
+    def _from_sdf(cls, el: ET.Element, version: str):
         _text = el.text or 0.0
         _pp = _parse_double(_text)
+        if isinstance(_pp, SDFError):
+            return _pp
         return cls(sdf_version=version, pp=_pp)
 
 
-class Pq(Model):
+class Pq(BaseModel):
     def __init__(self, sdf_version: str, pq: float = 0.0):
         self.__version__ = sdf_version
         self.pq = pq
@@ -4036,13 +5226,15 @@ class Pq(Model):
         return el
 
     @classmethod
-    def from_sdf(cls, el: ET.Element, version: str) -> "Pq":
+    def _from_sdf(cls, el: ET.Element, version: str):
         _text = el.text or 0.0
         _pq = _parse_double(_text)
+        if isinstance(_pq, SDFError):
+            return _pq
         return cls(sdf_version=version, pq=_pq)
 
 
-class Pr(Model):
+class Pr(BaseModel):
     def __init__(self, sdf_version: str, pr: float = 0.0):
         self.__version__ = sdf_version
         self.pr = pr
@@ -4063,13 +5255,15 @@ class Pr(Model):
         return el
 
     @classmethod
-    def from_sdf(cls, el: ET.Element, version: str) -> "Pr":
+    def _from_sdf(cls, el: ET.Element, version: str):
         _text = el.text or 0.0
         _pr = _parse_double(_text)
+        if isinstance(_pr, SDFError):
+            return _pr
         return cls(sdf_version=version, pr=_pr)
 
 
-class Qq(Model):
+class Qq(BaseModel):
     def __init__(self, sdf_version: str, qq: float = 0.0):
         self.__version__ = sdf_version
         self.qq = qq
@@ -4090,13 +5284,15 @@ class Qq(Model):
         return el
 
     @classmethod
-    def from_sdf(cls, el: ET.Element, version: str) -> "Qq":
+    def _from_sdf(cls, el: ET.Element, version: str):
         _text = el.text or 0.0
         _qq = _parse_double(_text)
+        if isinstance(_qq, SDFError):
+            return _qq
         return cls(sdf_version=version, qq=_qq)
 
 
-class Qr(Model):
+class Qr(BaseModel):
     def __init__(self, sdf_version: str, qr: float = 0.0):
         self.__version__ = sdf_version
         self.qr = qr
@@ -4117,13 +5313,15 @@ class Qr(Model):
         return el
 
     @classmethod
-    def from_sdf(cls, el: ET.Element, version: str) -> "Qr":
+    def _from_sdf(cls, el: ET.Element, version: str):
         _text = el.text or 0.0
         _qr = _parse_double(_text)
+        if isinstance(_qr, SDFError):
+            return _qr
         return cls(sdf_version=version, qr=_qr)
 
 
-class Rr(Model):
+class Rr(BaseModel):
     def __init__(self, sdf_version: str, rr: float = 0.0):
         self.__version__ = sdf_version
         self.rr = rr
@@ -4144,13 +5342,15 @@ class Rr(Model):
         return el
 
     @classmethod
-    def from_sdf(cls, el: ET.Element, version: str) -> "Rr":
+    def _from_sdf(cls, el: ET.Element, version: str):
         _text = el.text or 0.0
         _rr = _parse_double(_text)
+        if isinstance(_rr, SDFError):
+            return _rr
         return cls(sdf_version=version, rr=_rr)
 
 
-class FluidAddedMass(Model):
+class FluidAddedMass(BaseModel):
     def __init__(
         self,
         sdf_version: str,
@@ -4275,53 +5475,179 @@ class FluidAddedMass(Model):
         return el
 
     @classmethod
-    def from_sdf(cls, el: ET.Element, version: str) -> "FluidAddedMass":
+    def _from_sdf(cls, el: ET.Element, version: str):
         _c_xx = el.find("xx")
-        _xx = Xx.from_sdf(_c_xx, version) if _c_xx is not None else None
+        if _c_xx is not None:
+            _res = Xx._from_sdf(_c_xx, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("xx")
+            _xx = _res
+        else:
+            _xx = None
         _c_xy = el.find("xy")
-        _xy = Xy.from_sdf(_c_xy, version) if _c_xy is not None else None
+        if _c_xy is not None:
+            _res = Xy._from_sdf(_c_xy, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("xy")
+            _xy = _res
+        else:
+            _xy = None
         _c_xz = el.find("xz")
-        _xz = Xz.from_sdf(_c_xz, version) if _c_xz is not None else None
+        if _c_xz is not None:
+            _res = Xz._from_sdf(_c_xz, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("xz")
+            _xz = _res
+        else:
+            _xz = None
         _c_xp = el.find("xp")
-        _xp = Xp.from_sdf(_c_xp, version) if _c_xp is not None else None
+        if _c_xp is not None:
+            _res = Xp._from_sdf(_c_xp, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("xp")
+            _xp = _res
+        else:
+            _xp = None
         _c_xq = el.find("xq")
-        _xq = Xq.from_sdf(_c_xq, version) if _c_xq is not None else None
+        if _c_xq is not None:
+            _res = Xq._from_sdf(_c_xq, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("xq")
+            _xq = _res
+        else:
+            _xq = None
         _c_xr = el.find("xr")
-        _xr = Xr.from_sdf(_c_xr, version) if _c_xr is not None else None
+        if _c_xr is not None:
+            _res = Xr._from_sdf(_c_xr, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("xr")
+            _xr = _res
+        else:
+            _xr = None
         _c_yy = el.find("yy")
-        _yy = Yy.from_sdf(_c_yy, version) if _c_yy is not None else None
+        if _c_yy is not None:
+            _res = Yy._from_sdf(_c_yy, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("yy")
+            _yy = _res
+        else:
+            _yy = None
         _c_yz = el.find("yz")
-        _yz = Yz.from_sdf(_c_yz, version) if _c_yz is not None else None
+        if _c_yz is not None:
+            _res = Yz._from_sdf(_c_yz, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("yz")
+            _yz = _res
+        else:
+            _yz = None
         _c_yp = el.find("yp")
-        _yp = Yp.from_sdf(_c_yp, version) if _c_yp is not None else None
+        if _c_yp is not None:
+            _res = Yp._from_sdf(_c_yp, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("yp")
+            _yp = _res
+        else:
+            _yp = None
         _c_yq = el.find("yq")
-        _yq = Yq.from_sdf(_c_yq, version) if _c_yq is not None else None
+        if _c_yq is not None:
+            _res = Yq._from_sdf(_c_yq, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("yq")
+            _yq = _res
+        else:
+            _yq = None
         _c_yr = el.find("yr")
-        _yr = Yr.from_sdf(_c_yr, version) if _c_yr is not None else None
+        if _c_yr is not None:
+            _res = Yr._from_sdf(_c_yr, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("yr")
+            _yr = _res
+        else:
+            _yr = None
         _c_zz = el.find("zz")
-        _zz = Zz.from_sdf(_c_zz, version) if _c_zz is not None else None
+        if _c_zz is not None:
+            _res = Zz._from_sdf(_c_zz, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("zz")
+            _zz = _res
+        else:
+            _zz = None
         _c_zp = el.find("zp")
-        _zp = Zp.from_sdf(_c_zp, version) if _c_zp is not None else None
+        if _c_zp is not None:
+            _res = Zp._from_sdf(_c_zp, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("zp")
+            _zp = _res
+        else:
+            _zp = None
         _c_zq = el.find("zq")
-        _zq = Zq.from_sdf(_c_zq, version) if _c_zq is not None else None
+        if _c_zq is not None:
+            _res = Zq._from_sdf(_c_zq, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("zq")
+            _zq = _res
+        else:
+            _zq = None
         _c_zr = el.find("zr")
-        _zr = Zr.from_sdf(_c_zr, version) if _c_zr is not None else None
+        if _c_zr is not None:
+            _res = Zr._from_sdf(_c_zr, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("zr")
+            _zr = _res
+        else:
+            _zr = None
         _c_pp = el.find("pp")
-        _pp = Pp.from_sdf(_c_pp, version) if _c_pp is not None else None
+        if _c_pp is not None:
+            _res = Pp._from_sdf(_c_pp, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("pp")
+            _pp = _res
+        else:
+            _pp = None
         _c_pq = el.find("pq")
-        _pq = Pq.from_sdf(_c_pq, version) if _c_pq is not None else None
+        if _c_pq is not None:
+            _res = Pq._from_sdf(_c_pq, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("pq")
+            _pq = _res
+        else:
+            _pq = None
         _c_pr = el.find("pr")
-        _pr = Pr.from_sdf(_c_pr, version) if _c_pr is not None else None
+        if _c_pr is not None:
+            _res = Pr._from_sdf(_c_pr, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("pr")
+            _pr = _res
+        else:
+            _pr = None
         _c_qq = el.find("qq")
-        _qq = Qq.from_sdf(_c_qq, version) if _c_qq is not None else None
+        if _c_qq is not None:
+            _res = Qq._from_sdf(_c_qq, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("qq")
+            _qq = _res
+        else:
+            _qq = None
         _c_qr = el.find("qr")
-        _qr = Qr.from_sdf(_c_qr, version) if _c_qr is not None else None
+        if _c_qr is not None:
+            _res = Qr._from_sdf(_c_qr, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("qr")
+            _qr = _res
+        else:
+            _qr = None
         _c_rr = el.find("rr")
-        _rr = Rr.from_sdf(_c_rr, version) if _c_rr is not None else None
+        if _c_rr is not None:
+            _res = Rr._from_sdf(_c_rr, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("rr")
+            _rr = _res
+        else:
+            _rr = None
         return cls(sdf_version=version, xx=_xx, xy=_xy, xz=_xz, xp=_xp, xq=_xq, xr=_xr, yy=_yy, yz=_yz, yp=_yp, yq=_yq, yr=_yr, zz=_zz, zp=_zp, zq=_zq, zr=_zr, pp=_pp, pq=_pq, pr=_pr, qq=_qq, qr=_qr, rr=_rr)
 
 
-class AutoInertiaParams(Model):
+class AutoInertiaParams(BaseModel):
     def __init__(self, sdf_version: str):
         self.__version__ = sdf_version
 
@@ -4338,11 +5664,11 @@ class AutoInertiaParams(Model):
         return el
 
     @classmethod
-    def from_sdf(cls, el: ET.Element, version: str) -> "AutoInertiaParams":
+    def _from_sdf(cls, el: ET.Element, version: str):
         return cls(sdf_version=version)
 
 
-class Inertial(Model):
+class Inertial(BaseModel):
     def __init__(
         self,
         sdf_version: str,
@@ -4352,8 +5678,8 @@ class Inertial(Model):
         inertia: "Inertia" = None,
         frame: List["Frame"] = None,
         fluid_added_mass: "FluidAddedMass" = None,
-        density: "Density" = None,
-        auto_inertia_params: "AutoInertiaParams" = None
+        auto_inertia_params: "AutoInertiaParams" = None,
+        density: "Density" = None
     ):
         self.__version__ = sdf_version
         self.auto = auto
@@ -4362,20 +5688,22 @@ class Inertial(Model):
         self.inertia = inertia
         self.frame = frame or []
         self.fluid_added_mass = fluid_added_mass
-        self.density = density
         self.auto_inertia_params = auto_inertia_params
+        self.density = density
 
     def to_version(self, target_version: str) -> "Inertial":
         if self.auto is not None and cmp_version(target_version, "1.11") < 0:
             raise ValueError(f"'auto' is not supported in SDF version {target_version} (added in 1.11)")
         if self.frame is not None and cmp_version(target_version, "1.5") < 0:
             raise ValueError(f"'frame' is not supported in SDF version {target_version} (added in 1.5)")
+        if self.frame is not None and cmp_version(target_version, "1.7") >= 0:
+            raise ValueError(f"'frame' is not supported in SDF version {target_version} (removed in 1.7)")
         if self.fluid_added_mass is not None and cmp_version(target_version, "1.10") < 0:
             raise ValueError(f"'fluid_added_mass' is not supported in SDF version {target_version} (added in 1.10)")
-        if self.density is not None and cmp_version(target_version, "1.11") < 0:
-            raise ValueError(f"'density' is not supported in SDF version {target_version} (added in 1.11)")
         if self.auto_inertia_params is not None and cmp_version(target_version, "1.11") < 0:
             raise ValueError(f"'auto_inertia_params' is not supported in SDF version {target_version} (added in 1.11)")
+        if self.density is not None and cmp_version(target_version, "1.11") < 0:
+            raise ValueError(f"'density' is not supported in SDF version {target_version} (added in 1.11)")
         kwargs = {"sdf_version": target_version}
         kwargs["auto"] = self.auto
         kwargs["mass"] = self.mass.to_version(target_version) if self.mass is not None else None
@@ -4383,8 +5711,8 @@ class Inertial(Model):
         kwargs["inertia"] = self.inertia.to_version(target_version) if self.inertia is not None else None
         kwargs["frame"] = [c.to_version(target_version) for c in (self.frame or [])]
         kwargs["fluid_added_mass"] = self.fluid_added_mass.to_version(target_version) if self.fluid_added_mass is not None else None
-        kwargs["density"] = self.density.to_version(target_version) if self.density is not None else None
         kwargs["auto_inertia_params"] = self.auto_inertia_params.to_version(target_version) if self.auto_inertia_params is not None else None
+        kwargs["density"] = self.density.to_version(target_version) if self.density is not None else None
         new_obj = self.__class__(**kwargs)
         return new_obj
 
@@ -4405,43 +5733,86 @@ class Inertial(Model):
             el.append(item.to_sdf(version))
         if self.fluid_added_mass is not None:
             el.append(self.fluid_added_mass.to_sdf(version))
-        if self.density is not None:
-            el.append(self.density.to_sdf(version))
         if self.auto_inertia_params is not None:
             el.append(self.auto_inertia_params.to_sdf(version))
+        if self.density is not None:
+            el.append(self.density.to_sdf(version))
         return el
 
     @classmethod
-    def from_sdf(cls, el: ET.Element, version: str) -> "Inertial":
-        _auto = el.get("auto", False).strip().lower() == 'true'
+    def _from_sdf(cls, el: ET.Element, version: str):
+        _auto = str(el.get("auto", False)).strip().lower() == 'true'
+        if isinstance(_auto, SDFError):
+            return _auto.extend("@auto")
         if _auto is not None and cmp_version(version, "1.11") < 0:
             if _auto != False:
-                raise ValueError(f"'auto' is not supported in SDF version {version} (added in 1.11)")
+                return SDFError(f"'auto' is not supported in SDF version {version} (added in 1.11)")
         _c_mass = el.find("mass")
-        _mass = Mass.from_sdf(_c_mass, version) if _c_mass is not None else None
+        if _c_mass is not None:
+            _res = Mass._from_sdf(_c_mass, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("mass")
+            _mass = _res
+        else:
+            _mass = None
         _c_pose = el.find("pose")
-        _pose = Pose.from_sdf(_c_pose, version) if _c_pose is not None else None
+        if _c_pose is not None:
+            _res = Pose._from_sdf(_c_pose, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("pose")
+            _pose = _res
+        else:
+            _pose = None
         _c_inertia = el.find("inertia")
-        _inertia = Inertia.from_sdf(_c_inertia, version) if _c_inertia is not None else None
-        _frame = [Frame.from_sdf(c, version) for c in el.findall("frame")]
+        if _c_inertia is not None:
+            _res = Inertia._from_sdf(_c_inertia, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("inertia")
+            _inertia = _res
+        else:
+            _inertia = None
+        _frame = []
+        for c in el.findall("frame"):
+            _res = Frame._from_sdf(c, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("frame")
+            _frame.append(_res)
         if _frame and cmp_version(version, "1.5") < 0:
-            raise ValueError(f"'frame' is not supported in SDF version {version} (added in 1.5)")
+            return SDFError(f"'frame' is not supported in SDF version {version} (added in 1.5)")
         _c_fluid_added_mass = el.find("fluid_added_mass")
-        _fluid_added_mass = FluidAddedMass.from_sdf(_c_fluid_added_mass, version) if _c_fluid_added_mass is not None else None
+        if _c_fluid_added_mass is not None:
+            _res = FluidAddedMass._from_sdf(_c_fluid_added_mass, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("fluid_added_mass")
+            _fluid_added_mass = _res
+        else:
+            _fluid_added_mass = None
         if _fluid_added_mass is not None and cmp_version(version, "1.10") < 0:
-            raise ValueError(f"'fluid_added_mass' is not supported in SDF version {version} (added in 1.10)")
-        _c_density = el.find("density")
-        _density = Density.from_sdf(_c_density, version) if _c_density is not None else None
-        if _density is not None and cmp_version(version, "1.11") < 0:
-            raise ValueError(f"'density' is not supported in SDF version {version} (added in 1.11)")
+            return SDFError(f"'fluid_added_mass' is not supported in SDF version {version} (added in 1.10)")
         _c_auto_inertia_params = el.find("auto_inertia_params")
-        _auto_inertia_params = AutoInertiaParams.from_sdf(_c_auto_inertia_params, version) if _c_auto_inertia_params is not None else None
+        if _c_auto_inertia_params is not None:
+            _res = AutoInertiaParams._from_sdf(_c_auto_inertia_params, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("auto_inertia_params")
+            _auto_inertia_params = _res
+        else:
+            _auto_inertia_params = None
         if _auto_inertia_params is not None and cmp_version(version, "1.11") < 0:
-            raise ValueError(f"'auto_inertia_params' is not supported in SDF version {version} (added in 1.11)")
-        return cls(sdf_version=version, auto=_auto, mass=_mass, pose=_pose, inertia=_inertia, frame=_frame, fluid_added_mass=_fluid_added_mass, density=_density, auto_inertia_params=_auto_inertia_params)
+            return SDFError(f"'auto_inertia_params' is not supported in SDF version {version} (added in 1.11)")
+        _c_density = el.find("density")
+        if _c_density is not None:
+            _res = Density._from_sdf(_c_density, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("density")
+            _density = _res
+        else:
+            _density = None
+        if _density is not None and cmp_version(version, "1.11") < 0:
+            return SDFError(f"'density' is not supported in SDF version {version} (added in 1.11)")
+        return cls(sdf_version=version, auto=_auto, mass=_mass, pose=_pose, inertia=_inertia, frame=_frame, fluid_added_mass=_fluid_added_mass, auto_inertia_params=_auto_inertia_params, density=_density)
 
 
-class Size(Model):
+class Size(BaseModel):
     def __init__(self, sdf_version: str, size: Vector3 = None):
         self.__version__ = sdf_version
         if size is None:
@@ -4459,18 +5830,24 @@ class Size(Model):
             return self.to_version(version).to_sdf()
         version = version or self.__version__
         el = ET.Element("size")
+        if self.size is None:
+            raise ValueError(f"'size' is required in SDF version {version}")
         if self.size is not None:
             el.text = self.size.to_sdf()
         return el
 
     @classmethod
-    def from_sdf(cls, el: ET.Element, version: str) -> "Size":
+    def _from_sdf(cls, el: ET.Element, version: str):
+        if el.text is None:
+            return SDFError(f"'size' is required in SDF version {version}")
         _text = el.text or "1 1 1"
-        _size = Vector3.from_sdf(_text)
+        _size = Vector3._from_sdf(_text, version)
+        if isinstance(_size, SDFError):
+            return _size
         return cls(sdf_version=version, size=_size)
 
 
-class Box(Model):
+class Box(BaseModel):
     def __init__(self, sdf_version: str, size: "Size" = None):
         self.__version__ = sdf_version
         self.size = size
@@ -4486,18 +5863,28 @@ class Box(Model):
             return self.to_version(version).to_sdf()
         version = version or self.__version__
         el = ET.Element("box")
+        if self.size is None:
+            raise ValueError(f"'size' is required in SDF version {version}")
         if self.size is not None:
             el.append(self.size.to_sdf(version))
         return el
 
     @classmethod
-    def from_sdf(cls, el: ET.Element, version: str) -> "Box":
+    def _from_sdf(cls, el: ET.Element, version: str):
         _c_size = el.find("size")
-        _size = Size.from_sdf(_c_size, version) if _c_size is not None else None
+        if _c_size is not None:
+            _res = Size._from_sdf(_c_size, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("size")
+            _size = _res
+        else:
+            _size = None
+        if _size is None:
+            return SDFError(f"'size' is required in SDF version {version}")
         return cls(sdf_version=version, size=_size)
 
 
-class Radius(Model):
+class Radius(BaseModel):
     def __init__(self, sdf_version: str, radius: float = 1):
         self.__version__ = sdf_version
         self.radius = radius
@@ -4513,18 +5900,24 @@ class Radius(Model):
             return self.to_version(version).to_sdf()
         version = version or self.__version__
         el = ET.Element("radius")
+        if self.radius is None:
+            raise ValueError(f"'radius' is required in SDF version {version}")
         if self.radius is not None:
             el.text = str(self.radius)
         return el
 
     @classmethod
-    def from_sdf(cls, el: ET.Element, version: str) -> "Radius":
+    def _from_sdf(cls, el: ET.Element, version: str):
+        if el.text is None:
+            return SDFError(f"'radius' is required in SDF version {version}")
         _text = el.text or 1
         _radius = _parse_double(_text)
+        if isinstance(_radius, SDFError):
+            return _radius
         return cls(sdf_version=version, radius=_radius)
 
 
-class Sphere(Model):
+class Sphere(BaseModel):
     def __init__(self, sdf_version: str, radius: "Radius" = None):
         self.__version__ = sdf_version
         self.radius = radius
@@ -4540,18 +5933,28 @@ class Sphere(Model):
             return self.to_version(version).to_sdf()
         version = version or self.__version__
         el = ET.Element("sphere")
+        if self.radius is None:
+            raise ValueError(f"'radius' is required in SDF version {version}")
         if self.radius is not None:
             el.append(self.radius.to_sdf(version))
         return el
 
     @classmethod
-    def from_sdf(cls, el: ET.Element, version: str) -> "Sphere":
+    def _from_sdf(cls, el: ET.Element, version: str):
         _c_radius = el.find("radius")
-        _radius = Radius.from_sdf(_c_radius, version) if _c_radius is not None else None
+        if _c_radius is not None:
+            _res = Radius._from_sdf(_c_radius, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("radius")
+            _radius = _res
+        else:
+            _radius = None
+        if _radius is None:
+            return SDFError(f"'radius' is required in SDF version {version}")
         return cls(sdf_version=version, radius=_radius)
 
 
-class Length(Model):
+class Length(BaseModel):
     def __init__(self, sdf_version: str, length: float = 1):
         self.__version__ = sdf_version
         self.length = length
@@ -4567,18 +5970,24 @@ class Length(Model):
             return self.to_version(version).to_sdf()
         version = version or self.__version__
         el = ET.Element("length")
+        if self.length is None:
+            raise ValueError(f"'length' is required in SDF version {version}")
         if self.length is not None:
             el.text = str(self.length)
         return el
 
     @classmethod
-    def from_sdf(cls, el: ET.Element, version: str) -> "Length":
+    def _from_sdf(cls, el: ET.Element, version: str):
+        if el.text is None:
+            return SDFError(f"'length' is required in SDF version {version}")
         _text = el.text or 1
         _length = _parse_double(_text)
+        if isinstance(_length, SDFError):
+            return _length
         return cls(sdf_version=version, length=_length)
 
 
-class Cylinder(Model):
+class Cylinder(BaseModel):
     def __init__(self, sdf_version: str, radius: "Radius" = None, length: "Length" = None):
         self.__version__ = sdf_version
         self.radius = radius
@@ -4596,22 +6005,42 @@ class Cylinder(Model):
             return self.to_version(version).to_sdf()
         version = version or self.__version__
         el = ET.Element("cylinder")
+        if self.radius is None:
+            raise ValueError(f"'radius' is required in SDF version {version}")
         if self.radius is not None:
             el.append(self.radius.to_sdf(version))
+        if self.length is None:
+            raise ValueError(f"'length' is required in SDF version {version}")
         if self.length is not None:
             el.append(self.length.to_sdf(version))
         return el
 
     @classmethod
-    def from_sdf(cls, el: ET.Element, version: str) -> "Cylinder":
+    def _from_sdf(cls, el: ET.Element, version: str):
         _c_radius = el.find("radius")
-        _radius = Radius.from_sdf(_c_radius, version) if _c_radius is not None else None
+        if _c_radius is not None:
+            _res = Radius._from_sdf(_c_radius, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("radius")
+            _radius = _res
+        else:
+            _radius = None
+        if _radius is None:
+            return SDFError(f"'radius' is required in SDF version {version}")
         _c_length = el.find("length")
-        _length = Length.from_sdf(_c_length, version) if _c_length is not None else None
+        if _c_length is not None:
+            _res = Length._from_sdf(_c_length, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("length")
+            _length = _res
+        else:
+            _length = None
+        if _length is None:
+            return SDFError(f"'length' is required in SDF version {version}")
         return cls(sdf_version=version, radius=_radius, length=_length)
 
 
-class Uri(Model):
+class Uri(BaseModel):
     def __init__(self, sdf_version: str, uri: str = "__default__"):
         self.__version__ = sdf_version
         self.uri = uri
@@ -4627,18 +6056,24 @@ class Uri(Model):
             return self.to_version(version).to_sdf()
         version = version or self.__version__
         el = ET.Element("uri")
+        if self.uri is None:
+            raise ValueError(f"'uri' is required in SDF version {version}")
         if self.uri is not None:
             el.text = self.uri
         return el
 
     @classmethod
-    def from_sdf(cls, el: ET.Element, version: str) -> "Uri":
+    def _from_sdf(cls, el: ET.Element, version: str):
+        if el.text is None:
+            return SDFError(f"'uri' is required in SDF version {version}")
         _text = el.text or "__default__"
         _uri = _text
+        if isinstance(_uri, SDFError):
+            return _uri
         return cls(sdf_version=version, uri=_uri)
 
 
-class Center(Model):
+class Center(BaseModel):
     def __init__(self, sdf_version: str, center: bool = False):
         self.__version__ = sdf_version
         self.center = center
@@ -4659,13 +6094,15 @@ class Center(Model):
         return el
 
     @classmethod
-    def from_sdf(cls, el: ET.Element, version: str) -> "Center":
+    def _from_sdf(cls, el: ET.Element, version: str):
         _text = el.text or False
-        _center = _text.strip().lower() == 'true'
+        _center = str(_text).strip().lower() == 'true'
+        if isinstance(_center, SDFError):
+            return _center
         return cls(sdf_version=version, center=_center)
 
 
-class Submesh(Model):
+class Submesh(BaseModel):
     def __init__(self, sdf_version: str, name: "Name" = None, center: "Center" = None):
         self.__version__ = sdf_version
         self.name = name
@@ -4683,6 +6120,8 @@ class Submesh(Model):
             return self.to_version(version).to_sdf()
         version = version or self.__version__
         el = ET.Element("submesh")
+        if self.name is None:
+            raise ValueError(f"'name' is required in SDF version {version}")
         if self.name is not None:
             el.append(self.name.to_sdf(version))
         if self.center is not None:
@@ -4690,15 +6129,29 @@ class Submesh(Model):
         return el
 
     @classmethod
-    def from_sdf(cls, el: ET.Element, version: str) -> "Submesh":
+    def _from_sdf(cls, el: ET.Element, version: str):
         _c_name = el.find("name")
-        _name = Name.from_sdf(_c_name, version) if _c_name is not None else None
+        if _c_name is not None:
+            _res = Name._from_sdf(_c_name, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("name")
+            _name = _res
+        else:
+            _name = None
+        if _name is None:
+            return SDFError(f"'name' is required in SDF version {version}")
         _c_center = el.find("center")
-        _center = Center.from_sdf(_c_center, version) if _c_center is not None else None
+        if _c_center is not None:
+            _res = Center._from_sdf(_c_center, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("center")
+            _center = _res
+        else:
+            _center = None
         return cls(sdf_version=version, name=_name, center=_center)
 
 
-class Scale(Model):
+class Scale(BaseModel):
     def __init__(self, sdf_version: str, scale: Vector3 = None):
         self.__version__ = sdf_version
         if scale is None:
@@ -4721,13 +6174,15 @@ class Scale(Model):
         return el
 
     @classmethod
-    def from_sdf(cls, el: ET.Element, version: str) -> "Scale":
+    def _from_sdf(cls, el: ET.Element, version: str):
         _text = el.text or "1 1 1"
-        _scale = Vector3.from_sdf(_text)
+        _scale = Vector3._from_sdf(_text, version)
+        if isinstance(_scale, SDFError):
+            return _scale
         return cls(sdf_version=version, scale=_scale)
 
 
-class MaxConvexHulls(Model):
+class MaxConvexHulls(BaseModel):
     def __init__(self, sdf_version: str, max_convex_hulls: int = 16):
         self.__version__ = sdf_version
         self.max_convex_hulls = max_convex_hulls
@@ -4748,13 +6203,15 @@ class MaxConvexHulls(Model):
         return el
 
     @classmethod
-    def from_sdf(cls, el: ET.Element, version: str) -> "MaxConvexHulls":
+    def _from_sdf(cls, el: ET.Element, version: str):
         _text = el.text or 16
         _max_convex_hulls = _parse_uint32(_text)
+        if isinstance(_max_convex_hulls, SDFError):
+            return _max_convex_hulls
         return cls(sdf_version=version, max_convex_hulls=_max_convex_hulls)
 
 
-class VoxelResolution(Model):
+class VoxelResolution(BaseModel):
     def __init__(self, sdf_version: str, voxel_resolution: int = 200000):
         self.__version__ = sdf_version
         self.voxel_resolution = voxel_resolution
@@ -4775,13 +6232,15 @@ class VoxelResolution(Model):
         return el
 
     @classmethod
-    def from_sdf(cls, el: ET.Element, version: str) -> "VoxelResolution":
+    def _from_sdf(cls, el: ET.Element, version: str):
         _text = el.text or 200000
         _voxel_resolution = _parse_uint32(_text)
+        if isinstance(_voxel_resolution, SDFError):
+            return _voxel_resolution
         return cls(sdf_version=version, voxel_resolution=_voxel_resolution)
 
 
-class ConvexDecomposition(Model):
+class ConvexDecomposition(BaseModel):
     def __init__(
         self,
         sdf_version: str,
@@ -4811,15 +6270,27 @@ class ConvexDecomposition(Model):
         return el
 
     @classmethod
-    def from_sdf(cls, el: ET.Element, version: str) -> "ConvexDecomposition":
+    def _from_sdf(cls, el: ET.Element, version: str):
         _c_max_convex_hulls = el.find("max_convex_hulls")
-        _max_convex_hulls = MaxConvexHulls.from_sdf(_c_max_convex_hulls, version) if _c_max_convex_hulls is not None else None
+        if _c_max_convex_hulls is not None:
+            _res = MaxConvexHulls._from_sdf(_c_max_convex_hulls, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("max_convex_hulls")
+            _max_convex_hulls = _res
+        else:
+            _max_convex_hulls = None
         _c_voxel_resolution = el.find("voxel_resolution")
-        _voxel_resolution = VoxelResolution.from_sdf(_c_voxel_resolution, version) if _c_voxel_resolution is not None else None
+        if _c_voxel_resolution is not None:
+            _res = VoxelResolution._from_sdf(_c_voxel_resolution, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("voxel_resolution")
+            _voxel_resolution = _res
+        else:
+            _voxel_resolution = None
         return cls(sdf_version=version, max_convex_hulls=_max_convex_hulls, voxel_resolution=_voxel_resolution)
 
 
-class Mesh(Model):
+class Mesh(BaseModel):
     def __init__(
         self,
         sdf_version: str,
@@ -4857,6 +6328,8 @@ class Mesh(Model):
         el = ET.Element("mesh")
         if self.optimization is not None:
             el.set("optimization", self.optimization)
+        if self.uri is None:
+            raise ValueError(f"'uri' is required in SDF version {version}")
         if self.uri is not None:
             el.append(self.uri.to_sdf(version))
         if self.submesh is not None:
@@ -4868,25 +6341,53 @@ class Mesh(Model):
         return el
 
     @classmethod
-    def from_sdf(cls, el: ET.Element, version: str) -> "Mesh":
+    def _from_sdf(cls, el: ET.Element, version: str):
         _optimization = el.get("optimization", "")
+        if isinstance(_optimization, SDFError):
+            return _optimization.extend("@optimization")
         if _optimization is not None and cmp_version(version, "1.11") < 0:
             if _optimization != "":
-                raise ValueError(f"'optimization' is not supported in SDF version {version} (added in 1.11)")
+                return SDFError(f"'optimization' is not supported in SDF version {version} (added in 1.11)")
         _c_uri = el.find("uri")
-        _uri = Uri.from_sdf(_c_uri, version) if _c_uri is not None else None
+        if _c_uri is not None:
+            _res = Uri._from_sdf(_c_uri, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("uri")
+            _uri = _res
+        else:
+            _uri = None
+        if _uri is None:
+            return SDFError(f"'uri' is required in SDF version {version}")
         _c_submesh = el.find("submesh")
-        _submesh = Submesh.from_sdf(_c_submesh, version) if _c_submesh is not None else None
+        if _c_submesh is not None:
+            _res = Submesh._from_sdf(_c_submesh, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("submesh")
+            _submesh = _res
+        else:
+            _submesh = None
         _c_scale = el.find("scale")
-        _scale = Scale.from_sdf(_c_scale, version) if _c_scale is not None else None
+        if _c_scale is not None:
+            _res = Scale._from_sdf(_c_scale, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("scale")
+            _scale = _res
+        else:
+            _scale = None
         _c_convex_decomposition = el.find("convex_decomposition")
-        _convex_decomposition = ConvexDecomposition.from_sdf(_c_convex_decomposition, version) if _c_convex_decomposition is not None else None
+        if _c_convex_decomposition is not None:
+            _res = ConvexDecomposition._from_sdf(_c_convex_decomposition, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("convex_decomposition")
+            _convex_decomposition = _res
+        else:
+            _convex_decomposition = None
         if _convex_decomposition is not None and cmp_version(version, "1.11") < 0:
-            raise ValueError(f"'convex_decomposition' is not supported in SDF version {version} (added in 1.11)")
+            return SDFError(f"'convex_decomposition' is not supported in SDF version {version} (added in 1.11)")
         return cls(sdf_version=version, optimization=_optimization, uri=_uri, submesh=_submesh, scale=_scale, convex_decomposition=_convex_decomposition)
 
 
-class Normal(Model):
+class Normal(BaseModel):
     def __init__(self, sdf_version: str, normal: Vector3 = None):
         self.__version__ = sdf_version
         if normal is None:
@@ -4904,18 +6405,24 @@ class Normal(Model):
             return self.to_version(version).to_sdf()
         version = version or self.__version__
         el = ET.Element("normal")
+        if self.normal is None:
+            raise ValueError(f"'normal' is required in SDF version {version}")
         if self.normal is not None:
             el.text = self.normal.to_sdf()
         return el
 
     @classmethod
-    def from_sdf(cls, el: ET.Element, version: str) -> "Normal":
+    def _from_sdf(cls, el: ET.Element, version: str):
+        if el.text is None:
+            return SDFError(f"'normal' is required in SDF version {version}")
         _text = el.text or "0 0 1"
-        _normal = Vector3.from_sdf(_text)
+        _normal = Vector3._from_sdf(_text, version)
+        if isinstance(_normal, SDFError):
+            return _normal
         return cls(sdf_version=version, normal=_normal)
 
 
-class Plane(Model):
+class Plane(BaseModel):
     def __init__(self, sdf_version: str, normal: "Normal" = None, size: "Size" = None):
         self.__version__ = sdf_version
         self.normal = normal
@@ -4933,22 +6440,42 @@ class Plane(Model):
             return self.to_version(version).to_sdf()
         version = version or self.__version__
         el = ET.Element("plane")
+        if self.normal is None:
+            raise ValueError(f"'normal' is required in SDF version {version}")
         if self.normal is not None:
             el.append(self.normal.to_sdf(version))
+        if self.size is None:
+            raise ValueError(f"'size' is required in SDF version {version}")
         if self.size is not None:
             el.append(self.size.to_sdf(version))
         return el
 
     @classmethod
-    def from_sdf(cls, el: ET.Element, version: str) -> "Plane":
+    def _from_sdf(cls, el: ET.Element, version: str):
         _c_normal = el.find("normal")
-        _normal = Normal.from_sdf(_c_normal, version) if _c_normal is not None else None
+        if _c_normal is not None:
+            _res = Normal._from_sdf(_c_normal, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("normal")
+            _normal = _res
+        else:
+            _normal = None
+        if _normal is None:
+            return SDFError(f"'normal' is required in SDF version {version}")
         _c_size = el.find("size")
-        _size = Size.from_sdf(_c_size, version) if _c_size is not None else None
+        if _c_size is not None:
+            _res = Size._from_sdf(_c_size, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("size")
+            _size = _res
+        else:
+            _size = None
+        if _size is None:
+            return SDFError(f"'size' is required in SDF version {version}")
         return cls(sdf_version=version, normal=_normal, size=_size)
 
 
-class Threshold(Model):
+class Threshold(BaseModel):
     def __init__(self, sdf_version: str, threshold: int = 200):
         self.__version__ = sdf_version
         self.threshold = threshold
@@ -4964,18 +6491,24 @@ class Threshold(Model):
             return self.to_version(version).to_sdf()
         version = version or self.__version__
         el = ET.Element("threshold")
+        if self.threshold is None:
+            raise ValueError(f"'threshold' is required in SDF version {version}")
         if self.threshold is not None:
             el.text = str(self.threshold)
         return el
 
     @classmethod
-    def from_sdf(cls, el: ET.Element, version: str) -> "Threshold":
+    def _from_sdf(cls, el: ET.Element, version: str):
+        if el.text is None:
+            return SDFError(f"'threshold' is required in SDF version {version}")
         _text = el.text or 200
         _threshold = _parse_int32(_text)
+        if isinstance(_threshold, SDFError):
+            return _threshold
         return cls(sdf_version=version, threshold=_threshold)
 
 
-class Height(Model):
+class Height(BaseModel):
     def __init__(self, sdf_version: str, height: float = 1):
         self.__version__ = sdf_version
         self.height = height
@@ -4991,18 +6524,24 @@ class Height(Model):
             return self.to_version(version).to_sdf()
         version = version or self.__version__
         el = ET.Element("height")
+        if self.height is None:
+            raise ValueError(f"'height' is required in SDF version {version}")
         if self.height is not None:
             el.text = str(self.height)
         return el
 
     @classmethod
-    def from_sdf(cls, el: ET.Element, version: str) -> "Height":
+    def _from_sdf(cls, el: ET.Element, version: str):
+        if el.text is None:
+            return SDFError(f"'height' is required in SDF version {version}")
         _text = el.text or 1
         _height = _parse_double(_text)
+        if isinstance(_height, SDFError):
+            return _height
         return cls(sdf_version=version, height=_height)
 
 
-class Granularity(Model):
+class Granularity(BaseModel):
     def __init__(self, sdf_version: str, granularity: int = 1):
         self.__version__ = sdf_version
         self.granularity = granularity
@@ -5018,18 +6557,24 @@ class Granularity(Model):
             return self.to_version(version).to_sdf()
         version = version or self.__version__
         el = ET.Element("granularity")
+        if self.granularity is None:
+            raise ValueError(f"'granularity' is required in SDF version {version}")
         if self.granularity is not None:
             el.text = str(self.granularity)
         return el
 
     @classmethod
-    def from_sdf(cls, el: ET.Element, version: str) -> "Granularity":
+    def _from_sdf(cls, el: ET.Element, version: str):
+        if el.text is None:
+            return SDFError(f"'granularity' is required in SDF version {version}")
         _text = el.text or 1
         _granularity = _parse_int32(_text)
+        if isinstance(_granularity, SDFError):
+            return _granularity
         return cls(sdf_version=version, granularity=_granularity)
 
 
-class Image(Model):
+class Image(BaseModel):
     def __init__(
         self,
         sdf_version: str,
@@ -5061,34 +6606,84 @@ class Image(Model):
             return self.to_version(version).to_sdf()
         version = version or self.__version__
         el = ET.Element("image")
+        if self.uri is None:
+            raise ValueError(f"'uri' is required in SDF version {version}")
         if self.uri is not None:
             el.append(self.uri.to_sdf(version))
+        if self.scale is None:
+            raise ValueError(f"'scale' is required in SDF version {version}")
         if self.scale is not None:
             el.append(self.scale.to_sdf(version))
+        if self.threshold is None:
+            raise ValueError(f"'threshold' is required in SDF version {version}")
         if self.threshold is not None:
             el.append(self.threshold.to_sdf(version))
+        if self.height is None:
+            raise ValueError(f"'height' is required in SDF version {version}")
         if self.height is not None:
             el.append(self.height.to_sdf(version))
+        if self.granularity is None:
+            raise ValueError(f"'granularity' is required in SDF version {version}")
         if self.granularity is not None:
             el.append(self.granularity.to_sdf(version))
         return el
 
     @classmethod
-    def from_sdf(cls, el: ET.Element, version: str) -> "Image":
+    def _from_sdf(cls, el: ET.Element, version: str):
         _c_uri = el.find("uri")
-        _uri = Uri.from_sdf(_c_uri, version) if _c_uri is not None else None
+        if _c_uri is not None:
+            _res = Uri._from_sdf(_c_uri, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("uri")
+            _uri = _res
+        else:
+            _uri = None
+        if _uri is None:
+            return SDFError(f"'uri' is required in SDF version {version}")
         _c_scale = el.find("scale")
-        _scale = Scale.from_sdf(_c_scale, version) if _c_scale is not None else None
+        if _c_scale is not None:
+            _res = Scale._from_sdf(_c_scale, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("scale")
+            _scale = _res
+        else:
+            _scale = None
+        if _scale is None:
+            return SDFError(f"'scale' is required in SDF version {version}")
         _c_threshold = el.find("threshold")
-        _threshold = Threshold.from_sdf(_c_threshold, version) if _c_threshold is not None else None
+        if _c_threshold is not None:
+            _res = Threshold._from_sdf(_c_threshold, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("threshold")
+            _threshold = _res
+        else:
+            _threshold = None
+        if _threshold is None:
+            return SDFError(f"'threshold' is required in SDF version {version}")
         _c_height = el.find("height")
-        _height = Height.from_sdf(_c_height, version) if _c_height is not None else None
+        if _c_height is not None:
+            _res = Height._from_sdf(_c_height, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("height")
+            _height = _res
+        else:
+            _height = None
+        if _height is None:
+            return SDFError(f"'height' is required in SDF version {version}")
         _c_granularity = el.find("granularity")
-        _granularity = Granularity.from_sdf(_c_granularity, version) if _c_granularity is not None else None
+        if _c_granularity is not None:
+            _res = Granularity._from_sdf(_c_granularity, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("granularity")
+            _granularity = _res
+        else:
+            _granularity = None
+        if _granularity is None:
+            return SDFError(f"'granularity' is required in SDF version {version}")
         return cls(sdf_version=version, uri=_uri, scale=_scale, threshold=_threshold, height=_height, granularity=_granularity)
 
 
-class Pos(Model):
+class Pos(BaseModel):
     def __init__(self, sdf_version: str, pos: Vector3 = None):
         self.__version__ = sdf_version
         if pos is None:
@@ -5111,13 +6706,15 @@ class Pos(Model):
         return el
 
     @classmethod
-    def from_sdf(cls, el: ET.Element, version: str) -> "Pos":
+    def _from_sdf(cls, el: ET.Element, version: str):
         _text = el.text or "0 0 0"
-        _pos = Vector3.from_sdf(_text)
+        _pos = Vector3._from_sdf(_text, version)
+        if isinstance(_pos, SDFError):
+            return _pos
         return cls(sdf_version=version, pos=_pos)
 
 
-class Texture(Model):
+class Texture(BaseModel):
     def __init__(
         self,
         sdf_version: str,
@@ -5143,26 +6740,56 @@ class Texture(Model):
             return self.to_version(version).to_sdf()
         version = version or self.__version__
         el = ET.Element("texture")
+        if self.size is None:
+            raise ValueError(f"'size' is required in SDF version {version}")
         if self.size is not None:
             el.append(self.size.to_sdf(version))
+        if self.diffuse is None:
+            raise ValueError(f"'diffuse' is required in SDF version {version}")
         if self.diffuse is not None:
             el.append(self.diffuse.to_sdf(version))
+        if self.normal is None:
+            raise ValueError(f"'normal' is required in SDF version {version}")
         if self.normal is not None:
             el.append(self.normal.to_sdf(version))
         return el
 
     @classmethod
-    def from_sdf(cls, el: ET.Element, version: str) -> "Texture":
+    def _from_sdf(cls, el: ET.Element, version: str):
         _c_size = el.find("size")
-        _size = Size.from_sdf(_c_size, version) if _c_size is not None else None
+        if _c_size is not None:
+            _res = Size._from_sdf(_c_size, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("size")
+            _size = _res
+        else:
+            _size = None
+        if _size is None:
+            return SDFError(f"'size' is required in SDF version {version}")
         _c_diffuse = el.find("diffuse")
-        _diffuse = Diffuse.from_sdf(_c_diffuse, version) if _c_diffuse is not None else None
+        if _c_diffuse is not None:
+            _res = Diffuse._from_sdf(_c_diffuse, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("diffuse")
+            _diffuse = _res
+        else:
+            _diffuse = None
+        if _diffuse is None:
+            return SDFError(f"'diffuse' is required in SDF version {version}")
         _c_normal = el.find("normal")
-        _normal = Normal.from_sdf(_c_normal, version) if _c_normal is not None else None
+        if _c_normal is not None:
+            _res = Normal._from_sdf(_c_normal, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("normal")
+            _normal = _res
+        else:
+            _normal = None
+        if _normal is None:
+            return SDFError(f"'normal' is required in SDF version {version}")
         return cls(sdf_version=version, size=_size, diffuse=_diffuse, normal=_normal)
 
 
-class MinHeight(Model):
+class MinHeight(BaseModel):
     def __init__(self, sdf_version: str, min_height: float = 0):
         self.__version__ = sdf_version
         self.min_height = min_height
@@ -5178,18 +6805,24 @@ class MinHeight(Model):
             return self.to_version(version).to_sdf()
         version = version or self.__version__
         el = ET.Element("min_height")
+        if self.min_height is None:
+            raise ValueError(f"'min_height' is required in SDF version {version}")
         if self.min_height is not None:
             el.text = str(self.min_height)
         return el
 
     @classmethod
-    def from_sdf(cls, el: ET.Element, version: str) -> "MinHeight":
+    def _from_sdf(cls, el: ET.Element, version: str):
+        if el.text is None:
+            return SDFError(f"'min_height' is required in SDF version {version}")
         _text = el.text or 0
         _min_height = _parse_double(_text)
+        if isinstance(_min_height, SDFError):
+            return _min_height
         return cls(sdf_version=version, min_height=_min_height)
 
 
-class FadeDist(Model):
+class FadeDist(BaseModel):
     def __init__(self, sdf_version: str, fade_dist: float = 0):
         self.__version__ = sdf_version
         self.fade_dist = fade_dist
@@ -5205,18 +6838,24 @@ class FadeDist(Model):
             return self.to_version(version).to_sdf()
         version = version or self.__version__
         el = ET.Element("fade_dist")
+        if self.fade_dist is None:
+            raise ValueError(f"'fade_dist' is required in SDF version {version}")
         if self.fade_dist is not None:
             el.text = str(self.fade_dist)
         return el
 
     @classmethod
-    def from_sdf(cls, el: ET.Element, version: str) -> "FadeDist":
+    def _from_sdf(cls, el: ET.Element, version: str):
+        if el.text is None:
+            return SDFError(f"'fade_dist' is required in SDF version {version}")
         _text = el.text or 0
         _fade_dist = _parse_double(_text)
+        if isinstance(_fade_dist, SDFError):
+            return _fade_dist
         return cls(sdf_version=version, fade_dist=_fade_dist)
 
 
-class Blend(Model):
+class Blend(BaseModel):
     def __init__(
         self,
         sdf_version: str,
@@ -5239,22 +6878,42 @@ class Blend(Model):
             return self.to_version(version).to_sdf()
         version = version or self.__version__
         el = ET.Element("blend")
+        if self.min_height is None:
+            raise ValueError(f"'min_height' is required in SDF version {version}")
         if self.min_height is not None:
             el.append(self.min_height.to_sdf(version))
+        if self.fade_dist is None:
+            raise ValueError(f"'fade_dist' is required in SDF version {version}")
         if self.fade_dist is not None:
             el.append(self.fade_dist.to_sdf(version))
         return el
 
     @classmethod
-    def from_sdf(cls, el: ET.Element, version: str) -> "Blend":
+    def _from_sdf(cls, el: ET.Element, version: str):
         _c_min_height = el.find("min_height")
-        _min_height = MinHeight.from_sdf(_c_min_height, version) if _c_min_height is not None else None
+        if _c_min_height is not None:
+            _res = MinHeight._from_sdf(_c_min_height, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("min_height")
+            _min_height = _res
+        else:
+            _min_height = None
+        if _min_height is None:
+            return SDFError(f"'min_height' is required in SDF version {version}")
         _c_fade_dist = el.find("fade_dist")
-        _fade_dist = FadeDist.from_sdf(_c_fade_dist, version) if _c_fade_dist is not None else None
+        if _c_fade_dist is not None:
+            _res = FadeDist._from_sdf(_c_fade_dist, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("fade_dist")
+            _fade_dist = _res
+        else:
+            _fade_dist = None
+        if _fade_dist is None:
+            return SDFError(f"'fade_dist' is required in SDF version {version}")
         return cls(sdf_version=version, min_height=_min_height, fade_dist=_fade_dist)
 
 
-class UseTerrainPaging(Model):
+class UseTerrainPaging(BaseModel):
     def __init__(self, sdf_version: str, use_terrain_paging: bool = False):
         self.__version__ = sdf_version
         self.use_terrain_paging = use_terrain_paging
@@ -5277,16 +6936,18 @@ class UseTerrainPaging(Model):
         return el
 
     @classmethod
-    def from_sdf(cls, el: ET.Element, version: str) -> "UseTerrainPaging":
+    def _from_sdf(cls, el: ET.Element, version: str):
         _text = el.text or False
-        _use_terrain_paging = _text.strip().lower() == 'true'
+        _use_terrain_paging = str(_text).strip().lower() == 'true'
+        if isinstance(_use_terrain_paging, SDFError):
+            return _use_terrain_paging
         if _use_terrain_paging is not None and cmp_version(version, "1.4") < 0:
             if _use_terrain_paging != False:
-                raise ValueError(f"'use_terrain_paging' is not supported in SDF version {version} (added in 1.4)")
+                return SDFError(f"'use_terrain_paging' is not supported in SDF version {version} (added in 1.4)")
         return cls(sdf_version=version, use_terrain_paging=_use_terrain_paging)
 
 
-class Sampling(Model):
+class Sampling(BaseModel):
     def __init__(self, sdf_version: str, sampling: int = 2):
         self.__version__ = sdf_version
         self.sampling = sampling
@@ -5309,16 +6970,18 @@ class Sampling(Model):
         return el
 
     @classmethod
-    def from_sdf(cls, el: ET.Element, version: str) -> "Sampling":
+    def _from_sdf(cls, el: ET.Element, version: str):
         _text = el.text or 2
         _sampling = _parse_uint32(_text)
+        if isinstance(_sampling, SDFError):
+            return _sampling
         if _sampling is not None and cmp_version(version, "1.6") < 0:
             if _sampling != 2:
-                raise ValueError(f"'sampling' is not supported in SDF version {version} (added in 1.6)")
+                return SDFError(f"'sampling' is not supported in SDF version {version} (added in 1.6)")
         return cls(sdf_version=version, sampling=_sampling)
 
 
-class Heightmap(Model):
+class Heightmap(BaseModel):
     def __init__(
         self,
         sdf_version: str,
@@ -5360,8 +7023,13 @@ class Heightmap(Model):
             return self.to_version(version).to_sdf()
         version = version or self.__version__
         el = ET.Element("heightmap")
+        if self.uri is None:
+            raise ValueError(f"'uri' is required in SDF version {version}")
         if self.uri is not None:
             el.append(self.uri.to_sdf(version))
+        if cmp_version(version, "1.12") < 0:
+            if self.size is None:
+                raise ValueError(f"'size' is required in SDF version {version}")
         if self.size is not None:
             el.append(self.size.to_sdf(version))
         if self.pos is not None:
@@ -5377,27 +7045,72 @@ class Heightmap(Model):
         return el
 
     @classmethod
-    def from_sdf(cls, el: ET.Element, version: str) -> "Heightmap":
+    def _from_sdf(cls, el: ET.Element, version: str):
         _c_uri = el.find("uri")
-        _uri = Uri.from_sdf(_c_uri, version) if _c_uri is not None else None
+        if _c_uri is not None:
+            _res = Uri._from_sdf(_c_uri, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("uri")
+            _uri = _res
+        else:
+            _uri = None
+        if _uri is None:
+            return SDFError(f"'uri' is required in SDF version {version}")
         _c_size = el.find("size")
-        _size = Size.from_sdf(_c_size, version) if _c_size is not None else None
+        if _c_size is not None:
+            _res = Size._from_sdf(_c_size, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("size")
+            _size = _res
+        else:
+            _size = None
+        if cmp_version(version, "1.12") < 0:
+            if _size is None:
+                return SDFError(f"'size' is required in SDF version {version}")
         _c_pos = el.find("pos")
-        _pos = Pos.from_sdf(_c_pos, version) if _c_pos is not None else None
-        _texture = [Texture.from_sdf(c, version) for c in el.findall("texture")]
-        _blend = [Blend.from_sdf(c, version) for c in el.findall("blend")]
+        if _c_pos is not None:
+            _res = Pos._from_sdf(_c_pos, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("pos")
+            _pos = _res
+        else:
+            _pos = None
+        _texture = []
+        for c in el.findall("texture"):
+            _res = Texture._from_sdf(c, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("texture")
+            _texture.append(_res)
+        _blend = []
+        for c in el.findall("blend"):
+            _res = Blend._from_sdf(c, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("blend")
+            _blend.append(_res)
         _c_use_terrain_paging = el.find("use_terrain_paging")
-        _use_terrain_paging = UseTerrainPaging.from_sdf(_c_use_terrain_paging, version) if _c_use_terrain_paging is not None else None
+        if _c_use_terrain_paging is not None:
+            _res = UseTerrainPaging._from_sdf(_c_use_terrain_paging, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("use_terrain_paging")
+            _use_terrain_paging = _res
+        else:
+            _use_terrain_paging = None
         if _use_terrain_paging is not None and cmp_version(version, "1.4") < 0:
-            raise ValueError(f"'use_terrain_paging' is not supported in SDF version {version} (added in 1.4)")
+            return SDFError(f"'use_terrain_paging' is not supported in SDF version {version} (added in 1.4)")
         _c_sampling = el.find("sampling")
-        _sampling = Sampling.from_sdf(_c_sampling, version) if _c_sampling is not None else None
+        if _c_sampling is not None:
+            _res = Sampling._from_sdf(_c_sampling, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("sampling")
+            _sampling = _res
+        else:
+            _sampling = None
         if _sampling is not None and cmp_version(version, "1.6") < 0:
-            raise ValueError(f"'sampling' is not supported in SDF version {version} (added in 1.6)")
+            return SDFError(f"'sampling' is not supported in SDF version {version} (added in 1.6)")
         return cls(sdf_version=version, uri=_uri, size=_size, pos=_pos, texture=_texture, blend=_blend, use_terrain_paging=_use_terrain_paging, sampling=_sampling)
 
 
-class Empty(Model):
+class Empty(BaseModel):
     def __init__(self, sdf_version: str):
         self.__version__ = sdf_version
 
@@ -5414,11 +7127,11 @@ class Empty(Model):
         return el
 
     @classmethod
-    def from_sdf(cls, el: ET.Element, version: str) -> "Empty":
+    def _from_sdf(cls, el: ET.Element, version: str):
         return cls(sdf_version=version)
 
 
-class Point(Model):
+class Point(BaseModel):
     def __init__(self, sdf_version: str, point: Vector2d = None):
         self.__version__ = sdf_version
         if point is None:
@@ -5436,18 +7149,24 @@ class Point(Model):
             return self.to_version(version).to_sdf()
         version = version or self.__version__
         el = ET.Element("point")
+        if self.point is None:
+            raise ValueError(f"'point' is required in SDF version {version}")
         if self.point is not None:
             el.text = self.point.to_sdf()
         return el
 
     @classmethod
-    def from_sdf(cls, el: ET.Element, version: str) -> "Point":
+    def _from_sdf(cls, el: ET.Element, version: str):
+        if el.text is None:
+            return SDFError(f"'point' is required in SDF version {version}")
         _text = el.text or "0 0"
-        _point = Vector2d.from_sdf(_text)
+        _point = Vector2d._from_sdf(_text, version)
+        if isinstance(_point, SDFError):
+            return _point
         return cls(sdf_version=version, point=_point)
 
 
-class Polyline(Model):
+class Polyline(BaseModel):
     def __init__(self, sdf_version: str, point: List["Point"] = None, height: "Height" = None):
         self.__version__ = sdf_version
         self.point = point or []
@@ -5465,21 +7184,40 @@ class Polyline(Model):
             return self.to_version(version).to_sdf()
         version = version or self.__version__
         el = ET.Element("polyline")
+        if not self.point:
+            raise ValueError(f"'point' is required in SDF version {version}")
         for item in (self.point or []):
             el.append(item.to_sdf(version))
+        if self.height is None:
+            raise ValueError(f"'height' is required in SDF version {version}")
         if self.height is not None:
             el.append(self.height.to_sdf(version))
         return el
 
     @classmethod
-    def from_sdf(cls, el: ET.Element, version: str) -> "Polyline":
-        _point = [Point.from_sdf(c, version) for c in el.findall("point")]
+    def _from_sdf(cls, el: ET.Element, version: str):
+        _point = []
+        for c in el.findall("point"):
+            _res = Point._from_sdf(c, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("point")
+            _point.append(_res)
+        if not _point:
+            return SDFError(f"'point' is required in SDF version {version}")
         _c_height = el.find("height")
-        _height = Height.from_sdf(_c_height, version) if _c_height is not None else None
+        if _c_height is not None:
+            _res = Height._from_sdf(_c_height, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("height")
+            _height = _res
+        else:
+            _height = None
+        if _height is None:
+            return SDFError(f"'height' is required in SDF version {version}")
         return cls(sdf_version=version, point=_point, height=_height)
 
 
-class Capsule(Model):
+class Capsule(BaseModel):
     def __init__(self, sdf_version: str, radius: "Radius" = None, length: "Length" = None):
         self.__version__ = sdf_version
         self.radius = radius
@@ -5497,22 +7235,42 @@ class Capsule(Model):
             return self.to_version(version).to_sdf()
         version = version or self.__version__
         el = ET.Element("capsule")
+        if self.radius is None:
+            raise ValueError(f"'radius' is required in SDF version {version}")
         if self.radius is not None:
             el.append(self.radius.to_sdf(version))
+        if self.length is None:
+            raise ValueError(f"'length' is required in SDF version {version}")
         if self.length is not None:
             el.append(self.length.to_sdf(version))
         return el
 
     @classmethod
-    def from_sdf(cls, el: ET.Element, version: str) -> "Capsule":
+    def _from_sdf(cls, el: ET.Element, version: str):
         _c_radius = el.find("radius")
-        _radius = Radius.from_sdf(_c_radius, version) if _c_radius is not None else None
+        if _c_radius is not None:
+            _res = Radius._from_sdf(_c_radius, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("radius")
+            _radius = _res
+        else:
+            _radius = None
+        if _radius is None:
+            return SDFError(f"'radius' is required in SDF version {version}")
         _c_length = el.find("length")
-        _length = Length.from_sdf(_c_length, version) if _c_length is not None else None
+        if _c_length is not None:
+            _res = Length._from_sdf(_c_length, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("length")
+            _length = _res
+        else:
+            _length = None
+        if _length is None:
+            return SDFError(f"'length' is required in SDF version {version}")
         return cls(sdf_version=version, radius=_radius, length=_length)
 
 
-class Radii(Model):
+class Radii(BaseModel):
     def __init__(self, sdf_version: str, radii: Vector3 = None):
         self.__version__ = sdf_version
         if radii is None:
@@ -5530,18 +7288,24 @@ class Radii(Model):
             return self.to_version(version).to_sdf()
         version = version or self.__version__
         el = ET.Element("radii")
+        if self.radii is None:
+            raise ValueError(f"'radii' is required in SDF version {version}")
         if self.radii is not None:
             el.text = self.radii.to_sdf()
         return el
 
     @classmethod
-    def from_sdf(cls, el: ET.Element, version: str) -> "Radii":
+    def _from_sdf(cls, el: ET.Element, version: str):
+        if el.text is None:
+            return SDFError(f"'radii' is required in SDF version {version}")
         _text = el.text or "1 1 1"
-        _radii = Vector3.from_sdf(_text)
+        _radii = Vector3._from_sdf(_text, version)
+        if isinstance(_radii, SDFError):
+            return _radii
         return cls(sdf_version=version, radii=_radii)
 
 
-class Ellipsoid(Model):
+class Ellipsoid(BaseModel):
     def __init__(self, sdf_version: str, radii: "Radii" = None):
         self.__version__ = sdf_version
         self.radii = radii
@@ -5557,18 +7321,28 @@ class Ellipsoid(Model):
             return self.to_version(version).to_sdf()
         version = version or self.__version__
         el = ET.Element("ellipsoid")
+        if self.radii is None:
+            raise ValueError(f"'radii' is required in SDF version {version}")
         if self.radii is not None:
             el.append(self.radii.to_sdf(version))
         return el
 
     @classmethod
-    def from_sdf(cls, el: ET.Element, version: str) -> "Ellipsoid":
+    def _from_sdf(cls, el: ET.Element, version: str):
         _c_radii = el.find("radii")
-        _radii = Radii.from_sdf(_c_radii, version) if _c_radii is not None else None
+        if _c_radii is not None:
+            _res = Radii._from_sdf(_c_radii, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("radii")
+            _radii = _res
+        else:
+            _radii = None
+        if _radii is None:
+            return SDFError(f"'radii' is required in SDF version {version}")
         return cls(sdf_version=version, radii=_radii)
 
 
-class Cone(Model):
+class Cone(BaseModel):
     def __init__(self, sdf_version: str, radius: "Radius" = None, length: "Length" = None):
         self.__version__ = sdf_version
         self.radius = radius
@@ -5586,22 +7360,42 @@ class Cone(Model):
             return self.to_version(version).to_sdf()
         version = version or self.__version__
         el = ET.Element("cone")
+        if self.radius is None:
+            raise ValueError(f"'radius' is required in SDF version {version}")
         if self.radius is not None:
             el.append(self.radius.to_sdf(version))
+        if self.length is None:
+            raise ValueError(f"'length' is required in SDF version {version}")
         if self.length is not None:
             el.append(self.length.to_sdf(version))
         return el
 
     @classmethod
-    def from_sdf(cls, el: ET.Element, version: str) -> "Cone":
+    def _from_sdf(cls, el: ET.Element, version: str):
         _c_radius = el.find("radius")
-        _radius = Radius.from_sdf(_c_radius, version) if _c_radius is not None else None
+        if _c_radius is not None:
+            _res = Radius._from_sdf(_c_radius, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("radius")
+            _radius = _res
+        else:
+            _radius = None
+        if _radius is None:
+            return SDFError(f"'radius' is required in SDF version {version}")
         _c_length = el.find("length")
-        _length = Length.from_sdf(_c_length, version) if _c_length is not None else None
+        if _c_length is not None:
+            _res = Length._from_sdf(_c_length, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("length")
+            _length = _res
+        else:
+            _length = None
+        if _length is None:
+            return SDFError(f"'length' is required in SDF version {version}")
         return cls(sdf_version=version, radius=_radius, length=_length)
 
 
-class Geometry(Model):
+class Geometry(BaseModel):
     def __init__(
         self,
         sdf_version: str,
@@ -5689,43 +7483,115 @@ class Geometry(Model):
         return el
 
     @classmethod
-    def from_sdf(cls, el: ET.Element, version: str) -> "Geometry":
+    def _from_sdf(cls, el: ET.Element, version: str):
         _c_box = el.find("box")
-        _box = Box.from_sdf(_c_box, version) if _c_box is not None else None
+        if _c_box is not None:
+            _res = Box._from_sdf(_c_box, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("box")
+            _box = _res
+        else:
+            _box = None
         _c_sphere = el.find("sphere")
-        _sphere = Sphere.from_sdf(_c_sphere, version) if _c_sphere is not None else None
+        if _c_sphere is not None:
+            _res = Sphere._from_sdf(_c_sphere, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("sphere")
+            _sphere = _res
+        else:
+            _sphere = None
         _c_cylinder = el.find("cylinder")
-        _cylinder = Cylinder.from_sdf(_c_cylinder, version) if _c_cylinder is not None else None
+        if _c_cylinder is not None:
+            _res = Cylinder._from_sdf(_c_cylinder, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("cylinder")
+            _cylinder = _res
+        else:
+            _cylinder = None
         _c_mesh = el.find("mesh")
-        _mesh = Mesh.from_sdf(_c_mesh, version) if _c_mesh is not None else None
+        if _c_mesh is not None:
+            _res = Mesh._from_sdf(_c_mesh, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("mesh")
+            _mesh = _res
+        else:
+            _mesh = None
         _c_plane = el.find("plane")
-        _plane = Plane.from_sdf(_c_plane, version) if _c_plane is not None else None
+        if _c_plane is not None:
+            _res = Plane._from_sdf(_c_plane, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("plane")
+            _plane = _res
+        else:
+            _plane = None
         _c_image = el.find("image")
-        _image = Image.from_sdf(_c_image, version) if _c_image is not None else None
+        if _c_image is not None:
+            _res = Image._from_sdf(_c_image, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("image")
+            _image = _res
+        else:
+            _image = None
         _c_heightmap = el.find("heightmap")
-        _heightmap = Heightmap.from_sdf(_c_heightmap, version) if _c_heightmap is not None else None
+        if _c_heightmap is not None:
+            _res = Heightmap._from_sdf(_c_heightmap, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("heightmap")
+            _heightmap = _res
+        else:
+            _heightmap = None
         _c_empty = el.find("empty")
-        _empty = Empty.from_sdf(_c_empty, version) if _c_empty is not None else None
+        if _c_empty is not None:
+            _res = Empty._from_sdf(_c_empty, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("empty")
+            _empty = _res
+        else:
+            _empty = None
         _c_polyline = el.find("polyline")
-        _polyline = Polyline.from_sdf(_c_polyline, version) if _c_polyline is not None else None
+        if _c_polyline is not None:
+            _res = Polyline._from_sdf(_c_polyline, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("polyline")
+            _polyline = _res
+        else:
+            _polyline = None
         if _polyline is not None and cmp_version(version, "1.5") < 0:
-            raise ValueError(f"'polyline' is not supported in SDF version {version} (added in 1.5)")
+            return SDFError(f"'polyline' is not supported in SDF version {version} (added in 1.5)")
         _c_capsule = el.find("capsule")
-        _capsule = Capsule.from_sdf(_c_capsule, version) if _c_capsule is not None else None
+        if _c_capsule is not None:
+            _res = Capsule._from_sdf(_c_capsule, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("capsule")
+            _capsule = _res
+        else:
+            _capsule = None
         if _capsule is not None and cmp_version(version, "1.8") < 0:
-            raise ValueError(f"'capsule' is not supported in SDF version {version} (added in 1.8)")
+            return SDFError(f"'capsule' is not supported in SDF version {version} (added in 1.8)")
         _c_ellipsoid = el.find("ellipsoid")
-        _ellipsoid = Ellipsoid.from_sdf(_c_ellipsoid, version) if _c_ellipsoid is not None else None
+        if _c_ellipsoid is not None:
+            _res = Ellipsoid._from_sdf(_c_ellipsoid, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("ellipsoid")
+            _ellipsoid = _res
+        else:
+            _ellipsoid = None
         if _ellipsoid is not None and cmp_version(version, "1.8") < 0:
-            raise ValueError(f"'ellipsoid' is not supported in SDF version {version} (added in 1.8)")
+            return SDFError(f"'ellipsoid' is not supported in SDF version {version} (added in 1.8)")
         _c_cone = el.find("cone")
-        _cone = Cone.from_sdf(_c_cone, version) if _c_cone is not None else None
+        if _c_cone is not None:
+            _res = Cone._from_sdf(_c_cone, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("cone")
+            _cone = _res
+        else:
+            _cone = None
         if _cone is not None and cmp_version(version, "1.11") < 0:
-            raise ValueError(f"'cone' is not supported in SDF version {version} (added in 1.11)")
+            return SDFError(f"'cone' is not supported in SDF version {version} (added in 1.11)")
         return cls(sdf_version=version, box=_box, sphere=_sphere, cylinder=_cylinder, mesh=_mesh, plane=_plane, image=_image, heightmap=_heightmap, empty=_empty, polyline=_polyline, capsule=_capsule, ellipsoid=_ellipsoid, cone=_cone)
 
 
-class RestitutionCoefficient(Model):
+class RestitutionCoefficient(BaseModel):
     def __init__(self, sdf_version: str, restitution_coefficient: float = 0):
         self.__version__ = sdf_version
         self.restitution_coefficient = restitution_coefficient
@@ -5746,13 +7612,15 @@ class RestitutionCoefficient(Model):
         return el
 
     @classmethod
-    def from_sdf(cls, el: ET.Element, version: str) -> "RestitutionCoefficient":
+    def _from_sdf(cls, el: ET.Element, version: str):
         _text = el.text or 0
         _restitution_coefficient = _parse_double(_text)
+        if isinstance(_restitution_coefficient, SDFError):
+            return _restitution_coefficient
         return cls(sdf_version=version, restitution_coefficient=_restitution_coefficient)
 
 
-class Bounce(Model):
+class Bounce(BaseModel):
     def __init__(
         self,
         sdf_version: str,
@@ -5782,15 +7650,27 @@ class Bounce(Model):
         return el
 
     @classmethod
-    def from_sdf(cls, el: ET.Element, version: str) -> "Bounce":
+    def _from_sdf(cls, el: ET.Element, version: str):
         _c_restitution_coefficient = el.find("restitution_coefficient")
-        _restitution_coefficient = RestitutionCoefficient.from_sdf(_c_restitution_coefficient, version) if _c_restitution_coefficient is not None else None
+        if _c_restitution_coefficient is not None:
+            _res = RestitutionCoefficient._from_sdf(_c_restitution_coefficient, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("restitution_coefficient")
+            _restitution_coefficient = _res
+        else:
+            _restitution_coefficient = None
         _c_threshold = el.find("threshold")
-        _threshold = Threshold.from_sdf(_c_threshold, version) if _c_threshold is not None else None
+        if _c_threshold is not None:
+            _res = Threshold._from_sdf(_c_threshold, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("threshold")
+            _threshold = _res
+        else:
+            _threshold = None
         return cls(sdf_version=version, restitution_coefficient=_restitution_coefficient, threshold=_threshold)
 
 
-class Coefficient(Model):
+class Coefficient(BaseModel):
     def __init__(self, sdf_version: str, coefficient: float = 1.0):
         self.__version__ = sdf_version
         self.coefficient = coefficient
@@ -5811,13 +7691,15 @@ class Coefficient(Model):
         return el
 
     @classmethod
-    def from_sdf(cls, el: ET.Element, version: str) -> "Coefficient":
+    def _from_sdf(cls, el: ET.Element, version: str):
         _text = el.text or 1.0
         _coefficient = _parse_double(_text)
+        if isinstance(_coefficient, SDFError):
+            return _coefficient
         return cls(sdf_version=version, coefficient=_coefficient)
 
 
-class UsePatchRadius(Model):
+class UsePatchRadius(BaseModel):
     def __init__(self, sdf_version: str, use_patch_radius: bool = True):
         self.__version__ = sdf_version
         self.use_patch_radius = use_patch_radius
@@ -5838,13 +7720,15 @@ class UsePatchRadius(Model):
         return el
 
     @classmethod
-    def from_sdf(cls, el: ET.Element, version: str) -> "UsePatchRadius":
+    def _from_sdf(cls, el: ET.Element, version: str):
         _text = el.text or True
-        _use_patch_radius = _text.strip().lower() == 'true'
+        _use_patch_radius = str(_text).strip().lower() == 'true'
+        if isinstance(_use_patch_radius, SDFError):
+            return _use_patch_radius
         return cls(sdf_version=version, use_patch_radius=_use_patch_radius)
 
 
-class PatchRadius(Model):
+class PatchRadius(BaseModel):
     def __init__(self, sdf_version: str, patch_radius: float = 0):
         self.__version__ = sdf_version
         self.patch_radius = patch_radius
@@ -5865,13 +7749,15 @@ class PatchRadius(Model):
         return el
 
     @classmethod
-    def from_sdf(cls, el: ET.Element, version: str) -> "PatchRadius":
+    def _from_sdf(cls, el: ET.Element, version: str):
         _text = el.text or 0
         _patch_radius = _parse_double(_text)
+        if isinstance(_patch_radius, SDFError):
+            return _patch_radius
         return cls(sdf_version=version, patch_radius=_patch_radius)
 
 
-class SurfaceRadius(Model):
+class SurfaceRadius(BaseModel):
     def __init__(self, sdf_version: str, surface_radius: float = 0.0):
         self.__version__ = sdf_version
         self.surface_radius = surface_radius
@@ -5892,13 +7778,15 @@ class SurfaceRadius(Model):
         return el
 
     @classmethod
-    def from_sdf(cls, el: ET.Element, version: str) -> "SurfaceRadius":
+    def _from_sdf(cls, el: ET.Element, version: str):
         _text = el.text or 0.0
         _surface_radius = _parse_double(_text)
+        if isinstance(_surface_radius, SDFError):
+            return _surface_radius
         return cls(sdf_version=version, surface_radius=_surface_radius)
 
 
-class Torsional(Model):
+class Torsional(BaseModel):
     def __init__(
         self,
         sdf_version: str,
@@ -5943,21 +7831,51 @@ class Torsional(Model):
         return el
 
     @classmethod
-    def from_sdf(cls, el: ET.Element, version: str) -> "Torsional":
+    def _from_sdf(cls, el: ET.Element, version: str):
         _c_coefficient = el.find("coefficient")
-        _coefficient = Coefficient.from_sdf(_c_coefficient, version) if _c_coefficient is not None else None
+        if _c_coefficient is not None:
+            _res = Coefficient._from_sdf(_c_coefficient, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("coefficient")
+            _coefficient = _res
+        else:
+            _coefficient = None
         _c_use_patch_radius = el.find("use_patch_radius")
-        _use_patch_radius = UsePatchRadius.from_sdf(_c_use_patch_radius, version) if _c_use_patch_radius is not None else None
+        if _c_use_patch_radius is not None:
+            _res = UsePatchRadius._from_sdf(_c_use_patch_radius, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("use_patch_radius")
+            _use_patch_radius = _res
+        else:
+            _use_patch_radius = None
         _c_patch_radius = el.find("patch_radius")
-        _patch_radius = PatchRadius.from_sdf(_c_patch_radius, version) if _c_patch_radius is not None else None
+        if _c_patch_radius is not None:
+            _res = PatchRadius._from_sdf(_c_patch_radius, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("patch_radius")
+            _patch_radius = _res
+        else:
+            _patch_radius = None
         _c_surface_radius = el.find("surface_radius")
-        _surface_radius = SurfaceRadius.from_sdf(_c_surface_radius, version) if _c_surface_radius is not None else None
+        if _c_surface_radius is not None:
+            _res = SurfaceRadius._from_sdf(_c_surface_radius, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("surface_radius")
+            _surface_radius = _res
+        else:
+            _surface_radius = None
         _c_ode = el.find("ode")
-        _ode = Ode.from_sdf(_c_ode, version) if _c_ode is not None else None
+        if _c_ode is not None:
+            _res = Ode._from_sdf(_c_ode, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("ode")
+            _ode = _res
+        else:
+            _ode = None
         return cls(sdf_version=version, coefficient=_coefficient, use_patch_radius=_use_patch_radius, patch_radius=_patch_radius, surface_radius=_surface_radius, ode=_ode)
 
 
-class Friction(Model):
+class Friction(BaseModel):
     def __init__(
         self,
         sdf_version: str,
@@ -5996,21 +7914,39 @@ class Friction(Model):
         return el
 
     @classmethod
-    def from_sdf(cls, el: ET.Element, version: str) -> "Friction":
+    def _from_sdf(cls, el: ET.Element, version: str):
         _c_ode = el.find("ode")
-        _ode = Ode.from_sdf(_c_ode, version) if _c_ode is not None else None
+        if _c_ode is not None:
+            _res = Ode._from_sdf(_c_ode, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("ode")
+            _ode = _res
+        else:
+            _ode = None
         _c_bullet = el.find("bullet")
-        _bullet = Bullet.from_sdf(_c_bullet, version) if _c_bullet is not None else None
+        if _c_bullet is not None:
+            _res = Bullet._from_sdf(_c_bullet, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("bullet")
+            _bullet = _res
+        else:
+            _bullet = None
         if _bullet is not None and cmp_version(version, "1.4") < 0:
-            raise ValueError(f"'bullet' is not supported in SDF version {version} (added in 1.4)")
+            return SDFError(f"'bullet' is not supported in SDF version {version} (added in 1.4)")
         _c_torsional = el.find("torsional")
-        _torsional = Torsional.from_sdf(_c_torsional, version) if _c_torsional is not None else None
+        if _c_torsional is not None:
+            _res = Torsional._from_sdf(_c_torsional, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("torsional")
+            _torsional = _res
+        else:
+            _torsional = None
         if _torsional is not None and cmp_version(version, "1.5") < 0:
-            raise ValueError(f"'torsional' is not supported in SDF version {version} (added in 1.5)")
+            return SDFError(f"'torsional' is not supported in SDF version {version} (added in 1.5)")
         return cls(sdf_version=version, ode=_ode, bullet=_bullet, torsional=_torsional)
 
 
-class SoftContact(Model):
+class SoftContact(BaseModel):
     def __init__(self, sdf_version: str, dart: "Dart" = None):
         self.__version__ = sdf_version
         self.dart = dart
@@ -6031,13 +7967,19 @@ class SoftContact(Model):
         return el
 
     @classmethod
-    def from_sdf(cls, el: ET.Element, version: str) -> "SoftContact":
+    def _from_sdf(cls, el: ET.Element, version: str):
         _c_dart = el.find("dart")
-        _dart = Dart.from_sdf(_c_dart, version) if _c_dart is not None else None
+        if _c_dart is not None:
+            _res = Dart._from_sdf(_c_dart, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("dart")
+            _dart = _res
+        else:
+            _dart = None
         return cls(sdf_version=version, dart=_dart)
 
 
-class Surface(Model):
+class Surface(BaseModel):
     def __init__(
         self,
         sdf_version: str,
@@ -6079,21 +8021,45 @@ class Surface(Model):
         return el
 
     @classmethod
-    def from_sdf(cls, el: ET.Element, version: str) -> "Surface":
+    def _from_sdf(cls, el: ET.Element, version: str):
         _c_bounce = el.find("bounce")
-        _bounce = Bounce.from_sdf(_c_bounce, version) if _c_bounce is not None else None
+        if _c_bounce is not None:
+            _res = Bounce._from_sdf(_c_bounce, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("bounce")
+            _bounce = _res
+        else:
+            _bounce = None
         _c_friction = el.find("friction")
-        _friction = Friction.from_sdf(_c_friction, version) if _c_friction is not None else None
+        if _c_friction is not None:
+            _res = Friction._from_sdf(_c_friction, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("friction")
+            _friction = _res
+        else:
+            _friction = None
         _c_contact = el.find("contact")
-        _contact = Contact.from_sdf(_c_contact, version) if _c_contact is not None else None
+        if _c_contact is not None:
+            _res = Contact._from_sdf(_c_contact, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("contact")
+            _contact = _res
+        else:
+            _contact = None
         _c_soft_contact = el.find("soft_contact")
-        _soft_contact = SoftContact.from_sdf(_c_soft_contact, version) if _c_soft_contact is not None else None
+        if _c_soft_contact is not None:
+            _res = SoftContact._from_sdf(_c_soft_contact, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("soft_contact")
+            _soft_contact = _res
+        else:
+            _soft_contact = None
         if _soft_contact is not None and cmp_version(version, "1.4") < 0:
-            raise ValueError(f"'soft_contact' is not supported in SDF version {version} (added in 1.4)")
+            return SDFError(f"'soft_contact' is not supported in SDF version {version} (added in 1.4)")
         return cls(sdf_version=version, bounce=_bounce, friction=_friction, contact=_contact, soft_contact=_soft_contact)
 
 
-class LaserRetro(Model):
+class LaserRetro(BaseModel):
     def __init__(self, sdf_version: str, laser_retro: float = 0):
         self.__version__ = sdf_version
         self.laser_retro = laser_retro
@@ -6114,13 +8080,15 @@ class LaserRetro(Model):
         return el
 
     @classmethod
-    def from_sdf(cls, el: ET.Element, version: str) -> "LaserRetro":
+    def _from_sdf(cls, el: ET.Element, version: str):
         _text = el.text or 0
         _laser_retro = _parse_double(_text)
+        if isinstance(_laser_retro, SDFError):
+            return _laser_retro
         return cls(sdf_version=version, laser_retro=_laser_retro)
 
 
-class Collision(Model):
+class Collision(BaseModel):
     def __init__(
         self,
         sdf_version: str,
@@ -6131,8 +8099,8 @@ class Collision(Model):
         max_contacts: "MaxContacts" = None,
         pose: "Pose" = None,
         frame: List["Frame"] = None,
-        density: "Density" = None,
-        auto_inertia_params: "AutoInertiaParams" = None
+        auto_inertia_params: "AutoInertiaParams" = None,
+        density: "Density" = None
     ):
         self.__version__ = sdf_version
         self.name = name
@@ -6142,16 +8110,18 @@ class Collision(Model):
         self.max_contacts = max_contacts
         self.pose = pose
         self.frame = frame or []
-        self.density = density
         self.auto_inertia_params = auto_inertia_params
+        self.density = density
 
     def to_version(self, target_version: str) -> "Collision":
         if self.frame is not None and cmp_version(target_version, "1.5") < 0:
             raise ValueError(f"'frame' is not supported in SDF version {target_version} (added in 1.5)")
-        if self.density is not None and cmp_version(target_version, "1.11") < 0:
-            raise ValueError(f"'density' is not supported in SDF version {target_version} (added in 1.11)")
+        if self.frame is not None and cmp_version(target_version, "1.7") >= 0:
+            raise ValueError(f"'frame' is not supported in SDF version {target_version} (removed in 1.7)")
         if self.auto_inertia_params is not None and cmp_version(target_version, "1.11") < 0:
             raise ValueError(f"'auto_inertia_params' is not supported in SDF version {target_version} (added in 1.11)")
+        if self.density is not None and cmp_version(target_version, "1.11") < 0:
+            raise ValueError(f"'density' is not supported in SDF version {target_version} (added in 1.11)")
         kwargs = {"sdf_version": target_version}
         kwargs["name"] = self.name
         kwargs["geometry"] = self.geometry.to_version(target_version) if self.geometry is not None else None
@@ -6160,8 +8130,8 @@ class Collision(Model):
         kwargs["max_contacts"] = self.max_contacts.to_version(target_version) if self.max_contacts is not None else None
         kwargs["pose"] = self.pose.to_version(target_version) if self.pose is not None else None
         kwargs["frame"] = [c.to_version(target_version) for c in (self.frame or [])]
-        kwargs["density"] = self.density.to_version(target_version) if self.density is not None else None
         kwargs["auto_inertia_params"] = self.auto_inertia_params.to_version(target_version) if self.auto_inertia_params is not None else None
+        kwargs["density"] = self.density.to_version(target_version) if self.density is not None else None
         new_obj = self.__class__(**kwargs)
         return new_obj
 
@@ -6170,8 +8140,12 @@ class Collision(Model):
             return self.to_version(version).to_sdf()
         version = version or self.__version__
         el = ET.Element("collision")
+        if self.name is None:
+            raise ValueError(f"'name' is required in SDF version {version}")
         if self.name is not None:
             el.set("name", self.name)
+        if self.geometry is None:
+            raise ValueError(f"'geometry' is required in SDF version {version}")
         if self.geometry is not None:
             el.append(self.geometry.to_sdf(version))
         if self.surface is not None:
@@ -6184,40 +8158,93 @@ class Collision(Model):
             el.append(self.pose.to_sdf(version))
         for item in (self.frame or []):
             el.append(item.to_sdf(version))
-        if self.density is not None:
-            el.append(self.density.to_sdf(version))
         if self.auto_inertia_params is not None:
             el.append(self.auto_inertia_params.to_sdf(version))
+        if self.density is not None:
+            el.append(self.density.to_sdf(version))
         return el
 
     @classmethod
-    def from_sdf(cls, el: ET.Element, version: str) -> "Collision":
+    def _from_sdf(cls, el: ET.Element, version: str):
+        if el.get("name") is None:
+            return SDFError(f"'name' is required in SDF version {version}")
         _name = el.get("name", "__default__")
+        if isinstance(_name, SDFError):
+            return _name.extend("@name")
         _c_geometry = el.find("geometry")
-        _geometry = Geometry.from_sdf(_c_geometry, version) if _c_geometry is not None else None
+        if _c_geometry is not None:
+            _res = Geometry._from_sdf(_c_geometry, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("geometry")
+            _geometry = _res
+        else:
+            _geometry = None
+        if _geometry is None:
+            return SDFError(f"'geometry' is required in SDF version {version}")
         _c_surface = el.find("surface")
-        _surface = Surface.from_sdf(_c_surface, version) if _c_surface is not None else None
+        if _c_surface is not None:
+            _res = Surface._from_sdf(_c_surface, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("surface")
+            _surface = _res
+        else:
+            _surface = None
         _c_laser_retro = el.find("laser_retro")
-        _laser_retro = LaserRetro.from_sdf(_c_laser_retro, version) if _c_laser_retro is not None else None
+        if _c_laser_retro is not None:
+            _res = LaserRetro._from_sdf(_c_laser_retro, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("laser_retro")
+            _laser_retro = _res
+        else:
+            _laser_retro = None
         _c_max_contacts = el.find("max_contacts")
-        _max_contacts = MaxContacts.from_sdf(_c_max_contacts, version) if _c_max_contacts is not None else None
+        if _c_max_contacts is not None:
+            _res = MaxContacts._from_sdf(_c_max_contacts, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("max_contacts")
+            _max_contacts = _res
+        else:
+            _max_contacts = None
         _c_pose = el.find("pose")
-        _pose = Pose.from_sdf(_c_pose, version) if _c_pose is not None else None
-        _frame = [Frame.from_sdf(c, version) for c in el.findall("frame")]
+        if _c_pose is not None:
+            _res = Pose._from_sdf(_c_pose, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("pose")
+            _pose = _res
+        else:
+            _pose = None
+        _frame = []
+        for c in el.findall("frame"):
+            _res = Frame._from_sdf(c, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("frame")
+            _frame.append(_res)
         if _frame and cmp_version(version, "1.5") < 0:
-            raise ValueError(f"'frame' is not supported in SDF version {version} (added in 1.5)")
-        _c_density = el.find("density")
-        _density = Density.from_sdf(_c_density, version) if _c_density is not None else None
-        if _density is not None and cmp_version(version, "1.11") < 0:
-            raise ValueError(f"'density' is not supported in SDF version {version} (added in 1.11)")
+            return SDFError(f"'frame' is not supported in SDF version {version} (added in 1.5)")
         _c_auto_inertia_params = el.find("auto_inertia_params")
-        _auto_inertia_params = AutoInertiaParams.from_sdf(_c_auto_inertia_params, version) if _c_auto_inertia_params is not None else None
+        if _c_auto_inertia_params is not None:
+            _res = AutoInertiaParams._from_sdf(_c_auto_inertia_params, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("auto_inertia_params")
+            _auto_inertia_params = _res
+        else:
+            _auto_inertia_params = None
         if _auto_inertia_params is not None and cmp_version(version, "1.11") < 0:
-            raise ValueError(f"'auto_inertia_params' is not supported in SDF version {version} (added in 1.11)")
-        return cls(sdf_version=version, name=_name, geometry=_geometry, surface=_surface, laser_retro=_laser_retro, max_contacts=_max_contacts, pose=_pose, frame=_frame, density=_density, auto_inertia_params=_auto_inertia_params)
+            return SDFError(f"'auto_inertia_params' is not supported in SDF version {version} (added in 1.11)")
+        _c_density = el.find("density")
+        if _c_density is not None:
+            _res = Density._from_sdf(_c_density, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("density")
+            _density = _res
+        else:
+            _density = None
+        if _density is not None and cmp_version(version, "1.11") < 0:
+            return SDFError(f"'density' is not supported in SDF version {version} (added in 1.11)")
+        return cls(sdf_version=version, name=_name, geometry=_geometry, surface=_surface, laser_retro=_laser_retro, max_contacts=_max_contacts, pose=_pose, frame=_frame, auto_inertia_params=_auto_inertia_params, density=_density)
 
 
-class Transparency(Model):
+class Transparency(BaseModel):
     def __init__(self, sdf_version: str, transparency: float = 0.0):
         self.__version__ = sdf_version
         self.transparency = transparency
@@ -6238,13 +8265,15 @@ class Transparency(Model):
         return el
 
     @classmethod
-    def from_sdf(cls, el: ET.Element, version: str) -> "Transparency":
+    def _from_sdf(cls, el: ET.Element, version: str):
         _text = el.text or 0.0
         _transparency = _parse_double(_text)
+        if isinstance(_transparency, SDFError):
+            return _transparency
         return cls(sdf_version=version, transparency=_transparency)
 
 
-class Script(Model):
+class Script(BaseModel):
     def __init__(self, sdf_version: str, uri: List["Uri"] = None, name: "Name" = None):
         self.__version__ = sdf_version
         self.uri = uri or []
@@ -6262,21 +8291,40 @@ class Script(Model):
             return self.to_version(version).to_sdf()
         version = version or self.__version__
         el = ET.Element("script")
+        if not self.uri:
+            raise ValueError(f"'uri' is required in SDF version {version}")
         for item in (self.uri or []):
             el.append(item.to_sdf(version))
+        if self.name is None:
+            raise ValueError(f"'name' is required in SDF version {version}")
         if self.name is not None:
             el.append(self.name.to_sdf(version))
         return el
 
     @classmethod
-    def from_sdf(cls, el: ET.Element, version: str) -> "Script":
-        _uri = [Uri.from_sdf(c, version) for c in el.findall("uri")]
+    def _from_sdf(cls, el: ET.Element, version: str):
+        _uri = []
+        for c in el.findall("uri"):
+            _res = Uri._from_sdf(c, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("uri")
+            _uri.append(_res)
+        if not _uri:
+            return SDFError(f"'uri' is required in SDF version {version}")
         _c_name = el.find("name")
-        _name = Name.from_sdf(_c_name, version) if _c_name is not None else None
+        if _c_name is not None:
+            _res = Name._from_sdf(_c_name, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("name")
+            _name = _res
+        else:
+            _name = None
+        if _name is None:
+            return SDFError(f"'name' is required in SDF version {version}")
         return cls(sdf_version=version, uri=_uri, name=_name)
 
 
-class NormalMap(Model):
+class NormalMap(BaseModel):
     def __init__(self, sdf_version: str, normal_map: str = "__default__"):
         self.__version__ = sdf_version
         self.normal_map = normal_map
@@ -6297,13 +8345,15 @@ class NormalMap(Model):
         return el
 
     @classmethod
-    def from_sdf(cls, el: ET.Element, version: str) -> "NormalMap":
+    def _from_sdf(cls, el: ET.Element, version: str):
         _text = el.text or "__default__"
         _normal_map = _text
+        if isinstance(_normal_map, SDFError):
+            return _normal_map
         return cls(sdf_version=version, normal_map=_normal_map)
 
 
-class Shader(Model):
+class Shader(BaseModel):
     def __init__(self, sdf_version: str, type: str = "pixel", normal_map: "NormalMap" = None):
         self.__version__ = sdf_version
         self.type = type
@@ -6321,6 +8371,8 @@ class Shader(Model):
             return self.to_version(version).to_sdf()
         version = version or self.__version__
         el = ET.Element("shader")
+        if self.type is None:
+            raise ValueError(f"'type' is required in SDF version {version}")
         if self.type is not None:
             el.set("type", self.type)
         if self.normal_map is not None:
@@ -6328,14 +8380,24 @@ class Shader(Model):
         return el
 
     @classmethod
-    def from_sdf(cls, el: ET.Element, version: str) -> "Shader":
+    def _from_sdf(cls, el: ET.Element, version: str):
+        if el.get("type") is None:
+            return SDFError(f"'type' is required in SDF version {version}")
         _type = el.get("type", "pixel")
+        if isinstance(_type, SDFError):
+            return _type.extend("@type")
         _c_normal_map = el.find("normal_map")
-        _normal_map = NormalMap.from_sdf(_c_normal_map, version) if _c_normal_map is not None else None
+        if _c_normal_map is not None:
+            _res = NormalMap._from_sdf(_c_normal_map, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("normal_map")
+            _normal_map = _res
+        else:
+            _normal_map = None
         return cls(sdf_version=version, type=_type, normal_map=_normal_map)
 
 
-class Emissive(Model):
+class Emissive(BaseModel):
     def __init__(self, sdf_version: str, emissive: Color = None):
         self.__version__ = sdf_version
         if emissive is None:
@@ -6358,13 +8420,15 @@ class Emissive(Model):
         return el
 
     @classmethod
-    def from_sdf(cls, el: ET.Element, version: str) -> "Emissive":
+    def _from_sdf(cls, el: ET.Element, version: str):
         _text = el.text or "0 0 0 1"
-        _emissive = Color.from_sdf(_text)
+        _emissive = Color._from_sdf(_text, version)
+        if isinstance(_emissive, SDFError):
+            return _emissive
         return cls(sdf_version=version, emissive=_emissive)
 
 
-class Lighting(Model):
+class Lighting(BaseModel):
     def __init__(self, sdf_version: str, lighting: bool = True):
         self.__version__ = sdf_version
         self.lighting = lighting
@@ -6387,16 +8451,18 @@ class Lighting(Model):
         return el
 
     @classmethod
-    def from_sdf(cls, el: ET.Element, version: str) -> "Lighting":
+    def _from_sdf(cls, el: ET.Element, version: str):
         _text = el.text or True
-        _lighting = _text.strip().lower() == 'true'
+        _lighting = str(_text).strip().lower() == 'true'
+        if isinstance(_lighting, SDFError):
+            return _lighting
         if _lighting is not None and cmp_version(version, "1.4") < 0:
             if _lighting != True:
-                raise ValueError(f"'lighting' is not supported in SDF version {version} (added in 1.4)")
+                return SDFError(f"'lighting' is not supported in SDF version {version} (added in 1.4)")
         return cls(sdf_version=version, lighting=_lighting)
 
 
-class AlbedoMap(Model):
+class AlbedoMap(BaseModel):
     def __init__(self, sdf_version: str, albedo_map: str = ""):
         self.__version__ = sdf_version
         self.albedo_map = albedo_map
@@ -6417,13 +8483,15 @@ class AlbedoMap(Model):
         return el
 
     @classmethod
-    def from_sdf(cls, el: ET.Element, version: str) -> "AlbedoMap":
+    def _from_sdf(cls, el: ET.Element, version: str):
         _text = el.text or ""
         _albedo_map = _text
+        if isinstance(_albedo_map, SDFError):
+            return _albedo_map
         return cls(sdf_version=version, albedo_map=_albedo_map)
 
 
-class RoughnessMap(Model):
+class RoughnessMap(BaseModel):
     def __init__(self, sdf_version: str, roughness_map: str = ""):
         self.__version__ = sdf_version
         self.roughness_map = roughness_map
@@ -6444,13 +8512,15 @@ class RoughnessMap(Model):
         return el
 
     @classmethod
-    def from_sdf(cls, el: ET.Element, version: str) -> "RoughnessMap":
+    def _from_sdf(cls, el: ET.Element, version: str):
         _text = el.text or ""
         _roughness_map = _text
+        if isinstance(_roughness_map, SDFError):
+            return _roughness_map
         return cls(sdf_version=version, roughness_map=_roughness_map)
 
 
-class Roughness(Model):
+class Roughness(BaseModel):
     def __init__(self, sdf_version: str, roughness: str = "0.5"):
         self.__version__ = sdf_version
         self.roughness = roughness
@@ -6471,13 +8541,15 @@ class Roughness(Model):
         return el
 
     @classmethod
-    def from_sdf(cls, el: ET.Element, version: str) -> "Roughness":
+    def _from_sdf(cls, el: ET.Element, version: str):
         _text = el.text or "0.5"
         _roughness = _text
+        if isinstance(_roughness, SDFError):
+            return _roughness
         return cls(sdf_version=version, roughness=_roughness)
 
 
-class MetalnessMap(Model):
+class MetalnessMap(BaseModel):
     def __init__(self, sdf_version: str, metalness_map: str = ""):
         self.__version__ = sdf_version
         self.metalness_map = metalness_map
@@ -6498,13 +8570,15 @@ class MetalnessMap(Model):
         return el
 
     @classmethod
-    def from_sdf(cls, el: ET.Element, version: str) -> "MetalnessMap":
+    def _from_sdf(cls, el: ET.Element, version: str):
         _text = el.text or ""
         _metalness_map = _text
+        if isinstance(_metalness_map, SDFError):
+            return _metalness_map
         return cls(sdf_version=version, metalness_map=_metalness_map)
 
 
-class Metalness(Model):
+class Metalness(BaseModel):
     def __init__(self, sdf_version: str, metalness: str = "0.5"):
         self.__version__ = sdf_version
         self.metalness = metalness
@@ -6525,13 +8599,15 @@ class Metalness(Model):
         return el
 
     @classmethod
-    def from_sdf(cls, el: ET.Element, version: str) -> "Metalness":
+    def _from_sdf(cls, el: ET.Element, version: str):
         _text = el.text or "0.5"
         _metalness = _text
+        if isinstance(_metalness, SDFError):
+            return _metalness
         return cls(sdf_version=version, metalness=_metalness)
 
 
-class EnvironmentMap(Model):
+class EnvironmentMap(BaseModel):
     def __init__(self, sdf_version: str, environment_map: str = ""):
         self.__version__ = sdf_version
         self.environment_map = environment_map
@@ -6552,13 +8628,15 @@ class EnvironmentMap(Model):
         return el
 
     @classmethod
-    def from_sdf(cls, el: ET.Element, version: str) -> "EnvironmentMap":
+    def _from_sdf(cls, el: ET.Element, version: str):
         _text = el.text or ""
         _environment_map = _text
+        if isinstance(_environment_map, SDFError):
+            return _environment_map
         return cls(sdf_version=version, environment_map=_environment_map)
 
 
-class AmbientOcclusionMap(Model):
+class AmbientOcclusionMap(BaseModel):
     def __init__(self, sdf_version: str, ambient_occlusion_map: str = ""):
         self.__version__ = sdf_version
         self.ambient_occlusion_map = ambient_occlusion_map
@@ -6579,13 +8657,15 @@ class AmbientOcclusionMap(Model):
         return el
 
     @classmethod
-    def from_sdf(cls, el: ET.Element, version: str) -> "AmbientOcclusionMap":
+    def _from_sdf(cls, el: ET.Element, version: str):
         _text = el.text or ""
         _ambient_occlusion_map = _text
+        if isinstance(_ambient_occlusion_map, SDFError):
+            return _ambient_occlusion_map
         return cls(sdf_version=version, ambient_occlusion_map=_ambient_occlusion_map)
 
 
-class EmissiveMap(Model):
+class EmissiveMap(BaseModel):
     def __init__(self, sdf_version: str, emissive_map: str = ""):
         self.__version__ = sdf_version
         self.emissive_map = emissive_map
@@ -6606,13 +8686,15 @@ class EmissiveMap(Model):
         return el
 
     @classmethod
-    def from_sdf(cls, el: ET.Element, version: str) -> "EmissiveMap":
+    def _from_sdf(cls, el: ET.Element, version: str):
         _text = el.text or ""
         _emissive_map = _text
+        if isinstance(_emissive_map, SDFError):
+            return _emissive_map
         return cls(sdf_version=version, emissive_map=_emissive_map)
 
 
-class LightMap(Model):
+class LightMap(BaseModel):
     def __init__(self, sdf_version: str, light_map: str = "", uv_set: int = 0):
         self.__version__ = sdf_version
         self.light_map = light_map
@@ -6639,17 +8721,21 @@ class LightMap(Model):
         return el
 
     @classmethod
-    def from_sdf(cls, el: ET.Element, version: str) -> "LightMap":
+    def _from_sdf(cls, el: ET.Element, version: str):
         _text = el.text or ""
         _light_map = _text
+        if isinstance(_light_map, SDFError):
+            return _light_map
         if _light_map is not None and cmp_version(version, "1.7") < 0:
             if _light_map != "":
-                raise ValueError(f"'light_map' is not supported in SDF version {version} (added in 1.7)")
+                return SDFError(f"'light_map' is not supported in SDF version {version} (added in 1.7)")
         _uv_set = _parse_uint32(el.get("uv_set", 0))
+        if isinstance(_uv_set, SDFError):
+            return _uv_set.extend("@uv_set")
         return cls(sdf_version=version, light_map=_light_map, uv_set=_uv_set)
 
 
-class Metal(Model):
+class Metal(BaseModel):
     def __init__(
         self,
         sdf_version: str,
@@ -6721,33 +8807,93 @@ class Metal(Model):
         return el
 
     @classmethod
-    def from_sdf(cls, el: ET.Element, version: str) -> "Metal":
+    def _from_sdf(cls, el: ET.Element, version: str):
         _c_albedo_map = el.find("albedo_map")
-        _albedo_map = AlbedoMap.from_sdf(_c_albedo_map, version) if _c_albedo_map is not None else None
+        if _c_albedo_map is not None:
+            _res = AlbedoMap._from_sdf(_c_albedo_map, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("albedo_map")
+            _albedo_map = _res
+        else:
+            _albedo_map = None
         _c_roughness_map = el.find("roughness_map")
-        _roughness_map = RoughnessMap.from_sdf(_c_roughness_map, version) if _c_roughness_map is not None else None
+        if _c_roughness_map is not None:
+            _res = RoughnessMap._from_sdf(_c_roughness_map, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("roughness_map")
+            _roughness_map = _res
+        else:
+            _roughness_map = None
         _c_roughness = el.find("roughness")
-        _roughness = Roughness.from_sdf(_c_roughness, version) if _c_roughness is not None else None
+        if _c_roughness is not None:
+            _res = Roughness._from_sdf(_c_roughness, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("roughness")
+            _roughness = _res
+        else:
+            _roughness = None
         _c_metalness_map = el.find("metalness_map")
-        _metalness_map = MetalnessMap.from_sdf(_c_metalness_map, version) if _c_metalness_map is not None else None
+        if _c_metalness_map is not None:
+            _res = MetalnessMap._from_sdf(_c_metalness_map, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("metalness_map")
+            _metalness_map = _res
+        else:
+            _metalness_map = None
         _c_metalness = el.find("metalness")
-        _metalness = Metalness.from_sdf(_c_metalness, version) if _c_metalness is not None else None
+        if _c_metalness is not None:
+            _res = Metalness._from_sdf(_c_metalness, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("metalness")
+            _metalness = _res
+        else:
+            _metalness = None
         _c_environment_map = el.find("environment_map")
-        _environment_map = EnvironmentMap.from_sdf(_c_environment_map, version) if _c_environment_map is not None else None
+        if _c_environment_map is not None:
+            _res = EnvironmentMap._from_sdf(_c_environment_map, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("environment_map")
+            _environment_map = _res
+        else:
+            _environment_map = None
         _c_ambient_occlusion_map = el.find("ambient_occlusion_map")
-        _ambient_occlusion_map = AmbientOcclusionMap.from_sdf(_c_ambient_occlusion_map, version) if _c_ambient_occlusion_map is not None else None
+        if _c_ambient_occlusion_map is not None:
+            _res = AmbientOcclusionMap._from_sdf(_c_ambient_occlusion_map, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("ambient_occlusion_map")
+            _ambient_occlusion_map = _res
+        else:
+            _ambient_occlusion_map = None
         _c_normal_map = el.find("normal_map")
-        _normal_map = NormalMap.from_sdf(_c_normal_map, version) if _c_normal_map is not None else None
+        if _c_normal_map is not None:
+            _res = NormalMap._from_sdf(_c_normal_map, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("normal_map")
+            _normal_map = _res
+        else:
+            _normal_map = None
         _c_emissive_map = el.find("emissive_map")
-        _emissive_map = EmissiveMap.from_sdf(_c_emissive_map, version) if _c_emissive_map is not None else None
+        if _c_emissive_map is not None:
+            _res = EmissiveMap._from_sdf(_c_emissive_map, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("emissive_map")
+            _emissive_map = _res
+        else:
+            _emissive_map = None
         _c_light_map = el.find("light_map")
-        _light_map = LightMap.from_sdf(_c_light_map, version) if _c_light_map is not None else None
+        if _c_light_map is not None:
+            _res = LightMap._from_sdf(_c_light_map, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("light_map")
+            _light_map = _res
+        else:
+            _light_map = None
         if _light_map is not None and cmp_version(version, "1.7") < 0:
-            raise ValueError(f"'light_map' is not supported in SDF version {version} (added in 1.7)")
+            return SDFError(f"'light_map' is not supported in SDF version {version} (added in 1.7)")
         return cls(sdf_version=version, albedo_map=_albedo_map, roughness_map=_roughness_map, roughness=_roughness, metalness_map=_metalness_map, metalness=_metalness, environment_map=_environment_map, ambient_occlusion_map=_ambient_occlusion_map, normal_map=_normal_map, emissive_map=_emissive_map, light_map=_light_map)
 
 
-class Pbr(Model):
+class Pbr(BaseModel):
     def __init__(self, sdf_version: str, metal: "Metal" = None, specular: "Specular" = None):
         self.__version__ = sdf_version
         self.metal = metal
@@ -6772,47 +8918,27 @@ class Pbr(Model):
         return el
 
     @classmethod
-    def from_sdf(cls, el: ET.Element, version: str) -> "Pbr":
+    def _from_sdf(cls, el: ET.Element, version: str):
         _c_metal = el.find("metal")
-        _metal = Metal.from_sdf(_c_metal, version) if _c_metal is not None else None
+        if _c_metal is not None:
+            _res = Metal._from_sdf(_c_metal, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("metal")
+            _metal = _res
+        else:
+            _metal = None
         _c_specular = el.find("specular")
-        _specular = Specular.from_sdf(_c_specular, version) if _c_specular is not None else None
+        if _c_specular is not None:
+            _res = Specular._from_sdf(_c_specular, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("specular")
+            _specular = _res
+        else:
+            _specular = None
         return cls(sdf_version=version, metal=_metal, specular=_specular)
 
 
-class RenderOrder(Model):
-    def __init__(self, sdf_version: str, render_order: float = 0.0):
-        self.__version__ = sdf_version
-        self.render_order = render_order
-
-    def to_version(self, target_version: str) -> "RenderOrder":
-        if self.render_order is not None and cmp_version(target_version, "1.7") < 0:
-            raise ValueError(f"'render_order' is not supported in SDF version {target_version} (added in 1.7)")
-        kwargs = {"sdf_version": target_version}
-        kwargs["render_order"] = self.render_order
-        new_obj = self.__class__(**kwargs)
-        return new_obj
-
-    def to_sdf(self, version: str = None) -> ET.Element:
-        if version is not None and version != self.__version__:
-            return self.to_version(version).to_sdf()
-        version = version or self.__version__
-        el = ET.Element("render_order")
-        if self.render_order is not None:
-            el.text = str(self.render_order)
-        return el
-
-    @classmethod
-    def from_sdf(cls, el: ET.Element, version: str) -> "RenderOrder":
-        _text = el.text or 0.0
-        _render_order = _parse_double(_text)
-        if _render_order is not None and cmp_version(version, "1.7") < 0:
-            if _render_order != 0.0:
-                raise ValueError(f"'render_order' is not supported in SDF version {version} (added in 1.7)")
-        return cls(sdf_version=version, render_order=_render_order)
-
-
-class Shininess(Model):
+class Shininess(BaseModel):
     def __init__(self, sdf_version: str, shininess: float = 0):
         self.__version__ = sdf_version
         self.shininess = shininess
@@ -6835,16 +8961,52 @@ class Shininess(Model):
         return el
 
     @classmethod
-    def from_sdf(cls, el: ET.Element, version: str) -> "Shininess":
+    def _from_sdf(cls, el: ET.Element, version: str):
         _text = el.text or 0
         _shininess = _parse_double(_text)
+        if isinstance(_shininess, SDFError):
+            return _shininess
         if _shininess is not None and cmp_version(version, "1.7") < 0:
             if _shininess != 0:
-                raise ValueError(f"'shininess' is not supported in SDF version {version} (added in 1.7)")
+                return SDFError(f"'shininess' is not supported in SDF version {version} (added in 1.7)")
         return cls(sdf_version=version, shininess=_shininess)
 
 
-class DoubleSided(Model):
+class RenderOrder(BaseModel):
+    def __init__(self, sdf_version: str, render_order: float = 0.0):
+        self.__version__ = sdf_version
+        self.render_order = render_order
+
+    def to_version(self, target_version: str) -> "RenderOrder":
+        if self.render_order is not None and cmp_version(target_version, "1.7") < 0:
+            raise ValueError(f"'render_order' is not supported in SDF version {target_version} (added in 1.7)")
+        kwargs = {"sdf_version": target_version}
+        kwargs["render_order"] = self.render_order
+        new_obj = self.__class__(**kwargs)
+        return new_obj
+
+    def to_sdf(self, version: str = None) -> ET.Element:
+        if version is not None and version != self.__version__:
+            return self.to_version(version).to_sdf()
+        version = version or self.__version__
+        el = ET.Element("render_order")
+        if self.render_order is not None:
+            el.text = str(self.render_order)
+        return el
+
+    @classmethod
+    def _from_sdf(cls, el: ET.Element, version: str):
+        _text = el.text or 0.0
+        _render_order = _parse_double(_text)
+        if isinstance(_render_order, SDFError):
+            return _render_order
+        if _render_order is not None and cmp_version(version, "1.7") < 0:
+            if _render_order != 0.0:
+                return SDFError(f"'render_order' is not supported in SDF version {version} (added in 1.7)")
+        return cls(sdf_version=version, render_order=_render_order)
+
+
+class DoubleSided(BaseModel):
     def __init__(self, sdf_version: str, double_sided: bool = False):
         self.__version__ = sdf_version
         self.double_sided = double_sided
@@ -6867,16 +9029,18 @@ class DoubleSided(Model):
         return el
 
     @classmethod
-    def from_sdf(cls, el: ET.Element, version: str) -> "DoubleSided":
+    def _from_sdf(cls, el: ET.Element, version: str):
         _text = el.text or False
-        _double_sided = _text.strip().lower() == 'true'
+        _double_sided = str(_text).strip().lower() == 'true'
+        if isinstance(_double_sided, SDFError):
+            return _double_sided
         if _double_sided is not None and cmp_version(version, "1.7") < 0:
             if _double_sided != False:
-                raise ValueError(f"'double_sided' is not supported in SDF version {version} (added in 1.7)")
+                return SDFError(f"'double_sided' is not supported in SDF version {version} (added in 1.7)")
         return cls(sdf_version=version, double_sided=_double_sided)
 
 
-class Material(Model):
+class Material(BaseModel):
     def __init__(
         self,
         sdf_version: str,
@@ -6888,8 +9052,8 @@ class Material(Model):
         emissive: "Emissive" = None,
         lighting: "Lighting" = None,
         pbr: "Pbr" = None,
-        render_order: "RenderOrder" = None,
         shininess: "Shininess" = None,
+        render_order: "RenderOrder" = None,
         double_sided: "DoubleSided" = None
     ):
         self.__version__ = sdf_version
@@ -6901,8 +9065,8 @@ class Material(Model):
         self.emissive = emissive
         self.lighting = lighting
         self.pbr = pbr
-        self.render_order = render_order
         self.shininess = shininess
+        self.render_order = render_order
         self.double_sided = double_sided
 
     def to_version(self, target_version: str) -> "Material":
@@ -6910,10 +9074,10 @@ class Material(Model):
             raise ValueError(f"'lighting' is not supported in SDF version {target_version} (added in 1.4)")
         if self.pbr is not None and cmp_version(target_version, "1.6") < 0:
             raise ValueError(f"'pbr' is not supported in SDF version {target_version} (added in 1.6)")
-        if self.render_order is not None and cmp_version(target_version, "1.7") < 0:
-            raise ValueError(f"'render_order' is not supported in SDF version {target_version} (added in 1.7)")
         if self.shininess is not None and cmp_version(target_version, "1.7") < 0:
             raise ValueError(f"'shininess' is not supported in SDF version {target_version} (added in 1.7)")
+        if self.render_order is not None and cmp_version(target_version, "1.7") < 0:
+            raise ValueError(f"'render_order' is not supported in SDF version {target_version} (added in 1.7)")
         if self.double_sided is not None and cmp_version(target_version, "1.7") < 0:
             raise ValueError(f"'double_sided' is not supported in SDF version {target_version} (added in 1.7)")
         kwargs = {"sdf_version": target_version}
@@ -6925,8 +9089,8 @@ class Material(Model):
         kwargs["emissive"] = self.emissive.to_version(target_version) if self.emissive is not None else None
         kwargs["lighting"] = self.lighting.to_version(target_version) if self.lighting is not None else None
         kwargs["pbr"] = self.pbr.to_version(target_version) if self.pbr is not None else None
-        kwargs["render_order"] = self.render_order.to_version(target_version) if self.render_order is not None else None
         kwargs["shininess"] = self.shininess.to_version(target_version) if self.shininess is not None else None
+        kwargs["render_order"] = self.render_order.to_version(target_version) if self.render_order is not None else None
         kwargs["double_sided"] = self.double_sided.to_version(target_version) if self.double_sided is not None else None
         new_obj = self.__class__(**kwargs)
         return new_obj
@@ -6952,52 +9116,118 @@ class Material(Model):
             el.append(self.lighting.to_sdf(version))
         if self.pbr is not None:
             el.append(self.pbr.to_sdf(version))
-        if self.render_order is not None:
-            el.append(self.render_order.to_sdf(version))
         if self.shininess is not None:
             el.append(self.shininess.to_sdf(version))
+        if self.render_order is not None:
+            el.append(self.render_order.to_sdf(version))
         if self.double_sided is not None:
             el.append(self.double_sided.to_sdf(version))
         return el
 
     @classmethod
-    def from_sdf(cls, el: ET.Element, version: str) -> "Material":
+    def _from_sdf(cls, el: ET.Element, version: str):
         _c_script = el.find("script")
-        _script = Script.from_sdf(_c_script, version) if _c_script is not None else None
+        if _c_script is not None:
+            _res = Script._from_sdf(_c_script, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("script")
+            _script = _res
+        else:
+            _script = None
         _c_shader = el.find("shader")
-        _shader = Shader.from_sdf(_c_shader, version) if _c_shader is not None else None
+        if _c_shader is not None:
+            _res = Shader._from_sdf(_c_shader, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("shader")
+            _shader = _res
+        else:
+            _shader = None
         _c_ambient = el.find("ambient")
-        _ambient = Ambient.from_sdf(_c_ambient, version) if _c_ambient is not None else None
+        if _c_ambient is not None:
+            _res = Ambient._from_sdf(_c_ambient, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("ambient")
+            _ambient = _res
+        else:
+            _ambient = None
         _c_diffuse = el.find("diffuse")
-        _diffuse = Diffuse.from_sdf(_c_diffuse, version) if _c_diffuse is not None else None
+        if _c_diffuse is not None:
+            _res = Diffuse._from_sdf(_c_diffuse, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("diffuse")
+            _diffuse = _res
+        else:
+            _diffuse = None
         _c_specular = el.find("specular")
-        _specular = Specular.from_sdf(_c_specular, version) if _c_specular is not None else None
+        if _c_specular is not None:
+            _res = Specular._from_sdf(_c_specular, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("specular")
+            _specular = _res
+        else:
+            _specular = None
         _c_emissive = el.find("emissive")
-        _emissive = Emissive.from_sdf(_c_emissive, version) if _c_emissive is not None else None
+        if _c_emissive is not None:
+            _res = Emissive._from_sdf(_c_emissive, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("emissive")
+            _emissive = _res
+        else:
+            _emissive = None
         _c_lighting = el.find("lighting")
-        _lighting = Lighting.from_sdf(_c_lighting, version) if _c_lighting is not None else None
+        if _c_lighting is not None:
+            _res = Lighting._from_sdf(_c_lighting, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("lighting")
+            _lighting = _res
+        else:
+            _lighting = None
         if _lighting is not None and cmp_version(version, "1.4") < 0:
-            raise ValueError(f"'lighting' is not supported in SDF version {version} (added in 1.4)")
+            return SDFError(f"'lighting' is not supported in SDF version {version} (added in 1.4)")
         _c_pbr = el.find("pbr")
-        _pbr = Pbr.from_sdf(_c_pbr, version) if _c_pbr is not None else None
+        if _c_pbr is not None:
+            _res = Pbr._from_sdf(_c_pbr, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("pbr")
+            _pbr = _res
+        else:
+            _pbr = None
         if _pbr is not None and cmp_version(version, "1.6") < 0:
-            raise ValueError(f"'pbr' is not supported in SDF version {version} (added in 1.6)")
-        _c_render_order = el.find("render_order")
-        _render_order = RenderOrder.from_sdf(_c_render_order, version) if _c_render_order is not None else None
-        if _render_order is not None and cmp_version(version, "1.7") < 0:
-            raise ValueError(f"'render_order' is not supported in SDF version {version} (added in 1.7)")
+            return SDFError(f"'pbr' is not supported in SDF version {version} (added in 1.6)")
         _c_shininess = el.find("shininess")
-        _shininess = Shininess.from_sdf(_c_shininess, version) if _c_shininess is not None else None
+        if _c_shininess is not None:
+            _res = Shininess._from_sdf(_c_shininess, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("shininess")
+            _shininess = _res
+        else:
+            _shininess = None
         if _shininess is not None and cmp_version(version, "1.7") < 0:
-            raise ValueError(f"'shininess' is not supported in SDF version {version} (added in 1.7)")
+            return SDFError(f"'shininess' is not supported in SDF version {version} (added in 1.7)")
+        _c_render_order = el.find("render_order")
+        if _c_render_order is not None:
+            _res = RenderOrder._from_sdf(_c_render_order, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("render_order")
+            _render_order = _res
+        else:
+            _render_order = None
+        if _render_order is not None and cmp_version(version, "1.7") < 0:
+            return SDFError(f"'render_order' is not supported in SDF version {version} (added in 1.7)")
         _c_double_sided = el.find("double_sided")
-        _double_sided = DoubleSided.from_sdf(_c_double_sided, version) if _c_double_sided is not None else None
+        if _c_double_sided is not None:
+            _res = DoubleSided._from_sdf(_c_double_sided, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("double_sided")
+            _double_sided = _res
+        else:
+            _double_sided = None
         if _double_sided is not None and cmp_version(version, "1.7") < 0:
-            raise ValueError(f"'double_sided' is not supported in SDF version {version} (added in 1.7)")
-        return cls(sdf_version=version, script=_script, shader=_shader, ambient=_ambient, diffuse=_diffuse, specular=_specular, emissive=_emissive, lighting=_lighting, pbr=_pbr, render_order=_render_order, shininess=_shininess, double_sided=_double_sided)
+            return SDFError(f"'double_sided' is not supported in SDF version {version} (added in 1.7)")
+        return cls(sdf_version=version, script=_script, shader=_shader, ambient=_ambient, diffuse=_diffuse, specular=_specular, emissive=_emissive, lighting=_lighting, pbr=_pbr, shininess=_shininess, render_order=_render_order, double_sided=_double_sided)
 
 
-class Layer(Model):
+class Layer(BaseModel):
     def __init__(self, sdf_version: str, layer: int = 0):
         self.__version__ = sdf_version
         self.layer = layer
@@ -7018,13 +9248,15 @@ class Layer(Model):
         return el
 
     @classmethod
-    def from_sdf(cls, el: ET.Element, version: str) -> "Layer":
+    def _from_sdf(cls, el: ET.Element, version: str):
         _text = el.text or 0
         _layer = _parse_int32(_text)
+        if isinstance(_layer, SDFError):
+            return _layer
         return cls(sdf_version=version, layer=_layer)
 
 
-class Meta(Model):
+class Meta(BaseModel):
     def __init__(self, sdf_version: str, layer: "Layer" = None):
         self.__version__ = sdf_version
         self.layer = layer
@@ -7045,13 +9277,19 @@ class Meta(Model):
         return el
 
     @classmethod
-    def from_sdf(cls, el: ET.Element, version: str) -> "Meta":
+    def _from_sdf(cls, el: ET.Element, version: str):
         _c_layer = el.find("layer")
-        _layer = Layer.from_sdf(_c_layer, version) if _c_layer is not None else None
+        if _c_layer is not None:
+            _res = Layer._from_sdf(_c_layer, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("layer")
+            _layer = _res
+        else:
+            _layer = None
         return cls(sdf_version=version, layer=_layer)
 
 
-class VisibilityFlags(Model):
+class VisibilityFlags(BaseModel):
     def __init__(self, sdf_version: str, visibility_flags: int = 4294967295):
         self.__version__ = sdf_version
         self.visibility_flags = visibility_flags
@@ -7074,16 +9312,18 @@ class VisibilityFlags(Model):
         return el
 
     @classmethod
-    def from_sdf(cls, el: ET.Element, version: str) -> "VisibilityFlags":
+    def _from_sdf(cls, el: ET.Element, version: str):
         _text = el.text or 4294967295
         _visibility_flags = _parse_uint32(_text)
+        if isinstance(_visibility_flags, SDFError):
+            return _visibility_flags
         if _visibility_flags is not None and cmp_version(version, "1.7") < 0:
             if _visibility_flags != 4294967295:
-                raise ValueError(f"'visibility_flags' is not supported in SDF version {version} (added in 1.7)")
+                return SDFError(f"'visibility_flags' is not supported in SDF version {version} (added in 1.7)")
         return cls(sdf_version=version, visibility_flags=_visibility_flags)
 
 
-class Visual(Model):
+class Visual(BaseModel):
     def __init__(
         self,
         sdf_version: str,
@@ -7095,8 +9335,8 @@ class Visual(Model):
         transparency: "Transparency" = None,
         pose: "Pose" = None,
         material: "Material" = None,
-        frame: List["Frame"] = None,
         meta: "Meta" = None,
+        frame: List["Frame"] = None,
         visibility_flags: "VisibilityFlags" = None
     ):
         self.__version__ = sdf_version
@@ -7108,15 +9348,17 @@ class Visual(Model):
         self.transparency = transparency
         self.pose = pose
         self.material = material
-        self.frame = frame or []
         self.meta = meta
+        self.frame = frame or []
         self.visibility_flags = visibility_flags
 
     def to_version(self, target_version: str) -> "Visual":
-        if self.frame is not None and cmp_version(target_version, "1.5") < 0:
-            raise ValueError(f"'frame' is not supported in SDF version {target_version} (added in 1.5)")
         if self.meta is not None and cmp_version(target_version, "1.5") < 0:
             raise ValueError(f"'meta' is not supported in SDF version {target_version} (added in 1.5)")
+        if self.frame is not None and cmp_version(target_version, "1.5") < 0:
+            raise ValueError(f"'frame' is not supported in SDF version {target_version} (added in 1.5)")
+        if self.frame is not None and cmp_version(target_version, "1.7") >= 0:
+            raise ValueError(f"'frame' is not supported in SDF version {target_version} (removed in 1.7)")
         if self.visibility_flags is not None and cmp_version(target_version, "1.7") < 0:
             raise ValueError(f"'visibility_flags' is not supported in SDF version {target_version} (added in 1.7)")
         kwargs = {"sdf_version": target_version}
@@ -7128,8 +9370,8 @@ class Visual(Model):
         kwargs["transparency"] = self.transparency.to_version(target_version) if self.transparency is not None else None
         kwargs["pose"] = self.pose.to_version(target_version) if self.pose is not None else None
         kwargs["material"] = self.material.to_version(target_version) if self.material is not None else None
-        kwargs["frame"] = [c.to_version(target_version) for c in (self.frame or [])]
         kwargs["meta"] = self.meta.to_version(target_version) if self.meta is not None else None
+        kwargs["frame"] = [c.to_version(target_version) for c in (self.frame or [])]
         kwargs["visibility_flags"] = self.visibility_flags.to_version(target_version) if self.visibility_flags is not None else None
         new_obj = self.__class__(**kwargs)
         return new_obj
@@ -7139,8 +9381,12 @@ class Visual(Model):
             return self.to_version(version).to_sdf()
         version = version or self.__version__
         el = ET.Element("visual")
+        if self.name is None:
+            raise ValueError(f"'name' is required in SDF version {version}")
         if self.name is not None:
             el.set("name", self.name)
+        if self.geometry is None:
+            raise ValueError(f"'geometry' is required in SDF version {version}")
         if self.geometry is not None:
             el.append(self.geometry.to_sdf(version))
         for item in (self.plugin or []):
@@ -7155,45 +9401,109 @@ class Visual(Model):
             el.append(self.pose.to_sdf(version))
         if self.material is not None:
             el.append(self.material.to_sdf(version))
-        for item in (self.frame or []):
-            el.append(item.to_sdf(version))
         if self.meta is not None:
             el.append(self.meta.to_sdf(version))
+        for item in (self.frame or []):
+            el.append(item.to_sdf(version))
         if self.visibility_flags is not None:
             el.append(self.visibility_flags.to_sdf(version))
         return el
 
     @classmethod
-    def from_sdf(cls, el: ET.Element, version: str) -> "Visual":
+    def _from_sdf(cls, el: ET.Element, version: str):
+        if el.get("name") is None:
+            return SDFError(f"'name' is required in SDF version {version}")
         _name = el.get("name", "__default__")
+        if isinstance(_name, SDFError):
+            return _name.extend("@name")
         _c_geometry = el.find("geometry")
-        _geometry = Geometry.from_sdf(_c_geometry, version) if _c_geometry is not None else None
-        _plugin = [Plugin.from_sdf(c, version) for c in el.findall("plugin")]
+        if _c_geometry is not None:
+            _res = Geometry._from_sdf(_c_geometry, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("geometry")
+            _geometry = _res
+        else:
+            _geometry = None
+        if _geometry is None:
+            return SDFError(f"'geometry' is required in SDF version {version}")
+        _plugin = []
+        for c in el.findall("plugin"):
+            _res = Plugin._from_sdf(c, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("plugin")
+            _plugin.append(_res)
         _c_cast_shadows = el.find("cast_shadows")
-        _cast_shadows = CastShadows.from_sdf(_c_cast_shadows, version) if _c_cast_shadows is not None else None
+        if _c_cast_shadows is not None:
+            _res = CastShadows._from_sdf(_c_cast_shadows, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("cast_shadows")
+            _cast_shadows = _res
+        else:
+            _cast_shadows = None
         _c_laser_retro = el.find("laser_retro")
-        _laser_retro = LaserRetro.from_sdf(_c_laser_retro, version) if _c_laser_retro is not None else None
+        if _c_laser_retro is not None:
+            _res = LaserRetro._from_sdf(_c_laser_retro, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("laser_retro")
+            _laser_retro = _res
+        else:
+            _laser_retro = None
         _c_transparency = el.find("transparency")
-        _transparency = Transparency.from_sdf(_c_transparency, version) if _c_transparency is not None else None
+        if _c_transparency is not None:
+            _res = Transparency._from_sdf(_c_transparency, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("transparency")
+            _transparency = _res
+        else:
+            _transparency = None
         _c_pose = el.find("pose")
-        _pose = Pose.from_sdf(_c_pose, version) if _c_pose is not None else None
+        if _c_pose is not None:
+            _res = Pose._from_sdf(_c_pose, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("pose")
+            _pose = _res
+        else:
+            _pose = None
         _c_material = el.find("material")
-        _material = Material.from_sdf(_c_material, version) if _c_material is not None else None
-        _frame = [Frame.from_sdf(c, version) for c in el.findall("frame")]
-        if _frame and cmp_version(version, "1.5") < 0:
-            raise ValueError(f"'frame' is not supported in SDF version {version} (added in 1.5)")
+        if _c_material is not None:
+            _res = Material._from_sdf(_c_material, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("material")
+            _material = _res
+        else:
+            _material = None
         _c_meta = el.find("meta")
-        _meta = Meta.from_sdf(_c_meta, version) if _c_meta is not None else None
+        if _c_meta is not None:
+            _res = Meta._from_sdf(_c_meta, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("meta")
+            _meta = _res
+        else:
+            _meta = None
         if _meta is not None and cmp_version(version, "1.5") < 0:
-            raise ValueError(f"'meta' is not supported in SDF version {version} (added in 1.5)")
+            return SDFError(f"'meta' is not supported in SDF version {version} (added in 1.5)")
+        _frame = []
+        for c in el.findall("frame"):
+            _res = Frame._from_sdf(c, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("frame")
+            _frame.append(_res)
+        if _frame and cmp_version(version, "1.5") < 0:
+            return SDFError(f"'frame' is not supported in SDF version {version} (added in 1.5)")
         _c_visibility_flags = el.find("visibility_flags")
-        _visibility_flags = VisibilityFlags.from_sdf(_c_visibility_flags, version) if _c_visibility_flags is not None else None
+        if _c_visibility_flags is not None:
+            _res = VisibilityFlags._from_sdf(_c_visibility_flags, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("visibility_flags")
+            _visibility_flags = _res
+        else:
+            _visibility_flags = None
         if _visibility_flags is not None and cmp_version(version, "1.7") < 0:
-            raise ValueError(f"'visibility_flags' is not supported in SDF version {version} (added in 1.7)")
-        return cls(sdf_version=version, name=_name, geometry=_geometry, plugin=_plugin, cast_shadows=_cast_shadows, laser_retro=_laser_retro, transparency=_transparency, pose=_pose, material=_material, frame=_frame, meta=_meta, visibility_flags=_visibility_flags)
+            return SDFError(f"'visibility_flags' is not supported in SDF version {version} (added in 1.7)")
+        return cls(sdf_version=version, name=_name, geometry=_geometry, plugin=_plugin, cast_shadows=_cast_shadows, laser_retro=_laser_retro, transparency=_transparency, pose=_pose, material=_material, meta=_meta, frame=_frame, visibility_flags=_visibility_flags)
 
 
-class Samples(Model):
+class Samples(BaseModel):
     def __init__(self, sdf_version: str, samples: int = 640):
         self.__version__ = sdf_version
         self.samples = samples
@@ -7209,18 +9519,24 @@ class Samples(Model):
             return self.to_version(version).to_sdf()
         version = version or self.__version__
         el = ET.Element("samples")
+        if self.samples is None:
+            raise ValueError(f"'samples' is required in SDF version {version}")
         if self.samples is not None:
             el.text = str(self.samples)
         return el
 
     @classmethod
-    def from_sdf(cls, el: ET.Element, version: str) -> "Samples":
+    def _from_sdf(cls, el: ET.Element, version: str):
+        if el.text is None:
+            return SDFError(f"'samples' is required in SDF version {version}")
         _text = el.text or 640
         _samples = _parse_uint32(_text)
+        if isinstance(_samples, SDFError):
+            return _samples
         return cls(sdf_version=version, samples=_samples)
 
 
-class Resolution(Model):
+class Resolution(BaseModel):
     def __init__(self, sdf_version: str, resolution: float = 1):
         self.__version__ = sdf_version
         self.resolution = resolution
@@ -7236,18 +9552,24 @@ class Resolution(Model):
             return self.to_version(version).to_sdf()
         version = version or self.__version__
         el = ET.Element("resolution")
+        if self.resolution is None:
+            raise ValueError(f"'resolution' is required in SDF version {version}")
         if self.resolution is not None:
             el.text = str(self.resolution)
         return el
 
     @classmethod
-    def from_sdf(cls, el: ET.Element, version: str) -> "Resolution":
+    def _from_sdf(cls, el: ET.Element, version: str):
+        if el.text is None:
+            return SDFError(f"'resolution' is required in SDF version {version}")
         _text = el.text or 1
         _resolution = _parse_double(_text)
+        if isinstance(_resolution, SDFError):
+            return _resolution
         return cls(sdf_version=version, resolution=_resolution)
 
 
-class MinAngle(Model):
+class MinAngle(BaseModel):
     def __init__(self, sdf_version: str, min_angle: float = 0):
         self.__version__ = sdf_version
         self.min_angle = min_angle
@@ -7263,18 +9585,24 @@ class MinAngle(Model):
             return self.to_version(version).to_sdf()
         version = version or self.__version__
         el = ET.Element("min_angle")
+        if self.min_angle is None:
+            raise ValueError(f"'min_angle' is required in SDF version {version}")
         if self.min_angle is not None:
             el.text = str(self.min_angle)
         return el
 
     @classmethod
-    def from_sdf(cls, el: ET.Element, version: str) -> "MinAngle":
+    def _from_sdf(cls, el: ET.Element, version: str):
+        if el.text is None:
+            return SDFError(f"'min_angle' is required in SDF version {version}")
         _text = el.text or 0
         _min_angle = _parse_double(_text)
+        if isinstance(_min_angle, SDFError):
+            return _min_angle
         return cls(sdf_version=version, min_angle=_min_angle)
 
 
-class MaxAngle(Model):
+class MaxAngle(BaseModel):
     def __init__(self, sdf_version: str, max_angle: float = 0):
         self.__version__ = sdf_version
         self.max_angle = max_angle
@@ -7290,18 +9618,24 @@ class MaxAngle(Model):
             return self.to_version(version).to_sdf()
         version = version or self.__version__
         el = ET.Element("max_angle")
+        if self.max_angle is None:
+            raise ValueError(f"'max_angle' is required in SDF version {version}")
         if self.max_angle is not None:
             el.text = str(self.max_angle)
         return el
 
     @classmethod
-    def from_sdf(cls, el: ET.Element, version: str) -> "MaxAngle":
+    def _from_sdf(cls, el: ET.Element, version: str):
+        if el.text is None:
+            return SDFError(f"'max_angle' is required in SDF version {version}")
         _text = el.text or 0
         _max_angle = _parse_double(_text)
+        if isinstance(_max_angle, SDFError):
+            return _max_angle
         return cls(sdf_version=version, max_angle=_max_angle)
 
 
-class Horizontal(Model):
+class Horizontal(BaseModel):
     def __init__(
         self,
         sdf_version: str,
@@ -7330,30 +9664,70 @@ class Horizontal(Model):
             return self.to_version(version).to_sdf()
         version = version or self.__version__
         el = ET.Element("horizontal")
+        if self.samples is None:
+            raise ValueError(f"'samples' is required in SDF version {version}")
         if self.samples is not None:
             el.append(self.samples.to_sdf(version))
+        if self.resolution is None:
+            raise ValueError(f"'resolution' is required in SDF version {version}")
         if self.resolution is not None:
             el.append(self.resolution.to_sdf(version))
+        if self.min_angle is None:
+            raise ValueError(f"'min_angle' is required in SDF version {version}")
         if self.min_angle is not None:
             el.append(self.min_angle.to_sdf(version))
+        if self.max_angle is None:
+            raise ValueError(f"'max_angle' is required in SDF version {version}")
         if self.max_angle is not None:
             el.append(self.max_angle.to_sdf(version))
         return el
 
     @classmethod
-    def from_sdf(cls, el: ET.Element, version: str) -> "Horizontal":
+    def _from_sdf(cls, el: ET.Element, version: str):
         _c_samples = el.find("samples")
-        _samples = Samples.from_sdf(_c_samples, version) if _c_samples is not None else None
+        if _c_samples is not None:
+            _res = Samples._from_sdf(_c_samples, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("samples")
+            _samples = _res
+        else:
+            _samples = None
+        if _samples is None:
+            return SDFError(f"'samples' is required in SDF version {version}")
         _c_resolution = el.find("resolution")
-        _resolution = Resolution.from_sdf(_c_resolution, version) if _c_resolution is not None else None
+        if _c_resolution is not None:
+            _res = Resolution._from_sdf(_c_resolution, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("resolution")
+            _resolution = _res
+        else:
+            _resolution = None
+        if _resolution is None:
+            return SDFError(f"'resolution' is required in SDF version {version}")
         _c_min_angle = el.find("min_angle")
-        _min_angle = MinAngle.from_sdf(_c_min_angle, version) if _c_min_angle is not None else None
+        if _c_min_angle is not None:
+            _res = MinAngle._from_sdf(_c_min_angle, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("min_angle")
+            _min_angle = _res
+        else:
+            _min_angle = None
+        if _min_angle is None:
+            return SDFError(f"'min_angle' is required in SDF version {version}")
         _c_max_angle = el.find("max_angle")
-        _max_angle = MaxAngle.from_sdf(_c_max_angle, version) if _c_max_angle is not None else None
+        if _c_max_angle is not None:
+            _res = MaxAngle._from_sdf(_c_max_angle, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("max_angle")
+            _max_angle = _res
+        else:
+            _max_angle = None
+        if _max_angle is None:
+            return SDFError(f"'max_angle' is required in SDF version {version}")
         return cls(sdf_version=version, samples=_samples, resolution=_resolution, min_angle=_min_angle, max_angle=_max_angle)
 
 
-class Vertical(Model):
+class Vertical(BaseModel):
     def __init__(
         self,
         sdf_version: str,
@@ -7382,30 +9756,66 @@ class Vertical(Model):
             return self.to_version(version).to_sdf()
         version = version or self.__version__
         el = ET.Element("vertical")
+        if self.samples is None:
+            raise ValueError(f"'samples' is required in SDF version {version}")
         if self.samples is not None:
             el.append(self.samples.to_sdf(version))
         if self.resolution is not None:
             el.append(self.resolution.to_sdf(version))
+        if self.min_angle is None:
+            raise ValueError(f"'min_angle' is required in SDF version {version}")
         if self.min_angle is not None:
             el.append(self.min_angle.to_sdf(version))
+        if self.max_angle is None:
+            raise ValueError(f"'max_angle' is required in SDF version {version}")
         if self.max_angle is not None:
             el.append(self.max_angle.to_sdf(version))
         return el
 
     @classmethod
-    def from_sdf(cls, el: ET.Element, version: str) -> "Vertical":
+    def _from_sdf(cls, el: ET.Element, version: str):
         _c_samples = el.find("samples")
-        _samples = Samples.from_sdf(_c_samples, version) if _c_samples is not None else None
+        if _c_samples is not None:
+            _res = Samples._from_sdf(_c_samples, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("samples")
+            _samples = _res
+        else:
+            _samples = None
+        if _samples is None:
+            return SDFError(f"'samples' is required in SDF version {version}")
         _c_resolution = el.find("resolution")
-        _resolution = Resolution.from_sdf(_c_resolution, version) if _c_resolution is not None else None
+        if _c_resolution is not None:
+            _res = Resolution._from_sdf(_c_resolution, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("resolution")
+            _resolution = _res
+        else:
+            _resolution = None
         _c_min_angle = el.find("min_angle")
-        _min_angle = MinAngle.from_sdf(_c_min_angle, version) if _c_min_angle is not None else None
+        if _c_min_angle is not None:
+            _res = MinAngle._from_sdf(_c_min_angle, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("min_angle")
+            _min_angle = _res
+        else:
+            _min_angle = None
+        if _min_angle is None:
+            return SDFError(f"'min_angle' is required in SDF version {version}")
         _c_max_angle = el.find("max_angle")
-        _max_angle = MaxAngle.from_sdf(_c_max_angle, version) if _c_max_angle is not None else None
+        if _c_max_angle is not None:
+            _res = MaxAngle._from_sdf(_c_max_angle, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("max_angle")
+            _max_angle = _res
+        else:
+            _max_angle = None
+        if _max_angle is None:
+            return SDFError(f"'max_angle' is required in SDF version {version}")
         return cls(sdf_version=version, samples=_samples, resolution=_resolution, min_angle=_min_angle, max_angle=_max_angle)
 
 
-class Scan(Model):
+class Scan(BaseModel):
     def __init__(
         self,
         sdf_version: str,
@@ -7428,6 +9838,8 @@ class Scan(Model):
             return self.to_version(version).to_sdf()
         version = version or self.__version__
         el = ET.Element("scan")
+        if self.horizontal is None:
+            raise ValueError(f"'horizontal' is required in SDF version {version}")
         if self.horizontal is not None:
             el.append(self.horizontal.to_sdf(version))
         if self.vertical is not None:
@@ -7435,15 +9847,29 @@ class Scan(Model):
         return el
 
     @classmethod
-    def from_sdf(cls, el: ET.Element, version: str) -> "Scan":
+    def _from_sdf(cls, el: ET.Element, version: str):
         _c_horizontal = el.find("horizontal")
-        _horizontal = Horizontal.from_sdf(_c_horizontal, version) if _c_horizontal is not None else None
+        if _c_horizontal is not None:
+            _res = Horizontal._from_sdf(_c_horizontal, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("horizontal")
+            _horizontal = _res
+        else:
+            _horizontal = None
+        if _horizontal is None:
+            return SDFError(f"'horizontal' is required in SDF version {version}")
         _c_vertical = el.find("vertical")
-        _vertical = Vertical.from_sdf(_c_vertical, version) if _c_vertical is not None else None
+        if _c_vertical is not None:
+            _res = Vertical._from_sdf(_c_vertical, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("vertical")
+            _vertical = _res
+        else:
+            _vertical = None
         return cls(sdf_version=version, horizontal=_horizontal, vertical=_vertical)
 
 
-class Mean(Model):
+class Mean(BaseModel):
     def __init__(self, sdf_version: str, mean: float = 0.0):
         self.__version__ = sdf_version
         self.mean = mean
@@ -7464,13 +9890,15 @@ class Mean(Model):
         return el
 
     @classmethod
-    def from_sdf(cls, el: ET.Element, version: str) -> "Mean":
+    def _from_sdf(cls, el: ET.Element, version: str):
         _text = el.text or 0.0
         _mean = _parse_double(_text)
+        if isinstance(_mean, SDFError):
+            return _mean
         return cls(sdf_version=version, mean=_mean)
 
 
-class Stddev(Model):
+class Stddev(BaseModel):
     def __init__(self, sdf_version: str, stddev: float = 0.0):
         self.__version__ = sdf_version
         self.stddev = stddev
@@ -7491,13 +9919,15 @@ class Stddev(Model):
         return el
 
     @classmethod
-    def from_sdf(cls, el: ET.Element, version: str) -> "Stddev":
+    def _from_sdf(cls, el: ET.Element, version: str):
         _text = el.text or 0.0
         _stddev = _parse_double(_text)
+        if isinstance(_stddev, SDFError):
+            return _stddev
         return cls(sdf_version=version, stddev=_stddev)
 
 
-class Noise(Model):
+class Noise(BaseModel):
     def __init__(
         self,
         sdf_version: str,
@@ -7523,6 +9953,8 @@ class Noise(Model):
             return self.to_version(version).to_sdf()
         version = version or self.__version__
         el = ET.Element("noise")
+        if self.type is None:
+            raise ValueError(f"'type' is required in SDF version {version}")
         if self.type is not None:
             el.append(self.type.to_sdf(version))
         if self.mean is not None:
@@ -7532,17 +9964,37 @@ class Noise(Model):
         return el
 
     @classmethod
-    def from_sdf(cls, el: ET.Element, version: str) -> "Noise":
+    def _from_sdf(cls, el: ET.Element, version: str):
         _c_type = el.find("type")
-        _type = Type.from_sdf(_c_type, version) if _c_type is not None else None
+        if _c_type is not None:
+            _res = Type._from_sdf(_c_type, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("type")
+            _type = _res
+        else:
+            _type = None
+        if _type is None:
+            return SDFError(f"'type' is required in SDF version {version}")
         _c_mean = el.find("mean")
-        _mean = Mean.from_sdf(_c_mean, version) if _c_mean is not None else None
+        if _c_mean is not None:
+            _res = Mean._from_sdf(_c_mean, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("mean")
+            _mean = _res
+        else:
+            _mean = None
         _c_stddev = el.find("stddev")
-        _stddev = Stddev.from_sdf(_c_stddev, version) if _c_stddev is not None else None
+        if _c_stddev is not None:
+            _res = Stddev._from_sdf(_c_stddev, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("stddev")
+            _stddev = _res
+        else:
+            _stddev = None
         return cls(sdf_version=version, type=_type, mean=_mean, stddev=_stddev)
 
 
-class VisibilityMask(Model):
+class VisibilityMask(BaseModel):
     def __init__(self, sdf_version: str, visibility_mask: int = 4294967295):
         self.__version__ = sdf_version
         self.visibility_mask = visibility_mask
@@ -7565,16 +10017,18 @@ class VisibilityMask(Model):
         return el
 
     @classmethod
-    def from_sdf(cls, el: ET.Element, version: str) -> "VisibilityMask":
+    def _from_sdf(cls, el: ET.Element, version: str):
         _text = el.text or 4294967295
         _visibility_mask = _parse_uint32(_text)
+        if isinstance(_visibility_mask, SDFError):
+            return _visibility_mask
         if _visibility_mask is not None and cmp_version(version, "1.9") < 0:
             if _visibility_mask != 4294967295:
-                raise ValueError(f"'visibility_mask' is not supported in SDF version {version} (added in 1.9)")
+                return SDFError(f"'visibility_mask' is not supported in SDF version {version} (added in 1.9)")
         return cls(sdf_version=version, visibility_mask=_visibility_mask)
 
 
-class Ray(Model):
+class Ray(BaseModel):
     def __init__(
         self,
         sdf_version: str,
@@ -7607,8 +10061,12 @@ class Ray(Model):
             return self.to_version(version).to_sdf()
         version = version or self.__version__
         el = ET.Element("ray")
+        if self.scan is None:
+            raise ValueError(f"'scan' is required in SDF version {version}")
         if self.scan is not None:
             el.append(self.scan.to_sdf(version))
+        if self.range is None:
+            raise ValueError(f"'range' is required in SDF version {version}")
         if self.range is not None:
             el.append(self.range.to_sdf(version))
         if self.noise is not None:
@@ -7618,23 +10076,51 @@ class Ray(Model):
         return el
 
     @classmethod
-    def from_sdf(cls, el: ET.Element, version: str) -> "Ray":
+    def _from_sdf(cls, el: ET.Element, version: str):
         _c_scan = el.find("scan")
-        _scan = Scan.from_sdf(_c_scan, version) if _c_scan is not None else None
+        if _c_scan is not None:
+            _res = Scan._from_sdf(_c_scan, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("scan")
+            _scan = _res
+        else:
+            _scan = None
+        if _scan is None:
+            return SDFError(f"'scan' is required in SDF version {version}")
         _c_range = el.find("range")
-        _range = Range.from_sdf(_c_range, version) if _c_range is not None else None
+        if _c_range is not None:
+            _res = Range._from_sdf(_c_range, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("range")
+            _range = _res
+        else:
+            _range = None
+        if _range is None:
+            return SDFError(f"'range' is required in SDF version {version}")
         _c_noise = el.find("noise")
-        _noise = Noise.from_sdf(_c_noise, version) if _c_noise is not None else None
+        if _c_noise is not None:
+            _res = Noise._from_sdf(_c_noise, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("noise")
+            _noise = _res
+        else:
+            _noise = None
         if _noise is not None and cmp_version(version, "1.4") < 0:
-            raise ValueError(f"'noise' is not supported in SDF version {version} (added in 1.4)")
+            return SDFError(f"'noise' is not supported in SDF version {version} (added in 1.4)")
         _c_visibility_mask = el.find("visibility_mask")
-        _visibility_mask = VisibilityMask.from_sdf(_c_visibility_mask, version) if _c_visibility_mask is not None else None
+        if _c_visibility_mask is not None:
+            _res = VisibilityMask._from_sdf(_c_visibility_mask, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("visibility_mask")
+            _visibility_mask = _res
+        else:
+            _visibility_mask = None
         if _visibility_mask is not None and cmp_version(version, "1.9") < 0:
-            raise ValueError(f"'visibility_mask' is not supported in SDF version {version} (added in 1.9)")
+            return SDFError(f"'visibility_mask' is not supported in SDF version {version} (added in 1.9)")
         return cls(sdf_version=version, scan=_scan, range=_range, noise=_noise, visibility_mask=_visibility_mask)
 
 
-class Rfidtag(Model):
+class Rfidtag(BaseModel):
     def __init__(self, sdf_version: str):
         self.__version__ = sdf_version
 
@@ -7651,11 +10137,11 @@ class Rfidtag(Model):
         return el
 
     @classmethod
-    def from_sdf(cls, el: ET.Element, version: str) -> "Rfidtag":
+    def _from_sdf(cls, el: ET.Element, version: str):
         return cls(sdf_version=version)
 
 
-class Rfid(Model):
+class Rfid(BaseModel):
     def __init__(self, sdf_version: str):
         self.__version__ = sdf_version
 
@@ -7672,16 +10158,18 @@ class Rfid(Model):
         return el
 
     @classmethod
-    def from_sdf(cls, el: ET.Element, version: str) -> "Rfid":
+    def _from_sdf(cls, el: ET.Element, version: str):
         return cls(sdf_version=version)
 
 
-class Topic(Model):
+class Topic(BaseModel):
     def __init__(self, sdf_version: str, topic: str = "__default_topic__"):
         self.__version__ = sdf_version
         self.topic = topic
 
     def to_version(self, target_version: str) -> "Topic":
+        if self.topic is not None and cmp_version(target_version, "1.7") >= 0:
+            raise ValueError(f"'topic' is not supported in SDF version {target_version} (removed in 1.7)")
         kwargs = {"sdf_version": target_version}
         kwargs["topic"] = self.topic
         new_obj = self.__class__(**kwargs)
@@ -7697,13 +10185,15 @@ class Topic(Model):
         return el
 
     @classmethod
-    def from_sdf(cls, el: ET.Element, version: str) -> "Topic":
+    def _from_sdf(cls, el: ET.Element, version: str):
         _text = el.text or "__default_topic__"
         _topic = _text
+        if isinstance(_topic, SDFError):
+            return _topic
         return cls(sdf_version=version, topic=_topic)
 
 
-class X(Model):
+class X(BaseModel):
     def __init__(self, sdf_version: str, noise: "Noise" = None):
         self.__version__ = sdf_version
         self.noise = noise
@@ -7724,13 +10214,19 @@ class X(Model):
         return el
 
     @classmethod
-    def from_sdf(cls, el: ET.Element, version: str) -> "X":
+    def _from_sdf(cls, el: ET.Element, version: str):
         _c_noise = el.find("noise")
-        _noise = Noise.from_sdf(_c_noise, version) if _c_noise is not None else None
+        if _c_noise is not None:
+            _res = Noise._from_sdf(_c_noise, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("noise")
+            _noise = _res
+        else:
+            _noise = None
         return cls(sdf_version=version, noise=_noise)
 
 
-class Y(Model):
+class Y(BaseModel):
     def __init__(self, sdf_version: str, noise: "Noise" = None):
         self.__version__ = sdf_version
         self.noise = noise
@@ -7751,13 +10247,19 @@ class Y(Model):
         return el
 
     @classmethod
-    def from_sdf(cls, el: ET.Element, version: str) -> "Y":
+    def _from_sdf(cls, el: ET.Element, version: str):
         _c_noise = el.find("noise")
-        _noise = Noise.from_sdf(_c_noise, version) if _c_noise is not None else None
+        if _c_noise is not None:
+            _res = Noise._from_sdf(_c_noise, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("noise")
+            _noise = _res
+        else:
+            _noise = None
         return cls(sdf_version=version, noise=_noise)
 
 
-class Z(Model):
+class Z(BaseModel):
     def __init__(self, sdf_version: str, noise: "Noise" = None):
         self.__version__ = sdf_version
         self.noise = noise
@@ -7778,13 +10280,19 @@ class Z(Model):
         return el
 
     @classmethod
-    def from_sdf(cls, el: ET.Element, version: str) -> "Z":
+    def _from_sdf(cls, el: ET.Element, version: str):
         _c_noise = el.find("noise")
-        _noise = Noise.from_sdf(_c_noise, version) if _c_noise is not None else None
+        if _c_noise is not None:
+            _res = Noise._from_sdf(_c_noise, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("noise")
+            _noise = _res
+        else:
+            _noise = None
         return cls(sdf_version=version, noise=_noise)
 
 
-class AngularVelocity(Model):
+class AngularVelocity(BaseModel):
     def __init__(self, sdf_version: str, x: "X" = None, y: "Y" = None, z: "Z" = None):
         self.__version__ = sdf_version
         self.x = x
@@ -7813,17 +10321,35 @@ class AngularVelocity(Model):
         return el
 
     @classmethod
-    def from_sdf(cls, el: ET.Element, version: str) -> "AngularVelocity":
+    def _from_sdf(cls, el: ET.Element, version: str):
         _c_x = el.find("x")
-        _x = X.from_sdf(_c_x, version) if _c_x is not None else None
+        if _c_x is not None:
+            _res = X._from_sdf(_c_x, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("x")
+            _x = _res
+        else:
+            _x = None
         _c_y = el.find("y")
-        _y = Y.from_sdf(_c_y, version) if _c_y is not None else None
+        if _c_y is not None:
+            _res = Y._from_sdf(_c_y, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("y")
+            _y = _res
+        else:
+            _y = None
         _c_z = el.find("z")
-        _z = Z.from_sdf(_c_z, version) if _c_z is not None else None
+        if _c_z is not None:
+            _res = Z._from_sdf(_c_z, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("z")
+            _z = _res
+        else:
+            _z = None
         return cls(sdf_version=version, x=_x, y=_y, z=_z)
 
 
-class LinearAcceleration(Model):
+class LinearAcceleration(BaseModel):
     def __init__(self, sdf_version: str, x: "X" = None, y: "Y" = None, z: "Z" = None):
         self.__version__ = sdf_version
         self.x = x
@@ -7852,17 +10378,35 @@ class LinearAcceleration(Model):
         return el
 
     @classmethod
-    def from_sdf(cls, el: ET.Element, version: str) -> "LinearAcceleration":
+    def _from_sdf(cls, el: ET.Element, version: str):
         _c_x = el.find("x")
-        _x = X.from_sdf(_c_x, version) if _c_x is not None else None
+        if _c_x is not None:
+            _res = X._from_sdf(_c_x, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("x")
+            _x = _res
+        else:
+            _x = None
         _c_y = el.find("y")
-        _y = Y.from_sdf(_c_y, version) if _c_y is not None else None
+        if _c_y is not None:
+            _res = Y._from_sdf(_c_y, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("y")
+            _y = _res
+        else:
+            _y = None
         _c_z = el.find("z")
-        _z = Z.from_sdf(_c_z, version) if _c_z is not None else None
+        if _c_z is not None:
+            _res = Z._from_sdf(_c_z, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("z")
+            _z = _res
+        else:
+            _z = None
         return cls(sdf_version=version, x=_x, y=_y, z=_z)
 
 
-class Localization(Model):
+class Localization(BaseModel):
     def __init__(self, sdf_version: str, localization: str = "CUSTOM"):
         self.__version__ = sdf_version
         self.localization = localization
@@ -7878,18 +10422,24 @@ class Localization(Model):
             return self.to_version(version).to_sdf()
         version = version or self.__version__
         el = ET.Element("localization")
+        if self.localization is None:
+            raise ValueError(f"'localization' is required in SDF version {version}")
         if self.localization is not None:
             el.text = self.localization
         return el
 
     @classmethod
-    def from_sdf(cls, el: ET.Element, version: str) -> "Localization":
+    def _from_sdf(cls, el: ET.Element, version: str):
+        if el.text is None:
+            return SDFError(f"'localization' is required in SDF version {version}")
         _text = el.text or "CUSTOM"
         _localization = _text
+        if isinstance(_localization, SDFError):
+            return _localization
         return cls(sdf_version=version, localization=_localization)
 
 
-class CustomRpy(Model):
+class CustomRpy(BaseModel):
     def __init__(self, sdf_version: str, custom_rpy: Vector3 = None, parent_frame: str = ""):
         self.__version__ = sdf_version
         if custom_rpy is None:
@@ -7916,14 +10466,18 @@ class CustomRpy(Model):
         return el
 
     @classmethod
-    def from_sdf(cls, el: ET.Element, version: str) -> "CustomRpy":
+    def _from_sdf(cls, el: ET.Element, version: str):
         _text = el.text or "0 0 0"
-        _custom_rpy = Vector3.from_sdf(_text)
+        _custom_rpy = Vector3._from_sdf(_text, version)
+        if isinstance(_custom_rpy, SDFError):
+            return _custom_rpy
         _parent_frame = el.get("parent_frame", "")
+        if isinstance(_parent_frame, SDFError):
+            return _parent_frame.extend("@parent_frame")
         return cls(sdf_version=version, custom_rpy=_custom_rpy, parent_frame=_parent_frame)
 
 
-class GravDirX(Model):
+class GravDirX(BaseModel):
     def __init__(self, sdf_version: str, grav_dir_x: Vector3 = None, parent_frame: str = ""):
         self.__version__ = sdf_version
         if grav_dir_x is None:
@@ -7950,14 +10504,18 @@ class GravDirX(Model):
         return el
 
     @classmethod
-    def from_sdf(cls, el: ET.Element, version: str) -> "GravDirX":
+    def _from_sdf(cls, el: ET.Element, version: str):
         _text = el.text or "1 0 0"
-        _grav_dir_x = Vector3.from_sdf(_text)
+        _grav_dir_x = Vector3._from_sdf(_text, version)
+        if isinstance(_grav_dir_x, SDFError):
+            return _grav_dir_x
         _parent_frame = el.get("parent_frame", "")
+        if isinstance(_parent_frame, SDFError):
+            return _parent_frame.extend("@parent_frame")
         return cls(sdf_version=version, grav_dir_x=_grav_dir_x, parent_frame=_parent_frame)
 
 
-class OrientationReferenceFrame(Model):
+class OrientationReferenceFrame(BaseModel):
     def __init__(
         self,
         sdf_version: str,
@@ -7983,6 +10541,8 @@ class OrientationReferenceFrame(Model):
             return self.to_version(version).to_sdf()
         version = version or self.__version__
         el = ET.Element("orientation_reference_frame")
+        if self.localization is None:
+            raise ValueError(f"'localization' is required in SDF version {version}")
         if self.localization is not None:
             el.append(self.localization.to_sdf(version))
         if self.custom_rpy is not None:
@@ -7992,17 +10552,37 @@ class OrientationReferenceFrame(Model):
         return el
 
     @classmethod
-    def from_sdf(cls, el: ET.Element, version: str) -> "OrientationReferenceFrame":
+    def _from_sdf(cls, el: ET.Element, version: str):
         _c_localization = el.find("localization")
-        _localization = Localization.from_sdf(_c_localization, version) if _c_localization is not None else None
+        if _c_localization is not None:
+            _res = Localization._from_sdf(_c_localization, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("localization")
+            _localization = _res
+        else:
+            _localization = None
+        if _localization is None:
+            return SDFError(f"'localization' is required in SDF version {version}")
         _c_custom_rpy = el.find("custom_rpy")
-        _custom_rpy = CustomRpy.from_sdf(_c_custom_rpy, version) if _c_custom_rpy is not None else None
+        if _c_custom_rpy is not None:
+            _res = CustomRpy._from_sdf(_c_custom_rpy, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("custom_rpy")
+            _custom_rpy = _res
+        else:
+            _custom_rpy = None
         _c_grav_dir_x = el.find("grav_dir_x")
-        _grav_dir_x = GravDirX.from_sdf(_c_grav_dir_x, version) if _c_grav_dir_x is not None else None
+        if _c_grav_dir_x is not None:
+            _res = GravDirX._from_sdf(_c_grav_dir_x, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("grav_dir_x")
+            _grav_dir_x = _res
+        else:
+            _grav_dir_x = None
         return cls(sdf_version=version, localization=_localization, custom_rpy=_custom_rpy, grav_dir_x=_grav_dir_x)
 
 
-class EnableOrientation(Model):
+class EnableOrientation(BaseModel):
     def __init__(self, sdf_version: str, enable_orientation: bool = True):
         self.__version__ = sdf_version
         self.enable_orientation = enable_orientation
@@ -8025,16 +10605,18 @@ class EnableOrientation(Model):
         return el
 
     @classmethod
-    def from_sdf(cls, el: ET.Element, version: str) -> "EnableOrientation":
+    def _from_sdf(cls, el: ET.Element, version: str):
         _text = el.text or True
-        _enable_orientation = _text.strip().lower() == 'true'
+        _enable_orientation = str(_text).strip().lower() == 'true'
+        if isinstance(_enable_orientation, SDFError):
+            return _enable_orientation
         if _enable_orientation is not None and cmp_version(version, "1.6") < 0:
             if _enable_orientation != True:
-                raise ValueError(f"'enable_orientation' is not supported in SDF version {version} (added in 1.6)")
+                return SDFError(f"'enable_orientation' is not supported in SDF version {version} (added in 1.6)")
         return cls(sdf_version=version, enable_orientation=_enable_orientation)
 
 
-class Imu(Model):
+class Imu(BaseModel):
     _MIGRATIONS = [{"version": "1.6", "ops": [{"type": "move", "from": "noise::type", "to": "linear_acceleration::z::noise::type"}, {"type": "move", "from": "noise::rate::mean", "to": "angular_velocity::z::noise::mean"}, {"type": "move", "from": "noise::rate::stddev", "to": "angular_velocity::z::noise::stddev"}, {"type": "move", "from": "noise::rate::bias_mean", "to": "angular_velocity::z::noise::bias_mean"}, {"type": "move", "from": "noise::rate::bias_stddev", "to": "angular_velocity::z::noise::bias_stddev"}, {"type": "move", "from": "noise::accel::mean", "to": "linear_acceleration::z::noise::mean"}, {"type": "move", "from": "noise::accel::stddev", "to": "linear_acceleration::z::noise::stddev"}, {"type": "move", "from": "noise::accel::bias_mean", "to": "linear_acceleration::z::noise::bias_mean"}, {"type": "move", "from": "noise::accel::bias_stddev", "to": "linear_acceleration::z::noise::bias_stddev"}, {"type": "copy", "from": "noise::type", "to": "angular_velocity::x::noise::type"}, {"type": "copy", "from": "noise::type", "to": "angular_velocity::y::noise::type"}, {"type": "copy", "from": "noise::type", "to": "angular_velocity::z::noise::type"}, {"type": "copy", "from": "noise::type", "to": "linear_acceleration::x::noise::type"}, {"type": "copy", "from": "noise::type", "to": "linear_acceleration::y::noise::type"}, {"type": "copy", "from": "noise::rate::mean", "to": "angular_velocity::x::noise::mean"}, {"type": "copy", "from": "noise::rate::mean", "to": "angular_velocity::y::noise::mean"}, {"type": "copy", "from": "noise::rate::stddev", "to": "angular_velocity::x::noise::stddev"}, {"type": "copy", "from": "noise::rate::stddev", "to": "angular_velocity::y::noise::stddev"}, {"type": "copy", "from": "noise::rate::bias_mean", "to": "angular_velocity::x::noise::bias_mean"}, {"type": "copy", "from": "noise::rate::bias_mean", "to": "angular_velocity::y::noise::bias_mean"}, {"type": "copy", "from": "noise::rate::bias_stddev", "to": "angular_velocity::x::noise::bias_stddev"}, {"type": "copy", "from": "noise::rate::bias_stddev", "to": "angular_velocity::y::noise::bias_stddev"}, {"type": "copy", "from": "noise::accel::mean", "to": "linear_acceleration::x::noise::mean"}, {"type": "copy", "from": "noise::accel::mean", "to": "linear_acceleration::y::noise::mean"}, {"type": "copy", "from": "noise::accel::stddev", "to": "linear_acceleration::x::noise::stddev"}, {"type": "copy", "from": "noise::accel::stddev", "to": "linear_acceleration::y::noise::stddev"}, {"type": "copy", "from": "noise::accel::bias_mean", "to": "linear_acceleration::x::noise::bias_mean"}, {"type": "copy", "from": "noise::accel::bias_mean", "to": "linear_acceleration::y::noise::bias_mean"}, {"type": "copy", "from": "noise::accel::bias_stddev", "to": "linear_acceleration::x::noise::bias_stddev"}, {"type": "copy", "from": "noise::accel::bias_stddev", "to": "linear_acceleration::y::noise::bias_stddev"}, {"type": "move", "from": "noise::type", "to": "linear_acceleration::z::noise::type"}, {"type": "move", "from": "noise::rate::mean", "to": "angular_velocity::z::noise::mean"}, {"type": "move", "from": "noise::rate::stddev", "to": "angular_velocity::z::noise::stddev"}, {"type": "move", "from": "noise::rate::bias_mean", "to": "angular_velocity::z::noise::bias_mean"}, {"type": "move", "from": "noise::rate::bias_stddev", "to": "angular_velocity::z::noise::bias_stddev"}, {"type": "move", "from": "noise::accel::mean", "to": "linear_acceleration::z::noise::mean"}, {"type": "move", "from": "noise::accel::stddev", "to": "linear_acceleration::z::noise::stddev"}, {"type": "move", "from": "noise::accel::bias_mean", "to": "linear_acceleration::z::noise::bias_mean"}, {"type": "move", "from": "noise::accel::bias_stddev", "to": "linear_acceleration::z::noise::bias_stddev"}, {"type": "copy", "from": "noise::type", "to": "angular_velocity::x::noise::type"}, {"type": "copy", "from": "noise::type", "to": "angular_velocity::y::noise::type"}, {"type": "copy", "from": "noise::type", "to": "angular_velocity::z::noise::type"}, {"type": "copy", "from": "noise::type", "to": "linear_acceleration::x::noise::type"}, {"type": "copy", "from": "noise::type", "to": "linear_acceleration::y::noise::type"}, {"type": "copy", "from": "noise::rate::mean", "to": "angular_velocity::x::noise::mean"}, {"type": "copy", "from": "noise::rate::mean", "to": "angular_velocity::y::noise::mean"}, {"type": "copy", "from": "noise::rate::stddev", "to": "angular_velocity::x::noise::stddev"}, {"type": "copy", "from": "noise::rate::stddev", "to": "angular_velocity::y::noise::stddev"}, {"type": "copy", "from": "noise::rate::bias_mean", "to": "angular_velocity::x::noise::bias_mean"}, {"type": "copy", "from": "noise::rate::bias_mean", "to": "angular_velocity::y::noise::bias_mean"}, {"type": "copy", "from": "noise::rate::bias_stddev", "to": "angular_velocity::x::noise::bias_stddev"}, {"type": "copy", "from": "noise::rate::bias_stddev", "to": "angular_velocity::y::noise::bias_stddev"}, {"type": "copy", "from": "noise::accel::mean", "to": "linear_acceleration::x::noise::mean"}, {"type": "copy", "from": "noise::accel::mean", "to": "linear_acceleration::y::noise::mean"}, {"type": "copy", "from": "noise::accel::stddev", "to": "linear_acceleration::x::noise::stddev"}, {"type": "copy", "from": "noise::accel::stddev", "to": "linear_acceleration::y::noise::stddev"}, {"type": "copy", "from": "noise::accel::bias_mean", "to": "linear_acceleration::x::noise::bias_mean"}, {"type": "copy", "from": "noise::accel::bias_mean", "to": "linear_acceleration::y::noise::bias_mean"}, {"type": "copy", "from": "noise::accel::bias_stddev", "to": "linear_acceleration::x::noise::bias_stddev"}, {"type": "copy", "from": "noise::accel::bias_stddev", "to": "linear_acceleration::y::noise::bias_stddev"}]}]
 
     def __init__(
@@ -8056,8 +10638,12 @@ class Imu(Model):
         self.enable_orientation = enable_orientation
 
     def to_version(self, target_version: str) -> "Imu":
+        if self.topic is not None and cmp_version(target_version, "1.7") >= 0:
+            raise ValueError(f"'topic' is not supported in SDF version {target_version} (removed in 1.7)")
         if self.noise is not None and cmp_version(target_version, "1.4") < 0:
             raise ValueError(f"'noise' is not supported in SDF version {target_version} (added in 1.4)")
+        if self.noise is not None and cmp_version(target_version, "1.6") >= 0:
+            raise ValueError(f"'noise' is not supported in SDF version {target_version} (removed in 1.6)")
         if self.angular_velocity is not None and cmp_version(target_version, "1.5") < 0:
             raise ValueError(f"'angular_velocity' is not supported in SDF version {target_version} (added in 1.5)")
         if self.linear_acceleration is not None and cmp_version(target_version, "1.5") < 0:
@@ -8097,33 +10683,69 @@ class Imu(Model):
         return el
 
     @classmethod
-    def from_sdf(cls, el: ET.Element, version: str) -> "Imu":
+    def _from_sdf(cls, el: ET.Element, version: str):
         _c_topic = el.find("topic")
-        _topic = Topic.from_sdf(_c_topic, version) if _c_topic is not None else None
+        if _c_topic is not None:
+            _res = Topic._from_sdf(_c_topic, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("topic")
+            _topic = _res
+        else:
+            _topic = None
         _c_noise = el.find("noise")
-        _noise = Noise.from_sdf(_c_noise, version) if _c_noise is not None else None
+        if _c_noise is not None:
+            _res = Noise._from_sdf(_c_noise, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("noise")
+            _noise = _res
+        else:
+            _noise = None
         if _noise is not None and cmp_version(version, "1.4") < 0:
-            raise ValueError(f"'noise' is not supported in SDF version {version} (added in 1.4)")
+            return SDFError(f"'noise' is not supported in SDF version {version} (added in 1.4)")
         _c_angular_velocity = el.find("angular_velocity")
-        _angular_velocity = AngularVelocity.from_sdf(_c_angular_velocity, version) if _c_angular_velocity is not None else None
+        if _c_angular_velocity is not None:
+            _res = AngularVelocity._from_sdf(_c_angular_velocity, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("angular_velocity")
+            _angular_velocity = _res
+        else:
+            _angular_velocity = None
         if _angular_velocity is not None and cmp_version(version, "1.5") < 0:
-            raise ValueError(f"'angular_velocity' is not supported in SDF version {version} (added in 1.5)")
+            return SDFError(f"'angular_velocity' is not supported in SDF version {version} (added in 1.5)")
         _c_linear_acceleration = el.find("linear_acceleration")
-        _linear_acceleration = LinearAcceleration.from_sdf(_c_linear_acceleration, version) if _c_linear_acceleration is not None else None
+        if _c_linear_acceleration is not None:
+            _res = LinearAcceleration._from_sdf(_c_linear_acceleration, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("linear_acceleration")
+            _linear_acceleration = _res
+        else:
+            _linear_acceleration = None
         if _linear_acceleration is not None and cmp_version(version, "1.5") < 0:
-            raise ValueError(f"'linear_acceleration' is not supported in SDF version {version} (added in 1.5)")
+            return SDFError(f"'linear_acceleration' is not supported in SDF version {version} (added in 1.5)")
         _c_orientation_reference_frame = el.find("orientation_reference_frame")
-        _orientation_reference_frame = OrientationReferenceFrame.from_sdf(_c_orientation_reference_frame, version) if _c_orientation_reference_frame is not None else None
+        if _c_orientation_reference_frame is not None:
+            _res = OrientationReferenceFrame._from_sdf(_c_orientation_reference_frame, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("orientation_reference_frame")
+            _orientation_reference_frame = _res
+        else:
+            _orientation_reference_frame = None
         if _orientation_reference_frame is not None and cmp_version(version, "1.6") < 0:
-            raise ValueError(f"'orientation_reference_frame' is not supported in SDF version {version} (added in 1.6)")
+            return SDFError(f"'orientation_reference_frame' is not supported in SDF version {version} (added in 1.6)")
         _c_enable_orientation = el.find("enable_orientation")
-        _enable_orientation = EnableOrientation.from_sdf(_c_enable_orientation, version) if _c_enable_orientation is not None else None
+        if _c_enable_orientation is not None:
+            _res = EnableOrientation._from_sdf(_c_enable_orientation, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("enable_orientation")
+            _enable_orientation = _res
+        else:
+            _enable_orientation = None
         if _enable_orientation is not None and cmp_version(version, "1.6") < 0:
-            raise ValueError(f"'enable_orientation' is not supported in SDF version {version} (added in 1.6)")
+            return SDFError(f"'enable_orientation' is not supported in SDF version {version} (added in 1.6)")
         return cls(sdf_version=version, topic=_topic, noise=_noise, angular_velocity=_angular_velocity, linear_acceleration=_linear_acceleration, orientation_reference_frame=_orientation_reference_frame, enable_orientation=_enable_orientation)
 
 
-class AlwaysOn(Model):
+class AlwaysOn(BaseModel):
     def __init__(self, sdf_version: str, always_on: bool = False):
         self.__version__ = sdf_version
         self.always_on = always_on
@@ -8144,301 +10766,15 @@ class AlwaysOn(Model):
         return el
 
     @classmethod
-    def from_sdf(cls, el: ET.Element, version: str) -> "AlwaysOn":
+    def _from_sdf(cls, el: ET.Element, version: str):
         _text = el.text or False
-        _always_on = _text.strip().lower() == 'true'
+        _always_on = str(_text).strip().lower() == 'true'
+        if isinstance(_always_on, SDFError):
+            return _always_on
         return cls(sdf_version=version, always_on=_always_on)
 
 
-class MeasureDirection(Model):
-    def __init__(self, sdf_version: str, measure_direction: str = "child_to_parent"):
-        self.__version__ = sdf_version
-        self.measure_direction = measure_direction
-
-    def to_version(self, target_version: str) -> "MeasureDirection":
-        if self.measure_direction is not None and cmp_version(target_version, "1.5") < 0:
-            raise ValueError(f"'measure_direction' is not supported in SDF version {target_version} (added in 1.5)")
-        kwargs = {"sdf_version": target_version}
-        kwargs["measure_direction"] = self.measure_direction
-        new_obj = self.__class__(**kwargs)
-        return new_obj
-
-    def to_sdf(self, version: str = None) -> ET.Element:
-        if version is not None and version != self.__version__:
-            return self.to_version(version).to_sdf()
-        version = version or self.__version__
-        el = ET.Element("measure_direction")
-        if self.measure_direction is not None:
-            el.text = self.measure_direction
-        return el
-
-    @classmethod
-    def from_sdf(cls, el: ET.Element, version: str) -> "MeasureDirection":
-        _text = el.text or "child_to_parent"
-        _measure_direction = _text
-        if _measure_direction is not None and cmp_version(version, "1.5") < 0:
-            if _measure_direction != "child_to_parent":
-                raise ValueError(f"'measure_direction' is not supported in SDF version {version} (added in 1.5)")
-        return cls(sdf_version=version, measure_direction=_measure_direction)
-
-
-class Force(Model):
-    def __init__(self, sdf_version: str, x: "X" = None, y: "Y" = None, z: "Z" = None):
-        self.__version__ = sdf_version
-        self.x = x
-        self.y = y
-        self.z = z
-
-    def to_version(self, target_version: str) -> "Force":
-        kwargs = {"sdf_version": target_version}
-        kwargs["x"] = self.x.to_version(target_version) if self.x is not None else None
-        kwargs["y"] = self.y.to_version(target_version) if self.y is not None else None
-        kwargs["z"] = self.z.to_version(target_version) if self.z is not None else None
-        new_obj = self.__class__(**kwargs)
-        return new_obj
-
-    def to_sdf(self, version: str = None) -> ET.Element:
-        if version is not None and version != self.__version__:
-            return self.to_version(version).to_sdf()
-        version = version or self.__version__
-        el = ET.Element("force")
-        if self.x is not None:
-            el.append(self.x.to_sdf(version))
-        if self.y is not None:
-            el.append(self.y.to_sdf(version))
-        if self.z is not None:
-            el.append(self.z.to_sdf(version))
-        return el
-
-    @classmethod
-    def from_sdf(cls, el: ET.Element, version: str) -> "Force":
-        _c_x = el.find("x")
-        _x = X.from_sdf(_c_x, version) if _c_x is not None else None
-        _c_y = el.find("y")
-        _y = Y.from_sdf(_c_y, version) if _c_y is not None else None
-        _c_z = el.find("z")
-        _z = Z.from_sdf(_c_z, version) if _c_z is not None else None
-        return cls(sdf_version=version, x=_x, y=_y, z=_z)
-
-
-class Torque(Model):
-    def __init__(self, sdf_version: str, x: "X" = None, y: "Y" = None, z: "Z" = None):
-        self.__version__ = sdf_version
-        self.x = x
-        self.y = y
-        self.z = z
-
-    def to_version(self, target_version: str) -> "Torque":
-        kwargs = {"sdf_version": target_version}
-        kwargs["x"] = self.x.to_version(target_version) if self.x is not None else None
-        kwargs["y"] = self.y.to_version(target_version) if self.y is not None else None
-        kwargs["z"] = self.z.to_version(target_version) if self.z is not None else None
-        new_obj = self.__class__(**kwargs)
-        return new_obj
-
-    def to_sdf(self, version: str = None) -> ET.Element:
-        if version is not None and version != self.__version__:
-            return self.to_version(version).to_sdf()
-        version = version or self.__version__
-        el = ET.Element("torque")
-        if self.x is not None:
-            el.append(self.x.to_sdf(version))
-        if self.y is not None:
-            el.append(self.y.to_sdf(version))
-        if self.z is not None:
-            el.append(self.z.to_sdf(version))
-        return el
-
-    @classmethod
-    def from_sdf(cls, el: ET.Element, version: str) -> "Torque":
-        _c_x = el.find("x")
-        _x = X.from_sdf(_c_x, version) if _c_x is not None else None
-        _c_y = el.find("y")
-        _y = Y.from_sdf(_c_y, version) if _c_y is not None else None
-        _c_z = el.find("z")
-        _z = Z.from_sdf(_c_z, version) if _c_z is not None else None
-        return cls(sdf_version=version, x=_x, y=_y, z=_z)
-
-
-class ForceTorque(Model):
-    def __init__(
-        self,
-        sdf_version: str,
-        frame: "Frame" = None,
-        measure_direction: "MeasureDirection" = None,
-        force: "Force" = None,
-        torque: "Torque" = None
-    ):
-        self.__version__ = sdf_version
-        self.frame = frame
-        self.measure_direction = measure_direction
-        self.force = force
-        self.torque = torque
-
-    def to_version(self, target_version: str) -> "ForceTorque":
-        if self.measure_direction is not None and cmp_version(target_version, "1.5") < 0:
-            raise ValueError(f"'measure_direction' is not supported in SDF version {target_version} (added in 1.5)")
-        if self.force is not None and cmp_version(target_version, "1.7") < 0:
-            raise ValueError(f"'force' is not supported in SDF version {target_version} (added in 1.7)")
-        if self.torque is not None and cmp_version(target_version, "1.7") < 0:
-            raise ValueError(f"'torque' is not supported in SDF version {target_version} (added in 1.7)")
-        kwargs = {"sdf_version": target_version}
-        kwargs["frame"] = self.frame.to_version(target_version) if self.frame is not None else None
-        kwargs["measure_direction"] = self.measure_direction.to_version(target_version) if self.measure_direction is not None else None
-        kwargs["force"] = self.force.to_version(target_version) if self.force is not None else None
-        kwargs["torque"] = self.torque.to_version(target_version) if self.torque is not None else None
-        new_obj = self.__class__(**kwargs)
-        return new_obj
-
-    def to_sdf(self, version: str = None) -> ET.Element:
-        if version is not None and version != self.__version__:
-            return self.to_version(version).to_sdf()
-        version = version or self.__version__
-        el = ET.Element("force_torque")
-        if self.frame is not None:
-            el.append(self.frame.to_sdf(version))
-        if self.measure_direction is not None:
-            el.append(self.measure_direction.to_sdf(version))
-        if self.force is not None:
-            el.append(self.force.to_sdf(version))
-        if self.torque is not None:
-            el.append(self.torque.to_sdf(version))
-        return el
-
-    @classmethod
-    def from_sdf(cls, el: ET.Element, version: str) -> "ForceTorque":
-        _c_frame = el.find("frame")
-        _frame = Frame.from_sdf(_c_frame, version) if _c_frame is not None else None
-        _c_measure_direction = el.find("measure_direction")
-        _measure_direction = MeasureDirection.from_sdf(_c_measure_direction, version) if _c_measure_direction is not None else None
-        if _measure_direction is not None and cmp_version(version, "1.5") < 0:
-            raise ValueError(f"'measure_direction' is not supported in SDF version {version} (added in 1.5)")
-        _c_force = el.find("force")
-        _force = Force.from_sdf(_c_force, version) if _c_force is not None else None
-        if _force is not None and cmp_version(version, "1.7") < 0:
-            raise ValueError(f"'force' is not supported in SDF version {version} (added in 1.7)")
-        _c_torque = el.find("torque")
-        _torque = Torque.from_sdf(_c_torque, version) if _c_torque is not None else None
-        if _torque is not None and cmp_version(version, "1.7") < 0:
-            raise ValueError(f"'torque' is not supported in SDF version {version} (added in 1.7)")
-        return cls(sdf_version=version, frame=_frame, measure_direction=_measure_direction, force=_force, torque=_torque)
-
-
-class PositionSensing(Model):
-    def __init__(
-        self,
-        sdf_version: str,
-        horizontal: "Horizontal" = None,
-        vertical: "Vertical" = None
-    ):
-        self.__version__ = sdf_version
-        self.horizontal = horizontal
-        self.vertical = vertical
-
-    def to_version(self, target_version: str) -> "PositionSensing":
-        kwargs = {"sdf_version": target_version}
-        kwargs["horizontal"] = self.horizontal.to_version(target_version) if self.horizontal is not None else None
-        kwargs["vertical"] = self.vertical.to_version(target_version) if self.vertical is not None else None
-        new_obj = self.__class__(**kwargs)
-        return new_obj
-
-    def to_sdf(self, version: str = None) -> ET.Element:
-        if version is not None and version != self.__version__:
-            return self.to_version(version).to_sdf()
-        version = version or self.__version__
-        el = ET.Element("position_sensing")
-        if self.horizontal is not None:
-            el.append(self.horizontal.to_sdf(version))
-        if self.vertical is not None:
-            el.append(self.vertical.to_sdf(version))
-        return el
-
-    @classmethod
-    def from_sdf(cls, el: ET.Element, version: str) -> "PositionSensing":
-        _c_horizontal = el.find("horizontal")
-        _horizontal = Horizontal.from_sdf(_c_horizontal, version) if _c_horizontal is not None else None
-        _c_vertical = el.find("vertical")
-        _vertical = Vertical.from_sdf(_c_vertical, version) if _c_vertical is not None else None
-        return cls(sdf_version=version, horizontal=_horizontal, vertical=_vertical)
-
-
-class VelocitySensing(Model):
-    def __init__(
-        self,
-        sdf_version: str,
-        horizontal: "Horizontal" = None,
-        vertical: "Vertical" = None
-    ):
-        self.__version__ = sdf_version
-        self.horizontal = horizontal
-        self.vertical = vertical
-
-    def to_version(self, target_version: str) -> "VelocitySensing":
-        kwargs = {"sdf_version": target_version}
-        kwargs["horizontal"] = self.horizontal.to_version(target_version) if self.horizontal is not None else None
-        kwargs["vertical"] = self.vertical.to_version(target_version) if self.vertical is not None else None
-        new_obj = self.__class__(**kwargs)
-        return new_obj
-
-    def to_sdf(self, version: str = None) -> ET.Element:
-        if version is not None and version != self.__version__:
-            return self.to_version(version).to_sdf()
-        version = version or self.__version__
-        el = ET.Element("velocity_sensing")
-        if self.horizontal is not None:
-            el.append(self.horizontal.to_sdf(version))
-        if self.vertical is not None:
-            el.append(self.vertical.to_sdf(version))
-        return el
-
-    @classmethod
-    def from_sdf(cls, el: ET.Element, version: str) -> "VelocitySensing":
-        _c_horizontal = el.find("horizontal")
-        _horizontal = Horizontal.from_sdf(_c_horizontal, version) if _c_horizontal is not None else None
-        _c_vertical = el.find("vertical")
-        _vertical = Vertical.from_sdf(_c_vertical, version) if _c_vertical is not None else None
-        return cls(sdf_version=version, horizontal=_horizontal, vertical=_vertical)
-
-
-class Gps(Model):
-    def __init__(
-        self,
-        sdf_version: str,
-        position_sensing: "PositionSensing" = None,
-        velocity_sensing: "VelocitySensing" = None
-    ):
-        self.__version__ = sdf_version
-        self.position_sensing = position_sensing
-        self.velocity_sensing = velocity_sensing
-
-    def to_version(self, target_version: str) -> "Gps":
-        kwargs = {"sdf_version": target_version}
-        kwargs["position_sensing"] = self.position_sensing.to_version(target_version) if self.position_sensing is not None else None
-        kwargs["velocity_sensing"] = self.velocity_sensing.to_version(target_version) if self.velocity_sensing is not None else None
-        new_obj = self.__class__(**kwargs)
-        return new_obj
-
-    def to_sdf(self, version: str = None) -> ET.Element:
-        if version is not None and version != self.__version__:
-            return self.to_version(version).to_sdf()
-        version = version or self.__version__
-        el = ET.Element("gps")
-        if self.position_sensing is not None:
-            el.append(self.position_sensing.to_sdf(version))
-        if self.velocity_sensing is not None:
-            el.append(self.velocity_sensing.to_sdf(version))
-        return el
-
-    @classmethod
-    def from_sdf(cls, el: ET.Element, version: str) -> "Gps":
-        _c_position_sensing = el.find("position_sensing")
-        _position_sensing = PositionSensing.from_sdf(_c_position_sensing, version) if _c_position_sensing is not None else None
-        _c_velocity_sensing = el.find("velocity_sensing")
-        _velocity_sensing = VelocitySensing.from_sdf(_c_velocity_sensing, version) if _c_velocity_sensing is not None else None
-        return cls(sdf_version=version, position_sensing=_position_sensing, velocity_sensing=_velocity_sensing)
-
-
-class Min(Model):
+class Min(BaseModel):
     def __init__(self, sdf_version: str, min: float = 0):
         self.__version__ = sdf_version
         self.min = min
@@ -8454,18 +10790,24 @@ class Min(Model):
             return self.to_version(version).to_sdf()
         version = version or self.__version__
         el = ET.Element("min")
+        if self.min is None:
+            raise ValueError(f"'min' is required in SDF version {version}")
         if self.min is not None:
             el.text = str(self.min)
         return el
 
     @classmethod
-    def from_sdf(cls, el: ET.Element, version: str) -> "Min":
+    def _from_sdf(cls, el: ET.Element, version: str):
+        if el.text is None:
+            return SDFError(f"'min' is required in SDF version {version}")
         _text = el.text or 0
         _min = _parse_double(_text)
+        if isinstance(_min, SDFError):
+            return _min
         return cls(sdf_version=version, min=_min)
 
 
-class Max(Model):
+class Max(BaseModel):
     def __init__(self, sdf_version: str, max: float = 1.0):
         self.__version__ = sdf_version
         self.max = max
@@ -8481,18 +10823,24 @@ class Max(Model):
             return self.to_version(version).to_sdf()
         version = version or self.__version__
         el = ET.Element("max")
+        if self.max is None:
+            raise ValueError(f"'max' is required in SDF version {version}")
         if self.max is not None:
             el.text = str(self.max)
         return el
 
     @classmethod
-    def from_sdf(cls, el: ET.Element, version: str) -> "Max":
+    def _from_sdf(cls, el: ET.Element, version: str):
+        if el.text is None:
+            return SDFError(f"'max' is required in SDF version {version}")
         _text = el.text or 1.0
         _max = _parse_double(_text)
+        if isinstance(_max, SDFError):
+            return _max
         return cls(sdf_version=version, max=_max)
 
 
-class Sonar(Model):
+class Sonar(BaseModel):
     def __init__(
         self,
         sdf_version: str,
@@ -8523,10 +10871,17 @@ class Sonar(Model):
             return self.to_version(version).to_sdf()
         version = version or self.__version__
         el = ET.Element("sonar")
+        if self.min is None:
+            raise ValueError(f"'min' is required in SDF version {version}")
         if self.min is not None:
             el.append(self.min.to_sdf(version))
+        if self.max is None:
+            raise ValueError(f"'max' is required in SDF version {version}")
         if self.max is not None:
             el.append(self.max.to_sdf(version))
+        if cmp_version(version, "1.12") < 0:
+            if self.radius is None:
+                raise ValueError(f"'radius' is required in SDF version {version}")
         if self.radius is not None:
             el.append(self.radius.to_sdf(version))
         if self.geometry is not None:
@@ -8534,21 +10889,202 @@ class Sonar(Model):
         return el
 
     @classmethod
-    def from_sdf(cls, el: ET.Element, version: str) -> "Sonar":
+    def _from_sdf(cls, el: ET.Element, version: str):
         _c_min = el.find("min")
-        _min = Min.from_sdf(_c_min, version) if _c_min is not None else None
+        if _c_min is not None:
+            _res = Min._from_sdf(_c_min, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("min")
+            _min = _res
+        else:
+            _min = None
+        if _min is None:
+            return SDFError(f"'min' is required in SDF version {version}")
         _c_max = el.find("max")
-        _max = Max.from_sdf(_c_max, version) if _c_max is not None else None
+        if _c_max is not None:
+            _res = Max._from_sdf(_c_max, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("max")
+            _max = _res
+        else:
+            _max = None
+        if _max is None:
+            return SDFError(f"'max' is required in SDF version {version}")
         _c_radius = el.find("radius")
-        _radius = Radius.from_sdf(_c_radius, version) if _c_radius is not None else None
+        if _c_radius is not None:
+            _res = Radius._from_sdf(_c_radius, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("radius")
+            _radius = _res
+        else:
+            _radius = None
+        if cmp_version(version, "1.12") < 0:
+            if _radius is None:
+                return SDFError(f"'radius' is required in SDF version {version}")
         _c_geometry = el.find("geometry")
-        _geometry = Geometry.from_sdf(_c_geometry, version) if _c_geometry is not None else None
+        if _c_geometry is not None:
+            _res = Geometry._from_sdf(_c_geometry, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("geometry")
+            _geometry = _res
+        else:
+            _geometry = None
         if _geometry is not None and cmp_version(version, "1.6") < 0:
-            raise ValueError(f"'geometry' is not supported in SDF version {version} (added in 1.6)")
+            return SDFError(f"'geometry' is not supported in SDF version {version} (added in 1.6)")
         return cls(sdf_version=version, min=_min, max=_max, radius=_radius, geometry=_geometry)
 
 
-class Essid(Model):
+class PositionSensing(BaseModel):
+    def __init__(
+        self,
+        sdf_version: str,
+        horizontal: "Horizontal" = None,
+        vertical: "Vertical" = None
+    ):
+        self.__version__ = sdf_version
+        self.horizontal = horizontal
+        self.vertical = vertical
+
+    def to_version(self, target_version: str) -> "PositionSensing":
+        kwargs = {"sdf_version": target_version}
+        kwargs["horizontal"] = self.horizontal.to_version(target_version) if self.horizontal is not None else None
+        kwargs["vertical"] = self.vertical.to_version(target_version) if self.vertical is not None else None
+        new_obj = self.__class__(**kwargs)
+        return new_obj
+
+    def to_sdf(self, version: str = None) -> ET.Element:
+        if version is not None and version != self.__version__:
+            return self.to_version(version).to_sdf()
+        version = version or self.__version__
+        el = ET.Element("position_sensing")
+        if self.horizontal is not None:
+            el.append(self.horizontal.to_sdf(version))
+        if self.vertical is not None:
+            el.append(self.vertical.to_sdf(version))
+        return el
+
+    @classmethod
+    def _from_sdf(cls, el: ET.Element, version: str):
+        _c_horizontal = el.find("horizontal")
+        if _c_horizontal is not None:
+            _res = Horizontal._from_sdf(_c_horizontal, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("horizontal")
+            _horizontal = _res
+        else:
+            _horizontal = None
+        _c_vertical = el.find("vertical")
+        if _c_vertical is not None:
+            _res = Vertical._from_sdf(_c_vertical, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("vertical")
+            _vertical = _res
+        else:
+            _vertical = None
+        return cls(sdf_version=version, horizontal=_horizontal, vertical=_vertical)
+
+
+class VelocitySensing(BaseModel):
+    def __init__(
+        self,
+        sdf_version: str,
+        horizontal: "Horizontal" = None,
+        vertical: "Vertical" = None
+    ):
+        self.__version__ = sdf_version
+        self.horizontal = horizontal
+        self.vertical = vertical
+
+    def to_version(self, target_version: str) -> "VelocitySensing":
+        kwargs = {"sdf_version": target_version}
+        kwargs["horizontal"] = self.horizontal.to_version(target_version) if self.horizontal is not None else None
+        kwargs["vertical"] = self.vertical.to_version(target_version) if self.vertical is not None else None
+        new_obj = self.__class__(**kwargs)
+        return new_obj
+
+    def to_sdf(self, version: str = None) -> ET.Element:
+        if version is not None and version != self.__version__:
+            return self.to_version(version).to_sdf()
+        version = version or self.__version__
+        el = ET.Element("velocity_sensing")
+        if self.horizontal is not None:
+            el.append(self.horizontal.to_sdf(version))
+        if self.vertical is not None:
+            el.append(self.vertical.to_sdf(version))
+        return el
+
+    @classmethod
+    def _from_sdf(cls, el: ET.Element, version: str):
+        _c_horizontal = el.find("horizontal")
+        if _c_horizontal is not None:
+            _res = Horizontal._from_sdf(_c_horizontal, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("horizontal")
+            _horizontal = _res
+        else:
+            _horizontal = None
+        _c_vertical = el.find("vertical")
+        if _c_vertical is not None:
+            _res = Vertical._from_sdf(_c_vertical, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("vertical")
+            _vertical = _res
+        else:
+            _vertical = None
+        return cls(sdf_version=version, horizontal=_horizontal, vertical=_vertical)
+
+
+class Gps(BaseModel):
+    def __init__(
+        self,
+        sdf_version: str,
+        position_sensing: "PositionSensing" = None,
+        velocity_sensing: "VelocitySensing" = None
+    ):
+        self.__version__ = sdf_version
+        self.position_sensing = position_sensing
+        self.velocity_sensing = velocity_sensing
+
+    def to_version(self, target_version: str) -> "Gps":
+        kwargs = {"sdf_version": target_version}
+        kwargs["position_sensing"] = self.position_sensing.to_version(target_version) if self.position_sensing is not None else None
+        kwargs["velocity_sensing"] = self.velocity_sensing.to_version(target_version) if self.velocity_sensing is not None else None
+        new_obj = self.__class__(**kwargs)
+        return new_obj
+
+    def to_sdf(self, version: str = None) -> ET.Element:
+        if version is not None and version != self.__version__:
+            return self.to_version(version).to_sdf()
+        version = version or self.__version__
+        el = ET.Element("gps")
+        if self.position_sensing is not None:
+            el.append(self.position_sensing.to_sdf(version))
+        if self.velocity_sensing is not None:
+            el.append(self.velocity_sensing.to_sdf(version))
+        return el
+
+    @classmethod
+    def _from_sdf(cls, el: ET.Element, version: str):
+        _c_position_sensing = el.find("position_sensing")
+        if _c_position_sensing is not None:
+            _res = PositionSensing._from_sdf(_c_position_sensing, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("position_sensing")
+            _position_sensing = _res
+        else:
+            _position_sensing = None
+        _c_velocity_sensing = el.find("velocity_sensing")
+        if _c_velocity_sensing is not None:
+            _res = VelocitySensing._from_sdf(_c_velocity_sensing, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("velocity_sensing")
+            _velocity_sensing = _res
+        else:
+            _velocity_sensing = None
+        return cls(sdf_version=version, position_sensing=_position_sensing, velocity_sensing=_velocity_sensing)
+
+
+class Essid(BaseModel):
     def __init__(self, sdf_version: str, essid: str = "wireless"):
         self.__version__ = sdf_version
         self.essid = essid
@@ -8569,13 +11105,15 @@ class Essid(Model):
         return el
 
     @classmethod
-    def from_sdf(cls, el: ET.Element, version: str) -> "Essid":
+    def _from_sdf(cls, el: ET.Element, version: str):
         _text = el.text or "wireless"
         _essid = _text
+        if isinstance(_essid, SDFError):
+            return _essid
         return cls(sdf_version=version, essid=_essid)
 
 
-class Frequency(Model):
+class Frequency(BaseModel):
     def __init__(self, sdf_version: str, frequency: float = 2442):
         self.__version__ = sdf_version
         self.frequency = frequency
@@ -8596,13 +11134,15 @@ class Frequency(Model):
         return el
 
     @classmethod
-    def from_sdf(cls, el: ET.Element, version: str) -> "Frequency":
+    def _from_sdf(cls, el: ET.Element, version: str):
         _text = el.text or 2442
         _frequency = _parse_double(_text)
+        if isinstance(_frequency, SDFError):
+            return _frequency
         return cls(sdf_version=version, frequency=_frequency)
 
 
-class MinFrequency(Model):
+class MinFrequency(BaseModel):
     def __init__(self, sdf_version: str, min_frequency: float = 2412):
         self.__version__ = sdf_version
         self.min_frequency = min_frequency
@@ -8623,13 +11163,15 @@ class MinFrequency(Model):
         return el
 
     @classmethod
-    def from_sdf(cls, el: ET.Element, version: str) -> "MinFrequency":
+    def _from_sdf(cls, el: ET.Element, version: str):
         _text = el.text or 2412
         _min_frequency = _parse_double(_text)
+        if isinstance(_min_frequency, SDFError):
+            return _min_frequency
         return cls(sdf_version=version, min_frequency=_min_frequency)
 
 
-class MaxFrequency(Model):
+class MaxFrequency(BaseModel):
     def __init__(self, sdf_version: str, max_frequency: float = 2484):
         self.__version__ = sdf_version
         self.max_frequency = max_frequency
@@ -8650,13 +11192,15 @@ class MaxFrequency(Model):
         return el
 
     @classmethod
-    def from_sdf(cls, el: ET.Element, version: str) -> "MaxFrequency":
+    def _from_sdf(cls, el: ET.Element, version: str):
         _text = el.text or 2484
         _max_frequency = _parse_double(_text)
+        if isinstance(_max_frequency, SDFError):
+            return _max_frequency
         return cls(sdf_version=version, max_frequency=_max_frequency)
 
 
-class Gain(Model):
+class Gain(BaseModel):
     def __init__(self, sdf_version: str, gain: float = 2.5):
         self.__version__ = sdf_version
         self.gain = gain
@@ -8672,18 +11216,24 @@ class Gain(Model):
             return self.to_version(version).to_sdf()
         version = version or self.__version__
         el = ET.Element("gain")
+        if self.gain is None:
+            raise ValueError(f"'gain' is required in SDF version {version}")
         if self.gain is not None:
             el.text = str(self.gain)
         return el
 
     @classmethod
-    def from_sdf(cls, el: ET.Element, version: str) -> "Gain":
+    def _from_sdf(cls, el: ET.Element, version: str):
+        if el.text is None:
+            return SDFError(f"'gain' is required in SDF version {version}")
         _text = el.text or 2.5
         _gain = _parse_double(_text)
+        if isinstance(_gain, SDFError):
+            return _gain
         return cls(sdf_version=version, gain=_gain)
 
 
-class Power(Model):
+class Power(BaseModel):
     def __init__(self, sdf_version: str, power: float = 14.50):
         self.__version__ = sdf_version
         self.power = power
@@ -8699,18 +11249,24 @@ class Power(Model):
             return self.to_version(version).to_sdf()
         version = version or self.__version__
         el = ET.Element("power")
+        if self.power is None:
+            raise ValueError(f"'power' is required in SDF version {version}")
         if self.power is not None:
             el.text = str(self.power)
         return el
 
     @classmethod
-    def from_sdf(cls, el: ET.Element, version: str) -> "Power":
+    def _from_sdf(cls, el: ET.Element, version: str):
+        if el.text is None:
+            return SDFError(f"'power' is required in SDF version {version}")
         _text = el.text or 14.50
         _power = _parse_double(_text)
+        if isinstance(_power, SDFError):
+            return _power
         return cls(sdf_version=version, power=_power)
 
 
-class Sensitivity(Model):
+class Sensitivity(BaseModel):
     def __init__(self, sdf_version: str, sensitivity: float = -90):
         self.__version__ = sdf_version
         self.sensitivity = sensitivity
@@ -8731,13 +11287,15 @@ class Sensitivity(Model):
         return el
 
     @classmethod
-    def from_sdf(cls, el: ET.Element, version: str) -> "Sensitivity":
+    def _from_sdf(cls, el: ET.Element, version: str):
         _text = el.text or -90
         _sensitivity = _parse_double(_text)
+        if isinstance(_sensitivity, SDFError):
+            return _sensitivity
         return cls(sdf_version=version, sensitivity=_sensitivity)
 
 
-class Transceiver(Model):
+class Transceiver(BaseModel):
     def __init__(
         self,
         sdf_version: str,
@@ -8783,8 +11341,12 @@ class Transceiver(Model):
             el.append(self.min_frequency.to_sdf(version))
         if self.max_frequency is not None:
             el.append(self.max_frequency.to_sdf(version))
+        if self.gain is None:
+            raise ValueError(f"'gain' is required in SDF version {version}")
         if self.gain is not None:
             el.append(self.gain.to_sdf(version))
+        if self.power is None:
+            raise ValueError(f"'power' is required in SDF version {version}")
         if self.power is not None:
             el.append(self.power.to_sdf(version))
         if self.sensitivity is not None:
@@ -8792,25 +11354,531 @@ class Transceiver(Model):
         return el
 
     @classmethod
-    def from_sdf(cls, el: ET.Element, version: str) -> "Transceiver":
+    def _from_sdf(cls, el: ET.Element, version: str):
         _c_essid = el.find("essid")
-        _essid = Essid.from_sdf(_c_essid, version) if _c_essid is not None else None
+        if _c_essid is not None:
+            _res = Essid._from_sdf(_c_essid, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("essid")
+            _essid = _res
+        else:
+            _essid = None
         _c_frequency = el.find("frequency")
-        _frequency = Frequency.from_sdf(_c_frequency, version) if _c_frequency is not None else None
+        if _c_frequency is not None:
+            _res = Frequency._from_sdf(_c_frequency, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("frequency")
+            _frequency = _res
+        else:
+            _frequency = None
         _c_min_frequency = el.find("min_frequency")
-        _min_frequency = MinFrequency.from_sdf(_c_min_frequency, version) if _c_min_frequency is not None else None
+        if _c_min_frequency is not None:
+            _res = MinFrequency._from_sdf(_c_min_frequency, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("min_frequency")
+            _min_frequency = _res
+        else:
+            _min_frequency = None
         _c_max_frequency = el.find("max_frequency")
-        _max_frequency = MaxFrequency.from_sdf(_c_max_frequency, version) if _c_max_frequency is not None else None
+        if _c_max_frequency is not None:
+            _res = MaxFrequency._from_sdf(_c_max_frequency, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("max_frequency")
+            _max_frequency = _res
+        else:
+            _max_frequency = None
         _c_gain = el.find("gain")
-        _gain = Gain.from_sdf(_c_gain, version) if _c_gain is not None else None
+        if _c_gain is not None:
+            _res = Gain._from_sdf(_c_gain, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("gain")
+            _gain = _res
+        else:
+            _gain = None
+        if _gain is None:
+            return SDFError(f"'gain' is required in SDF version {version}")
         _c_power = el.find("power")
-        _power = Power.from_sdf(_c_power, version) if _c_power is not None else None
+        if _c_power is not None:
+            _res = Power._from_sdf(_c_power, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("power")
+            _power = _res
+        else:
+            _power = None
+        if _power is None:
+            return SDFError(f"'power' is required in SDF version {version}")
         _c_sensitivity = el.find("sensitivity")
-        _sensitivity = Sensitivity.from_sdf(_c_sensitivity, version) if _c_sensitivity is not None else None
+        if _c_sensitivity is not None:
+            _res = Sensitivity._from_sdf(_c_sensitivity, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("sensitivity")
+            _sensitivity = _res
+        else:
+            _sensitivity = None
         return cls(sdf_version=version, essid=_essid, frequency=_frequency, min_frequency=_min_frequency, max_frequency=_max_frequency, gain=_gain, power=_power, sensitivity=_sensitivity)
 
 
-class VerticalPosition(Model):
+class MeasureDirection(BaseModel):
+    def __init__(self, sdf_version: str, measure_direction: str = "child_to_parent"):
+        self.__version__ = sdf_version
+        self.measure_direction = measure_direction
+
+    def to_version(self, target_version: str) -> "MeasureDirection":
+        if self.measure_direction is not None and cmp_version(target_version, "1.5") < 0:
+            raise ValueError(f"'measure_direction' is not supported in SDF version {target_version} (added in 1.5)")
+        kwargs = {"sdf_version": target_version}
+        kwargs["measure_direction"] = self.measure_direction
+        new_obj = self.__class__(**kwargs)
+        return new_obj
+
+    def to_sdf(self, version: str = None) -> ET.Element:
+        if version is not None and version != self.__version__:
+            return self.to_version(version).to_sdf()
+        version = version or self.__version__
+        el = ET.Element("measure_direction")
+        if self.measure_direction is not None:
+            el.text = self.measure_direction
+        return el
+
+    @classmethod
+    def _from_sdf(cls, el: ET.Element, version: str):
+        _text = el.text or "child_to_parent"
+        _measure_direction = _text
+        if isinstance(_measure_direction, SDFError):
+            return _measure_direction
+        if _measure_direction is not None and cmp_version(version, "1.5") < 0:
+            if _measure_direction != "child_to_parent":
+                return SDFError(f"'measure_direction' is not supported in SDF version {version} (added in 1.5)")
+        return cls(sdf_version=version, measure_direction=_measure_direction)
+
+
+class Torque(BaseModel):
+    def __init__(self, sdf_version: str, x: "X" = None, y: "Y" = None, z: "Z" = None):
+        self.__version__ = sdf_version
+        self.x = x
+        self.y = y
+        self.z = z
+
+    def to_version(self, target_version: str) -> "Torque":
+        kwargs = {"sdf_version": target_version}
+        kwargs["x"] = self.x.to_version(target_version) if self.x is not None else None
+        kwargs["y"] = self.y.to_version(target_version) if self.y is not None else None
+        kwargs["z"] = self.z.to_version(target_version) if self.z is not None else None
+        new_obj = self.__class__(**kwargs)
+        return new_obj
+
+    def to_sdf(self, version: str = None) -> ET.Element:
+        if version is not None and version != self.__version__:
+            return self.to_version(version).to_sdf()
+        version = version or self.__version__
+        el = ET.Element("torque")
+        if self.x is not None:
+            el.append(self.x.to_sdf(version))
+        if self.y is not None:
+            el.append(self.y.to_sdf(version))
+        if self.z is not None:
+            el.append(self.z.to_sdf(version))
+        return el
+
+    @classmethod
+    def _from_sdf(cls, el: ET.Element, version: str):
+        _c_x = el.find("x")
+        if _c_x is not None:
+            _res = X._from_sdf(_c_x, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("x")
+            _x = _res
+        else:
+            _x = None
+        _c_y = el.find("y")
+        if _c_y is not None:
+            _res = Y._from_sdf(_c_y, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("y")
+            _y = _res
+        else:
+            _y = None
+        _c_z = el.find("z")
+        if _c_z is not None:
+            _res = Z._from_sdf(_c_z, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("z")
+            _z = _res
+        else:
+            _z = None
+        return cls(sdf_version=version, x=_x, y=_y, z=_z)
+
+
+class Force(BaseModel):
+    def __init__(self, sdf_version: str, x: "X" = None, y: "Y" = None, z: "Z" = None):
+        self.__version__ = sdf_version
+        self.x = x
+        self.y = y
+        self.z = z
+
+    def to_version(self, target_version: str) -> "Force":
+        kwargs = {"sdf_version": target_version}
+        kwargs["x"] = self.x.to_version(target_version) if self.x is not None else None
+        kwargs["y"] = self.y.to_version(target_version) if self.y is not None else None
+        kwargs["z"] = self.z.to_version(target_version) if self.z is not None else None
+        new_obj = self.__class__(**kwargs)
+        return new_obj
+
+    def to_sdf(self, version: str = None) -> ET.Element:
+        if version is not None and version != self.__version__:
+            return self.to_version(version).to_sdf()
+        version = version or self.__version__
+        el = ET.Element("force")
+        if self.x is not None:
+            el.append(self.x.to_sdf(version))
+        if self.y is not None:
+            el.append(self.y.to_sdf(version))
+        if self.z is not None:
+            el.append(self.z.to_sdf(version))
+        return el
+
+    @classmethod
+    def _from_sdf(cls, el: ET.Element, version: str):
+        _c_x = el.find("x")
+        if _c_x is not None:
+            _res = X._from_sdf(_c_x, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("x")
+            _x = _res
+        else:
+            _x = None
+        _c_y = el.find("y")
+        if _c_y is not None:
+            _res = Y._from_sdf(_c_y, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("y")
+            _y = _res
+        else:
+            _y = None
+        _c_z = el.find("z")
+        if _c_z is not None:
+            _res = Z._from_sdf(_c_z, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("z")
+            _z = _res
+        else:
+            _z = None
+        return cls(sdf_version=version, x=_x, y=_y, z=_z)
+
+
+class ForceTorque(BaseModel):
+    def __init__(
+        self,
+        sdf_version: str,
+        frame: "Frame" = None,
+        measure_direction: "MeasureDirection" = None,
+        torque: "Torque" = None,
+        force: "Force" = None
+    ):
+        self.__version__ = sdf_version
+        self.frame = frame
+        self.measure_direction = measure_direction
+        self.torque = torque
+        self.force = force
+
+    def to_version(self, target_version: str) -> "ForceTorque":
+        if self.measure_direction is not None and cmp_version(target_version, "1.5") < 0:
+            raise ValueError(f"'measure_direction' is not supported in SDF version {target_version} (added in 1.5)")
+        if self.torque is not None and cmp_version(target_version, "1.7") < 0:
+            raise ValueError(f"'torque' is not supported in SDF version {target_version} (added in 1.7)")
+        if self.force is not None and cmp_version(target_version, "1.7") < 0:
+            raise ValueError(f"'force' is not supported in SDF version {target_version} (added in 1.7)")
+        kwargs = {"sdf_version": target_version}
+        kwargs["frame"] = self.frame.to_version(target_version) if self.frame is not None else None
+        kwargs["measure_direction"] = self.measure_direction.to_version(target_version) if self.measure_direction is not None else None
+        kwargs["torque"] = self.torque.to_version(target_version) if self.torque is not None else None
+        kwargs["force"] = self.force.to_version(target_version) if self.force is not None else None
+        new_obj = self.__class__(**kwargs)
+        return new_obj
+
+    def to_sdf(self, version: str = None) -> ET.Element:
+        if version is not None and version != self.__version__:
+            return self.to_version(version).to_sdf()
+        version = version or self.__version__
+        el = ET.Element("force_torque")
+        if self.frame is not None:
+            el.append(self.frame.to_sdf(version))
+        if self.measure_direction is not None:
+            el.append(self.measure_direction.to_sdf(version))
+        if self.torque is not None:
+            el.append(self.torque.to_sdf(version))
+        if self.force is not None:
+            el.append(self.force.to_sdf(version))
+        return el
+
+    @classmethod
+    def _from_sdf(cls, el: ET.Element, version: str):
+        _c_frame = el.find("frame")
+        if _c_frame is not None:
+            _res = Frame._from_sdf(_c_frame, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("frame")
+            _frame = _res
+        else:
+            _frame = None
+        _c_measure_direction = el.find("measure_direction")
+        if _c_measure_direction is not None:
+            _res = MeasureDirection._from_sdf(_c_measure_direction, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("measure_direction")
+            _measure_direction = _res
+        else:
+            _measure_direction = None
+        if _measure_direction is not None and cmp_version(version, "1.5") < 0:
+            return SDFError(f"'measure_direction' is not supported in SDF version {version} (added in 1.5)")
+        _c_torque = el.find("torque")
+        if _c_torque is not None:
+            _res = Torque._from_sdf(_c_torque, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("torque")
+            _torque = _res
+        else:
+            _torque = None
+        if _torque is not None and cmp_version(version, "1.7") < 0:
+            return SDFError(f"'torque' is not supported in SDF version {version} (added in 1.7)")
+        _c_force = el.find("force")
+        if _c_force is not None:
+            _res = Force._from_sdf(_c_force, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("force")
+            _force = _res
+        else:
+            _force = None
+        if _force is not None and cmp_version(version, "1.7") < 0:
+            return SDFError(f"'force' is not supported in SDF version {version} (added in 1.7)")
+        return cls(sdf_version=version, frame=_frame, measure_direction=_measure_direction, torque=_torque, force=_force)
+
+
+class Near(BaseModel):
+    def __init__(self, sdf_version: str, near: float = 0):
+        self.__version__ = sdf_version
+        self.near = near
+
+    def to_version(self, target_version: str) -> "Near":
+        kwargs = {"sdf_version": target_version}
+        kwargs["near"] = self.near
+        new_obj = self.__class__(**kwargs)
+        return new_obj
+
+    def to_sdf(self, version: str = None) -> ET.Element:
+        if version is not None and version != self.__version__:
+            return self.to_version(version).to_sdf()
+        version = version or self.__version__
+        el = ET.Element("near")
+        if self.near is None:
+            raise ValueError(f"'near' is required in SDF version {version}")
+        if self.near is not None:
+            el.text = str(self.near)
+        return el
+
+    @classmethod
+    def _from_sdf(cls, el: ET.Element, version: str):
+        if el.text is None:
+            return SDFError(f"'near' is required in SDF version {version}")
+        _text = el.text or 0
+        _near = _parse_double(_text)
+        if isinstance(_near, SDFError):
+            return _near
+        return cls(sdf_version=version, near=_near)
+
+
+class Far(BaseModel):
+    def __init__(self, sdf_version: str, far: float = 1):
+        self.__version__ = sdf_version
+        self.far = far
+
+    def to_version(self, target_version: str) -> "Far":
+        kwargs = {"sdf_version": target_version}
+        kwargs["far"] = self.far
+        new_obj = self.__class__(**kwargs)
+        return new_obj
+
+    def to_sdf(self, version: str = None) -> ET.Element:
+        if version is not None and version != self.__version__:
+            return self.to_version(version).to_sdf()
+        version = version or self.__version__
+        el = ET.Element("far")
+        if self.far is None:
+            raise ValueError(f"'far' is required in SDF version {version}")
+        if self.far is not None:
+            el.text = str(self.far)
+        return el
+
+    @classmethod
+    def _from_sdf(cls, el: ET.Element, version: str):
+        if el.text is None:
+            return SDFError(f"'far' is required in SDF version {version}")
+        _text = el.text or 1
+        _far = _parse_double(_text)
+        if isinstance(_far, SDFError):
+            return _far
+        return cls(sdf_version=version, far=_far)
+
+
+class AspectRatio(BaseModel):
+    def __init__(self, sdf_version: str, aspect_ratio: float = 1):
+        self.__version__ = sdf_version
+        self.aspect_ratio = aspect_ratio
+
+    def to_version(self, target_version: str) -> "AspectRatio":
+        kwargs = {"sdf_version": target_version}
+        kwargs["aspect_ratio"] = self.aspect_ratio
+        new_obj = self.__class__(**kwargs)
+        return new_obj
+
+    def to_sdf(self, version: str = None) -> ET.Element:
+        if version is not None and version != self.__version__:
+            return self.to_version(version).to_sdf()
+        version = version or self.__version__
+        el = ET.Element("aspect_ratio")
+        if self.aspect_ratio is None:
+            raise ValueError(f"'aspect_ratio' is required in SDF version {version}")
+        if self.aspect_ratio is not None:
+            el.text = str(self.aspect_ratio)
+        return el
+
+    @classmethod
+    def _from_sdf(cls, el: ET.Element, version: str):
+        if el.text is None:
+            return SDFError(f"'aspect_ratio' is required in SDF version {version}")
+        _text = el.text or 1
+        _aspect_ratio = _parse_double(_text)
+        if isinstance(_aspect_ratio, SDFError):
+            return _aspect_ratio
+        return cls(sdf_version=version, aspect_ratio=_aspect_ratio)
+
+
+class HorizontalFov(BaseModel):
+    def __init__(self, sdf_version: str, horizontal_fov: float = 1):
+        self.__version__ = sdf_version
+        self.horizontal_fov = horizontal_fov
+
+    def to_version(self, target_version: str) -> "HorizontalFov":
+        kwargs = {"sdf_version": target_version}
+        kwargs["horizontal_fov"] = self.horizontal_fov
+        new_obj = self.__class__(**kwargs)
+        return new_obj
+
+    def to_sdf(self, version: str = None) -> ET.Element:
+        if version is not None and version != self.__version__:
+            return self.to_version(version).to_sdf()
+        version = version or self.__version__
+        el = ET.Element("horizontal_fov")
+        if self.horizontal_fov is None:
+            raise ValueError(f"'horizontal_fov' is required in SDF version {version}")
+        if self.horizontal_fov is not None:
+            el.text = str(self.horizontal_fov)
+        return el
+
+    @classmethod
+    def _from_sdf(cls, el: ET.Element, version: str):
+        if el.text is None:
+            return SDFError(f"'horizontal_fov' is required in SDF version {version}")
+        _text = el.text or 1
+        _horizontal_fov = _parse_double(_text)
+        if isinstance(_horizontal_fov, SDFError):
+            return _horizontal_fov
+        return cls(sdf_version=version, horizontal_fov=_horizontal_fov)
+
+
+class LogicalCamera(BaseModel):
+    def __init__(
+        self,
+        sdf_version: str,
+        near: "Near" = None,
+        far: "Far" = None,
+        aspect_ratio: "AspectRatio" = None,
+        horizontal_fov: "HorizontalFov" = None
+    ):
+        self.__version__ = sdf_version
+        self.near = near
+        self.far = far
+        self.aspect_ratio = aspect_ratio
+        self.horizontal_fov = horizontal_fov
+
+    def to_version(self, target_version: str) -> "LogicalCamera":
+        kwargs = {"sdf_version": target_version}
+        kwargs["near"] = self.near.to_version(target_version) if self.near is not None else None
+        kwargs["far"] = self.far.to_version(target_version) if self.far is not None else None
+        kwargs["aspect_ratio"] = self.aspect_ratio.to_version(target_version) if self.aspect_ratio is not None else None
+        kwargs["horizontal_fov"] = self.horizontal_fov.to_version(target_version) if self.horizontal_fov is not None else None
+        new_obj = self.__class__(**kwargs)
+        return new_obj
+
+    def to_sdf(self, version: str = None) -> ET.Element:
+        if version is not None and version != self.__version__:
+            return self.to_version(version).to_sdf()
+        version = version or self.__version__
+        el = ET.Element("logical_camera")
+        if self.near is None:
+            raise ValueError(f"'near' is required in SDF version {version}")
+        if self.near is not None:
+            el.append(self.near.to_sdf(version))
+        if self.far is None:
+            raise ValueError(f"'far' is required in SDF version {version}")
+        if self.far is not None:
+            el.append(self.far.to_sdf(version))
+        if self.aspect_ratio is None:
+            raise ValueError(f"'aspect_ratio' is required in SDF version {version}")
+        if self.aspect_ratio is not None:
+            el.append(self.aspect_ratio.to_sdf(version))
+        if self.horizontal_fov is None:
+            raise ValueError(f"'horizontal_fov' is required in SDF version {version}")
+        if self.horizontal_fov is not None:
+            el.append(self.horizontal_fov.to_sdf(version))
+        return el
+
+    @classmethod
+    def _from_sdf(cls, el: ET.Element, version: str):
+        _c_near = el.find("near")
+        if _c_near is not None:
+            _res = Near._from_sdf(_c_near, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("near")
+            _near = _res
+        else:
+            _near = None
+        if _near is None:
+            return SDFError(f"'near' is required in SDF version {version}")
+        _c_far = el.find("far")
+        if _c_far is not None:
+            _res = Far._from_sdf(_c_far, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("far")
+            _far = _res
+        else:
+            _far = None
+        if _far is None:
+            return SDFError(f"'far' is required in SDF version {version}")
+        _c_aspect_ratio = el.find("aspect_ratio")
+        if _c_aspect_ratio is not None:
+            _res = AspectRatio._from_sdf(_c_aspect_ratio, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("aspect_ratio")
+            _aspect_ratio = _res
+        else:
+            _aspect_ratio = None
+        if _aspect_ratio is None:
+            return SDFError(f"'aspect_ratio' is required in SDF version {version}")
+        _c_horizontal_fov = el.find("horizontal_fov")
+        if _c_horizontal_fov is not None:
+            _res = HorizontalFov._from_sdf(_c_horizontal_fov, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("horizontal_fov")
+            _horizontal_fov = _res
+        else:
+            _horizontal_fov = None
+        if _horizontal_fov is None:
+            return SDFError(f"'horizontal_fov' is required in SDF version {version}")
+        return cls(sdf_version=version, near=_near, far=_far, aspect_ratio=_aspect_ratio, horizontal_fov=_horizontal_fov)
+
+
+class VerticalPosition(BaseModel):
     def __init__(self, sdf_version: str, noise: "Noise" = None):
         self.__version__ = sdf_version
         self.noise = noise
@@ -8831,13 +11899,19 @@ class VerticalPosition(Model):
         return el
 
     @classmethod
-    def from_sdf(cls, el: ET.Element, version: str) -> "VerticalPosition":
+    def _from_sdf(cls, el: ET.Element, version: str):
         _c_noise = el.find("noise")
-        _noise = Noise.from_sdf(_c_noise, version) if _c_noise is not None else None
+        if _c_noise is not None:
+            _res = Noise._from_sdf(_c_noise, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("noise")
+            _noise = _res
+        else:
+            _noise = None
         return cls(sdf_version=version, noise=_noise)
 
 
-class VerticalVelocity(Model):
+class VerticalVelocity(BaseModel):
     def __init__(self, sdf_version: str, noise: "Noise" = None):
         self.__version__ = sdf_version
         self.noise = noise
@@ -8858,13 +11932,19 @@ class VerticalVelocity(Model):
         return el
 
     @classmethod
-    def from_sdf(cls, el: ET.Element, version: str) -> "VerticalVelocity":
+    def _from_sdf(cls, el: ET.Element, version: str):
         _c_noise = el.find("noise")
-        _noise = Noise.from_sdf(_c_noise, version) if _c_noise is not None else None
+        if _c_noise is not None:
+            _res = Noise._from_sdf(_c_noise, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("noise")
+            _noise = _res
+        else:
+            _noise = None
         return cls(sdf_version=version, noise=_noise)
 
 
-class Altimeter(Model):
+class Altimeter(BaseModel):
     def __init__(
         self,
         sdf_version: str,
@@ -8894,175 +11974,27 @@ class Altimeter(Model):
         return el
 
     @classmethod
-    def from_sdf(cls, el: ET.Element, version: str) -> "Altimeter":
+    def _from_sdf(cls, el: ET.Element, version: str):
         _c_vertical_position = el.find("vertical_position")
-        _vertical_position = VerticalPosition.from_sdf(_c_vertical_position, version) if _c_vertical_position is not None else None
+        if _c_vertical_position is not None:
+            _res = VerticalPosition._from_sdf(_c_vertical_position, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("vertical_position")
+            _vertical_position = _res
+        else:
+            _vertical_position = None
         _c_vertical_velocity = el.find("vertical_velocity")
-        _vertical_velocity = VerticalVelocity.from_sdf(_c_vertical_velocity, version) if _c_vertical_velocity is not None else None
+        if _c_vertical_velocity is not None:
+            _res = VerticalVelocity._from_sdf(_c_vertical_velocity, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("vertical_velocity")
+            _vertical_velocity = _res
+        else:
+            _vertical_velocity = None
         return cls(sdf_version=version, vertical_position=_vertical_position, vertical_velocity=_vertical_velocity)
 
 
-class Near(Model):
-    def __init__(self, sdf_version: str, near: float = 0):
-        self.__version__ = sdf_version
-        self.near = near
-
-    def to_version(self, target_version: str) -> "Near":
-        kwargs = {"sdf_version": target_version}
-        kwargs["near"] = self.near
-        new_obj = self.__class__(**kwargs)
-        return new_obj
-
-    def to_sdf(self, version: str = None) -> ET.Element:
-        if version is not None and version != self.__version__:
-            return self.to_version(version).to_sdf()
-        version = version or self.__version__
-        el = ET.Element("near")
-        if self.near is not None:
-            el.text = str(self.near)
-        return el
-
-    @classmethod
-    def from_sdf(cls, el: ET.Element, version: str) -> "Near":
-        _text = el.text or 0
-        _near = _parse_double(_text)
-        return cls(sdf_version=version, near=_near)
-
-
-class Far(Model):
-    def __init__(self, sdf_version: str, far: float = 1):
-        self.__version__ = sdf_version
-        self.far = far
-
-    def to_version(self, target_version: str) -> "Far":
-        kwargs = {"sdf_version": target_version}
-        kwargs["far"] = self.far
-        new_obj = self.__class__(**kwargs)
-        return new_obj
-
-    def to_sdf(self, version: str = None) -> ET.Element:
-        if version is not None and version != self.__version__:
-            return self.to_version(version).to_sdf()
-        version = version or self.__version__
-        el = ET.Element("far")
-        if self.far is not None:
-            el.text = str(self.far)
-        return el
-
-    @classmethod
-    def from_sdf(cls, el: ET.Element, version: str) -> "Far":
-        _text = el.text or 1
-        _far = _parse_double(_text)
-        return cls(sdf_version=version, far=_far)
-
-
-class AspectRatio(Model):
-    def __init__(self, sdf_version: str, aspect_ratio: float = 1):
-        self.__version__ = sdf_version
-        self.aspect_ratio = aspect_ratio
-
-    def to_version(self, target_version: str) -> "AspectRatio":
-        kwargs = {"sdf_version": target_version}
-        kwargs["aspect_ratio"] = self.aspect_ratio
-        new_obj = self.__class__(**kwargs)
-        return new_obj
-
-    def to_sdf(self, version: str = None) -> ET.Element:
-        if version is not None and version != self.__version__:
-            return self.to_version(version).to_sdf()
-        version = version or self.__version__
-        el = ET.Element("aspect_ratio")
-        if self.aspect_ratio is not None:
-            el.text = str(self.aspect_ratio)
-        return el
-
-    @classmethod
-    def from_sdf(cls, el: ET.Element, version: str) -> "AspectRatio":
-        _text = el.text or 1
-        _aspect_ratio = _parse_double(_text)
-        return cls(sdf_version=version, aspect_ratio=_aspect_ratio)
-
-
-class HorizontalFov(Model):
-    def __init__(self, sdf_version: str, horizontal_fov: float = 1):
-        self.__version__ = sdf_version
-        self.horizontal_fov = horizontal_fov
-
-    def to_version(self, target_version: str) -> "HorizontalFov":
-        kwargs = {"sdf_version": target_version}
-        kwargs["horizontal_fov"] = self.horizontal_fov
-        new_obj = self.__class__(**kwargs)
-        return new_obj
-
-    def to_sdf(self, version: str = None) -> ET.Element:
-        if version is not None and version != self.__version__:
-            return self.to_version(version).to_sdf()
-        version = version or self.__version__
-        el = ET.Element("horizontal_fov")
-        if self.horizontal_fov is not None:
-            el.text = str(self.horizontal_fov)
-        return el
-
-    @classmethod
-    def from_sdf(cls, el: ET.Element, version: str) -> "HorizontalFov":
-        _text = el.text or 1
-        _horizontal_fov = _parse_double(_text)
-        return cls(sdf_version=version, horizontal_fov=_horizontal_fov)
-
-
-class LogicalCamera(Model):
-    def __init__(
-        self,
-        sdf_version: str,
-        near: "Near" = None,
-        far: "Far" = None,
-        aspect_ratio: "AspectRatio" = None,
-        horizontal_fov: "HorizontalFov" = None
-    ):
-        self.__version__ = sdf_version
-        self.near = near
-        self.far = far
-        self.aspect_ratio = aspect_ratio
-        self.horizontal_fov = horizontal_fov
-
-    def to_version(self, target_version: str) -> "LogicalCamera":
-        kwargs = {"sdf_version": target_version}
-        kwargs["near"] = self.near.to_version(target_version) if self.near is not None else None
-        kwargs["far"] = self.far.to_version(target_version) if self.far is not None else None
-        kwargs["aspect_ratio"] = self.aspect_ratio.to_version(target_version) if self.aspect_ratio is not None else None
-        kwargs["horizontal_fov"] = self.horizontal_fov.to_version(target_version) if self.horizontal_fov is not None else None
-        new_obj = self.__class__(**kwargs)
-        return new_obj
-
-    def to_sdf(self, version: str = None) -> ET.Element:
-        if version is not None and version != self.__version__:
-            return self.to_version(version).to_sdf()
-        version = version or self.__version__
-        el = ET.Element("logical_camera")
-        if self.near is not None:
-            el.append(self.near.to_sdf(version))
-        if self.far is not None:
-            el.append(self.far.to_sdf(version))
-        if self.aspect_ratio is not None:
-            el.append(self.aspect_ratio.to_sdf(version))
-        if self.horizontal_fov is not None:
-            el.append(self.horizontal_fov.to_sdf(version))
-        return el
-
-    @classmethod
-    def from_sdf(cls, el: ET.Element, version: str) -> "LogicalCamera":
-        _c_near = el.find("near")
-        _near = Near.from_sdf(_c_near, version) if _c_near is not None else None
-        _c_far = el.find("far")
-        _far = Far.from_sdf(_c_far, version) if _c_far is not None else None
-        _c_aspect_ratio = el.find("aspect_ratio")
-        _aspect_ratio = AspectRatio.from_sdf(_c_aspect_ratio, version) if _c_aspect_ratio is not None else None
-        _c_horizontal_fov = el.find("horizontal_fov")
-        _horizontal_fov = HorizontalFov.from_sdf(_c_horizontal_fov, version) if _c_horizontal_fov is not None else None
-        return cls(sdf_version=version, near=_near, far=_far, aspect_ratio=_aspect_ratio, horizontal_fov=_horizontal_fov)
-
-
-class Magnetometer(Model):
+class Magnetometer(BaseModel):
     def __init__(self, sdf_version: str, x: "X" = None, y: "Y" = None, z: "Z" = None):
         self.__version__ = sdf_version
         self.x = x
@@ -9091,109 +12023,35 @@ class Magnetometer(Model):
         return el
 
     @classmethod
-    def from_sdf(cls, el: ET.Element, version: str) -> "Magnetometer":
+    def _from_sdf(cls, el: ET.Element, version: str):
         _c_x = el.find("x")
-        _x = X.from_sdf(_c_x, version) if _c_x is not None else None
+        if _c_x is not None:
+            _res = X._from_sdf(_c_x, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("x")
+            _x = _res
+        else:
+            _x = None
         _c_y = el.find("y")
-        _y = Y.from_sdf(_c_y, version) if _c_y is not None else None
+        if _c_y is not None:
+            _res = Y._from_sdf(_c_y, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("y")
+            _y = _res
+        else:
+            _y = None
         _c_z = el.find("z")
-        _z = Z.from_sdf(_c_z, version) if _c_z is not None else None
+        if _c_z is not None:
+            _res = Z._from_sdf(_c_z, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("z")
+            _z = _res
+        else:
+            _z = None
         return cls(sdf_version=version, x=_x, y=_y, z=_z)
 
 
-class ReferenceAltitude(Model):
-    def __init__(self, sdf_version: str, reference_altitude: float = 0.0):
-        self.__version__ = sdf_version
-        self.reference_altitude = reference_altitude
-
-    def to_version(self, target_version: str) -> "ReferenceAltitude":
-        kwargs = {"sdf_version": target_version}
-        kwargs["reference_altitude"] = self.reference_altitude
-        new_obj = self.__class__(**kwargs)
-        return new_obj
-
-    def to_sdf(self, version: str = None) -> ET.Element:
-        if version is not None and version != self.__version__:
-            return self.to_version(version).to_sdf()
-        version = version or self.__version__
-        el = ET.Element("reference_altitude")
-        if self.reference_altitude is not None:
-            el.text = str(self.reference_altitude)
-        return el
-
-    @classmethod
-    def from_sdf(cls, el: ET.Element, version: str) -> "ReferenceAltitude":
-        _text = el.text or 0.0
-        _reference_altitude = _parse_double(_text)
-        return cls(sdf_version=version, reference_altitude=_reference_altitude)
-
-
-class Pressure(Model):
-    def __init__(self, sdf_version: str, noise: "Noise" = None):
-        self.__version__ = sdf_version
-        self.noise = noise
-
-    def to_version(self, target_version: str) -> "Pressure":
-        kwargs = {"sdf_version": target_version}
-        kwargs["noise"] = self.noise.to_version(target_version) if self.noise is not None else None
-        new_obj = self.__class__(**kwargs)
-        return new_obj
-
-    def to_sdf(self, version: str = None) -> ET.Element:
-        if version is not None and version != self.__version__:
-            return self.to_version(version).to_sdf()
-        version = version or self.__version__
-        el = ET.Element("pressure")
-        if self.noise is not None:
-            el.append(self.noise.to_sdf(version))
-        return el
-
-    @classmethod
-    def from_sdf(cls, el: ET.Element, version: str) -> "Pressure":
-        _c_noise = el.find("noise")
-        _noise = Noise.from_sdf(_c_noise, version) if _c_noise is not None else None
-        return cls(sdf_version=version, noise=_noise)
-
-
-class AirPressure(Model):
-    def __init__(
-        self,
-        sdf_version: str,
-        reference_altitude: "ReferenceAltitude" = None,
-        pressure: "Pressure" = None
-    ):
-        self.__version__ = sdf_version
-        self.reference_altitude = reference_altitude
-        self.pressure = pressure
-
-    def to_version(self, target_version: str) -> "AirPressure":
-        kwargs = {"sdf_version": target_version}
-        kwargs["reference_altitude"] = self.reference_altitude.to_version(target_version) if self.reference_altitude is not None else None
-        kwargs["pressure"] = self.pressure.to_version(target_version) if self.pressure is not None else None
-        new_obj = self.__class__(**kwargs)
-        return new_obj
-
-    def to_sdf(self, version: str = None) -> ET.Element:
-        if version is not None and version != self.__version__:
-            return self.to_version(version).to_sdf()
-        version = version or self.__version__
-        el = ET.Element("air_pressure")
-        if self.reference_altitude is not None:
-            el.append(self.reference_altitude.to_sdf(version))
-        if self.pressure is not None:
-            el.append(self.pressure.to_sdf(version))
-        return el
-
-    @classmethod
-    def from_sdf(cls, el: ET.Element, version: str) -> "AirPressure":
-        _c_reference_altitude = el.find("reference_altitude")
-        _reference_altitude = ReferenceAltitude.from_sdf(_c_reference_altitude, version) if _c_reference_altitude is not None else None
-        _c_pressure = el.find("pressure")
-        _pressure = Pressure.from_sdf(_c_pressure, version) if _c_pressure is not None else None
-        return cls(sdf_version=version, reference_altitude=_reference_altitude, pressure=_pressure)
-
-
-class Lidar(Model):
+class Lidar(BaseModel):
     def __init__(
         self,
         sdf_version: str,
@@ -9224,8 +12082,12 @@ class Lidar(Model):
             return self.to_version(version).to_sdf()
         version = version or self.__version__
         el = ET.Element("lidar")
+        if self.scan is None:
+            raise ValueError(f"'scan' is required in SDF version {version}")
         if self.scan is not None:
             el.append(self.scan.to_sdf(version))
+        if self.range is None:
+            raise ValueError(f"'range' is required in SDF version {version}")
         if self.range is not None:
             el.append(self.range.to_sdf(version))
         if self.noise is not None:
@@ -9235,21 +12097,161 @@ class Lidar(Model):
         return el
 
     @classmethod
-    def from_sdf(cls, el: ET.Element, version: str) -> "Lidar":
+    def _from_sdf(cls, el: ET.Element, version: str):
         _c_scan = el.find("scan")
-        _scan = Scan.from_sdf(_c_scan, version) if _c_scan is not None else None
+        if _c_scan is not None:
+            _res = Scan._from_sdf(_c_scan, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("scan")
+            _scan = _res
+        else:
+            _scan = None
+        if _scan is None:
+            return SDFError(f"'scan' is required in SDF version {version}")
         _c_range = el.find("range")
-        _range = Range.from_sdf(_c_range, version) if _c_range is not None else None
+        if _c_range is not None:
+            _res = Range._from_sdf(_c_range, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("range")
+            _range = _res
+        else:
+            _range = None
+        if _range is None:
+            return SDFError(f"'range' is required in SDF version {version}")
         _c_noise = el.find("noise")
-        _noise = Noise.from_sdf(_c_noise, version) if _c_noise is not None else None
+        if _c_noise is not None:
+            _res = Noise._from_sdf(_c_noise, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("noise")
+            _noise = _res
+        else:
+            _noise = None
         _c_visibility_mask = el.find("visibility_mask")
-        _visibility_mask = VisibilityMask.from_sdf(_c_visibility_mask, version) if _c_visibility_mask is not None else None
+        if _c_visibility_mask is not None:
+            _res = VisibilityMask._from_sdf(_c_visibility_mask, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("visibility_mask")
+            _visibility_mask = _res
+        else:
+            _visibility_mask = None
         if _visibility_mask is not None and cmp_version(version, "1.9") < 0:
-            raise ValueError(f"'visibility_mask' is not supported in SDF version {version} (added in 1.9)")
+            return SDFError(f"'visibility_mask' is not supported in SDF version {version} (added in 1.9)")
         return cls(sdf_version=version, scan=_scan, range=_range, noise=_noise, visibility_mask=_visibility_mask)
 
 
-class Navsat(Model):
+class ReferenceAltitude(BaseModel):
+    def __init__(self, sdf_version: str, reference_altitude: float = 0.0):
+        self.__version__ = sdf_version
+        self.reference_altitude = reference_altitude
+
+    def to_version(self, target_version: str) -> "ReferenceAltitude":
+        kwargs = {"sdf_version": target_version}
+        kwargs["reference_altitude"] = self.reference_altitude
+        new_obj = self.__class__(**kwargs)
+        return new_obj
+
+    def to_sdf(self, version: str = None) -> ET.Element:
+        if version is not None and version != self.__version__:
+            return self.to_version(version).to_sdf()
+        version = version or self.__version__
+        el = ET.Element("reference_altitude")
+        if self.reference_altitude is not None:
+            el.text = str(self.reference_altitude)
+        return el
+
+    @classmethod
+    def _from_sdf(cls, el: ET.Element, version: str):
+        _text = el.text or 0.0
+        _reference_altitude = _parse_double(_text)
+        if isinstance(_reference_altitude, SDFError):
+            return _reference_altitude
+        return cls(sdf_version=version, reference_altitude=_reference_altitude)
+
+
+class Pressure(BaseModel):
+    def __init__(self, sdf_version: str, noise: "Noise" = None):
+        self.__version__ = sdf_version
+        self.noise = noise
+
+    def to_version(self, target_version: str) -> "Pressure":
+        kwargs = {"sdf_version": target_version}
+        kwargs["noise"] = self.noise.to_version(target_version) if self.noise is not None else None
+        new_obj = self.__class__(**kwargs)
+        return new_obj
+
+    def to_sdf(self, version: str = None) -> ET.Element:
+        if version is not None and version != self.__version__:
+            return self.to_version(version).to_sdf()
+        version = version or self.__version__
+        el = ET.Element("pressure")
+        if self.noise is not None:
+            el.append(self.noise.to_sdf(version))
+        return el
+
+    @classmethod
+    def _from_sdf(cls, el: ET.Element, version: str):
+        _c_noise = el.find("noise")
+        if _c_noise is not None:
+            _res = Noise._from_sdf(_c_noise, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("noise")
+            _noise = _res
+        else:
+            _noise = None
+        return cls(sdf_version=version, noise=_noise)
+
+
+class AirPressure(BaseModel):
+    def __init__(
+        self,
+        sdf_version: str,
+        reference_altitude: "ReferenceAltitude" = None,
+        pressure: "Pressure" = None
+    ):
+        self.__version__ = sdf_version
+        self.reference_altitude = reference_altitude
+        self.pressure = pressure
+
+    def to_version(self, target_version: str) -> "AirPressure":
+        kwargs = {"sdf_version": target_version}
+        kwargs["reference_altitude"] = self.reference_altitude.to_version(target_version) if self.reference_altitude is not None else None
+        kwargs["pressure"] = self.pressure.to_version(target_version) if self.pressure is not None else None
+        new_obj = self.__class__(**kwargs)
+        return new_obj
+
+    def to_sdf(self, version: str = None) -> ET.Element:
+        if version is not None and version != self.__version__:
+            return self.to_version(version).to_sdf()
+        version = version or self.__version__
+        el = ET.Element("air_pressure")
+        if self.reference_altitude is not None:
+            el.append(self.reference_altitude.to_sdf(version))
+        if self.pressure is not None:
+            el.append(self.pressure.to_sdf(version))
+        return el
+
+    @classmethod
+    def _from_sdf(cls, el: ET.Element, version: str):
+        _c_reference_altitude = el.find("reference_altitude")
+        if _c_reference_altitude is not None:
+            _res = ReferenceAltitude._from_sdf(_c_reference_altitude, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("reference_altitude")
+            _reference_altitude = _res
+        else:
+            _reference_altitude = None
+        _c_pressure = el.find("pressure")
+        if _c_pressure is not None:
+            _res = Pressure._from_sdf(_c_pressure, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("pressure")
+            _pressure = _res
+        else:
+            _pressure = None
+        return cls(sdf_version=version, reference_altitude=_reference_altitude, pressure=_pressure)
+
+
+class Navsat(BaseModel):
     def __init__(
         self,
         sdf_version: str,
@@ -9279,15 +12281,27 @@ class Navsat(Model):
         return el
 
     @classmethod
-    def from_sdf(cls, el: ET.Element, version: str) -> "Navsat":
+    def _from_sdf(cls, el: ET.Element, version: str):
         _c_position_sensing = el.find("position_sensing")
-        _position_sensing = PositionSensing.from_sdf(_c_position_sensing, version) if _c_position_sensing is not None else None
+        if _c_position_sensing is not None:
+            _res = PositionSensing._from_sdf(_c_position_sensing, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("position_sensing")
+            _position_sensing = _res
+        else:
+            _position_sensing = None
         _c_velocity_sensing = el.find("velocity_sensing")
-        _velocity_sensing = VelocitySensing.from_sdf(_c_velocity_sensing, version) if _c_velocity_sensing is not None else None
+        if _c_velocity_sensing is not None:
+            _res = VelocitySensing._from_sdf(_c_velocity_sensing, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("velocity_sensing")
+            _velocity_sensing = _res
+        else:
+            _velocity_sensing = None
         return cls(sdf_version=version, position_sensing=_position_sensing, velocity_sensing=_velocity_sensing)
 
 
-class EnableMetrics(Model):
+class EnableMetrics(BaseModel):
     def __init__(self, sdf_version: str, enable_metrics: bool = False):
         self.__version__ = sdf_version
         self.enable_metrics = enable_metrics
@@ -9310,16 +12324,18 @@ class EnableMetrics(Model):
         return el
 
     @classmethod
-    def from_sdf(cls, el: ET.Element, version: str) -> "EnableMetrics":
+    def _from_sdf(cls, el: ET.Element, version: str):
         _text = el.text or False
-        _enable_metrics = _text.strip().lower() == 'true'
+        _enable_metrics = str(_text).strip().lower() == 'true'
+        if isinstance(_enable_metrics, SDFError):
+            return _enable_metrics
         if _enable_metrics is not None and cmp_version(version, "1.7") < 0:
             if _enable_metrics != False:
-                raise ValueError(f"'enable_metrics' is not supported in SDF version {version} (added in 1.7)")
+                return SDFError(f"'enable_metrics' is not supported in SDF version {version} (added in 1.7)")
         return cls(sdf_version=version, enable_metrics=_enable_metrics)
 
 
-class AirSpeed(Model):
+class AirSpeed(BaseModel):
     def __init__(self, sdf_version: str, pressure: "Pressure" = None):
         self.__version__ = sdf_version
         self.pressure = pressure
@@ -9340,13 +12356,19 @@ class AirSpeed(Model):
         return el
 
     @classmethod
-    def from_sdf(cls, el: ET.Element, version: str) -> "AirSpeed":
+    def _from_sdf(cls, el: ET.Element, version: str):
         _c_pressure = el.find("pressure")
-        _pressure = Pressure.from_sdf(_c_pressure, version) if _c_pressure is not None else None
+        if _c_pressure is not None:
+            _res = Pressure._from_sdf(_c_pressure, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("pressure")
+            _pressure = _res
+        else:
+            _pressure = None
         return cls(sdf_version=version, pressure=_pressure)
 
 
-class FrameId(Model):
+class FrameId(BaseModel):
     def __init__(self, sdf_version: str, frame_id: str = ""):
         self.__version__ = sdf_version
         self.frame_id = frame_id
@@ -9369,16 +12391,18 @@ class FrameId(Model):
         return el
 
     @classmethod
-    def from_sdf(cls, el: ET.Element, version: str) -> "FrameId":
+    def _from_sdf(cls, el: ET.Element, version: str):
         _text = el.text or ""
         _frame_id = _text
+        if isinstance(_frame_id, SDFError):
+            return _frame_id
         if _frame_id is not None and cmp_version(version, "1.12") < 0:
             if _frame_id != "":
-                raise ValueError(f"'frame_id' is not supported in SDF version {version} (added in 1.12)")
+                return SDFError(f"'frame_id' is not supported in SDF version {version} (added in 1.12)")
         return cls(sdf_version=version, frame_id=_frame_id)
 
 
-class Sensor(Model):
+class Sensor(BaseModel):
     def __init__(
         self,
         sdf_version: str,
@@ -9396,16 +12420,16 @@ class Sensor(Model):
         visualize: "Visualize" = None,
         pose: "Pose" = None,
         topic: "Topic" = None,
-        force_torque: "ForceTorque" = None,
-        gps: "Gps" = None,
         sonar: "Sonar" = None,
+        gps: "Gps" = None,
         transceiver: "Transceiver" = None,
-        frame: List["Frame"] = None,
-        altimeter: "Altimeter" = None,
+        force_torque: "ForceTorque" = None,
         logical_camera: "LogicalCamera" = None,
+        altimeter: "Altimeter" = None,
+        frame: List["Frame"] = None,
         magnetometer: "Magnetometer" = None,
-        air_pressure: "AirPressure" = None,
         lidar: "Lidar" = None,
+        air_pressure: "AirPressure" = None,
         navsat: "Navsat" = None,
         enable_metrics: "EnableMetrics" = None,
         air_speed: "AirSpeed" = None,
@@ -9426,42 +12450,44 @@ class Sensor(Model):
         self.visualize = visualize
         self.pose = pose
         self.topic = topic
-        self.force_torque = force_torque
-        self.gps = gps
         self.sonar = sonar
+        self.gps = gps
         self.transceiver = transceiver
-        self.frame = frame or []
-        self.altimeter = altimeter
+        self.force_torque = force_torque
         self.logical_camera = logical_camera
+        self.altimeter = altimeter
+        self.frame = frame or []
         self.magnetometer = magnetometer
-        self.air_pressure = air_pressure
         self.lidar = lidar
+        self.air_pressure = air_pressure
         self.navsat = navsat
         self.enable_metrics = enable_metrics
         self.air_speed = air_speed
         self.frame_id = frame_id
 
     def to_version(self, target_version: str) -> "Sensor":
-        if self.force_torque is not None and cmp_version(target_version, "1.4") < 0:
-            raise ValueError(f"'force_torque' is not supported in SDF version {target_version} (added in 1.4)")
-        if self.gps is not None and cmp_version(target_version, "1.4") < 0:
-            raise ValueError(f"'gps' is not supported in SDF version {target_version} (added in 1.4)")
         if self.sonar is not None and cmp_version(target_version, "1.4") < 0:
             raise ValueError(f"'sonar' is not supported in SDF version {target_version} (added in 1.4)")
+        if self.gps is not None and cmp_version(target_version, "1.4") < 0:
+            raise ValueError(f"'gps' is not supported in SDF version {target_version} (added in 1.4)")
         if self.transceiver is not None and cmp_version(target_version, "1.4") < 0:
             raise ValueError(f"'transceiver' is not supported in SDF version {target_version} (added in 1.4)")
-        if self.frame is not None and cmp_version(target_version, "1.5") < 0:
-            raise ValueError(f"'frame' is not supported in SDF version {target_version} (added in 1.5)")
-        if self.altimeter is not None and cmp_version(target_version, "1.5") < 0:
-            raise ValueError(f"'altimeter' is not supported in SDF version {target_version} (added in 1.5)")
+        if self.force_torque is not None and cmp_version(target_version, "1.4") < 0:
+            raise ValueError(f"'force_torque' is not supported in SDF version {target_version} (added in 1.4)")
         if self.logical_camera is not None and cmp_version(target_version, "1.5") < 0:
             raise ValueError(f"'logical_camera' is not supported in SDF version {target_version} (added in 1.5)")
+        if self.altimeter is not None and cmp_version(target_version, "1.5") < 0:
+            raise ValueError(f"'altimeter' is not supported in SDF version {target_version} (added in 1.5)")
+        if self.frame is not None and cmp_version(target_version, "1.5") < 0:
+            raise ValueError(f"'frame' is not supported in SDF version {target_version} (added in 1.5)")
+        if self.frame is not None and cmp_version(target_version, "1.7") >= 0:
+            raise ValueError(f"'frame' is not supported in SDF version {target_version} (removed in 1.7)")
         if self.magnetometer is not None and cmp_version(target_version, "1.5") < 0:
             raise ValueError(f"'magnetometer' is not supported in SDF version {target_version} (added in 1.5)")
-        if self.air_pressure is not None and cmp_version(target_version, "1.6") < 0:
-            raise ValueError(f"'air_pressure' is not supported in SDF version {target_version} (added in 1.6)")
         if self.lidar is not None and cmp_version(target_version, "1.6") < 0:
             raise ValueError(f"'lidar' is not supported in SDF version {target_version} (added in 1.6)")
+        if self.air_pressure is not None and cmp_version(target_version, "1.6") < 0:
+            raise ValueError(f"'air_pressure' is not supported in SDF version {target_version} (added in 1.6)")
         if self.navsat is not None and cmp_version(target_version, "1.7") < 0:
             raise ValueError(f"'navsat' is not supported in SDF version {target_version} (added in 1.7)")
         if self.enable_metrics is not None and cmp_version(target_version, "1.7") < 0:
@@ -9485,16 +12511,16 @@ class Sensor(Model):
         kwargs["visualize"] = self.visualize.to_version(target_version) if self.visualize is not None else None
         kwargs["pose"] = self.pose.to_version(target_version) if self.pose is not None else None
         kwargs["topic"] = self.topic.to_version(target_version) if self.topic is not None else None
-        kwargs["force_torque"] = self.force_torque.to_version(target_version) if self.force_torque is not None else None
-        kwargs["gps"] = self.gps.to_version(target_version) if self.gps is not None else None
         kwargs["sonar"] = self.sonar.to_version(target_version) if self.sonar is not None else None
+        kwargs["gps"] = self.gps.to_version(target_version) if self.gps is not None else None
         kwargs["transceiver"] = self.transceiver.to_version(target_version) if self.transceiver is not None else None
-        kwargs["frame"] = [c.to_version(target_version) for c in (self.frame or [])]
-        kwargs["altimeter"] = self.altimeter.to_version(target_version) if self.altimeter is not None else None
+        kwargs["force_torque"] = self.force_torque.to_version(target_version) if self.force_torque is not None else None
         kwargs["logical_camera"] = self.logical_camera.to_version(target_version) if self.logical_camera is not None else None
+        kwargs["altimeter"] = self.altimeter.to_version(target_version) if self.altimeter is not None else None
+        kwargs["frame"] = [c.to_version(target_version) for c in (self.frame or [])]
         kwargs["magnetometer"] = self.magnetometer.to_version(target_version) if self.magnetometer is not None else None
-        kwargs["air_pressure"] = self.air_pressure.to_version(target_version) if self.air_pressure is not None else None
         kwargs["lidar"] = self.lidar.to_version(target_version) if self.lidar is not None else None
+        kwargs["air_pressure"] = self.air_pressure.to_version(target_version) if self.air_pressure is not None else None
         kwargs["navsat"] = self.navsat.to_version(target_version) if self.navsat is not None else None
         kwargs["enable_metrics"] = self.enable_metrics.to_version(target_version) if self.enable_metrics is not None else None
         kwargs["air_speed"] = self.air_speed.to_version(target_version) if self.air_speed is not None else None
@@ -9507,8 +12533,12 @@ class Sensor(Model):
             return self.to_version(version).to_sdf()
         version = version or self.__version__
         el = ET.Element("sensor")
+        if self.name is None:
+            raise ValueError(f"'name' is required in SDF version {version}")
         if self.name is not None:
             el.set("name", self.name)
+        if self.type is None:
+            raise ValueError(f"'type' is required in SDF version {version}")
         if self.type is not None:
             el.set("type", self.type)
         for item in (self.plugin or []):
@@ -9535,26 +12565,26 @@ class Sensor(Model):
             el.append(self.pose.to_sdf(version))
         if self.topic is not None:
             el.append(self.topic.to_sdf(version))
-        if self.force_torque is not None:
-            el.append(self.force_torque.to_sdf(version))
-        if self.gps is not None:
-            el.append(self.gps.to_sdf(version))
         if self.sonar is not None:
             el.append(self.sonar.to_sdf(version))
+        if self.gps is not None:
+            el.append(self.gps.to_sdf(version))
         if self.transceiver is not None:
             el.append(self.transceiver.to_sdf(version))
-        for item in (self.frame or []):
-            el.append(item.to_sdf(version))
-        if self.altimeter is not None:
-            el.append(self.altimeter.to_sdf(version))
+        if self.force_torque is not None:
+            el.append(self.force_torque.to_sdf(version))
         if self.logical_camera is not None:
             el.append(self.logical_camera.to_sdf(version))
+        if self.altimeter is not None:
+            el.append(self.altimeter.to_sdf(version))
+        for item in (self.frame or []):
+            el.append(item.to_sdf(version))
         if self.magnetometer is not None:
             el.append(self.magnetometer.to_sdf(version))
-        if self.air_pressure is not None:
-            el.append(self.air_pressure.to_sdf(version))
         if self.lidar is not None:
             el.append(self.lidar.to_sdf(version))
+        if self.air_pressure is not None:
+            el.append(self.air_pressure.to_sdf(version))
         if self.navsat is not None:
             el.append(self.navsat.to_sdf(version))
         if self.enable_metrics is not None:
@@ -9566,91 +12596,253 @@ class Sensor(Model):
         return el
 
     @classmethod
-    def from_sdf(cls, el: ET.Element, version: str) -> "Sensor":
+    def _from_sdf(cls, el: ET.Element, version: str):
+        if el.get("name") is None:
+            return SDFError(f"'name' is required in SDF version {version}")
         _name = el.get("name", "__default__")
+        if isinstance(_name, SDFError):
+            return _name.extend("@name")
+        if el.get("type") is None:
+            return SDFError(f"'type' is required in SDF version {version}")
         _type = el.get("type", "__default__")
-        _plugin = [Plugin.from_sdf(c, version) for c in el.findall("plugin")]
+        if isinstance(_type, SDFError):
+            return _type.extend("@type")
+        _plugin = []
+        for c in el.findall("plugin"):
+            _res = Plugin._from_sdf(c, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("plugin")
+            _plugin.append(_res)
         _c_camera = el.find("camera")
-        _camera = Camera.from_sdf(_c_camera, version) if _c_camera is not None else None
+        if _c_camera is not None:
+            _res = Camera._from_sdf(_c_camera, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("camera")
+            _camera = _res
+        else:
+            _camera = None
         _c_ray = el.find("ray")
-        _ray = Ray.from_sdf(_c_ray, version) if _c_ray is not None else None
+        if _c_ray is not None:
+            _res = Ray._from_sdf(_c_ray, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("ray")
+            _ray = _res
+        else:
+            _ray = None
         _c_contact = el.find("contact")
-        _contact = Contact.from_sdf(_c_contact, version) if _c_contact is not None else None
+        if _c_contact is not None:
+            _res = Contact._from_sdf(_c_contact, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("contact")
+            _contact = _res
+        else:
+            _contact = None
         _c_rfidtag = el.find("rfidtag")
-        _rfidtag = Rfidtag.from_sdf(_c_rfidtag, version) if _c_rfidtag is not None else None
+        if _c_rfidtag is not None:
+            _res = Rfidtag._from_sdf(_c_rfidtag, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("rfidtag")
+            _rfidtag = _res
+        else:
+            _rfidtag = None
         _c_rfid = el.find("rfid")
-        _rfid = Rfid.from_sdf(_c_rfid, version) if _c_rfid is not None else None
+        if _c_rfid is not None:
+            _res = Rfid._from_sdf(_c_rfid, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("rfid")
+            _rfid = _res
+        else:
+            _rfid = None
         _c_imu = el.find("imu")
-        _imu = Imu.from_sdf(_c_imu, version) if _c_imu is not None else None
+        if _c_imu is not None:
+            _res = Imu._from_sdf(_c_imu, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("imu")
+            _imu = _res
+        else:
+            _imu = None
         _c_always_on = el.find("always_on")
-        _always_on = AlwaysOn.from_sdf(_c_always_on, version) if _c_always_on is not None else None
+        if _c_always_on is not None:
+            _res = AlwaysOn._from_sdf(_c_always_on, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("always_on")
+            _always_on = _res
+        else:
+            _always_on = None
         _c_update_rate = el.find("update_rate")
-        _update_rate = UpdateRate.from_sdf(_c_update_rate, version) if _c_update_rate is not None else None
+        if _c_update_rate is not None:
+            _res = UpdateRate._from_sdf(_c_update_rate, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("update_rate")
+            _update_rate = _res
+        else:
+            _update_rate = None
         _c_visualize = el.find("visualize")
-        _visualize = Visualize.from_sdf(_c_visualize, version) if _c_visualize is not None else None
+        if _c_visualize is not None:
+            _res = Visualize._from_sdf(_c_visualize, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("visualize")
+            _visualize = _res
+        else:
+            _visualize = None
         _c_pose = el.find("pose")
-        _pose = Pose.from_sdf(_c_pose, version) if _c_pose is not None else None
+        if _c_pose is not None:
+            _res = Pose._from_sdf(_c_pose, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("pose")
+            _pose = _res
+        else:
+            _pose = None
         _c_topic = el.find("topic")
-        _topic = Topic.from_sdf(_c_topic, version) if _c_topic is not None else None
-        _c_force_torque = el.find("force_torque")
-        _force_torque = ForceTorque.from_sdf(_c_force_torque, version) if _c_force_torque is not None else None
-        if _force_torque is not None and cmp_version(version, "1.4") < 0:
-            raise ValueError(f"'force_torque' is not supported in SDF version {version} (added in 1.4)")
-        _c_gps = el.find("gps")
-        _gps = Gps.from_sdf(_c_gps, version) if _c_gps is not None else None
-        if _gps is not None and cmp_version(version, "1.4") < 0:
-            raise ValueError(f"'gps' is not supported in SDF version {version} (added in 1.4)")
+        if _c_topic is not None:
+            _res = Topic._from_sdf(_c_topic, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("topic")
+            _topic = _res
+        else:
+            _topic = None
         _c_sonar = el.find("sonar")
-        _sonar = Sonar.from_sdf(_c_sonar, version) if _c_sonar is not None else None
+        if _c_sonar is not None:
+            _res = Sonar._from_sdf(_c_sonar, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("sonar")
+            _sonar = _res
+        else:
+            _sonar = None
         if _sonar is not None and cmp_version(version, "1.4") < 0:
-            raise ValueError(f"'sonar' is not supported in SDF version {version} (added in 1.4)")
+            return SDFError(f"'sonar' is not supported in SDF version {version} (added in 1.4)")
+        _c_gps = el.find("gps")
+        if _c_gps is not None:
+            _res = Gps._from_sdf(_c_gps, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("gps")
+            _gps = _res
+        else:
+            _gps = None
+        if _gps is not None and cmp_version(version, "1.4") < 0:
+            return SDFError(f"'gps' is not supported in SDF version {version} (added in 1.4)")
         _c_transceiver = el.find("transceiver")
-        _transceiver = Transceiver.from_sdf(_c_transceiver, version) if _c_transceiver is not None else None
+        if _c_transceiver is not None:
+            _res = Transceiver._from_sdf(_c_transceiver, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("transceiver")
+            _transceiver = _res
+        else:
+            _transceiver = None
         if _transceiver is not None and cmp_version(version, "1.4") < 0:
-            raise ValueError(f"'transceiver' is not supported in SDF version {version} (added in 1.4)")
-        _frame = [Frame.from_sdf(c, version) for c in el.findall("frame")]
-        if _frame and cmp_version(version, "1.5") < 0:
-            raise ValueError(f"'frame' is not supported in SDF version {version} (added in 1.5)")
-        _c_altimeter = el.find("altimeter")
-        _altimeter = Altimeter.from_sdf(_c_altimeter, version) if _c_altimeter is not None else None
-        if _altimeter is not None and cmp_version(version, "1.5") < 0:
-            raise ValueError(f"'altimeter' is not supported in SDF version {version} (added in 1.5)")
+            return SDFError(f"'transceiver' is not supported in SDF version {version} (added in 1.4)")
+        _c_force_torque = el.find("force_torque")
+        if _c_force_torque is not None:
+            _res = ForceTorque._from_sdf(_c_force_torque, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("force_torque")
+            _force_torque = _res
+        else:
+            _force_torque = None
+        if _force_torque is not None and cmp_version(version, "1.4") < 0:
+            return SDFError(f"'force_torque' is not supported in SDF version {version} (added in 1.4)")
         _c_logical_camera = el.find("logical_camera")
-        _logical_camera = LogicalCamera.from_sdf(_c_logical_camera, version) if _c_logical_camera is not None else None
+        if _c_logical_camera is not None:
+            _res = LogicalCamera._from_sdf(_c_logical_camera, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("logical_camera")
+            _logical_camera = _res
+        else:
+            _logical_camera = None
         if _logical_camera is not None and cmp_version(version, "1.5") < 0:
-            raise ValueError(f"'logical_camera' is not supported in SDF version {version} (added in 1.5)")
+            return SDFError(f"'logical_camera' is not supported in SDF version {version} (added in 1.5)")
+        _c_altimeter = el.find("altimeter")
+        if _c_altimeter is not None:
+            _res = Altimeter._from_sdf(_c_altimeter, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("altimeter")
+            _altimeter = _res
+        else:
+            _altimeter = None
+        if _altimeter is not None and cmp_version(version, "1.5") < 0:
+            return SDFError(f"'altimeter' is not supported in SDF version {version} (added in 1.5)")
+        _frame = []
+        for c in el.findall("frame"):
+            _res = Frame._from_sdf(c, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("frame")
+            _frame.append(_res)
+        if _frame and cmp_version(version, "1.5") < 0:
+            return SDFError(f"'frame' is not supported in SDF version {version} (added in 1.5)")
         _c_magnetometer = el.find("magnetometer")
-        _magnetometer = Magnetometer.from_sdf(_c_magnetometer, version) if _c_magnetometer is not None else None
+        if _c_magnetometer is not None:
+            _res = Magnetometer._from_sdf(_c_magnetometer, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("magnetometer")
+            _magnetometer = _res
+        else:
+            _magnetometer = None
         if _magnetometer is not None and cmp_version(version, "1.5") < 0:
-            raise ValueError(f"'magnetometer' is not supported in SDF version {version} (added in 1.5)")
-        _c_air_pressure = el.find("air_pressure")
-        _air_pressure = AirPressure.from_sdf(_c_air_pressure, version) if _c_air_pressure is not None else None
-        if _air_pressure is not None and cmp_version(version, "1.6") < 0:
-            raise ValueError(f"'air_pressure' is not supported in SDF version {version} (added in 1.6)")
+            return SDFError(f"'magnetometer' is not supported in SDF version {version} (added in 1.5)")
         _c_lidar = el.find("lidar")
-        _lidar = Lidar.from_sdf(_c_lidar, version) if _c_lidar is not None else None
+        if _c_lidar is not None:
+            _res = Lidar._from_sdf(_c_lidar, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("lidar")
+            _lidar = _res
+        else:
+            _lidar = None
         if _lidar is not None and cmp_version(version, "1.6") < 0:
-            raise ValueError(f"'lidar' is not supported in SDF version {version} (added in 1.6)")
+            return SDFError(f"'lidar' is not supported in SDF version {version} (added in 1.6)")
+        _c_air_pressure = el.find("air_pressure")
+        if _c_air_pressure is not None:
+            _res = AirPressure._from_sdf(_c_air_pressure, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("air_pressure")
+            _air_pressure = _res
+        else:
+            _air_pressure = None
+        if _air_pressure is not None and cmp_version(version, "1.6") < 0:
+            return SDFError(f"'air_pressure' is not supported in SDF version {version} (added in 1.6)")
         _c_navsat = el.find("navsat")
-        _navsat = Navsat.from_sdf(_c_navsat, version) if _c_navsat is not None else None
+        if _c_navsat is not None:
+            _res = Navsat._from_sdf(_c_navsat, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("navsat")
+            _navsat = _res
+        else:
+            _navsat = None
         if _navsat is not None and cmp_version(version, "1.7") < 0:
-            raise ValueError(f"'navsat' is not supported in SDF version {version} (added in 1.7)")
+            return SDFError(f"'navsat' is not supported in SDF version {version} (added in 1.7)")
         _c_enable_metrics = el.find("enable_metrics")
-        _enable_metrics = EnableMetrics.from_sdf(_c_enable_metrics, version) if _c_enable_metrics is not None else None
+        if _c_enable_metrics is not None:
+            _res = EnableMetrics._from_sdf(_c_enable_metrics, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("enable_metrics")
+            _enable_metrics = _res
+        else:
+            _enable_metrics = None
         if _enable_metrics is not None and cmp_version(version, "1.7") < 0:
-            raise ValueError(f"'enable_metrics' is not supported in SDF version {version} (added in 1.7)")
+            return SDFError(f"'enable_metrics' is not supported in SDF version {version} (added in 1.7)")
         _c_air_speed = el.find("air_speed")
-        _air_speed = AirSpeed.from_sdf(_c_air_speed, version) if _c_air_speed is not None else None
+        if _c_air_speed is not None:
+            _res = AirSpeed._from_sdf(_c_air_speed, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("air_speed")
+            _air_speed = _res
+        else:
+            _air_speed = None
         if _air_speed is not None and cmp_version(version, "1.10") < 0:
-            raise ValueError(f"'air_speed' is not supported in SDF version {version} (added in 1.10)")
+            return SDFError(f"'air_speed' is not supported in SDF version {version} (added in 1.10)")
         _c_frame_id = el.find("frame_id")
-        _frame_id = FrameId.from_sdf(_c_frame_id, version) if _c_frame_id is not None else None
+        if _c_frame_id is not None:
+            _res = FrameId._from_sdf(_c_frame_id, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("frame_id")
+            _frame_id = _res
+        else:
+            _frame_id = None
         if _frame_id is not None and cmp_version(version, "1.12") < 0:
-            raise ValueError(f"'frame_id' is not supported in SDF version {version} (added in 1.12)")
-        return cls(sdf_version=version, name=_name, type=_type, plugin=_plugin, camera=_camera, ray=_ray, contact=_contact, rfidtag=_rfidtag, rfid=_rfid, imu=_imu, always_on=_always_on, update_rate=_update_rate, visualize=_visualize, pose=_pose, topic=_topic, force_torque=_force_torque, gps=_gps, sonar=_sonar, transceiver=_transceiver, frame=_frame, altimeter=_altimeter, logical_camera=_logical_camera, magnetometer=_magnetometer, air_pressure=_air_pressure, lidar=_lidar, navsat=_navsat, enable_metrics=_enable_metrics, air_speed=_air_speed, frame_id=_frame_id)
+            return SDFError(f"'frame_id' is not supported in SDF version {version} (added in 1.12)")
+        return cls(sdf_version=version, name=_name, type=_type, plugin=_plugin, camera=_camera, ray=_ray, contact=_contact, rfidtag=_rfidtag, rfid=_rfid, imu=_imu, always_on=_always_on, update_rate=_update_rate, visualize=_visualize, pose=_pose, topic=_topic, sonar=_sonar, gps=_gps, transceiver=_transceiver, force_torque=_force_torque, logical_camera=_logical_camera, altimeter=_altimeter, frame=_frame, magnetometer=_magnetometer, lidar=_lidar, air_pressure=_air_pressure, navsat=_navsat, enable_metrics=_enable_metrics, air_speed=_air_speed, frame_id=_frame_id)
 
 
-class Fov(Model):
+class Fov(BaseModel):
     def __init__(self, sdf_version: str, fov: float = 0.785):
         self.__version__ = sdf_version
         self.fov = fov
@@ -9671,13 +12863,15 @@ class Fov(Model):
         return el
 
     @classmethod
-    def from_sdf(cls, el: ET.Element, version: str) -> "Fov":
+    def _from_sdf(cls, el: ET.Element, version: str):
         _text = el.text or 0.785
         _fov = _parse_double(_text)
+        if isinstance(_fov, SDFError):
+            return _fov
         return cls(sdf_version=version, fov=_fov)
 
 
-class NearClip(Model):
+class NearClip(BaseModel):
     def __init__(self, sdf_version: str, near_clip: float = 0.1):
         self.__version__ = sdf_version
         self.near_clip = near_clip
@@ -9698,13 +12892,15 @@ class NearClip(Model):
         return el
 
     @classmethod
-    def from_sdf(cls, el: ET.Element, version: str) -> "NearClip":
+    def _from_sdf(cls, el: ET.Element, version: str):
         _text = el.text or 0.1
         _near_clip = _parse_double(_text)
+        if isinstance(_near_clip, SDFError):
+            return _near_clip
         return cls(sdf_version=version, near_clip=_near_clip)
 
 
-class FarClip(Model):
+class FarClip(BaseModel):
     def __init__(self, sdf_version: str, far_clip: float = 10.0):
         self.__version__ = sdf_version
         self.far_clip = far_clip
@@ -9725,13 +12921,15 @@ class FarClip(Model):
         return el
 
     @classmethod
-    def from_sdf(cls, el: ET.Element, version: str) -> "FarClip":
+    def _from_sdf(cls, el: ET.Element, version: str):
         _text = el.text or 10.0
         _far_clip = _parse_double(_text)
+        if isinstance(_far_clip, SDFError):
+            return _far_clip
         return cls(sdf_version=version, far_clip=_far_clip)
 
 
-class Projector(Model):
+class Projector(BaseModel):
     def __init__(
         self,
         sdf_version: str,
@@ -9759,6 +12957,8 @@ class Projector(Model):
     def to_version(self, target_version: str) -> "Projector":
         if self.frame is not None and cmp_version(target_version, "1.5") < 0:
             raise ValueError(f"'frame' is not supported in SDF version {target_version} (added in 1.5)")
+        if self.frame is not None and cmp_version(target_version, "1.7") >= 0:
+            raise ValueError(f"'frame' is not supported in SDF version {target_version} (removed in 1.7)")
         if self.visibility_flags is not None and cmp_version(target_version, "1.7") < 0:
             raise ValueError(f"'visibility_flags' is not supported in SDF version {target_version} (added in 1.7)")
         kwargs = {"sdf_version": target_version}
@@ -9779,10 +12979,14 @@ class Projector(Model):
             return self.to_version(version).to_sdf()
         version = version or self.__version__
         el = ET.Element("projector")
+        if self.name is None:
+            raise ValueError(f"'name' is required in SDF version {version}")
         if self.name is not None:
             el.set("name", self.name)
         for item in (self.plugin or []):
             el.append(item.to_sdf(version))
+        if self.texture is None:
+            raise ValueError(f"'texture' is required in SDF version {version}")
         if self.texture is not None:
             el.append(self.texture.to_sdf(version))
         if self.pose is not None:
@@ -9800,30 +13004,82 @@ class Projector(Model):
         return el
 
     @classmethod
-    def from_sdf(cls, el: ET.Element, version: str) -> "Projector":
+    def _from_sdf(cls, el: ET.Element, version: str):
+        if el.get("name") is None:
+            return SDFError(f"'name' is required in SDF version {version}")
         _name = el.get("name", "__default__")
-        _plugin = [Plugin.from_sdf(c, version) for c in el.findall("plugin")]
+        if isinstance(_name, SDFError):
+            return _name.extend("@name")
+        _plugin = []
+        for c in el.findall("plugin"):
+            _res = Plugin._from_sdf(c, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("plugin")
+            _plugin.append(_res)
         _c_texture = el.find("texture")
-        _texture = Texture.from_sdf(_c_texture, version) if _c_texture is not None else None
+        if _c_texture is not None:
+            _res = Texture._from_sdf(_c_texture, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("texture")
+            _texture = _res
+        else:
+            _texture = None
+        if _texture is None:
+            return SDFError(f"'texture' is required in SDF version {version}")
         _c_pose = el.find("pose")
-        _pose = Pose.from_sdf(_c_pose, version) if _c_pose is not None else None
+        if _c_pose is not None:
+            _res = Pose._from_sdf(_c_pose, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("pose")
+            _pose = _res
+        else:
+            _pose = None
         _c_fov = el.find("fov")
-        _fov = Fov.from_sdf(_c_fov, version) if _c_fov is not None else None
+        if _c_fov is not None:
+            _res = Fov._from_sdf(_c_fov, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("fov")
+            _fov = _res
+        else:
+            _fov = None
         _c_near_clip = el.find("near_clip")
-        _near_clip = NearClip.from_sdf(_c_near_clip, version) if _c_near_clip is not None else None
+        if _c_near_clip is not None:
+            _res = NearClip._from_sdf(_c_near_clip, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("near_clip")
+            _near_clip = _res
+        else:
+            _near_clip = None
         _c_far_clip = el.find("far_clip")
-        _far_clip = FarClip.from_sdf(_c_far_clip, version) if _c_far_clip is not None else None
-        _frame = [Frame.from_sdf(c, version) for c in el.findall("frame")]
+        if _c_far_clip is not None:
+            _res = FarClip._from_sdf(_c_far_clip, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("far_clip")
+            _far_clip = _res
+        else:
+            _far_clip = None
+        _frame = []
+        for c in el.findall("frame"):
+            _res = Frame._from_sdf(c, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("frame")
+            _frame.append(_res)
         if _frame and cmp_version(version, "1.5") < 0:
-            raise ValueError(f"'frame' is not supported in SDF version {version} (added in 1.5)")
+            return SDFError(f"'frame' is not supported in SDF version {version} (added in 1.5)")
         _c_visibility_flags = el.find("visibility_flags")
-        _visibility_flags = VisibilityFlags.from_sdf(_c_visibility_flags, version) if _c_visibility_flags is not None else None
+        if _c_visibility_flags is not None:
+            _res = VisibilityFlags._from_sdf(_c_visibility_flags, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("visibility_flags")
+            _visibility_flags = _res
+        else:
+            _visibility_flags = None
         if _visibility_flags is not None and cmp_version(version, "1.7") < 0:
-            raise ValueError(f"'visibility_flags' is not supported in SDF version {version} (added in 1.7)")
+            return SDFError(f"'visibility_flags' is not supported in SDF version {version} (added in 1.7)")
         return cls(sdf_version=version, name=_name, plugin=_plugin, texture=_texture, pose=_pose, fov=_fov, near_clip=_near_clip, far_clip=_far_clip, frame=_frame, visibility_flags=_visibility_flags)
 
 
-class SelfCollide(Model):
+class SelfCollide(BaseModel):
     def __init__(self, sdf_version: str, self_collide: bool = False):
         self.__version__ = sdf_version
         self.self_collide = self_collide
@@ -9844,13 +13100,15 @@ class SelfCollide(Model):
         return el
 
     @classmethod
-    def from_sdf(cls, el: ET.Element, version: str) -> "SelfCollide":
+    def _from_sdf(cls, el: ET.Element, version: str):
         _text = el.text or False
-        _self_collide = _text.strip().lower() == 'true'
+        _self_collide = str(_text).strip().lower() == 'true'
+        if isinstance(_self_collide, SDFError):
+            return _self_collide
         return cls(sdf_version=version, self_collide=_self_collide)
 
 
-class Kinematic(Model):
+class Kinematic(BaseModel):
     def __init__(self, sdf_version: str, kinematic: bool = False):
         self.__version__ = sdf_version
         self.kinematic = kinematic
@@ -9871,13 +13129,15 @@ class Kinematic(Model):
         return el
 
     @classmethod
-    def from_sdf(cls, el: ET.Element, version: str) -> "Kinematic":
+    def _from_sdf(cls, el: ET.Element, version: str):
         _text = el.text or False
-        _kinematic = _text.strip().lower() == 'true'
+        _kinematic = str(_text).strip().lower() == 'true'
+        if isinstance(_kinematic, SDFError):
+            return _kinematic
         return cls(sdf_version=version, kinematic=_kinematic)
 
 
-class Angular(Model):
+class Angular(BaseModel):
     def __init__(self, sdf_version: str, angular: float = 0.0):
         self.__version__ = sdf_version
         self.angular = angular
@@ -9893,18 +13153,26 @@ class Angular(Model):
             return self.to_version(version).to_sdf()
         version = version or self.__version__
         el = ET.Element("angular")
+        if cmp_version(version, "1.12") < 0:
+            if self.angular is None:
+                raise ValueError(f"'angular' is required in SDF version {version}")
         if self.angular is not None:
             el.text = str(self.angular)
         return el
 
     @classmethod
-    def from_sdf(cls, el: ET.Element, version: str) -> "Angular":
+    def _from_sdf(cls, el: ET.Element, version: str):
+        if cmp_version(version, "1.12") < 0:
+            if el.text is None:
+                return SDFError(f"'angular' is required in SDF version {version}")
         _text = el.text or 0.0
         _angular = _parse_double(_text)
+        if isinstance(_angular, SDFError):
+            return _angular
         return cls(sdf_version=version, angular=_angular)
 
 
-class VelocityDecay(Model):
+class VelocityDecay(BaseModel):
     def __init__(self, sdf_version: str, linear: "Linear" = None, angular: "Angular" = None):
         self.__version__ = sdf_version
         self.linear = linear
@@ -9922,27 +13190,55 @@ class VelocityDecay(Model):
             return self.to_version(version).to_sdf()
         version = version or self.__version__
         el = ET.Element("velocity_decay")
+        if cmp_version(version, "1.12") < 0:
+            if self.linear is None:
+                raise ValueError(f"'linear' is required in SDF version {version}")
         if self.linear is not None:
             el.append(self.linear.to_sdf(version))
+        if cmp_version(version, "1.12") < 0:
+            if self.angular is None:
+                raise ValueError(f"'angular' is required in SDF version {version}")
         if self.angular is not None:
             el.append(self.angular.to_sdf(version))
         return el
 
     @classmethod
-    def from_sdf(cls, el: ET.Element, version: str) -> "VelocityDecay":
+    def _from_sdf(cls, el: ET.Element, version: str):
         _c_linear = el.find("linear")
-        _linear = Linear.from_sdf(_c_linear, version) if _c_linear is not None else None
+        if _c_linear is not None:
+            _res = Linear._from_sdf(_c_linear, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("linear")
+            _linear = _res
+        else:
+            _linear = None
+        if cmp_version(version, "1.12") < 0:
+            if _linear is None:
+                return SDFError(f"'linear' is required in SDF version {version}")
         _c_angular = el.find("angular")
-        _angular = Angular.from_sdf(_c_angular, version) if _c_angular is not None else None
+        if _c_angular is not None:
+            _res = Angular._from_sdf(_c_angular, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("angular")
+            _angular = _res
+        else:
+            _angular = None
+        if cmp_version(version, "1.12") < 0:
+            if _angular is None:
+                return SDFError(f"'angular' is required in SDF version {version}")
         return cls(sdf_version=version, linear=_linear, angular=_angular)
 
 
-class AudioSink(Model):
-    def __init__(self, sdf_version: str):
+class MustBeBaseLink(BaseModel):
+    def __init__(self, sdf_version: str, must_be_base_link: bool = False):
         self.__version__ = sdf_version
+        self.must_be_base_link = must_be_base_link
 
-    def to_version(self, target_version: str) -> "AudioSink":
+    def to_version(self, target_version: str) -> "MustBeBaseLink":
+        if self.must_be_base_link is not None and cmp_version(target_version, "1.4") < 0:
+            raise ValueError(f"'must_be_base_link' is not supported in SDF version {target_version} (added in 1.4)")
         kwargs = {"sdf_version": target_version}
+        kwargs["must_be_base_link"] = self.must_be_base_link
         new_obj = self.__class__(**kwargs)
         return new_obj
 
@@ -9950,15 +13246,24 @@ class AudioSink(Model):
         if version is not None and version != self.__version__:
             return self.to_version(version).to_sdf()
         version = version or self.__version__
-        el = ET.Element("audio_sink")
+        el = ET.Element("must_be_base_link")
+        if self.must_be_base_link is not None:
+            el.text = str(self.must_be_base_link).lower()
         return el
 
     @classmethod
-    def from_sdf(cls, el: ET.Element, version: str) -> "AudioSink":
-        return cls(sdf_version=version)
+    def _from_sdf(cls, el: ET.Element, version: str):
+        _text = el.text or False
+        _must_be_base_link = str(_text).strip().lower() == 'true'
+        if isinstance(_must_be_base_link, SDFError):
+            return _must_be_base_link
+        if _must_be_base_link is not None and cmp_version(version, "1.4") < 0:
+            if _must_be_base_link != False:
+                return SDFError(f"'must_be_base_link' is not supported in SDF version {version} (added in 1.4)")
+        return cls(sdf_version=version, must_be_base_link=_must_be_base_link)
 
 
-class Pitch(Model):
+class Pitch(BaseModel):
     def __init__(self, sdf_version: str, pitch: float = 1.0):
         self.__version__ = sdf_version
         self.pitch = pitch
@@ -9979,13 +13284,15 @@ class Pitch(Model):
         return el
 
     @classmethod
-    def from_sdf(cls, el: ET.Element, version: str) -> "Pitch":
+    def _from_sdf(cls, el: ET.Element, version: str):
         _text = el.text or 1.0
         _pitch = _parse_double(_text)
+        if isinstance(_pitch, SDFError):
+            return _pitch
         return cls(sdf_version=version, pitch=_pitch)
 
 
-class Loop(Model):
+class Loop(BaseModel):
     def __init__(self, sdf_version: str, loop: bool = False):
         self.__version__ = sdf_version
         self.loop = loop
@@ -10006,13 +13313,15 @@ class Loop(Model):
         return el
 
     @classmethod
-    def from_sdf(cls, el: ET.Element, version: str) -> "Loop":
+    def _from_sdf(cls, el: ET.Element, version: str):
         _text = el.text or False
-        _loop = _text.strip().lower() == 'true'
+        _loop = str(_text).strip().lower() == 'true'
+        if isinstance(_loop, SDFError):
+            return _loop
         return cls(sdf_version=version, loop=_loop)
 
 
-class AudioSource(Model):
+class AudioSource(BaseModel):
     def __init__(
         self,
         sdf_version: str,
@@ -10036,6 +13345,8 @@ class AudioSource(Model):
     def to_version(self, target_version: str) -> "AudioSource":
         if self.frame is not None and cmp_version(target_version, "1.5") < 0:
             raise ValueError(f"'frame' is not supported in SDF version {target_version} (added in 1.5)")
+        if self.frame is not None and cmp_version(target_version, "1.7") >= 0:
+            raise ValueError(f"'frame' is not supported in SDF version {target_version} (removed in 1.7)")
         kwargs = {"sdf_version": target_version}
         kwargs["uri"] = self.uri.to_version(target_version) if self.uri is not None else None
         kwargs["pitch"] = self.pitch.to_version(target_version) if self.pitch is not None else None
@@ -10052,6 +13363,8 @@ class AudioSource(Model):
             return self.to_version(version).to_sdf()
         version = version or self.__version__
         el = ET.Element("audio_source")
+        if self.uri is None:
+            raise ValueError(f"'uri' is required in SDF version {version}")
         if self.uri is not None:
             el.append(self.uri.to_sdf(version))
         if self.pitch is not None:
@@ -10069,35 +13382,74 @@ class AudioSource(Model):
         return el
 
     @classmethod
-    def from_sdf(cls, el: ET.Element, version: str) -> "AudioSource":
+    def _from_sdf(cls, el: ET.Element, version: str):
         _c_uri = el.find("uri")
-        _uri = Uri.from_sdf(_c_uri, version) if _c_uri is not None else None
+        if _c_uri is not None:
+            _res = Uri._from_sdf(_c_uri, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("uri")
+            _uri = _res
+        else:
+            _uri = None
+        if _uri is None:
+            return SDFError(f"'uri' is required in SDF version {version}")
         _c_pitch = el.find("pitch")
-        _pitch = Pitch.from_sdf(_c_pitch, version) if _c_pitch is not None else None
+        if _c_pitch is not None:
+            _res = Pitch._from_sdf(_c_pitch, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("pitch")
+            _pitch = _res
+        else:
+            _pitch = None
         _c_gain = el.find("gain")
-        _gain = Gain.from_sdf(_c_gain, version) if _c_gain is not None else None
+        if _c_gain is not None:
+            _res = Gain._from_sdf(_c_gain, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("gain")
+            _gain = _res
+        else:
+            _gain = None
         _c_contact = el.find("contact")
-        _contact = Contact.from_sdf(_c_contact, version) if _c_contact is not None else None
+        if _c_contact is not None:
+            _res = Contact._from_sdf(_c_contact, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("contact")
+            _contact = _res
+        else:
+            _contact = None
         _c_loop = el.find("loop")
-        _loop = Loop.from_sdf(_c_loop, version) if _c_loop is not None else None
+        if _c_loop is not None:
+            _res = Loop._from_sdf(_c_loop, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("loop")
+            _loop = _res
+        else:
+            _loop = None
         _c_pose = el.find("pose")
-        _pose = Pose.from_sdf(_c_pose, version) if _c_pose is not None else None
-        _frame = [Frame.from_sdf(c, version) for c in el.findall("frame")]
+        if _c_pose is not None:
+            _res = Pose._from_sdf(_c_pose, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("pose")
+            _pose = _res
+        else:
+            _pose = None
+        _frame = []
+        for c in el.findall("frame"):
+            _res = Frame._from_sdf(c, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("frame")
+            _frame.append(_res)
         if _frame and cmp_version(version, "1.5") < 0:
-            raise ValueError(f"'frame' is not supported in SDF version {version} (added in 1.5)")
+            return SDFError(f"'frame' is not supported in SDF version {version} (added in 1.5)")
         return cls(sdf_version=version, uri=_uri, pitch=_pitch, gain=_gain, contact=_contact, loop=_loop, pose=_pose, frame=_frame)
 
 
-class MustBeBaseLink(Model):
-    def __init__(self, sdf_version: str, must_be_base_link: bool = False):
+class AudioSink(BaseModel):
+    def __init__(self, sdf_version: str):
         self.__version__ = sdf_version
-        self.must_be_base_link = must_be_base_link
 
-    def to_version(self, target_version: str) -> "MustBeBaseLink":
-        if self.must_be_base_link is not None and cmp_version(target_version, "1.4") < 0:
-            raise ValueError(f"'must_be_base_link' is not supported in SDF version {target_version} (added in 1.4)")
+    def to_version(self, target_version: str) -> "AudioSink":
         kwargs = {"sdf_version": target_version}
-        kwargs["must_be_base_link"] = self.must_be_base_link
         new_obj = self.__class__(**kwargs)
         return new_obj
 
@@ -10105,22 +13457,15 @@ class MustBeBaseLink(Model):
         if version is not None and version != self.__version__:
             return self.to_version(version).to_sdf()
         version = version or self.__version__
-        el = ET.Element("must_be_base_link")
-        if self.must_be_base_link is not None:
-            el.text = str(self.must_be_base_link).lower()
+        el = ET.Element("audio_sink")
         return el
 
     @classmethod
-    def from_sdf(cls, el: ET.Element, version: str) -> "MustBeBaseLink":
-        _text = el.text or False
-        _must_be_base_link = _text.strip().lower() == 'true'
-        if _must_be_base_link is not None and cmp_version(version, "1.4") < 0:
-            if _must_be_base_link != False:
-                raise ValueError(f"'must_be_base_link' is not supported in SDF version {version} (added in 1.4)")
-        return cls(sdf_version=version, must_be_base_link=_must_be_base_link)
+    def _from_sdf(cls, el: ET.Element, version: str):
+        return cls(sdf_version=version)
 
 
-class Voltage(Model):
+class Voltage(BaseModel):
     def __init__(self, sdf_version: str, voltage: float = 0.0):
         self.__version__ = sdf_version
         self.voltage = voltage
@@ -10136,18 +13481,24 @@ class Voltage(Model):
             return self.to_version(version).to_sdf()
         version = version or self.__version__
         el = ET.Element("voltage")
+        if self.voltage is None:
+            raise ValueError(f"'voltage' is required in SDF version {version}")
         if self.voltage is not None:
             el.text = str(self.voltage)
         return el
 
     @classmethod
-    def from_sdf(cls, el: ET.Element, version: str) -> "Voltage":
+    def _from_sdf(cls, el: ET.Element, version: str):
+        if el.text is None:
+            return SDFError(f"'voltage' is required in SDF version {version}")
         _text = el.text or 0.0
         _voltage = _parse_double(_text)
+        if isinstance(_voltage, SDFError):
+            return _voltage
         return cls(sdf_version=version, voltage=_voltage)
 
 
-class Battery(Model):
+class Battery(BaseModel):
     def __init__(self, sdf_version: str, name: str = "__default__", voltage: "Voltage" = None):
         self.__version__ = sdf_version
         self.name = name
@@ -10165,21 +13516,71 @@ class Battery(Model):
             return self.to_version(version).to_sdf()
         version = version or self.__version__
         el = ET.Element("battery")
+        if self.name is None:
+            raise ValueError(f"'name' is required in SDF version {version}")
         if self.name is not None:
             el.set("name", self.name)
+        if self.voltage is None:
+            raise ValueError(f"'voltage' is required in SDF version {version}")
         if self.voltage is not None:
             el.append(self.voltage.to_sdf(version))
         return el
 
     @classmethod
-    def from_sdf(cls, el: ET.Element, version: str) -> "Battery":
+    def _from_sdf(cls, el: ET.Element, version: str):
+        if el.get("name") is None:
+            return SDFError(f"'name' is required in SDF version {version}")
         _name = el.get("name", "__default__")
+        if isinstance(_name, SDFError):
+            return _name.extend("@name")
         _c_voltage = el.find("voltage")
-        _voltage = Voltage.from_sdf(_c_voltage, version) if _c_voltage is not None else None
+        if _c_voltage is not None:
+            _res = Voltage._from_sdf(_c_voltage, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("voltage")
+            _voltage = _res
+        else:
+            _voltage = None
+        if _voltage is None:
+            return SDFError(f"'voltage' is required in SDF version {version}")
         return cls(sdf_version=version, name=_name, voltage=_voltage)
 
 
-class Emitting(Model):
+class EnableWind(BaseModel):
+    def __init__(self, sdf_version: str, enable_wind: bool = False):
+        self.__version__ = sdf_version
+        self.enable_wind = enable_wind
+
+    def to_version(self, target_version: str) -> "EnableWind":
+        if self.enable_wind is not None and cmp_version(target_version, "1.6") < 0:
+            raise ValueError(f"'enable_wind' is not supported in SDF version {target_version} (added in 1.6)")
+        kwargs = {"sdf_version": target_version}
+        kwargs["enable_wind"] = self.enable_wind
+        new_obj = self.__class__(**kwargs)
+        return new_obj
+
+    def to_sdf(self, version: str = None) -> ET.Element:
+        if version is not None and version != self.__version__:
+            return self.to_version(version).to_sdf()
+        version = version or self.__version__
+        el = ET.Element("enable_wind")
+        if self.enable_wind is not None:
+            el.text = str(self.enable_wind).lower()
+        return el
+
+    @classmethod
+    def _from_sdf(cls, el: ET.Element, version: str):
+        _text = el.text or False
+        _enable_wind = str(_text).strip().lower() == 'true'
+        if isinstance(_enable_wind, SDFError):
+            return _enable_wind
+        if _enable_wind is not None and cmp_version(version, "1.6") < 0:
+            if _enable_wind != False:
+                return SDFError(f"'enable_wind' is not supported in SDF version {version} (added in 1.6)")
+        return cls(sdf_version=version, enable_wind=_enable_wind)
+
+
+class Emitting(BaseModel):
     def __init__(self, sdf_version: str, emitting: bool = True):
         self.__version__ = sdf_version
         self.emitting = emitting
@@ -10200,13 +13601,15 @@ class Emitting(Model):
         return el
 
     @classmethod
-    def from_sdf(cls, el: ET.Element, version: str) -> "Emitting":
+    def _from_sdf(cls, el: ET.Element, version: str):
         _text = el.text or True
-        _emitting = _text.strip().lower() == 'true'
+        _emitting = str(_text).strip().lower() == 'true'
+        if isinstance(_emitting, SDFError):
+            return _emitting
         return cls(sdf_version=version, emitting=_emitting)
 
 
-class Duration(Model):
+class Duration(BaseModel):
     def __init__(self, sdf_version: str, duration: float = 0):
         self.__version__ = sdf_version
         self.duration = duration
@@ -10227,13 +13630,15 @@ class Duration(Model):
         return el
 
     @classmethod
-    def from_sdf(cls, el: ET.Element, version: str) -> "Duration":
+    def _from_sdf(cls, el: ET.Element, version: str):
         _text = el.text or 0
         _duration = _parse_double(_text)
+        if isinstance(_duration, SDFError):
+            return _duration
         return cls(sdf_version=version, duration=_duration)
 
 
-class ParticleSize(Model):
+class ParticleSize(BaseModel):
     def __init__(self, sdf_version: str, particle_size: Vector3 = None):
         self.__version__ = sdf_version
         if particle_size is None:
@@ -10256,13 +13661,15 @@ class ParticleSize(Model):
         return el
 
     @classmethod
-    def from_sdf(cls, el: ET.Element, version: str) -> "ParticleSize":
+    def _from_sdf(cls, el: ET.Element, version: str):
         _text = el.text or "1 1 1"
-        _particle_size = Vector3.from_sdf(_text)
+        _particle_size = Vector3._from_sdf(_text, version)
+        if isinstance(_particle_size, SDFError):
+            return _particle_size
         return cls(sdf_version=version, particle_size=_particle_size)
 
 
-class Lifetime(Model):
+class Lifetime(BaseModel):
     def __init__(self, sdf_version: str, lifetime: float = 5):
         self.__version__ = sdf_version
         self.lifetime = lifetime
@@ -10283,13 +13690,15 @@ class Lifetime(Model):
         return el
 
     @classmethod
-    def from_sdf(cls, el: ET.Element, version: str) -> "Lifetime":
+    def _from_sdf(cls, el: ET.Element, version: str):
         _text = el.text or 5
         _lifetime = _parse_double(_text)
+        if isinstance(_lifetime, SDFError):
+            return _lifetime
         return cls(sdf_version=version, lifetime=_lifetime)
 
 
-class Rate(Model):
+class Rate(BaseModel):
     def __init__(self, sdf_version: str, rate: float = 10):
         self.__version__ = sdf_version
         self.rate = rate
@@ -10310,13 +13719,15 @@ class Rate(Model):
         return el
 
     @classmethod
-    def from_sdf(cls, el: ET.Element, version: str) -> "Rate":
+    def _from_sdf(cls, el: ET.Element, version: str):
         _text = el.text or 10
         _rate = _parse_double(_text)
+        if isinstance(_rate, SDFError):
+            return _rate
         return cls(sdf_version=version, rate=_rate)
 
 
-class MinVelocity(Model):
+class MinVelocity(BaseModel):
     def __init__(self, sdf_version: str, min_velocity: float = 1):
         self.__version__ = sdf_version
         self.min_velocity = min_velocity
@@ -10337,13 +13748,15 @@ class MinVelocity(Model):
         return el
 
     @classmethod
-    def from_sdf(cls, el: ET.Element, version: str) -> "MinVelocity":
+    def _from_sdf(cls, el: ET.Element, version: str):
         _text = el.text or 1
         _min_velocity = _parse_double(_text)
+        if isinstance(_min_velocity, SDFError):
+            return _min_velocity
         return cls(sdf_version=version, min_velocity=_min_velocity)
 
 
-class MaxVelocity(Model):
+class MaxVelocity(BaseModel):
     def __init__(self, sdf_version: str, max_velocity: float = 1):
         self.__version__ = sdf_version
         self.max_velocity = max_velocity
@@ -10364,13 +13777,15 @@ class MaxVelocity(Model):
         return el
 
     @classmethod
-    def from_sdf(cls, el: ET.Element, version: str) -> "MaxVelocity":
+    def _from_sdf(cls, el: ET.Element, version: str):
         _text = el.text or 1
         _max_velocity = _parse_double(_text)
+        if isinstance(_max_velocity, SDFError):
+            return _max_velocity
         return cls(sdf_version=version, max_velocity=_max_velocity)
 
 
-class ScaleRate(Model):
+class ScaleRate(BaseModel):
     def __init__(self, sdf_version: str, scale_rate: float = 0):
         self.__version__ = sdf_version
         self.scale_rate = scale_rate
@@ -10391,13 +13806,15 @@ class ScaleRate(Model):
         return el
 
     @classmethod
-    def from_sdf(cls, el: ET.Element, version: str) -> "ScaleRate":
+    def _from_sdf(cls, el: ET.Element, version: str):
         _text = el.text or 0
         _scale_rate = _parse_double(_text)
+        if isinstance(_scale_rate, SDFError):
+            return _scale_rate
         return cls(sdf_version=version, scale_rate=_scale_rate)
 
 
-class ColorStart(Model):
+class ColorStart(BaseModel):
     def __init__(self, sdf_version: str, color_start: Color = None):
         self.__version__ = sdf_version
         if color_start is None:
@@ -10420,13 +13837,15 @@ class ColorStart(Model):
         return el
 
     @classmethod
-    def from_sdf(cls, el: ET.Element, version: str) -> "ColorStart":
+    def _from_sdf(cls, el: ET.Element, version: str):
         _text = el.text or "1 1 1 1"
-        _color_start = Color.from_sdf(_text)
+        _color_start = Color._from_sdf(_text, version)
+        if isinstance(_color_start, SDFError):
+            return _color_start
         return cls(sdf_version=version, color_start=_color_start)
 
 
-class ColorEnd(Model):
+class ColorEnd(BaseModel):
     def __init__(self, sdf_version: str, color_end: Color = None):
         self.__version__ = sdf_version
         if color_end is None:
@@ -10449,13 +13868,15 @@ class ColorEnd(Model):
         return el
 
     @classmethod
-    def from_sdf(cls, el: ET.Element, version: str) -> "ColorEnd":
+    def _from_sdf(cls, el: ET.Element, version: str):
         _text = el.text or "1 1 1 1"
-        _color_end = Color.from_sdf(_text)
+        _color_end = Color._from_sdf(_text, version)
+        if isinstance(_color_end, SDFError):
+            return _color_end
         return cls(sdf_version=version, color_end=_color_end)
 
 
-class ColorRangeImage(Model):
+class ColorRangeImage(BaseModel):
     def __init__(self, sdf_version: str, color_range_image: str = ""):
         self.__version__ = sdf_version
         self.color_range_image = color_range_image
@@ -10476,13 +13897,15 @@ class ColorRangeImage(Model):
         return el
 
     @classmethod
-    def from_sdf(cls, el: ET.Element, version: str) -> "ColorRangeImage":
+    def _from_sdf(cls, el: ET.Element, version: str):
         _text = el.text or ""
         _color_range_image = _text
+        if isinstance(_color_range_image, SDFError):
+            return _color_range_image
         return cls(sdf_version=version, color_range_image=_color_range_image)
 
 
-class ParticleScatterRatio(Model):
+class ParticleScatterRatio(BaseModel):
     def __init__(self, sdf_version: str, particle_scatter_ratio: float = 0.65):
         self.__version__ = sdf_version
         self.particle_scatter_ratio = particle_scatter_ratio
@@ -10503,13 +13926,15 @@ class ParticleScatterRatio(Model):
         return el
 
     @classmethod
-    def from_sdf(cls, el: ET.Element, version: str) -> "ParticleScatterRatio":
+    def _from_sdf(cls, el: ET.Element, version: str):
         _text = el.text or 0.65
         _particle_scatter_ratio = _parse_double(_text)
+        if isinstance(_particle_scatter_ratio, SDFError):
+            return _particle_scatter_ratio
         return cls(sdf_version=version, particle_scatter_ratio=_particle_scatter_ratio)
 
 
-class ParticleEmitter(Model):
+class ParticleEmitter(BaseModel):
     def __init__(
         self,
         sdf_version: str,
@@ -10580,8 +14005,12 @@ class ParticleEmitter(Model):
             return self.to_version(version).to_sdf()
         version = version or self.__version__
         el = ET.Element("particle_emitter")
+        if self.name is None:
+            raise ValueError(f"'name' is required in SDF version {version}")
         if self.name is not None:
             el.set("name", self.name)
+        if self.type is None:
+            raise ValueError(f"'type' is required in SDF version {version}")
         if self.type is not None:
             el.set("type", self.type)
         if self.pose is not None:
@@ -10619,77 +14048,149 @@ class ParticleEmitter(Model):
         return el
 
     @classmethod
-    def from_sdf(cls, el: ET.Element, version: str) -> "ParticleEmitter":
+    def _from_sdf(cls, el: ET.Element, version: str):
+        if el.get("name") is None:
+            return SDFError(f"'name' is required in SDF version {version}")
         _name = el.get("name", "__default__")
+        if isinstance(_name, SDFError):
+            return _name.extend("@name")
+        if el.get("type") is None:
+            return SDFError(f"'type' is required in SDF version {version}")
         _type = el.get("type", "point")
+        if isinstance(_type, SDFError):
+            return _type.extend("@type")
         _c_pose = el.find("pose")
-        _pose = Pose.from_sdf(_c_pose, version) if _c_pose is not None else None
+        if _c_pose is not None:
+            _res = Pose._from_sdf(_c_pose, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("pose")
+            _pose = _res
+        else:
+            _pose = None
         _c_material = el.find("material")
-        _material = Material.from_sdf(_c_material, version) if _c_material is not None else None
+        if _c_material is not None:
+            _res = Material._from_sdf(_c_material, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("material")
+            _material = _res
+        else:
+            _material = None
         _c_emitting = el.find("emitting")
-        _emitting = Emitting.from_sdf(_c_emitting, version) if _c_emitting is not None else None
+        if _c_emitting is not None:
+            _res = Emitting._from_sdf(_c_emitting, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("emitting")
+            _emitting = _res
+        else:
+            _emitting = None
         _c_duration = el.find("duration")
-        _duration = Duration.from_sdf(_c_duration, version) if _c_duration is not None else None
+        if _c_duration is not None:
+            _res = Duration._from_sdf(_c_duration, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("duration")
+            _duration = _res
+        else:
+            _duration = None
         _c_size = el.find("size")
-        _size = Size.from_sdf(_c_size, version) if _c_size is not None else None
+        if _c_size is not None:
+            _res = Size._from_sdf(_c_size, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("size")
+            _size = _res
+        else:
+            _size = None
         _c_particle_size = el.find("particle_size")
-        _particle_size = ParticleSize.from_sdf(_c_particle_size, version) if _c_particle_size is not None else None
+        if _c_particle_size is not None:
+            _res = ParticleSize._from_sdf(_c_particle_size, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("particle_size")
+            _particle_size = _res
+        else:
+            _particle_size = None
         _c_lifetime = el.find("lifetime")
-        _lifetime = Lifetime.from_sdf(_c_lifetime, version) if _c_lifetime is not None else None
+        if _c_lifetime is not None:
+            _res = Lifetime._from_sdf(_c_lifetime, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("lifetime")
+            _lifetime = _res
+        else:
+            _lifetime = None
         _c_rate = el.find("rate")
-        _rate = Rate.from_sdf(_c_rate, version) if _c_rate is not None else None
+        if _c_rate is not None:
+            _res = Rate._from_sdf(_c_rate, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("rate")
+            _rate = _res
+        else:
+            _rate = None
         _c_min_velocity = el.find("min_velocity")
-        _min_velocity = MinVelocity.from_sdf(_c_min_velocity, version) if _c_min_velocity is not None else None
+        if _c_min_velocity is not None:
+            _res = MinVelocity._from_sdf(_c_min_velocity, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("min_velocity")
+            _min_velocity = _res
+        else:
+            _min_velocity = None
         _c_max_velocity = el.find("max_velocity")
-        _max_velocity = MaxVelocity.from_sdf(_c_max_velocity, version) if _c_max_velocity is not None else None
+        if _c_max_velocity is not None:
+            _res = MaxVelocity._from_sdf(_c_max_velocity, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("max_velocity")
+            _max_velocity = _res
+        else:
+            _max_velocity = None
         _c_scale_rate = el.find("scale_rate")
-        _scale_rate = ScaleRate.from_sdf(_c_scale_rate, version) if _c_scale_rate is not None else None
+        if _c_scale_rate is not None:
+            _res = ScaleRate._from_sdf(_c_scale_rate, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("scale_rate")
+            _scale_rate = _res
+        else:
+            _scale_rate = None
         _c_color_start = el.find("color_start")
-        _color_start = ColorStart.from_sdf(_c_color_start, version) if _c_color_start is not None else None
+        if _c_color_start is not None:
+            _res = ColorStart._from_sdf(_c_color_start, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("color_start")
+            _color_start = _res
+        else:
+            _color_start = None
         _c_color_end = el.find("color_end")
-        _color_end = ColorEnd.from_sdf(_c_color_end, version) if _c_color_end is not None else None
+        if _c_color_end is not None:
+            _res = ColorEnd._from_sdf(_c_color_end, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("color_end")
+            _color_end = _res
+        else:
+            _color_end = None
         _c_color_range_image = el.find("color_range_image")
-        _color_range_image = ColorRangeImage.from_sdf(_c_color_range_image, version) if _c_color_range_image is not None else None
+        if _c_color_range_image is not None:
+            _res = ColorRangeImage._from_sdf(_c_color_range_image, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("color_range_image")
+            _color_range_image = _res
+        else:
+            _color_range_image = None
         _c_topic = el.find("topic")
-        _topic = Topic.from_sdf(_c_topic, version) if _c_topic is not None else None
+        if _c_topic is not None:
+            _res = Topic._from_sdf(_c_topic, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("topic")
+            _topic = _res
+        else:
+            _topic = None
         _c_particle_scatter_ratio = el.find("particle_scatter_ratio")
-        _particle_scatter_ratio = ParticleScatterRatio.from_sdf(_c_particle_scatter_ratio, version) if _c_particle_scatter_ratio is not None else None
+        if _c_particle_scatter_ratio is not None:
+            _res = ParticleScatterRatio._from_sdf(_c_particle_scatter_ratio, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("particle_scatter_ratio")
+            _particle_scatter_ratio = _res
+        else:
+            _particle_scatter_ratio = None
         return cls(sdf_version=version, name=_name, type=_type, pose=_pose, material=_material, emitting=_emitting, duration=_duration, size=_size, particle_size=_particle_size, lifetime=_lifetime, rate=_rate, min_velocity=_min_velocity, max_velocity=_max_velocity, scale_rate=_scale_rate, color_start=_color_start, color_end=_color_end, color_range_image=_color_range_image, topic=_topic, particle_scatter_ratio=_particle_scatter_ratio)
 
 
-class EnableWind(Model):
-    def __init__(self, sdf_version: str, enable_wind: bool = False):
-        self.__version__ = sdf_version
-        self.enable_wind = enable_wind
-
-    def to_version(self, target_version: str) -> "EnableWind":
-        if self.enable_wind is not None and cmp_version(target_version, "1.6") < 0:
-            raise ValueError(f"'enable_wind' is not supported in SDF version {target_version} (added in 1.6)")
-        kwargs = {"sdf_version": target_version}
-        kwargs["enable_wind"] = self.enable_wind
-        new_obj = self.__class__(**kwargs)
-        return new_obj
-
-    def to_sdf(self, version: str = None) -> ET.Element:
-        if version is not None and version != self.__version__:
-            return self.to_version(version).to_sdf()
-        version = version or self.__version__
-        el = ET.Element("enable_wind")
-        if self.enable_wind is not None:
-            el.text = str(self.enable_wind).lower()
-        return el
-
-    @classmethod
-    def from_sdf(cls, el: ET.Element, version: str) -> "EnableWind":
-        _text = el.text or False
-        _enable_wind = _text.strip().lower() == 'true'
-        if _enable_wind is not None and cmp_version(version, "1.6") < 0:
-            if _enable_wind != False:
-                raise ValueError(f"'enable_wind' is not supported in SDF version {version} (added in 1.6)")
-        return cls(sdf_version=version, enable_wind=_enable_wind)
-
-
-class Link(Model):
+class Link(BaseModel):
     def __init__(
         self,
         sdf_version: str,
@@ -10704,14 +14205,14 @@ class Link(Model):
         kinematic: "Kinematic" = None,
         pose: "Pose" = None,
         velocity_decay: "VelocityDecay" = None,
-        audio_sink: List["AudioSink"] = None,
-        audio_source: List["AudioSource"] = None,
         must_be_base_link: "MustBeBaseLink" = None,
-        frame: List["Frame"] = None,
+        audio_source: List["AudioSource"] = None,
+        audio_sink: List["AudioSink"] = None,
         battery: List["Battery"] = None,
-        light: List["Light"] = None,
+        frame: List["Frame"] = None,
+        enable_wind: "EnableWind" = None,
         particle_emitter: List["ParticleEmitter"] = None,
-        enable_wind: "EnableWind" = None
+        light: List["Light"] = None
     ):
         self.__version__ = sdf_version
         self.name = name
@@ -10725,32 +14226,34 @@ class Link(Model):
         self.kinematic = kinematic
         self.pose = pose
         self.velocity_decay = velocity_decay
-        self.audio_sink = audio_sink or []
-        self.audio_source = audio_source or []
         self.must_be_base_link = must_be_base_link
-        self.frame = frame or []
+        self.audio_source = audio_source or []
+        self.audio_sink = audio_sink or []
         self.battery = battery or []
-        self.light = light or []
-        self.particle_emitter = particle_emitter or []
+        self.frame = frame or []
         self.enable_wind = enable_wind
+        self.particle_emitter = particle_emitter or []
+        self.light = light or []
 
     def to_version(self, target_version: str) -> "Link":
-        if self.audio_sink is not None and cmp_version(target_version, "1.4") < 0:
-            raise ValueError(f"'audio_sink' is not supported in SDF version {target_version} (added in 1.4)")
-        if self.audio_source is not None and cmp_version(target_version, "1.4") < 0:
-            raise ValueError(f"'audio_source' is not supported in SDF version {target_version} (added in 1.4)")
         if self.must_be_base_link is not None and cmp_version(target_version, "1.4") < 0:
             raise ValueError(f"'must_be_base_link' is not supported in SDF version {target_version} (added in 1.4)")
-        if self.frame is not None and cmp_version(target_version, "1.5") < 0:
-            raise ValueError(f"'frame' is not supported in SDF version {target_version} (added in 1.5)")
+        if self.audio_source is not None and cmp_version(target_version, "1.4") < 0:
+            raise ValueError(f"'audio_source' is not supported in SDF version {target_version} (added in 1.4)")
+        if self.audio_sink is not None and cmp_version(target_version, "1.4") < 0:
+            raise ValueError(f"'audio_sink' is not supported in SDF version {target_version} (added in 1.4)")
         if self.battery is not None and cmp_version(target_version, "1.5") < 0:
             raise ValueError(f"'battery' is not supported in SDF version {target_version} (added in 1.5)")
-        if self.light is not None and cmp_version(target_version, "1.6") < 0:
-            raise ValueError(f"'light' is not supported in SDF version {target_version} (added in 1.6)")
-        if self.particle_emitter is not None and cmp_version(target_version, "1.6") < 0:
-            raise ValueError(f"'particle_emitter' is not supported in SDF version {target_version} (added in 1.6)")
+        if self.frame is not None and cmp_version(target_version, "1.5") < 0:
+            raise ValueError(f"'frame' is not supported in SDF version {target_version} (added in 1.5)")
+        if self.frame is not None and cmp_version(target_version, "1.7") >= 0:
+            raise ValueError(f"'frame' is not supported in SDF version {target_version} (removed in 1.7)")
         if self.enable_wind is not None and cmp_version(target_version, "1.6") < 0:
             raise ValueError(f"'enable_wind' is not supported in SDF version {target_version} (added in 1.6)")
+        if self.particle_emitter is not None and cmp_version(target_version, "1.6") < 0:
+            raise ValueError(f"'particle_emitter' is not supported in SDF version {target_version} (added in 1.6)")
+        if self.light is not None and cmp_version(target_version, "1.6") < 0:
+            raise ValueError(f"'light' is not supported in SDF version {target_version} (added in 1.6)")
         kwargs = {"sdf_version": target_version}
         kwargs["name"] = self.name
         kwargs["inertial"] = self.inertial.to_version(target_version) if self.inertial is not None else None
@@ -10763,14 +14266,14 @@ class Link(Model):
         kwargs["kinematic"] = self.kinematic.to_version(target_version) if self.kinematic is not None else None
         kwargs["pose"] = self.pose.to_version(target_version) if self.pose is not None else None
         kwargs["velocity_decay"] = self.velocity_decay.to_version(target_version) if self.velocity_decay is not None else None
-        kwargs["audio_sink"] = [c.to_version(target_version) for c in (self.audio_sink or [])]
-        kwargs["audio_source"] = [c.to_version(target_version) for c in (self.audio_source or [])]
         kwargs["must_be_base_link"] = self.must_be_base_link.to_version(target_version) if self.must_be_base_link is not None else None
-        kwargs["frame"] = [c.to_version(target_version) for c in (self.frame or [])]
+        kwargs["audio_source"] = [c.to_version(target_version) for c in (self.audio_source or [])]
+        kwargs["audio_sink"] = [c.to_version(target_version) for c in (self.audio_sink or [])]
         kwargs["battery"] = [c.to_version(target_version) for c in (self.battery or [])]
-        kwargs["light"] = [c.to_version(target_version) for c in (self.light or [])]
-        kwargs["particle_emitter"] = [c.to_version(target_version) for c in (self.particle_emitter or [])]
+        kwargs["frame"] = [c.to_version(target_version) for c in (self.frame or [])]
         kwargs["enable_wind"] = self.enable_wind.to_version(target_version) if self.enable_wind is not None else None
+        kwargs["particle_emitter"] = [c.to_version(target_version) for c in (self.particle_emitter or [])]
+        kwargs["light"] = [c.to_version(target_version) for c in (self.light or [])]
         new_obj = self.__class__(**kwargs)
         return new_obj
 
@@ -10779,6 +14282,8 @@ class Link(Model):
             return self.to_version(version).to_sdf()
         version = version or self.__version__
         el = ET.Element("link")
+        if self.name is None:
+            raise ValueError(f"'name' is required in SDF version {version}")
         if self.name is not None:
             el.set("name", self.name)
         if self.inertial is not None:
@@ -10799,75 +14304,183 @@ class Link(Model):
             el.append(self.kinematic.to_sdf(version))
         if self.pose is not None:
             el.append(self.pose.to_sdf(version))
+        if cmp_version(version, "1.12") < 0:
+            if self.velocity_decay is None:
+                raise ValueError(f"'velocity_decay' is required in SDF version {version}")
         if self.velocity_decay is not None:
             el.append(self.velocity_decay.to_sdf(version))
-        for item in (self.audio_sink or []):
-            el.append(item.to_sdf(version))
-        for item in (self.audio_source or []):
-            el.append(item.to_sdf(version))
         if self.must_be_base_link is not None:
             el.append(self.must_be_base_link.to_sdf(version))
-        for item in (self.frame or []):
+        for item in (self.audio_source or []):
+            el.append(item.to_sdf(version))
+        for item in (self.audio_sink or []):
             el.append(item.to_sdf(version))
         for item in (self.battery or []):
             el.append(item.to_sdf(version))
-        for item in (self.light or []):
-            el.append(item.to_sdf(version))
-        for item in (self.particle_emitter or []):
+        for item in (self.frame or []):
             el.append(item.to_sdf(version))
         if self.enable_wind is not None:
             el.append(self.enable_wind.to_sdf(version))
+        for item in (self.particle_emitter or []):
+            el.append(item.to_sdf(version))
+        for item in (self.light or []):
+            el.append(item.to_sdf(version))
         return el
 
     @classmethod
-    def from_sdf(cls, el: ET.Element, version: str) -> "Link":
+    def _from_sdf(cls, el: ET.Element, version: str):
+        if el.get("name") is None:
+            return SDFError(f"'name' is required in SDF version {version}")
         _name = el.get("name", "__default__")
+        if isinstance(_name, SDFError):
+            return _name.extend("@name")
         _c_inertial = el.find("inertial")
-        _inertial = Inertial.from_sdf(_c_inertial, version) if _c_inertial is not None else None
-        _collision = [Collision.from_sdf(c, version) for c in el.findall("collision")]
-        _visual = [Visual.from_sdf(c, version) for c in el.findall("visual")]
-        _sensor = [Sensor.from_sdf(c, version) for c in el.findall("sensor")]
-        _projector = [Projector.from_sdf(c, version) for c in el.findall("projector")]
+        if _c_inertial is not None:
+            _res = Inertial._from_sdf(_c_inertial, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("inertial")
+            _inertial = _res
+        else:
+            _inertial = None
+        _collision = []
+        for c in el.findall("collision"):
+            _res = Collision._from_sdf(c, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("collision")
+            _collision.append(_res)
+        _visual = []
+        for c in el.findall("visual"):
+            _res = Visual._from_sdf(c, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("visual")
+            _visual.append(_res)
+        _sensor = []
+        for c in el.findall("sensor"):
+            _res = Sensor._from_sdf(c, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("sensor")
+            _sensor.append(_res)
+        _projector = []
+        for c in el.findall("projector"):
+            _res = Projector._from_sdf(c, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("projector")
+            _projector.append(_res)
         _c_gravity = el.find("gravity")
-        _gravity = Gravity.from_sdf(_c_gravity, version) if _c_gravity is not None else None
+        if _c_gravity is not None:
+            _res = Gravity._from_sdf(_c_gravity, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("gravity")
+            _gravity = _res
+        else:
+            _gravity = None
         _c_self_collide = el.find("self_collide")
-        _self_collide = SelfCollide.from_sdf(_c_self_collide, version) if _c_self_collide is not None else None
+        if _c_self_collide is not None:
+            _res = SelfCollide._from_sdf(_c_self_collide, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("self_collide")
+            _self_collide = _res
+        else:
+            _self_collide = None
         _c_kinematic = el.find("kinematic")
-        _kinematic = Kinematic.from_sdf(_c_kinematic, version) if _c_kinematic is not None else None
+        if _c_kinematic is not None:
+            _res = Kinematic._from_sdf(_c_kinematic, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("kinematic")
+            _kinematic = _res
+        else:
+            _kinematic = None
         _c_pose = el.find("pose")
-        _pose = Pose.from_sdf(_c_pose, version) if _c_pose is not None else None
+        if _c_pose is not None:
+            _res = Pose._from_sdf(_c_pose, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("pose")
+            _pose = _res
+        else:
+            _pose = None
         _c_velocity_decay = el.find("velocity_decay")
-        _velocity_decay = VelocityDecay.from_sdf(_c_velocity_decay, version) if _c_velocity_decay is not None else None
-        _audio_sink = [AudioSink.from_sdf(c, version) for c in el.findall("audio_sink")]
-        if _audio_sink and cmp_version(version, "1.4") < 0:
-            raise ValueError(f"'audio_sink' is not supported in SDF version {version} (added in 1.4)")
-        _audio_source = [AudioSource.from_sdf(c, version) for c in el.findall("audio_source")]
-        if _audio_source and cmp_version(version, "1.4") < 0:
-            raise ValueError(f"'audio_source' is not supported in SDF version {version} (added in 1.4)")
+        if _c_velocity_decay is not None:
+            _res = VelocityDecay._from_sdf(_c_velocity_decay, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("velocity_decay")
+            _velocity_decay = _res
+        else:
+            _velocity_decay = None
+        if cmp_version(version, "1.12") < 0:
+            if _velocity_decay is None:
+                return SDFError(f"'velocity_decay' is required in SDF version {version}")
         _c_must_be_base_link = el.find("must_be_base_link")
-        _must_be_base_link = MustBeBaseLink.from_sdf(_c_must_be_base_link, version) if _c_must_be_base_link is not None else None
+        if _c_must_be_base_link is not None:
+            _res = MustBeBaseLink._from_sdf(_c_must_be_base_link, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("must_be_base_link")
+            _must_be_base_link = _res
+        else:
+            _must_be_base_link = None
         if _must_be_base_link is not None and cmp_version(version, "1.4") < 0:
-            raise ValueError(f"'must_be_base_link' is not supported in SDF version {version} (added in 1.4)")
-        _frame = [Frame.from_sdf(c, version) for c in el.findall("frame")]
-        if _frame and cmp_version(version, "1.5") < 0:
-            raise ValueError(f"'frame' is not supported in SDF version {version} (added in 1.5)")
-        _battery = [Battery.from_sdf(c, version) for c in el.findall("battery")]
+            return SDFError(f"'must_be_base_link' is not supported in SDF version {version} (added in 1.4)")
+        _audio_source = []
+        for c in el.findall("audio_source"):
+            _res = AudioSource._from_sdf(c, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("audio_source")
+            _audio_source.append(_res)
+        if _audio_source and cmp_version(version, "1.4") < 0:
+            return SDFError(f"'audio_source' is not supported in SDF version {version} (added in 1.4)")
+        _audio_sink = []
+        for c in el.findall("audio_sink"):
+            _res = AudioSink._from_sdf(c, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("audio_sink")
+            _audio_sink.append(_res)
+        if _audio_sink and cmp_version(version, "1.4") < 0:
+            return SDFError(f"'audio_sink' is not supported in SDF version {version} (added in 1.4)")
+        _battery = []
+        for c in el.findall("battery"):
+            _res = Battery._from_sdf(c, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("battery")
+            _battery.append(_res)
         if _battery and cmp_version(version, "1.5") < 0:
-            raise ValueError(f"'battery' is not supported in SDF version {version} (added in 1.5)")
-        _light = [Light.from_sdf(c, version) for c in el.findall("light")]
-        if _light and cmp_version(version, "1.6") < 0:
-            raise ValueError(f"'light' is not supported in SDF version {version} (added in 1.6)")
-        _particle_emitter = [ParticleEmitter.from_sdf(c, version) for c in el.findall("particle_emitter")]
-        if _particle_emitter and cmp_version(version, "1.6") < 0:
-            raise ValueError(f"'particle_emitter' is not supported in SDF version {version} (added in 1.6)")
+            return SDFError(f"'battery' is not supported in SDF version {version} (added in 1.5)")
+        _frame = []
+        for c in el.findall("frame"):
+            _res = Frame._from_sdf(c, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("frame")
+            _frame.append(_res)
+        if _frame and cmp_version(version, "1.5") < 0:
+            return SDFError(f"'frame' is not supported in SDF version {version} (added in 1.5)")
         _c_enable_wind = el.find("enable_wind")
-        _enable_wind = EnableWind.from_sdf(_c_enable_wind, version) if _c_enable_wind is not None else None
+        if _c_enable_wind is not None:
+            _res = EnableWind._from_sdf(_c_enable_wind, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("enable_wind")
+            _enable_wind = _res
+        else:
+            _enable_wind = None
         if _enable_wind is not None and cmp_version(version, "1.6") < 0:
-            raise ValueError(f"'enable_wind' is not supported in SDF version {version} (added in 1.6)")
-        return cls(sdf_version=version, name=_name, inertial=_inertial, collision=_collision, visual=_visual, sensor=_sensor, projector=_projector, gravity=_gravity, self_collide=_self_collide, kinematic=_kinematic, pose=_pose, velocity_decay=_velocity_decay, audio_sink=_audio_sink, audio_source=_audio_source, must_be_base_link=_must_be_base_link, frame=_frame, battery=_battery, light=_light, particle_emitter=_particle_emitter, enable_wind=_enable_wind)
+            return SDFError(f"'enable_wind' is not supported in SDF version {version} (added in 1.6)")
+        _particle_emitter = []
+        for c in el.findall("particle_emitter"):
+            _res = ParticleEmitter._from_sdf(c, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("particle_emitter")
+            _particle_emitter.append(_res)
+        if _particle_emitter and cmp_version(version, "1.6") < 0:
+            return SDFError(f"'particle_emitter' is not supported in SDF version {version} (added in 1.6)")
+        _light = []
+        for c in el.findall("light"):
+            _res = Light._from_sdf(c, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("light")
+            _light.append(_res)
+        if _light and cmp_version(version, "1.6") < 0:
+            return SDFError(f"'light' is not supported in SDF version {version} (added in 1.6)")
+        return cls(sdf_version=version, name=_name, inertial=_inertial, collision=_collision, visual=_visual, sensor=_sensor, projector=_projector, gravity=_gravity, self_collide=_self_collide, kinematic=_kinematic, pose=_pose, velocity_decay=_velocity_decay, must_be_base_link=_must_be_base_link, audio_source=_audio_source, audio_sink=_audio_sink, battery=_battery, frame=_frame, enable_wind=_enable_wind, particle_emitter=_particle_emitter, light=_light)
 
 
-class Parent(Model):
+class Parent(BaseModel):
     def __init__(self, sdf_version: str, parent: str = "__default__"):
         self.__version__ = sdf_version
         self.parent = parent
@@ -10883,18 +14496,24 @@ class Parent(Model):
             return self.to_version(version).to_sdf()
         version = version or self.__version__
         el = ET.Element("parent")
+        if self.parent is None:
+            raise ValueError(f"'parent' is required in SDF version {version}")
         if self.parent is not None:
             el.text = self.parent
         return el
 
     @classmethod
-    def from_sdf(cls, el: ET.Element, version: str) -> "Parent":
+    def _from_sdf(cls, el: ET.Element, version: str):
+        if el.text is None:
+            return SDFError(f"'parent' is required in SDF version {version}")
         _text = el.text or "__default__"
         _parent = _text
+        if isinstance(_parent, SDFError):
+            return _parent
         return cls(sdf_version=version, parent=_parent)
 
 
-class Child(Model):
+class Child(BaseModel):
     def __init__(self, sdf_version: str, child: str = "__default__"):
         self.__version__ = sdf_version
         self.child = child
@@ -10910,18 +14529,24 @@ class Child(Model):
             return self.to_version(version).to_sdf()
         version = version or self.__version__
         el = ET.Element("child")
+        if self.child is None:
+            raise ValueError(f"'child' is required in SDF version {version}")
         if self.child is not None:
             el.text = self.child
         return el
 
     @classmethod
-    def from_sdf(cls, el: ET.Element, version: str) -> "Child":
+    def _from_sdf(cls, el: ET.Element, version: str):
+        if el.text is None:
+            return SDFError(f"'child' is required in SDF version {version}")
         _text = el.text or "__default__"
         _child = _text
+        if isinstance(_child, SDFError):
+            return _child
         return cls(sdf_version=version, child=_child)
 
 
-class ThreadPitch(Model):
+class ThreadPitch(BaseModel):
     def __init__(self, sdf_version: str, thread_pitch: float = 1.0):
         self.__version__ = sdf_version
         self.thread_pitch = thread_pitch
@@ -10942,13 +14567,15 @@ class ThreadPitch(Model):
         return el
 
     @classmethod
-    def from_sdf(cls, el: ET.Element, version: str) -> "ThreadPitch":
+    def _from_sdf(cls, el: ET.Element, version: str):
         _text = el.text or 1.0
         _thread_pitch = _parse_double(_text)
+        if isinstance(_thread_pitch, SDFError):
+            return _thread_pitch
         return cls(sdf_version=version, thread_pitch=_thread_pitch)
 
 
-class Damping(Model):
+class Damping(BaseModel):
     def __init__(self, sdf_version: str, damping: float = 0):
         self.__version__ = sdf_version
         self.damping = damping
@@ -10969,13 +14596,15 @@ class Damping(Model):
         return el
 
     @classmethod
-    def from_sdf(cls, el: ET.Element, version: str) -> "Damping":
+    def _from_sdf(cls, el: ET.Element, version: str):
         _text = el.text or 0
         _damping = _parse_double(_text)
+        if isinstance(_damping, SDFError):
+            return _damping
         return cls(sdf_version=version, damping=_damping)
 
 
-class SpringReference(Model):
+class SpringReference(BaseModel):
     def __init__(self, sdf_version: str, spring_reference: float = 0):
         self.__version__ = sdf_version
         self.spring_reference = spring_reference
@@ -10993,21 +14622,29 @@ class SpringReference(Model):
             return self.to_version(version).to_sdf()
         version = version or self.__version__
         el = ET.Element("spring_reference")
+        if cmp_version(version, "1.5") >= 0:
+            if self.spring_reference is None:
+                raise ValueError(f"'spring_reference' is required in SDF version {version}")
         if self.spring_reference is not None:
             el.text = str(self.spring_reference)
         return el
 
     @classmethod
-    def from_sdf(cls, el: ET.Element, version: str) -> "SpringReference":
+    def _from_sdf(cls, el: ET.Element, version: str):
+        if cmp_version(version, "1.5") >= 0:
+            if el.text is None:
+                return SDFError(f"'spring_reference' is required in SDF version {version}")
         _text = el.text or 0
         _spring_reference = _parse_double(_text)
+        if isinstance(_spring_reference, SDFError):
+            return _spring_reference
         if _spring_reference is not None and cmp_version(version, "1.5") < 0:
             if _spring_reference != 0:
-                raise ValueError(f"'spring_reference' is not supported in SDF version {version} (added in 1.5)")
+                return SDFError(f"'spring_reference' is not supported in SDF version {version} (added in 1.5)")
         return cls(sdf_version=version, spring_reference=_spring_reference)
 
 
-class SpringStiffness(Model):
+class SpringStiffness(BaseModel):
     def __init__(self, sdf_version: str, spring_stiffness: float = 0):
         self.__version__ = sdf_version
         self.spring_stiffness = spring_stiffness
@@ -11025,21 +14662,29 @@ class SpringStiffness(Model):
             return self.to_version(version).to_sdf()
         version = version or self.__version__
         el = ET.Element("spring_stiffness")
+        if cmp_version(version, "1.5") >= 0:
+            if self.spring_stiffness is None:
+                raise ValueError(f"'spring_stiffness' is required in SDF version {version}")
         if self.spring_stiffness is not None:
             el.text = str(self.spring_stiffness)
         return el
 
     @classmethod
-    def from_sdf(cls, el: ET.Element, version: str) -> "SpringStiffness":
+    def _from_sdf(cls, el: ET.Element, version: str):
+        if cmp_version(version, "1.5") >= 0:
+            if el.text is None:
+                return SDFError(f"'spring_stiffness' is required in SDF version {version}")
         _text = el.text or 0
         _spring_stiffness = _parse_double(_text)
+        if isinstance(_spring_stiffness, SDFError):
+            return _spring_stiffness
         if _spring_stiffness is not None and cmp_version(version, "1.5") < 0:
             if _spring_stiffness != 0:
-                raise ValueError(f"'spring_stiffness' is not supported in SDF version {version} (added in 1.5)")
+                return SDFError(f"'spring_stiffness' is not supported in SDF version {version} (added in 1.5)")
         return cls(sdf_version=version, spring_stiffness=_spring_stiffness)
 
 
-class Dynamics(Model):
+class Dynamics(BaseModel):
     def __init__(
         self,
         sdf_version: str,
@@ -11076,30 +14721,66 @@ class Dynamics(Model):
             el.append(self.damping.to_sdf(version))
         if self.friction is not None:
             el.append(self.friction.to_sdf(version))
+        if cmp_version(version, "1.5") >= 0:
+            if self.spring_reference is None:
+                raise ValueError(f"'spring_reference' is required in SDF version {version}")
         if self.spring_reference is not None:
             el.append(self.spring_reference.to_sdf(version))
+        if cmp_version(version, "1.5") >= 0:
+            if self.spring_stiffness is None:
+                raise ValueError(f"'spring_stiffness' is required in SDF version {version}")
         if self.spring_stiffness is not None:
             el.append(self.spring_stiffness.to_sdf(version))
         return el
 
     @classmethod
-    def from_sdf(cls, el: ET.Element, version: str) -> "Dynamics":
+    def _from_sdf(cls, el: ET.Element, version: str):
         _c_damping = el.find("damping")
-        _damping = Damping.from_sdf(_c_damping, version) if _c_damping is not None else None
+        if _c_damping is not None:
+            _res = Damping._from_sdf(_c_damping, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("damping")
+            _damping = _res
+        else:
+            _damping = None
         _c_friction = el.find("friction")
-        _friction = Friction.from_sdf(_c_friction, version) if _c_friction is not None else None
+        if _c_friction is not None:
+            _res = Friction._from_sdf(_c_friction, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("friction")
+            _friction = _res
+        else:
+            _friction = None
         _c_spring_reference = el.find("spring_reference")
-        _spring_reference = SpringReference.from_sdf(_c_spring_reference, version) if _c_spring_reference is not None else None
+        if _c_spring_reference is not None:
+            _res = SpringReference._from_sdf(_c_spring_reference, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("spring_reference")
+            _spring_reference = _res
+        else:
+            _spring_reference = None
+        if cmp_version(version, "1.5") >= 0:
+            if _spring_reference is None:
+                return SDFError(f"'spring_reference' is required in SDF version {version}")
         if _spring_reference is not None and cmp_version(version, "1.5") < 0:
-            raise ValueError(f"'spring_reference' is not supported in SDF version {version} (added in 1.5)")
+            return SDFError(f"'spring_reference' is not supported in SDF version {version} (added in 1.5)")
         _c_spring_stiffness = el.find("spring_stiffness")
-        _spring_stiffness = SpringStiffness.from_sdf(_c_spring_stiffness, version) if _c_spring_stiffness is not None else None
+        if _c_spring_stiffness is not None:
+            _res = SpringStiffness._from_sdf(_c_spring_stiffness, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("spring_stiffness")
+            _spring_stiffness = _res
+        else:
+            _spring_stiffness = None
+        if cmp_version(version, "1.5") >= 0:
+            if _spring_stiffness is None:
+                return SDFError(f"'spring_stiffness' is required in SDF version {version}")
         if _spring_stiffness is not None and cmp_version(version, "1.5") < 0:
-            raise ValueError(f"'spring_stiffness' is not supported in SDF version {version} (added in 1.5)")
+            return SDFError(f"'spring_stiffness' is not supported in SDF version {version} (added in 1.5)")
         return cls(sdf_version=version, damping=_damping, friction=_friction, spring_reference=_spring_reference, spring_stiffness=_spring_stiffness)
 
 
-class Lower(Model):
+class Lower(BaseModel):
     def __init__(self, sdf_version: str, lower: float = -1e16):
         self.__version__ = sdf_version
         self.lower = lower
@@ -11115,18 +14796,24 @@ class Lower(Model):
             return self.to_version(version).to_sdf()
         version = version or self.__version__
         el = ET.Element("lower")
+        if self.lower is None:
+            raise ValueError(f"'lower' is required in SDF version {version}")
         if self.lower is not None:
             el.text = str(self.lower)
         return el
 
     @classmethod
-    def from_sdf(cls, el: ET.Element, version: str) -> "Lower":
+    def _from_sdf(cls, el: ET.Element, version: str):
+        if el.text is None:
+            return SDFError(f"'lower' is required in SDF version {version}")
         _text = el.text or -1e16
         _lower = _parse_double(_text)
+        if isinstance(_lower, SDFError):
+            return _lower
         return cls(sdf_version=version, lower=_lower)
 
 
-class Upper(Model):
+class Upper(BaseModel):
     def __init__(self, sdf_version: str, upper: float = 1e16):
         self.__version__ = sdf_version
         self.upper = upper
@@ -11142,18 +14829,24 @@ class Upper(Model):
             return self.to_version(version).to_sdf()
         version = version or self.__version__
         el = ET.Element("upper")
+        if self.upper is None:
+            raise ValueError(f"'upper' is required in SDF version {version}")
         if self.upper is not None:
             el.text = str(self.upper)
         return el
 
     @classmethod
-    def from_sdf(cls, el: ET.Element, version: str) -> "Upper":
+    def _from_sdf(cls, el: ET.Element, version: str):
+        if el.text is None:
+            return SDFError(f"'upper' is required in SDF version {version}")
         _text = el.text or 1e16
         _upper = _parse_double(_text)
+        if isinstance(_upper, SDFError):
+            return _upper
         return cls(sdf_version=version, upper=_upper)
 
 
-class Effort(Model):
+class Effort(BaseModel):
     def __init__(self, sdf_version: str, effort: float = -1):
         self.__version__ = sdf_version
         self.effort = effort
@@ -11174,13 +14867,15 @@ class Effort(Model):
         return el
 
     @classmethod
-    def from_sdf(cls, el: ET.Element, version: str) -> "Effort":
+    def _from_sdf(cls, el: ET.Element, version: str):
         _text = el.text or -1
         _effort = _parse_double(_text)
+        if isinstance(_effort, SDFError):
+            return _effort
         return cls(sdf_version=version, effort=_effort)
 
 
-class Velocity(Model):
+class Velocity(BaseModel):
     def __init__(self, sdf_version: str, velocity: float = -1):
         self.__version__ = sdf_version
         self.velocity = velocity
@@ -11201,13 +14896,15 @@ class Velocity(Model):
         return el
 
     @classmethod
-    def from_sdf(cls, el: ET.Element, version: str) -> "Velocity":
+    def _from_sdf(cls, el: ET.Element, version: str):
         _text = el.text or -1
         _velocity = _parse_double(_text)
+        if isinstance(_velocity, SDFError):
+            return _velocity
         return cls(sdf_version=version, velocity=_velocity)
 
 
-class Limit(Model):
+class Limit(BaseModel):
     def __init__(
         self,
         sdf_version: str,
@@ -11215,29 +14912,29 @@ class Limit(Model):
         upper: "Upper" = None,
         effort: "Effort" = None,
         velocity: "Velocity" = None,
-        stiffness: "Stiffness" = None,
-        dissipation: "Dissipation" = None
+        dissipation: "Dissipation" = None,
+        stiffness: "Stiffness" = None
     ):
         self.__version__ = sdf_version
         self.lower = lower
         self.upper = upper
         self.effort = effort
         self.velocity = velocity
-        self.stiffness = stiffness
         self.dissipation = dissipation
+        self.stiffness = stiffness
 
     def to_version(self, target_version: str) -> "Limit":
-        if self.stiffness is not None and cmp_version(target_version, "1.4") < 0:
-            raise ValueError(f"'stiffness' is not supported in SDF version {target_version} (added in 1.4)")
         if self.dissipation is not None and cmp_version(target_version, "1.4") < 0:
             raise ValueError(f"'dissipation' is not supported in SDF version {target_version} (added in 1.4)")
+        if self.stiffness is not None and cmp_version(target_version, "1.4") < 0:
+            raise ValueError(f"'stiffness' is not supported in SDF version {target_version} (added in 1.4)")
         kwargs = {"sdf_version": target_version}
         kwargs["lower"] = self.lower.to_version(target_version) if self.lower is not None else None
         kwargs["upper"] = self.upper.to_version(target_version) if self.upper is not None else None
         kwargs["effort"] = self.effort.to_version(target_version) if self.effort is not None else None
         kwargs["velocity"] = self.velocity.to_version(target_version) if self.velocity is not None else None
-        kwargs["stiffness"] = self.stiffness.to_version(target_version) if self.stiffness is not None else None
         kwargs["dissipation"] = self.dissipation.to_version(target_version) if self.dissipation is not None else None
+        kwargs["stiffness"] = self.stiffness.to_version(target_version) if self.stiffness is not None else None
         new_obj = self.__class__(**kwargs)
         return new_obj
 
@@ -11246,42 +14943,86 @@ class Limit(Model):
             return self.to_version(version).to_sdf()
         version = version or self.__version__
         el = ET.Element("limit")
+        if self.lower is None:
+            raise ValueError(f"'lower' is required in SDF version {version}")
         if self.lower is not None:
             el.append(self.lower.to_sdf(version))
+        if self.upper is None:
+            raise ValueError(f"'upper' is required in SDF version {version}")
         if self.upper is not None:
             el.append(self.upper.to_sdf(version))
         if self.effort is not None:
             el.append(self.effort.to_sdf(version))
         if self.velocity is not None:
             el.append(self.velocity.to_sdf(version))
-        if self.stiffness is not None:
-            el.append(self.stiffness.to_sdf(version))
         if self.dissipation is not None:
             el.append(self.dissipation.to_sdf(version))
+        if self.stiffness is not None:
+            el.append(self.stiffness.to_sdf(version))
         return el
 
     @classmethod
-    def from_sdf(cls, el: ET.Element, version: str) -> "Limit":
+    def _from_sdf(cls, el: ET.Element, version: str):
         _c_lower = el.find("lower")
-        _lower = Lower.from_sdf(_c_lower, version) if _c_lower is not None else None
+        if _c_lower is not None:
+            _res = Lower._from_sdf(_c_lower, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("lower")
+            _lower = _res
+        else:
+            _lower = None
+        if _lower is None:
+            return SDFError(f"'lower' is required in SDF version {version}")
         _c_upper = el.find("upper")
-        _upper = Upper.from_sdf(_c_upper, version) if _c_upper is not None else None
+        if _c_upper is not None:
+            _res = Upper._from_sdf(_c_upper, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("upper")
+            _upper = _res
+        else:
+            _upper = None
+        if _upper is None:
+            return SDFError(f"'upper' is required in SDF version {version}")
         _c_effort = el.find("effort")
-        _effort = Effort.from_sdf(_c_effort, version) if _c_effort is not None else None
+        if _c_effort is not None:
+            _res = Effort._from_sdf(_c_effort, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("effort")
+            _effort = _res
+        else:
+            _effort = None
         _c_velocity = el.find("velocity")
-        _velocity = Velocity.from_sdf(_c_velocity, version) if _c_velocity is not None else None
-        _c_stiffness = el.find("stiffness")
-        _stiffness = Stiffness.from_sdf(_c_stiffness, version) if _c_stiffness is not None else None
-        if _stiffness is not None and cmp_version(version, "1.4") < 0:
-            raise ValueError(f"'stiffness' is not supported in SDF version {version} (added in 1.4)")
+        if _c_velocity is not None:
+            _res = Velocity._from_sdf(_c_velocity, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("velocity")
+            _velocity = _res
+        else:
+            _velocity = None
         _c_dissipation = el.find("dissipation")
-        _dissipation = Dissipation.from_sdf(_c_dissipation, version) if _c_dissipation is not None else None
+        if _c_dissipation is not None:
+            _res = Dissipation._from_sdf(_c_dissipation, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("dissipation")
+            _dissipation = _res
+        else:
+            _dissipation = None
         if _dissipation is not None and cmp_version(version, "1.4") < 0:
-            raise ValueError(f"'dissipation' is not supported in SDF version {version} (added in 1.4)")
-        return cls(sdf_version=version, lower=_lower, upper=_upper, effort=_effort, velocity=_velocity, stiffness=_stiffness, dissipation=_dissipation)
+            return SDFError(f"'dissipation' is not supported in SDF version {version} (added in 1.4)")
+        _c_stiffness = el.find("stiffness")
+        if _c_stiffness is not None:
+            _res = Stiffness._from_sdf(_c_stiffness, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("stiffness")
+            _stiffness = _res
+        else:
+            _stiffness = None
+        if _stiffness is not None and cmp_version(version, "1.4") < 0:
+            return SDFError(f"'stiffness' is not supported in SDF version {version} (added in 1.4)")
+        return cls(sdf_version=version, lower=_lower, upper=_upper, effort=_effort, velocity=_velocity, dissipation=_dissipation, stiffness=_stiffness)
 
 
-class UseParentModelFrame(Model):
+class UseParentModelFrame(BaseModel):
     def __init__(self, sdf_version: str, use_parent_model_frame: bool = False):
         self.__version__ = sdf_version
         self.use_parent_model_frame = use_parent_model_frame
@@ -11289,6 +15030,8 @@ class UseParentModelFrame(Model):
     def to_version(self, target_version: str) -> "UseParentModelFrame":
         if self.use_parent_model_frame is not None and cmp_version(target_version, "1.5") < 0:
             raise ValueError(f"'use_parent_model_frame' is not supported in SDF version {target_version} (added in 1.5)")
+        if self.use_parent_model_frame is not None and cmp_version(target_version, "1.7") >= 0:
+            raise ValueError(f"'use_parent_model_frame' is not supported in SDF version {target_version} (removed in 1.7)")
         kwargs = {"sdf_version": target_version}
         kwargs["use_parent_model_frame"] = self.use_parent_model_frame
         new_obj = self.__class__(**kwargs)
@@ -11299,21 +15042,29 @@ class UseParentModelFrame(Model):
             return self.to_version(version).to_sdf()
         version = version or self.__version__
         el = ET.Element("use_parent_model_frame")
+        if cmp_version(version, "1.5") >= 0 and cmp_version(version, "1.7") < 0:
+            if self.use_parent_model_frame is None:
+                raise ValueError(f"'use_parent_model_frame' is required in SDF version {version}")
         if self.use_parent_model_frame is not None:
             el.text = str(self.use_parent_model_frame).lower()
         return el
 
     @classmethod
-    def from_sdf(cls, el: ET.Element, version: str) -> "UseParentModelFrame":
+    def _from_sdf(cls, el: ET.Element, version: str):
+        if cmp_version(version, "1.5") >= 0 and cmp_version(version, "1.7") < 0:
+            if el.text is None:
+                return SDFError(f"'use_parent_model_frame' is required in SDF version {version}")
         _text = el.text or False
-        _use_parent_model_frame = _text.strip().lower() == 'true'
+        _use_parent_model_frame = str(_text).strip().lower() == 'true'
+        if isinstance(_use_parent_model_frame, SDFError):
+            return _use_parent_model_frame
         if _use_parent_model_frame is not None and cmp_version(version, "1.5") < 0:
             if _use_parent_model_frame != False:
-                raise ValueError(f"'use_parent_model_frame' is not supported in SDF version {version} (added in 1.5)")
+                return SDFError(f"'use_parent_model_frame' is not supported in SDF version {version} (added in 1.5)")
         return cls(sdf_version=version, use_parent_model_frame=_use_parent_model_frame)
 
 
-class InitialPosition(Model):
+class InitialPosition(BaseModel):
     def __init__(self, sdf_version: str, initial_position: float = 0):
         self.__version__ = sdf_version
         self.initial_position = initial_position
@@ -11321,6 +15072,8 @@ class InitialPosition(Model):
     def to_version(self, target_version: str) -> "InitialPosition":
         if self.initial_position is not None and cmp_version(target_version, "1.6") < 0:
             raise ValueError(f"'initial_position' is not supported in SDF version {target_version} (added in 1.6)")
+        if self.initial_position is not None and cmp_version(target_version, "1.9") >= 0:
+            raise ValueError(f"'initial_position' is not supported in SDF version {target_version} (removed in 1.9)")
         kwargs = {"sdf_version": target_version}
         kwargs["initial_position"] = self.initial_position
         new_obj = self.__class__(**kwargs)
@@ -11336,16 +15089,18 @@ class InitialPosition(Model):
         return el
 
     @classmethod
-    def from_sdf(cls, el: ET.Element, version: str) -> "InitialPosition":
+    def _from_sdf(cls, el: ET.Element, version: str):
         _text = el.text or 0
         _initial_position = _parse_double(_text)
+        if isinstance(_initial_position, SDFError):
+            return _initial_position
         if _initial_position is not None and cmp_version(version, "1.6") < 0:
             if _initial_position != 0:
-                raise ValueError(f"'initial_position' is not supported in SDF version {version} (added in 1.6)")
+                return SDFError(f"'initial_position' is not supported in SDF version {version} (added in 1.6)")
         return cls(sdf_version=version, initial_position=_initial_position)
 
 
-class Multiplier(Model):
+class Multiplier(BaseModel):
     def __init__(self, sdf_version: str, multiplier: float = 1.0):
         self.__version__ = sdf_version
         self.multiplier = multiplier
@@ -11361,18 +15116,24 @@ class Multiplier(Model):
             return self.to_version(version).to_sdf()
         version = version or self.__version__
         el = ET.Element("multiplier")
+        if self.multiplier is None:
+            raise ValueError(f"'multiplier' is required in SDF version {version}")
         if self.multiplier is not None:
             el.text = str(self.multiplier)
         return el
 
     @classmethod
-    def from_sdf(cls, el: ET.Element, version: str) -> "Multiplier":
+    def _from_sdf(cls, el: ET.Element, version: str):
+        if el.text is None:
+            return SDFError(f"'multiplier' is required in SDF version {version}")
         _text = el.text or 1.0
         _multiplier = _parse_double(_text)
+        if isinstance(_multiplier, SDFError):
+            return _multiplier
         return cls(sdf_version=version, multiplier=_multiplier)
 
 
-class Offset(Model):
+class Offset(BaseModel):
     def __init__(self, sdf_version: str, offset: float = 0):
         self.__version__ = sdf_version
         self.offset = offset
@@ -11388,18 +15149,24 @@ class Offset(Model):
             return self.to_version(version).to_sdf()
         version = version or self.__version__
         el = ET.Element("offset")
+        if self.offset is None:
+            raise ValueError(f"'offset' is required in SDF version {version}")
         if self.offset is not None:
             el.text = str(self.offset)
         return el
 
     @classmethod
-    def from_sdf(cls, el: ET.Element, version: str) -> "Offset":
+    def _from_sdf(cls, el: ET.Element, version: str):
+        if el.text is None:
+            return SDFError(f"'offset' is required in SDF version {version}")
         _text = el.text or 0
         _offset = _parse_double(_text)
+        if isinstance(_offset, SDFError):
+            return _offset
         return cls(sdf_version=version, offset=_offset)
 
 
-class Reference(Model):
+class Reference(BaseModel):
     def __init__(self, sdf_version: str, reference: float = 0):
         self.__version__ = sdf_version
         self.reference = reference
@@ -11415,18 +15182,24 @@ class Reference(Model):
             return self.to_version(version).to_sdf()
         version = version or self.__version__
         el = ET.Element("reference")
+        if self.reference is None:
+            raise ValueError(f"'reference' is required in SDF version {version}")
         if self.reference is not None:
             el.text = str(self.reference)
         return el
 
     @classmethod
-    def from_sdf(cls, el: ET.Element, version: str) -> "Reference":
+    def _from_sdf(cls, el: ET.Element, version: str):
+        if el.text is None:
+            return SDFError(f"'reference' is required in SDF version {version}")
         _text = el.text or 0
         _reference = _parse_double(_text)
+        if isinstance(_reference, SDFError):
+            return _reference
         return cls(sdf_version=version, reference=_reference)
 
 
-class Mimic(Model):
+class Mimic(BaseModel):
     def __init__(
         self,
         sdf_version: str,
@@ -11458,32 +15231,70 @@ class Mimic(Model):
             return self.to_version(version).to_sdf()
         version = version or self.__version__
         el = ET.Element("mimic")
+        if self.joint is None:
+            raise ValueError(f"'joint' is required in SDF version {version}")
         if self.joint is not None:
             el.set("joint", self.joint)
         if self.axis is not None:
             el.set("axis", self.axis)
+        if self.multiplier is None:
+            raise ValueError(f"'multiplier' is required in SDF version {version}")
         if self.multiplier is not None:
             el.append(self.multiplier.to_sdf(version))
+        if self.offset is None:
+            raise ValueError(f"'offset' is required in SDF version {version}")
         if self.offset is not None:
             el.append(self.offset.to_sdf(version))
+        if self.reference is None:
+            raise ValueError(f"'reference' is required in SDF version {version}")
         if self.reference is not None:
             el.append(self.reference.to_sdf(version))
         return el
 
     @classmethod
-    def from_sdf(cls, el: ET.Element, version: str) -> "Mimic":
+    def _from_sdf(cls, el: ET.Element, version: str):
+        if el.get("joint") is None:
+            return SDFError(f"'joint' is required in SDF version {version}")
         _joint = el.get("joint", "")
+        if isinstance(_joint, SDFError):
+            return _joint.extend("@joint")
         _axis = el.get("axis", "axis")
+        if isinstance(_axis, SDFError):
+            return _axis.extend("@axis")
         _c_multiplier = el.find("multiplier")
-        _multiplier = Multiplier.from_sdf(_c_multiplier, version) if _c_multiplier is not None else None
+        if _c_multiplier is not None:
+            _res = Multiplier._from_sdf(_c_multiplier, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("multiplier")
+            _multiplier = _res
+        else:
+            _multiplier = None
+        if _multiplier is None:
+            return SDFError(f"'multiplier' is required in SDF version {version}")
         _c_offset = el.find("offset")
-        _offset = Offset.from_sdf(_c_offset, version) if _c_offset is not None else None
+        if _c_offset is not None:
+            _res = Offset._from_sdf(_c_offset, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("offset")
+            _offset = _res
+        else:
+            _offset = None
+        if _offset is None:
+            return SDFError(f"'offset' is required in SDF version {version}")
         _c_reference = el.find("reference")
-        _reference = Reference.from_sdf(_c_reference, version) if _c_reference is not None else None
+        if _c_reference is not None:
+            _res = Reference._from_sdf(_c_reference, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("reference")
+            _reference = _res
+        else:
+            _reference = None
+        if _reference is None:
+            return SDFError(f"'reference' is required in SDF version {version}")
         return cls(sdf_version=version, joint=_joint, axis=_axis, multiplier=_multiplier, offset=_offset, reference=_reference)
 
 
-class Axis(Model):
+class Axis(BaseModel):
     _MIGRATIONS = [{"version": "1.7", "ops": [{"type": "map", "from": "use_parent_model_frame", "to": "xyz::expressed_in", "from_values": ["true", "True", "TRUE", "1"], "to_value": "__model__"}]}]
 
     def __init__(
@@ -11507,8 +15318,12 @@ class Axis(Model):
     def to_version(self, target_version: str) -> "Axis":
         if self.use_parent_model_frame is not None and cmp_version(target_version, "1.5") < 0:
             raise ValueError(f"'use_parent_model_frame' is not supported in SDF version {target_version} (added in 1.5)")
+        if self.use_parent_model_frame is not None and cmp_version(target_version, "1.7") >= 0:
+            raise ValueError(f"'use_parent_model_frame' is not supported in SDF version {target_version} (removed in 1.7)")
         if self.initial_position is not None and cmp_version(target_version, "1.6") < 0:
             raise ValueError(f"'initial_position' is not supported in SDF version {target_version} (added in 1.6)")
+        if self.initial_position is not None and cmp_version(target_version, "1.9") >= 0:
+            raise ValueError(f"'initial_position' is not supported in SDF version {target_version} (removed in 1.9)")
         if self.mimic is not None and cmp_version(target_version, "1.11") < 0:
             raise ValueError(f"'mimic' is not supported in SDF version {target_version} (added in 1.11)")
         kwargs = {"sdf_version": target_version}
@@ -11527,12 +15342,19 @@ class Axis(Model):
             return self.to_version(version).to_sdf()
         version = version or self.__version__
         el = ET.Element("axis")
+        if self.xyz is None:
+            raise ValueError(f"'xyz' is required in SDF version {version}")
         if self.xyz is not None:
             el.append(self.xyz.to_sdf(version))
         if self.dynamics is not None:
             el.append(self.dynamics.to_sdf(version))
+        if self.limit is None:
+            raise ValueError(f"'limit' is required in SDF version {version}")
         if self.limit is not None:
             el.append(self.limit.to_sdf(version))
+        if cmp_version(version, "1.5") >= 0 and cmp_version(version, "1.7") < 0:
+            if self.use_parent_model_frame is None:
+                raise ValueError(f"'use_parent_model_frame' is required in SDF version {version}")
         if self.use_parent_model_frame is not None:
             el.append(self.use_parent_model_frame.to_sdf(version))
         if self.initial_position is not None:
@@ -11542,29 +15364,72 @@ class Axis(Model):
         return el
 
     @classmethod
-    def from_sdf(cls, el: ET.Element, version: str) -> "Axis":
+    def _from_sdf(cls, el: ET.Element, version: str):
         _c_xyz = el.find("xyz")
-        _xyz = Xyz.from_sdf(_c_xyz, version) if _c_xyz is not None else None
+        if _c_xyz is not None:
+            _res = Xyz._from_sdf(_c_xyz, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("xyz")
+            _xyz = _res
+        else:
+            _xyz = None
+        if _xyz is None:
+            return SDFError(f"'xyz' is required in SDF version {version}")
         _c_dynamics = el.find("dynamics")
-        _dynamics = Dynamics.from_sdf(_c_dynamics, version) if _c_dynamics is not None else None
+        if _c_dynamics is not None:
+            _res = Dynamics._from_sdf(_c_dynamics, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("dynamics")
+            _dynamics = _res
+        else:
+            _dynamics = None
         _c_limit = el.find("limit")
-        _limit = Limit.from_sdf(_c_limit, version) if _c_limit is not None else None
+        if _c_limit is not None:
+            _res = Limit._from_sdf(_c_limit, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("limit")
+            _limit = _res
+        else:
+            _limit = None
+        if _limit is None:
+            return SDFError(f"'limit' is required in SDF version {version}")
         _c_use_parent_model_frame = el.find("use_parent_model_frame")
-        _use_parent_model_frame = UseParentModelFrame.from_sdf(_c_use_parent_model_frame, version) if _c_use_parent_model_frame is not None else None
+        if _c_use_parent_model_frame is not None:
+            _res = UseParentModelFrame._from_sdf(_c_use_parent_model_frame, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("use_parent_model_frame")
+            _use_parent_model_frame = _res
+        else:
+            _use_parent_model_frame = None
+        if cmp_version(version, "1.5") >= 0 and cmp_version(version, "1.7") < 0:
+            if _use_parent_model_frame is None:
+                return SDFError(f"'use_parent_model_frame' is required in SDF version {version}")
         if _use_parent_model_frame is not None and cmp_version(version, "1.5") < 0:
-            raise ValueError(f"'use_parent_model_frame' is not supported in SDF version {version} (added in 1.5)")
+            return SDFError(f"'use_parent_model_frame' is not supported in SDF version {version} (added in 1.5)")
         _c_initial_position = el.find("initial_position")
-        _initial_position = InitialPosition.from_sdf(_c_initial_position, version) if _c_initial_position is not None else None
+        if _c_initial_position is not None:
+            _res = InitialPosition._from_sdf(_c_initial_position, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("initial_position")
+            _initial_position = _res
+        else:
+            _initial_position = None
         if _initial_position is not None and cmp_version(version, "1.6") < 0:
-            raise ValueError(f"'initial_position' is not supported in SDF version {version} (added in 1.6)")
+            return SDFError(f"'initial_position' is not supported in SDF version {version} (added in 1.6)")
         _c_mimic = el.find("mimic")
-        _mimic = Mimic.from_sdf(_c_mimic, version) if _c_mimic is not None else None
+        if _c_mimic is not None:
+            _res = Mimic._from_sdf(_c_mimic, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("mimic")
+            _mimic = _res
+        else:
+            _mimic = None
         if _mimic is not None and cmp_version(version, "1.11") < 0:
-            raise ValueError(f"'mimic' is not supported in SDF version {version} (added in 1.11)")
+            return SDFError(f"'mimic' is not supported in SDF version {version} (added in 1.11)")
         return cls(sdf_version=version, xyz=_xyz, dynamics=_dynamics, limit=_limit, use_parent_model_frame=_use_parent_model_frame, initial_position=_initial_position, mimic=_mimic)
 
 
-class Axis2(Model):
+class Axis2(BaseModel):
     _MIGRATIONS = [{"version": "1.7", "ops": [{"type": "map", "from": "use_parent_model_frame", "to": "xyz::expressed_in", "from_values": ["true", "True", "TRUE", "1"], "to_value": "__model__"}]}]
 
     def __init__(
@@ -11588,8 +15453,12 @@ class Axis2(Model):
     def to_version(self, target_version: str) -> "Axis2":
         if self.use_parent_model_frame is not None and cmp_version(target_version, "1.5") < 0:
             raise ValueError(f"'use_parent_model_frame' is not supported in SDF version {target_version} (added in 1.5)")
+        if self.use_parent_model_frame is not None and cmp_version(target_version, "1.7") >= 0:
+            raise ValueError(f"'use_parent_model_frame' is not supported in SDF version {target_version} (removed in 1.7)")
         if self.initial_position is not None and cmp_version(target_version, "1.6") < 0:
             raise ValueError(f"'initial_position' is not supported in SDF version {target_version} (added in 1.6)")
+        if self.initial_position is not None and cmp_version(target_version, "1.9") >= 0:
+            raise ValueError(f"'initial_position' is not supported in SDF version {target_version} (removed in 1.9)")
         if self.mimic is not None and cmp_version(target_version, "1.11") < 0:
             raise ValueError(f"'mimic' is not supported in SDF version {target_version} (added in 1.11)")
         kwargs = {"sdf_version": target_version}
@@ -11608,12 +15477,17 @@ class Axis2(Model):
             return self.to_version(version).to_sdf()
         version = version or self.__version__
         el = ET.Element("axis2")
+        if self.xyz is None:
+            raise ValueError(f"'xyz' is required in SDF version {version}")
         if self.xyz is not None:
             el.append(self.xyz.to_sdf(version))
         if self.dynamics is not None:
             el.append(self.dynamics.to_sdf(version))
         if self.limit is not None:
             el.append(self.limit.to_sdf(version))
+        if cmp_version(version, "1.5") >= 0 and cmp_version(version, "1.7") < 0:
+            if self.use_parent_model_frame is None:
+                raise ValueError(f"'use_parent_model_frame' is required in SDF version {version}")
         if self.use_parent_model_frame is not None:
             el.append(self.use_parent_model_frame.to_sdf(version))
         if self.initial_position is not None:
@@ -11623,61 +15497,70 @@ class Axis2(Model):
         return el
 
     @classmethod
-    def from_sdf(cls, el: ET.Element, version: str) -> "Axis2":
+    def _from_sdf(cls, el: ET.Element, version: str):
         _c_xyz = el.find("xyz")
-        _xyz = Xyz.from_sdf(_c_xyz, version) if _c_xyz is not None else None
+        if _c_xyz is not None:
+            _res = Xyz._from_sdf(_c_xyz, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("xyz")
+            _xyz = _res
+        else:
+            _xyz = None
+        if _xyz is None:
+            return SDFError(f"'xyz' is required in SDF version {version}")
         _c_dynamics = el.find("dynamics")
-        _dynamics = Dynamics.from_sdf(_c_dynamics, version) if _c_dynamics is not None else None
+        if _c_dynamics is not None:
+            _res = Dynamics._from_sdf(_c_dynamics, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("dynamics")
+            _dynamics = _res
+        else:
+            _dynamics = None
         _c_limit = el.find("limit")
-        _limit = Limit.from_sdf(_c_limit, version) if _c_limit is not None else None
+        if _c_limit is not None:
+            _res = Limit._from_sdf(_c_limit, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("limit")
+            _limit = _res
+        else:
+            _limit = None
         _c_use_parent_model_frame = el.find("use_parent_model_frame")
-        _use_parent_model_frame = UseParentModelFrame.from_sdf(_c_use_parent_model_frame, version) if _c_use_parent_model_frame is not None else None
+        if _c_use_parent_model_frame is not None:
+            _res = UseParentModelFrame._from_sdf(_c_use_parent_model_frame, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("use_parent_model_frame")
+            _use_parent_model_frame = _res
+        else:
+            _use_parent_model_frame = None
+        if cmp_version(version, "1.5") >= 0 and cmp_version(version, "1.7") < 0:
+            if _use_parent_model_frame is None:
+                return SDFError(f"'use_parent_model_frame' is required in SDF version {version}")
         if _use_parent_model_frame is not None and cmp_version(version, "1.5") < 0:
-            raise ValueError(f"'use_parent_model_frame' is not supported in SDF version {version} (added in 1.5)")
+            return SDFError(f"'use_parent_model_frame' is not supported in SDF version {version} (added in 1.5)")
         _c_initial_position = el.find("initial_position")
-        _initial_position = InitialPosition.from_sdf(_c_initial_position, version) if _c_initial_position is not None else None
+        if _c_initial_position is not None:
+            _res = InitialPosition._from_sdf(_c_initial_position, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("initial_position")
+            _initial_position = _res
+        else:
+            _initial_position = None
         if _initial_position is not None and cmp_version(version, "1.6") < 0:
-            raise ValueError(f"'initial_position' is not supported in SDF version {version} (added in 1.6)")
+            return SDFError(f"'initial_position' is not supported in SDF version {version} (added in 1.6)")
         _c_mimic = el.find("mimic")
-        _mimic = Mimic.from_sdf(_c_mimic, version) if _c_mimic is not None else None
+        if _c_mimic is not None:
+            _res = Mimic._from_sdf(_c_mimic, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("mimic")
+            _mimic = _res
+        else:
+            _mimic = None
         if _mimic is not None and cmp_version(version, "1.11") < 0:
-            raise ValueError(f"'mimic' is not supported in SDF version {version} (added in 1.11)")
+            return SDFError(f"'mimic' is not supported in SDF version {version} (added in 1.11)")
         return cls(sdf_version=version, xyz=_xyz, dynamics=_dynamics, limit=_limit, use_parent_model_frame=_use_parent_model_frame, initial_position=_initial_position, mimic=_mimic)
 
 
-class GearboxRatio(Model):
-    def __init__(self, sdf_version: str, gearbox_ratio: float = 1.0):
-        self.__version__ = sdf_version
-        self.gearbox_ratio = gearbox_ratio
-
-    def to_version(self, target_version: str) -> "GearboxRatio":
-        if self.gearbox_ratio is not None and cmp_version(target_version, "1.4") < 0:
-            raise ValueError(f"'gearbox_ratio' is not supported in SDF version {target_version} (added in 1.4)")
-        kwargs = {"sdf_version": target_version}
-        kwargs["gearbox_ratio"] = self.gearbox_ratio
-        new_obj = self.__class__(**kwargs)
-        return new_obj
-
-    def to_sdf(self, version: str = None) -> ET.Element:
-        if version is not None and version != self.__version__:
-            return self.to_version(version).to_sdf()
-        version = version or self.__version__
-        el = ET.Element("gearbox_ratio")
-        if self.gearbox_ratio is not None:
-            el.text = str(self.gearbox_ratio)
-        return el
-
-    @classmethod
-    def from_sdf(cls, el: ET.Element, version: str) -> "GearboxRatio":
-        _text = el.text or 1.0
-        _gearbox_ratio = _parse_double(_text)
-        if _gearbox_ratio is not None and cmp_version(version, "1.4") < 0:
-            if _gearbox_ratio != 1.0:
-                raise ValueError(f"'gearbox_ratio' is not supported in SDF version {version} (added in 1.4)")
-        return cls(sdf_version=version, gearbox_ratio=_gearbox_ratio)
-
-
-class GearboxReferenceBody(Model):
+class GearboxReferenceBody(BaseModel):
     def __init__(self, sdf_version: str, gearbox_reference_body: str = "__default__"):
         self.__version__ = sdf_version
         self.gearbox_reference_body = gearbox_reference_body
@@ -11700,16 +15583,52 @@ class GearboxReferenceBody(Model):
         return el
 
     @classmethod
-    def from_sdf(cls, el: ET.Element, version: str) -> "GearboxReferenceBody":
+    def _from_sdf(cls, el: ET.Element, version: str):
         _text = el.text or "__default__"
         _gearbox_reference_body = _text
+        if isinstance(_gearbox_reference_body, SDFError):
+            return _gearbox_reference_body
         if _gearbox_reference_body is not None and cmp_version(version, "1.4") < 0:
             if _gearbox_reference_body != "__default__":
-                raise ValueError(f"'gearbox_reference_body' is not supported in SDF version {version} (added in 1.4)")
+                return SDFError(f"'gearbox_reference_body' is not supported in SDF version {version} (added in 1.4)")
         return cls(sdf_version=version, gearbox_reference_body=_gearbox_reference_body)
 
 
-class ScrewThreadPitch(Model):
+class GearboxRatio(BaseModel):
+    def __init__(self, sdf_version: str, gearbox_ratio: float = 1.0):
+        self.__version__ = sdf_version
+        self.gearbox_ratio = gearbox_ratio
+
+    def to_version(self, target_version: str) -> "GearboxRatio":
+        if self.gearbox_ratio is not None and cmp_version(target_version, "1.4") < 0:
+            raise ValueError(f"'gearbox_ratio' is not supported in SDF version {target_version} (added in 1.4)")
+        kwargs = {"sdf_version": target_version}
+        kwargs["gearbox_ratio"] = self.gearbox_ratio
+        new_obj = self.__class__(**kwargs)
+        return new_obj
+
+    def to_sdf(self, version: str = None) -> ET.Element:
+        if version is not None and version != self.__version__:
+            return self.to_version(version).to_sdf()
+        version = version or self.__version__
+        el = ET.Element("gearbox_ratio")
+        if self.gearbox_ratio is not None:
+            el.text = str(self.gearbox_ratio)
+        return el
+
+    @classmethod
+    def _from_sdf(cls, el: ET.Element, version: str):
+        _text = el.text or 1.0
+        _gearbox_ratio = _parse_double(_text)
+        if isinstance(_gearbox_ratio, SDFError):
+            return _gearbox_ratio
+        if _gearbox_ratio is not None and cmp_version(version, "1.4") < 0:
+            if _gearbox_ratio != 1.0:
+                return SDFError(f"'gearbox_ratio' is not supported in SDF version {version} (added in 1.4)")
+        return cls(sdf_version=version, gearbox_ratio=_gearbox_ratio)
+
+
+class ScrewThreadPitch(BaseModel):
     def __init__(self, sdf_version: str, screw_thread_pitch: float = 1.0):
         self.__version__ = sdf_version
         self.screw_thread_pitch = screw_thread_pitch
@@ -11732,16 +15651,18 @@ class ScrewThreadPitch(Model):
         return el
 
     @classmethod
-    def from_sdf(cls, el: ET.Element, version: str) -> "ScrewThreadPitch":
+    def _from_sdf(cls, el: ET.Element, version: str):
         _text = el.text or 1.0
         _screw_thread_pitch = _parse_double(_text)
+        if isinstance(_screw_thread_pitch, SDFError):
+            return _screw_thread_pitch
         if _screw_thread_pitch is not None and cmp_version(version, "1.10") < 0:
             if _screw_thread_pitch != 1.0:
-                raise ValueError(f"'screw_thread_pitch' is not supported in SDF version {version} (added in 1.10)")
+                return SDFError(f"'screw_thread_pitch' is not supported in SDF version {version} (added in 1.10)")
         return cls(sdf_version=version, screw_thread_pitch=_screw_thread_pitch)
 
 
-class Joint(Model):
+class Joint(BaseModel):
     def __init__(
         self,
         sdf_version: str,
@@ -11754,9 +15675,9 @@ class Joint(Model):
         axis: "Axis" = None,
         axis2: "Axis2" = None,
         physics: "Physics" = None,
+        gearbox_reference_body: "GearboxReferenceBody" = None,
         sensor: List["Sensor"] = None,
         gearbox_ratio: "GearboxRatio" = None,
-        gearbox_reference_body: "GearboxReferenceBody" = None,
         frame: List["Frame"] = None,
         screw_thread_pitch: "ScrewThreadPitch" = None
     ):
@@ -11770,21 +15691,23 @@ class Joint(Model):
         self.axis = axis
         self.axis2 = axis2
         self.physics = physics
+        self.gearbox_reference_body = gearbox_reference_body
         self.sensor = sensor or []
         self.gearbox_ratio = gearbox_ratio
-        self.gearbox_reference_body = gearbox_reference_body
         self.frame = frame or []
         self.screw_thread_pitch = screw_thread_pitch
 
     def to_version(self, target_version: str) -> "Joint":
+        if self.gearbox_reference_body is not None and cmp_version(target_version, "1.4") < 0:
+            raise ValueError(f"'gearbox_reference_body' is not supported in SDF version {target_version} (added in 1.4)")
         if self.sensor is not None and cmp_version(target_version, "1.4") < 0:
             raise ValueError(f"'sensor' is not supported in SDF version {target_version} (added in 1.4)")
         if self.gearbox_ratio is not None and cmp_version(target_version, "1.4") < 0:
             raise ValueError(f"'gearbox_ratio' is not supported in SDF version {target_version} (added in 1.4)")
-        if self.gearbox_reference_body is not None and cmp_version(target_version, "1.4") < 0:
-            raise ValueError(f"'gearbox_reference_body' is not supported in SDF version {target_version} (added in 1.4)")
         if self.frame is not None and cmp_version(target_version, "1.5") < 0:
             raise ValueError(f"'frame' is not supported in SDF version {target_version} (added in 1.5)")
+        if self.frame is not None and cmp_version(target_version, "1.7") >= 0:
+            raise ValueError(f"'frame' is not supported in SDF version {target_version} (removed in 1.7)")
         if self.screw_thread_pitch is not None and cmp_version(target_version, "1.10") < 0:
             raise ValueError(f"'screw_thread_pitch' is not supported in SDF version {target_version} (added in 1.10)")
         kwargs = {"sdf_version": target_version}
@@ -11797,9 +15720,9 @@ class Joint(Model):
         kwargs["axis"] = self.axis.to_version(target_version) if self.axis is not None else None
         kwargs["axis2"] = self.axis2.to_version(target_version) if self.axis2 is not None else None
         kwargs["physics"] = self.physics.to_version(target_version) if self.physics is not None else None
+        kwargs["gearbox_reference_body"] = self.gearbox_reference_body.to_version(target_version) if self.gearbox_reference_body is not None else None
         kwargs["sensor"] = [c.to_version(target_version) for c in (self.sensor or [])]
         kwargs["gearbox_ratio"] = self.gearbox_ratio.to_version(target_version) if self.gearbox_ratio is not None else None
-        kwargs["gearbox_reference_body"] = self.gearbox_reference_body.to_version(target_version) if self.gearbox_reference_body is not None else None
         kwargs["frame"] = [c.to_version(target_version) for c in (self.frame or [])]
         kwargs["screw_thread_pitch"] = self.screw_thread_pitch.to_version(target_version) if self.screw_thread_pitch is not None else None
         new_obj = self.__class__(**kwargs)
@@ -11810,30 +15733,41 @@ class Joint(Model):
             return self.to_version(version).to_sdf()
         version = version or self.__version__
         el = ET.Element("joint")
+        if self.name is None:
+            raise ValueError(f"'name' is required in SDF version {version}")
         if self.name is not None:
             el.set("name", self.name)
+        if self.type is None:
+            raise ValueError(f"'type' is required in SDF version {version}")
         if self.type is not None:
             el.set("type", self.type)
+        if self.parent is None:
+            raise ValueError(f"'parent' is required in SDF version {version}")
         if self.parent is not None:
             el.append(self.parent.to_sdf(version))
+        if self.child is None:
+            raise ValueError(f"'child' is required in SDF version {version}")
         if self.child is not None:
             el.append(self.child.to_sdf(version))
         if self.pose is not None:
             el.append(self.pose.to_sdf(version))
         if self.thread_pitch is not None:
             el.append(self.thread_pitch.to_sdf(version))
+        if cmp_version(version, "1.12") < 0:
+            if self.axis is None:
+                raise ValueError(f"'axis' is required in SDF version {version}")
         if self.axis is not None:
             el.append(self.axis.to_sdf(version))
         if self.axis2 is not None:
             el.append(self.axis2.to_sdf(version))
         if self.physics is not None:
             el.append(self.physics.to_sdf(version))
+        if self.gearbox_reference_body is not None:
+            el.append(self.gearbox_reference_body.to_sdf(version))
         for item in (self.sensor or []):
             el.append(item.to_sdf(version))
         if self.gearbox_ratio is not None:
             el.append(self.gearbox_ratio.to_sdf(version))
-        if self.gearbox_reference_body is not None:
-            el.append(self.gearbox_reference_body.to_sdf(version))
         for item in (self.frame or []):
             el.append(item.to_sdf(version))
         if self.screw_thread_pitch is not None:
@@ -11841,45 +15775,130 @@ class Joint(Model):
         return el
 
     @classmethod
-    def from_sdf(cls, el: ET.Element, version: str) -> "Joint":
+    def _from_sdf(cls, el: ET.Element, version: str):
+        if el.get("name") is None:
+            return SDFError(f"'name' is required in SDF version {version}")
         _name = el.get("name", "__default__")
+        if isinstance(_name, SDFError):
+            return _name.extend("@name")
+        if el.get("type") is None:
+            return SDFError(f"'type' is required in SDF version {version}")
         _type = el.get("type", "__default__")
+        if isinstance(_type, SDFError):
+            return _type.extend("@type")
         _c_parent = el.find("parent")
-        _parent = Parent.from_sdf(_c_parent, version) if _c_parent is not None else None
+        if _c_parent is not None:
+            _res = Parent._from_sdf(_c_parent, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("parent")
+            _parent = _res
+        else:
+            _parent = None
+        if _parent is None:
+            return SDFError(f"'parent' is required in SDF version {version}")
         _c_child = el.find("child")
-        _child = Child.from_sdf(_c_child, version) if _c_child is not None else None
+        if _c_child is not None:
+            _res = Child._from_sdf(_c_child, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("child")
+            _child = _res
+        else:
+            _child = None
+        if _child is None:
+            return SDFError(f"'child' is required in SDF version {version}")
         _c_pose = el.find("pose")
-        _pose = Pose.from_sdf(_c_pose, version) if _c_pose is not None else None
+        if _c_pose is not None:
+            _res = Pose._from_sdf(_c_pose, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("pose")
+            _pose = _res
+        else:
+            _pose = None
         _c_thread_pitch = el.find("thread_pitch")
-        _thread_pitch = ThreadPitch.from_sdf(_c_thread_pitch, version) if _c_thread_pitch is not None else None
+        if _c_thread_pitch is not None:
+            _res = ThreadPitch._from_sdf(_c_thread_pitch, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("thread_pitch")
+            _thread_pitch = _res
+        else:
+            _thread_pitch = None
         _c_axis = el.find("axis")
-        _axis = Axis.from_sdf(_c_axis, version) if _c_axis is not None else None
+        if _c_axis is not None:
+            _res = Axis._from_sdf(_c_axis, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("axis")
+            _axis = _res
+        else:
+            _axis = None
+        if cmp_version(version, "1.12") < 0:
+            if _axis is None:
+                return SDFError(f"'axis' is required in SDF version {version}")
         _c_axis2 = el.find("axis2")
-        _axis2 = Axis2.from_sdf(_c_axis2, version) if _c_axis2 is not None else None
+        if _c_axis2 is not None:
+            _res = Axis2._from_sdf(_c_axis2, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("axis2")
+            _axis2 = _res
+        else:
+            _axis2 = None
         _c_physics = el.find("physics")
-        _physics = Physics.from_sdf(_c_physics, version) if _c_physics is not None else None
-        _sensor = [Sensor.from_sdf(c, version) for c in el.findall("sensor")]
-        if _sensor and cmp_version(version, "1.4") < 0:
-            raise ValueError(f"'sensor' is not supported in SDF version {version} (added in 1.4)")
-        _c_gearbox_ratio = el.find("gearbox_ratio")
-        _gearbox_ratio = GearboxRatio.from_sdf(_c_gearbox_ratio, version) if _c_gearbox_ratio is not None else None
-        if _gearbox_ratio is not None and cmp_version(version, "1.4") < 0:
-            raise ValueError(f"'gearbox_ratio' is not supported in SDF version {version} (added in 1.4)")
+        if _c_physics is not None:
+            _res = Physics._from_sdf(_c_physics, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("physics")
+            _physics = _res
+        else:
+            _physics = None
         _c_gearbox_reference_body = el.find("gearbox_reference_body")
-        _gearbox_reference_body = GearboxReferenceBody.from_sdf(_c_gearbox_reference_body, version) if _c_gearbox_reference_body is not None else None
+        if _c_gearbox_reference_body is not None:
+            _res = GearboxReferenceBody._from_sdf(_c_gearbox_reference_body, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("gearbox_reference_body")
+            _gearbox_reference_body = _res
+        else:
+            _gearbox_reference_body = None
         if _gearbox_reference_body is not None and cmp_version(version, "1.4") < 0:
-            raise ValueError(f"'gearbox_reference_body' is not supported in SDF version {version} (added in 1.4)")
-        _frame = [Frame.from_sdf(c, version) for c in el.findall("frame")]
+            return SDFError(f"'gearbox_reference_body' is not supported in SDF version {version} (added in 1.4)")
+        _sensor = []
+        for c in el.findall("sensor"):
+            _res = Sensor._from_sdf(c, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("sensor")
+            _sensor.append(_res)
+        if _sensor and cmp_version(version, "1.4") < 0:
+            return SDFError(f"'sensor' is not supported in SDF version {version} (added in 1.4)")
+        _c_gearbox_ratio = el.find("gearbox_ratio")
+        if _c_gearbox_ratio is not None:
+            _res = GearboxRatio._from_sdf(_c_gearbox_ratio, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("gearbox_ratio")
+            _gearbox_ratio = _res
+        else:
+            _gearbox_ratio = None
+        if _gearbox_ratio is not None and cmp_version(version, "1.4") < 0:
+            return SDFError(f"'gearbox_ratio' is not supported in SDF version {version} (added in 1.4)")
+        _frame = []
+        for c in el.findall("frame"):
+            _res = Frame._from_sdf(c, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("frame")
+            _frame.append(_res)
         if _frame and cmp_version(version, "1.5") < 0:
-            raise ValueError(f"'frame' is not supported in SDF version {version} (added in 1.5)")
+            return SDFError(f"'frame' is not supported in SDF version {version} (added in 1.5)")
         _c_screw_thread_pitch = el.find("screw_thread_pitch")
-        _screw_thread_pitch = ScrewThreadPitch.from_sdf(_c_screw_thread_pitch, version) if _c_screw_thread_pitch is not None else None
+        if _c_screw_thread_pitch is not None:
+            _res = ScrewThreadPitch._from_sdf(_c_screw_thread_pitch, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("screw_thread_pitch")
+            _screw_thread_pitch = _res
+        else:
+            _screw_thread_pitch = None
         if _screw_thread_pitch is not None and cmp_version(version, "1.10") < 0:
-            raise ValueError(f"'screw_thread_pitch' is not supported in SDF version {version} (added in 1.10)")
-        return cls(sdf_version=version, name=_name, type=_type, parent=_parent, child=_child, pose=_pose, thread_pitch=_thread_pitch, axis=_axis, axis2=_axis2, physics=_physics, sensor=_sensor, gearbox_ratio=_gearbox_ratio, gearbox_reference_body=_gearbox_reference_body, frame=_frame, screw_thread_pitch=_screw_thread_pitch)
+            return SDFError(f"'screw_thread_pitch' is not supported in SDF version {version} (added in 1.10)")
+        return cls(sdf_version=version, name=_name, type=_type, parent=_parent, child=_child, pose=_pose, thread_pitch=_thread_pitch, axis=_axis, axis2=_axis2, physics=_physics, gearbox_reference_body=_gearbox_reference_body, sensor=_sensor, gearbox_ratio=_gearbox_ratio, frame=_frame, screw_thread_pitch=_screw_thread_pitch)
 
 
-class DetachSteps(Model):
+class DetachSteps(BaseModel):
     def __init__(self, sdf_version: str, detach_steps: int = 40):
         self.__version__ = sdf_version
         self.detach_steps = detach_steps
@@ -11900,13 +15919,15 @@ class DetachSteps(Model):
         return el
 
     @classmethod
-    def from_sdf(cls, el: ET.Element, version: str) -> "DetachSteps":
+    def _from_sdf(cls, el: ET.Element, version: str):
         _text = el.text or 40
         _detach_steps = _parse_int32(_text)
+        if isinstance(_detach_steps, SDFError):
+            return _detach_steps
         return cls(sdf_version=version, detach_steps=_detach_steps)
 
 
-class AttachSteps(Model):
+class AttachSteps(BaseModel):
     def __init__(self, sdf_version: str, attach_steps: int = 20):
         self.__version__ = sdf_version
         self.attach_steps = attach_steps
@@ -11927,13 +15948,15 @@ class AttachSteps(Model):
         return el
 
     @classmethod
-    def from_sdf(cls, el: ET.Element, version: str) -> "AttachSteps":
+    def _from_sdf(cls, el: ET.Element, version: str):
         _text = el.text or 20
         _attach_steps = _parse_int32(_text)
+        if isinstance(_attach_steps, SDFError):
+            return _attach_steps
         return cls(sdf_version=version, attach_steps=_attach_steps)
 
 
-class MinContactCount(Model):
+class MinContactCount(BaseModel):
     def __init__(self, sdf_version: str, min_contact_count: int = 2):
         self.__version__ = sdf_version
         self.min_contact_count = min_contact_count
@@ -11954,13 +15977,15 @@ class MinContactCount(Model):
         return el
 
     @classmethod
-    def from_sdf(cls, el: ET.Element, version: str) -> "MinContactCount":
+    def _from_sdf(cls, el: ET.Element, version: str):
         _text = el.text or 2
         _min_contact_count = _parse_uint32(_text)
+        if isinstance(_min_contact_count, SDFError):
+            return _min_contact_count
         return cls(sdf_version=version, min_contact_count=_min_contact_count)
 
 
-class GraspCheck(Model):
+class GraspCheck(BaseModel):
     def __init__(
         self,
         sdf_version: str,
@@ -11995,17 +16020,35 @@ class GraspCheck(Model):
         return el
 
     @classmethod
-    def from_sdf(cls, el: ET.Element, version: str) -> "GraspCheck":
+    def _from_sdf(cls, el: ET.Element, version: str):
         _c_detach_steps = el.find("detach_steps")
-        _detach_steps = DetachSteps.from_sdf(_c_detach_steps, version) if _c_detach_steps is not None else None
+        if _c_detach_steps is not None:
+            _res = DetachSteps._from_sdf(_c_detach_steps, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("detach_steps")
+            _detach_steps = _res
+        else:
+            _detach_steps = None
         _c_attach_steps = el.find("attach_steps")
-        _attach_steps = AttachSteps.from_sdf(_c_attach_steps, version) if _c_attach_steps is not None else None
+        if _c_attach_steps is not None:
+            _res = AttachSteps._from_sdf(_c_attach_steps, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("attach_steps")
+            _attach_steps = _res
+        else:
+            _attach_steps = None
         _c_min_contact_count = el.find("min_contact_count")
-        _min_contact_count = MinContactCount.from_sdf(_c_min_contact_count, version) if _c_min_contact_count is not None else None
+        if _c_min_contact_count is not None:
+            _res = MinContactCount._from_sdf(_c_min_contact_count, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("min_contact_count")
+            _min_contact_count = _res
+        else:
+            _min_contact_count = None
         return cls(sdf_version=version, detach_steps=_detach_steps, attach_steps=_attach_steps, min_contact_count=_min_contact_count)
 
 
-class GripperLink(Model):
+class GripperLink(BaseModel):
     def __init__(self, sdf_version: str, gripper_link: str = "__default__"):
         self.__version__ = sdf_version
         self.gripper_link = gripper_link
@@ -12021,18 +16064,24 @@ class GripperLink(Model):
             return self.to_version(version).to_sdf()
         version = version or self.__version__
         el = ET.Element("gripper_link")
+        if self.gripper_link is None:
+            raise ValueError(f"'gripper_link' is required in SDF version {version}")
         if self.gripper_link is not None:
             el.text = self.gripper_link
         return el
 
     @classmethod
-    def from_sdf(cls, el: ET.Element, version: str) -> "GripperLink":
+    def _from_sdf(cls, el: ET.Element, version: str):
+        if el.text is None:
+            return SDFError(f"'gripper_link' is required in SDF version {version}")
         _text = el.text or "__default__"
         _gripper_link = _text
+        if isinstance(_gripper_link, SDFError):
+            return _gripper_link
         return cls(sdf_version=version, gripper_link=_gripper_link)
 
 
-class PalmLink(Model):
+class PalmLink(BaseModel):
     def __init__(self, sdf_version: str, palm_link: str = "__default__"):
         self.__version__ = sdf_version
         self.palm_link = palm_link
@@ -12048,18 +16097,24 @@ class PalmLink(Model):
             return self.to_version(version).to_sdf()
         version = version or self.__version__
         el = ET.Element("palm_link")
+        if self.palm_link is None:
+            raise ValueError(f"'palm_link' is required in SDF version {version}")
         if self.palm_link is not None:
             el.text = self.palm_link
         return el
 
     @classmethod
-    def from_sdf(cls, el: ET.Element, version: str) -> "PalmLink":
+    def _from_sdf(cls, el: ET.Element, version: str):
+        if el.text is None:
+            return SDFError(f"'palm_link' is required in SDF version {version}")
         _text = el.text or "__default__"
         _palm_link = _text
+        if isinstance(_palm_link, SDFError):
+            return _palm_link
         return cls(sdf_version=version, palm_link=_palm_link)
 
 
-class Gripper(Model):
+class Gripper(BaseModel):
     def __init__(
         self,
         sdf_version: str,
@@ -12088,28 +16143,59 @@ class Gripper(Model):
             return self.to_version(version).to_sdf()
         version = version or self.__version__
         el = ET.Element("gripper")
+        if self.name is None:
+            raise ValueError(f"'name' is required in SDF version {version}")
         if self.name is not None:
             el.set("name", self.name)
         if self.grasp_check is not None:
             el.append(self.grasp_check.to_sdf(version))
+        if not self.gripper_link:
+            raise ValueError(f"'gripper_link' is required in SDF version {version}")
         for item in (self.gripper_link or []):
             el.append(item.to_sdf(version))
+        if self.palm_link is None:
+            raise ValueError(f"'palm_link' is required in SDF version {version}")
         if self.palm_link is not None:
             el.append(self.palm_link.to_sdf(version))
         return el
 
     @classmethod
-    def from_sdf(cls, el: ET.Element, version: str) -> "Gripper":
+    def _from_sdf(cls, el: ET.Element, version: str):
+        if el.get("name") is None:
+            return SDFError(f"'name' is required in SDF version {version}")
         _name = el.get("name", "__default__")
+        if isinstance(_name, SDFError):
+            return _name.extend("@name")
         _c_grasp_check = el.find("grasp_check")
-        _grasp_check = GraspCheck.from_sdf(_c_grasp_check, version) if _c_grasp_check is not None else None
-        _gripper_link = [GripperLink.from_sdf(c, version) for c in el.findall("gripper_link")]
+        if _c_grasp_check is not None:
+            _res = GraspCheck._from_sdf(_c_grasp_check, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("grasp_check")
+            _grasp_check = _res
+        else:
+            _grasp_check = None
+        _gripper_link = []
+        for c in el.findall("gripper_link"):
+            _res = GripperLink._from_sdf(c, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("gripper_link")
+            _gripper_link.append(_res)
+        if not _gripper_link:
+            return SDFError(f"'gripper_link' is required in SDF version {version}")
         _c_palm_link = el.find("palm_link")
-        _palm_link = PalmLink.from_sdf(_c_palm_link, version) if _c_palm_link is not None else None
+        if _c_palm_link is not None:
+            _res = PalmLink._from_sdf(_c_palm_link, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("palm_link")
+            _palm_link = _res
+        else:
+            _palm_link = None
+        if _palm_link is None:
+            return SDFError(f"'palm_link' is required in SDF version {version}")
         return cls(sdf_version=version, name=_name, grasp_check=_grasp_check, gripper_link=_gripper_link, palm_link=_palm_link)
 
 
-class AllowAutoDisable(Model):
+class AllowAutoDisable(BaseModel):
     def __init__(self, sdf_version: str, allow_auto_disable: bool = True):
         self.__version__ = sdf_version
         self.allow_auto_disable = allow_auto_disable
@@ -12130,13 +16216,15 @@ class AllowAutoDisable(Model):
         return el
 
     @classmethod
-    def from_sdf(cls, el: ET.Element, version: str) -> "AllowAutoDisable":
+    def _from_sdf(cls, el: ET.Element, version: str):
         _text = el.text or True
-        _allow_auto_disable = _text.strip().lower() == 'true'
+        _allow_auto_disable = str(_text).strip().lower() == 'true'
+        if isinstance(_allow_auto_disable, SDFError):
+            return _allow_auto_disable
         return cls(sdf_version=version, allow_auto_disable=_allow_auto_disable)
 
 
-class PlacementFrame(Model):
+class PlacementFrame(BaseModel):
     def __init__(self, sdf_version: str, placement_frame: str = ""):
         self.__version__ = sdf_version
         self.placement_frame = placement_frame
@@ -12159,16 +16247,18 @@ class PlacementFrame(Model):
         return el
 
     @classmethod
-    def from_sdf(cls, el: ET.Element, version: str) -> "PlacementFrame":
+    def _from_sdf(cls, el: ET.Element, version: str):
         _text = el.text or ""
         _placement_frame = _text
+        if isinstance(_placement_frame, SDFError):
+            return _placement_frame
         if _placement_frame is not None and cmp_version(version, "1.8") < 0:
             if _placement_frame != "":
-                raise ValueError(f"'placement_frame' is not supported in SDF version {version} (added in 1.8)")
+                return SDFError(f"'placement_frame' is not supported in SDF version {version} (added in 1.8)")
         return cls(sdf_version=version, placement_frame=_placement_frame)
 
 
-class Angle(Model):
+class Angle(BaseModel):
     def __init__(self, sdf_version: str, angle: float = 0, axis: int = 0):
         self.__version__ = sdf_version
         self.angle = angle
@@ -12188,19 +16278,27 @@ class Angle(Model):
         el = ET.Element("angle")
         if self.angle is not None:
             el.text = str(self.angle)
+        if self.axis is None:
+            raise ValueError(f"'axis' is required in SDF version {version}")
         if self.axis is not None:
             el.set("axis", str(self.axis))
         return el
 
     @classmethod
-    def from_sdf(cls, el: ET.Element, version: str) -> "Angle":
+    def _from_sdf(cls, el: ET.Element, version: str):
         _text = el.text or 0
         _angle = _parse_double(_text)
+        if isinstance(_angle, SDFError):
+            return _angle
+        if el.get("axis") is None:
+            return SDFError(f"'axis' is required in SDF version {version}")
         _axis = _parse_uint32(el.get("axis", 0))
+        if isinstance(_axis, SDFError):
+            return _axis.extend("@axis")
         return cls(sdf_version=version, angle=_angle, axis=_axis)
 
 
-class Position(Model):
+class Position(BaseModel):
     def __init__(self, sdf_version: str, position: float = 0, degrees: bool = False):
         self.__version__ = sdf_version
         self.position = position
@@ -12225,14 +16323,18 @@ class Position(Model):
         return el
 
     @classmethod
-    def from_sdf(cls, el: ET.Element, version: str) -> "Position":
+    def _from_sdf(cls, el: ET.Element, version: str):
         _text = el.text or 0
         _position = _parse_double(_text)
-        _degrees = el.get("degrees", False).strip().lower() == 'true'
+        if isinstance(_position, SDFError):
+            return _position
+        _degrees = str(el.get("degrees", False)).strip().lower() == 'true'
+        if isinstance(_degrees, SDFError):
+            return _degrees.extend("@degrees")
         return cls(sdf_version=version, position=_position, degrees=_degrees)
 
 
-class Acceleration(Model):
+class Acceleration(BaseModel):
     def __init__(self, sdf_version: str, acceleration: float = 0, degrees: bool = False):
         self.__version__ = sdf_version
         self.acceleration = acceleration
@@ -12257,14 +16359,18 @@ class Acceleration(Model):
         return el
 
     @classmethod
-    def from_sdf(cls, el: ET.Element, version: str) -> "Acceleration":
+    def _from_sdf(cls, el: ET.Element, version: str):
         _text = el.text or 0
         _acceleration = _parse_double(_text)
-        _degrees = el.get("degrees", False).strip().lower() == 'true'
+        if isinstance(_acceleration, SDFError):
+            return _acceleration
+        _degrees = str(el.get("degrees", False)).strip().lower() == 'true'
+        if isinstance(_degrees, SDFError):
+            return _degrees.extend("@degrees")
         return cls(sdf_version=version, acceleration=_acceleration, degrees=_degrees)
 
 
-class AxisState(Model):
+class AxisState(BaseModel):
     def __init__(
         self,
         sdf_version: str,
@@ -12304,19 +16410,43 @@ class AxisState(Model):
         return el
 
     @classmethod
-    def from_sdf(cls, el: ET.Element, version: str) -> "AxisState":
+    def _from_sdf(cls, el: ET.Element, version: str):
         _c_position = el.find("position")
-        _position = Position.from_sdf(_c_position, version) if _c_position is not None else None
+        if _c_position is not None:
+            _res = Position._from_sdf(_c_position, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("position")
+            _position = _res
+        else:
+            _position = None
         _c_velocity = el.find("velocity")
-        _velocity = Velocity.from_sdf(_c_velocity, version) if _c_velocity is not None else None
+        if _c_velocity is not None:
+            _res = Velocity._from_sdf(_c_velocity, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("velocity")
+            _velocity = _res
+        else:
+            _velocity = None
         _c_acceleration = el.find("acceleration")
-        _acceleration = Acceleration.from_sdf(_c_acceleration, version) if _c_acceleration is not None else None
+        if _c_acceleration is not None:
+            _res = Acceleration._from_sdf(_c_acceleration, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("acceleration")
+            _acceleration = _res
+        else:
+            _acceleration = None
         _c_effort = el.find("effort")
-        _effort = Effort.from_sdf(_c_effort, version) if _c_effort is not None else None
+        if _c_effort is not None:
+            _res = Effort._from_sdf(_c_effort, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("effort")
+            _effort = _res
+        else:
+            _effort = None
         return cls(sdf_version=version, position=_position, velocity=_velocity, acceleration=_acceleration, effort=_effort)
 
 
-class Axis2State(Model):
+class Axis2State(BaseModel):
     def __init__(
         self,
         sdf_version: str,
@@ -12356,19 +16486,43 @@ class Axis2State(Model):
         return el
 
     @classmethod
-    def from_sdf(cls, el: ET.Element, version: str) -> "Axis2State":
+    def _from_sdf(cls, el: ET.Element, version: str):
         _c_position = el.find("position")
-        _position = Position.from_sdf(_c_position, version) if _c_position is not None else None
+        if _c_position is not None:
+            _res = Position._from_sdf(_c_position, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("position")
+            _position = _res
+        else:
+            _position = None
         _c_velocity = el.find("velocity")
-        _velocity = Velocity.from_sdf(_c_velocity, version) if _c_velocity is not None else None
+        if _c_velocity is not None:
+            _res = Velocity._from_sdf(_c_velocity, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("velocity")
+            _velocity = _res
+        else:
+            _velocity = None
         _c_acceleration = el.find("acceleration")
-        _acceleration = Acceleration.from_sdf(_c_acceleration, version) if _c_acceleration is not None else None
+        if _c_acceleration is not None:
+            _res = Acceleration._from_sdf(_c_acceleration, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("acceleration")
+            _acceleration = _res
+        else:
+            _acceleration = None
         _c_effort = el.find("effort")
-        _effort = Effort.from_sdf(_c_effort, version) if _c_effort is not None else None
+        if _c_effort is not None:
+            _res = Effort._from_sdf(_c_effort, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("effort")
+            _effort = _res
+        else:
+            _effort = None
         return cls(sdf_version=version, position=_position, velocity=_velocity, acceleration=_acceleration, effort=_effort)
 
 
-class JointState(Model):
+class JointState(BaseModel):
     def __init__(
         self,
         sdf_version: str,
@@ -12397,6 +16551,8 @@ class JointState(Model):
             return self.to_version(version).to_sdf()
         version = version or self.__version__
         el = ET.Element("joint_state")
+        if self.name is None:
+            raise ValueError(f"'name' is required in SDF version {version}")
         if self.name is not None:
             el.set("name", self.name)
         if self.angle is not None:
@@ -12408,18 +16564,40 @@ class JointState(Model):
         return el
 
     @classmethod
-    def from_sdf(cls, el: ET.Element, version: str) -> "JointState":
+    def _from_sdf(cls, el: ET.Element, version: str):
+        if el.get("name") is None:
+            return SDFError(f"'name' is required in SDF version {version}")
         _name = el.get("name", "__default__")
+        if isinstance(_name, SDFError):
+            return _name.extend("@name")
         _c_angle = el.find("angle")
-        _angle = Angle.from_sdf(_c_angle, version) if _c_angle is not None else None
+        if _c_angle is not None:
+            _res = Angle._from_sdf(_c_angle, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("angle")
+            _angle = _res
+        else:
+            _angle = None
         _c_axis_state = el.find("axis_state")
-        _axis_state = AxisState.from_sdf(_c_axis_state, version) if _c_axis_state is not None else None
+        if _c_axis_state is not None:
+            _res = AxisState._from_sdf(_c_axis_state, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("axis_state")
+            _axis_state = _res
+        else:
+            _axis_state = None
         _c_axis2_state = el.find("axis2_state")
-        _axis2_state = Axis2State.from_sdf(_c_axis2_state, version) if _c_axis2_state is not None else None
+        if _c_axis2_state is not None:
+            _res = Axis2State._from_sdf(_c_axis2_state, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("axis2_state")
+            _axis2_state = _res
+        else:
+            _axis2_state = None
         return cls(sdf_version=version, name=_name, angle=_angle, axis_state=_axis_state, axis2_state=_axis2_state)
 
 
-class LinearVelocity(Model):
+class LinearVelocity(BaseModel):
     def __init__(self, sdf_version: str, linear_velocity: Vector3 = None):
         self.__version__ = sdf_version
         if linear_velocity is None:
@@ -12442,13 +16620,15 @@ class LinearVelocity(Model):
         return el
 
     @classmethod
-    def from_sdf(cls, el: ET.Element, version: str) -> "LinearVelocity":
+    def _from_sdf(cls, el: ET.Element, version: str):
         _text = el.text or "0 0 0"
-        _linear_velocity = Vector3.from_sdf(_text)
+        _linear_velocity = Vector3._from_sdf(_text, version)
+        if isinstance(_linear_velocity, SDFError):
+            return _linear_velocity
         return cls(sdf_version=version, linear_velocity=_linear_velocity)
 
 
-class AngularAcceleration(Model):
+class AngularAcceleration(BaseModel):
     def __init__(
         self,
         sdf_version: str,
@@ -12480,14 +16660,18 @@ class AngularAcceleration(Model):
         return el
 
     @classmethod
-    def from_sdf(cls, el: ET.Element, version: str) -> "AngularAcceleration":
+    def _from_sdf(cls, el: ET.Element, version: str):
         _text = el.text or "0 0 0"
-        _angular_acceleration = Vector3.from_sdf(_text)
-        _degrees = el.get("degrees", False).strip().lower() == 'true'
+        _angular_acceleration = Vector3._from_sdf(_text, version)
+        if isinstance(_angular_acceleration, SDFError):
+            return _angular_acceleration
+        _degrees = str(el.get("degrees", False)).strip().lower() == 'true'
+        if isinstance(_degrees, SDFError):
+            return _degrees.extend("@degrees")
         return cls(sdf_version=version, angular_acceleration=_angular_acceleration, degrees=_degrees)
 
 
-class Wrench(Model):
+class Wrench(BaseModel):
     def __init__(self, sdf_version: str, wrench: Pose = None):
         self.__version__ = sdf_version
         if wrench is None:
@@ -12510,13 +16694,15 @@ class Wrench(Model):
         return el
 
     @classmethod
-    def from_sdf(cls, el: ET.Element, version: str) -> "Wrench":
+    def _from_sdf(cls, el: ET.Element, version: str):
         _text = el.text or "0 0 0 0 0 0"
-        _wrench = Pose.from_sdf(_text)
+        _wrench = Pose._from_sdf(_text, version)
+        if isinstance(_wrench, SDFError):
+            return _wrench
         return cls(sdf_version=version, wrench=_wrench)
 
 
-class CollisionState(Model):
+class CollisionState(BaseModel):
     def __init__(self, sdf_version: str, name: str = "__default__"):
         self.__version__ = sdf_version
         self.name = name
@@ -12532,17 +16718,23 @@ class CollisionState(Model):
             return self.to_version(version).to_sdf()
         version = version or self.__version__
         el = ET.Element("collision_state")
+        if self.name is None:
+            raise ValueError(f"'name' is required in SDF version {version}")
         if self.name is not None:
             el.set("name", self.name)
         return el
 
     @classmethod
-    def from_sdf(cls, el: ET.Element, version: str) -> "CollisionState":
+    def _from_sdf(cls, el: ET.Element, version: str):
+        if el.get("name") is None:
+            return SDFError(f"'name' is required in SDF version {version}")
         _name = el.get("name", "__default__")
+        if isinstance(_name, SDFError):
+            return _name.extend("@name")
         return cls(sdf_version=version, name=_name)
 
 
-class LinkState(Model):
+class LinkState(BaseModel):
     def __init__(
         self,
         sdf_version: str,
@@ -12595,6 +16787,8 @@ class LinkState(Model):
             return self.to_version(version).to_sdf()
         version = version or self.__version__
         el = ET.Element("link_state")
+        if self.name is None:
+            raise ValueError(f"'name' is required in SDF version {version}")
         if self.name is not None:
             el.set("name", self.name)
         if self.pose is not None:
@@ -12622,33 +16816,102 @@ class LinkState(Model):
         return el
 
     @classmethod
-    def from_sdf(cls, el: ET.Element, version: str) -> "LinkState":
+    def _from_sdf(cls, el: ET.Element, version: str):
+        if el.get("name") is None:
+            return SDFError(f"'name' is required in SDF version {version}")
         _name = el.get("name", "__default__")
+        if isinstance(_name, SDFError):
+            return _name.extend("@name")
         _c_pose = el.find("pose")
-        _pose = Pose.from_sdf(_c_pose, version) if _c_pose is not None else None
+        if _c_pose is not None:
+            _res = Pose._from_sdf(_c_pose, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("pose")
+            _pose = _res
+        else:
+            _pose = None
         _c_angular_velocity = el.find("angular_velocity")
-        _angular_velocity = AngularVelocity.from_sdf(_c_angular_velocity, version) if _c_angular_velocity is not None else None
+        if _c_angular_velocity is not None:
+            _res = AngularVelocity._from_sdf(_c_angular_velocity, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("angular_velocity")
+            _angular_velocity = _res
+        else:
+            _angular_velocity = None
         _c_linear_velocity = el.find("linear_velocity")
-        _linear_velocity = LinearVelocity.from_sdf(_c_linear_velocity, version) if _c_linear_velocity is not None else None
+        if _c_linear_velocity is not None:
+            _res = LinearVelocity._from_sdf(_c_linear_velocity, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("linear_velocity")
+            _linear_velocity = _res
+        else:
+            _linear_velocity = None
         _c_velocity = el.find("velocity")
-        _velocity = Velocity.from_sdf(_c_velocity, version) if _c_velocity is not None else None
+        if _c_velocity is not None:
+            _res = Velocity._from_sdf(_c_velocity, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("velocity")
+            _velocity = _res
+        else:
+            _velocity = None
         _c_angular_acceleration = el.find("angular_acceleration")
-        _angular_acceleration = AngularAcceleration.from_sdf(_c_angular_acceleration, version) if _c_angular_acceleration is not None else None
+        if _c_angular_acceleration is not None:
+            _res = AngularAcceleration._from_sdf(_c_angular_acceleration, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("angular_acceleration")
+            _angular_acceleration = _res
+        else:
+            _angular_acceleration = None
         _c_linear_acceleration = el.find("linear_acceleration")
-        _linear_acceleration = LinearAcceleration.from_sdf(_c_linear_acceleration, version) if _c_linear_acceleration is not None else None
+        if _c_linear_acceleration is not None:
+            _res = LinearAcceleration._from_sdf(_c_linear_acceleration, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("linear_acceleration")
+            _linear_acceleration = _res
+        else:
+            _linear_acceleration = None
         _c_acceleration = el.find("acceleration")
-        _acceleration = Acceleration.from_sdf(_c_acceleration, version) if _c_acceleration is not None else None
+        if _c_acceleration is not None:
+            _res = Acceleration._from_sdf(_c_acceleration, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("acceleration")
+            _acceleration = _res
+        else:
+            _acceleration = None
         _c_torque = el.find("torque")
-        _torque = Torque.from_sdf(_c_torque, version) if _c_torque is not None else None
+        if _c_torque is not None:
+            _res = Torque._from_sdf(_c_torque, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("torque")
+            _torque = _res
+        else:
+            _torque = None
         _c_force = el.find("force")
-        _force = Force.from_sdf(_c_force, version) if _c_force is not None else None
+        if _c_force is not None:
+            _res = Force._from_sdf(_c_force, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("force")
+            _force = _res
+        else:
+            _force = None
         _c_wrench = el.find("wrench")
-        _wrench = Wrench.from_sdf(_c_wrench, version) if _c_wrench is not None else None
-        _collision_state = [CollisionState.from_sdf(c, version) for c in el.findall("collision_state")]
+        if _c_wrench is not None:
+            _res = Wrench._from_sdf(_c_wrench, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("wrench")
+            _wrench = _res
+        else:
+            _wrench = None
+        _collision_state = []
+        for c in el.findall("collision_state"):
+            _res = CollisionState._from_sdf(c, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("collision_state")
+            _collision_state.append(_res)
         return cls(sdf_version=version, name=_name, pose=_pose, angular_velocity=_angular_velocity, linear_velocity=_linear_velocity, velocity=_velocity, angular_acceleration=_angular_acceleration, linear_acceleration=_linear_acceleration, acceleration=_acceleration, torque=_torque, force=_force, wrench=_wrench, collision_state=_collision_state)
 
 
-class ModelState(Model):
+class ModelState(BaseModel):
     def __init__(
         self,
         sdf_version: str,
@@ -12686,6 +16949,8 @@ class ModelState(Model):
             return self.to_version(version).to_sdf()
         version = version or self.__version__
         el = ET.Element("model_state")
+        if self.name is None:
+            raise ValueError(f"'name' is required in SDF version {version}")
         if self.name is not None:
             el.set("name", self.name)
         for item in (self.joint_state or []):
@@ -12703,20 +16968,56 @@ class ModelState(Model):
         return el
 
     @classmethod
-    def from_sdf(cls, el: ET.Element, version: str) -> "ModelState":
+    def _from_sdf(cls, el: ET.Element, version: str):
+        if el.get("name") is None:
+            return SDFError(f"'name' is required in SDF version {version}")
         _name = el.get("name", "__default__")
-        _joint_state = [JointState.from_sdf(c, version) for c in el.findall("joint_state")]
-        _frame = [Frame.from_sdf(c, version) for c in el.findall("frame")]
+        if isinstance(_name, SDFError):
+            return _name.extend("@name")
+        _joint_state = []
+        for c in el.findall("joint_state"):
+            _res = JointState._from_sdf(c, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("joint_state")
+            _joint_state.append(_res)
+        _frame = []
+        for c in el.findall("frame"):
+            _res = Frame._from_sdf(c, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("frame")
+            _frame.append(_res)
         _c_pose = el.find("pose")
-        _pose = Pose.from_sdf(_c_pose, version) if _c_pose is not None else None
-        _link_state = [LinkState.from_sdf(c, version) for c in el.findall("link_state")]
-        _model_state = [ModelState.from_sdf(c, version) for c in el.findall("model_state")]
+        if _c_pose is not None:
+            _res = Pose._from_sdf(_c_pose, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("pose")
+            _pose = _res
+        else:
+            _pose = None
+        _link_state = []
+        for c in el.findall("link_state"):
+            _res = LinkState._from_sdf(c, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("link_state")
+            _link_state.append(_res)
+        _model_state = []
+        for c in el.findall("model_state"):
+            _res = ModelState._from_sdf(c, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("model_state")
+            _model_state.append(_res)
         _c_scale = el.find("scale")
-        _scale = Scale.from_sdf(_c_scale, version) if _c_scale is not None else None
+        if _c_scale is not None:
+            _res = Scale._from_sdf(_c_scale, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("scale")
+            _scale = _res
+        else:
+            _scale = None
         return cls(sdf_version=version, name=_name, joint_state=_joint_state, frame=_frame, pose=_pose, link_state=_link_state, model_state=_model_state, scale=_scale)
 
 
-class Include(Model):
+class Include(BaseModel):
     def __init__(
         self,
         sdf_version: str,
@@ -12767,6 +17068,8 @@ class Include(Model):
             el.set("merge", str(self.merge).lower())
         for item in (self.plugin or []):
             el.append(item.to_sdf(version))
+        if self.uri is None:
+            raise ValueError(f"'uri' is required in SDF version {version}")
         if self.uri is not None:
             el.append(self.uri.to_sdf(version))
         if self.pose is not None:
@@ -12782,32 +17085,77 @@ class Include(Model):
         return el
 
     @classmethod
-    def from_sdf(cls, el: ET.Element, version: str) -> "Include":
-        _merge = el.get("merge", False).strip().lower() == 'true'
+    def _from_sdf(cls, el: ET.Element, version: str):
+        _merge = str(el.get("merge", False)).strip().lower() == 'true'
+        if isinstance(_merge, SDFError):
+            return _merge.extend("@merge")
         if _merge is not None and cmp_version(version, "1.9") < 0:
             if _merge != False:
-                raise ValueError(f"'merge' is not supported in SDF version {version} (added in 1.9)")
-        _plugin = [Plugin.from_sdf(c, version) for c in el.findall("plugin")]
+                return SDFError(f"'merge' is not supported in SDF version {version} (added in 1.9)")
+        _plugin = []
+        for c in el.findall("plugin"):
+            _res = Plugin._from_sdf(c, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("plugin")
+            _plugin.append(_res)
         _c_uri = el.find("uri")
-        _uri = Uri.from_sdf(_c_uri, version) if _c_uri is not None else None
+        if _c_uri is not None:
+            _res = Uri._from_sdf(_c_uri, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("uri")
+            _uri = _res
+        else:
+            _uri = None
+        if _uri is None:
+            return SDFError(f"'uri' is required in SDF version {version}")
         _c_pose = el.find("pose")
-        _pose = Pose.from_sdf(_c_pose, version) if _c_pose is not None else None
+        if _c_pose is not None:
+            _res = Pose._from_sdf(_c_pose, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("pose")
+            _pose = _res
+        else:
+            _pose = None
         _c_name = el.find("name")
-        _name = Name.from_sdf(_c_name, version) if _c_name is not None else None
+        if _c_name is not None:
+            _res = Name._from_sdf(_c_name, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("name")
+            _name = _res
+        else:
+            _name = None
         _c_static = el.find("static")
-        _static = Static.from_sdf(_c_static, version) if _c_static is not None else None
+        if _c_static is not None:
+            _res = Static._from_sdf(_c_static, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("static")
+            _static = _res
+        else:
+            _static = None
         _c_placement_frame = el.find("placement_frame")
-        _placement_frame = PlacementFrame.from_sdf(_c_placement_frame, version) if _c_placement_frame is not None else None
+        if _c_placement_frame is not None:
+            _res = PlacementFrame._from_sdf(_c_placement_frame, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("placement_frame")
+            _placement_frame = _res
+        else:
+            _placement_frame = None
         if _placement_frame is not None and cmp_version(version, "1.8") < 0:
-            raise ValueError(f"'placement_frame' is not supported in SDF version {version} (added in 1.8)")
+            return SDFError(f"'placement_frame' is not supported in SDF version {version} (added in 1.8)")
         _c_model_state = el.find("model_state")
-        _model_state = ModelState.from_sdf(_c_model_state, version) if _c_model_state is not None else None
+        if _c_model_state is not None:
+            _res = ModelState._from_sdf(_c_model_state, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("model_state")
+            _model_state = _res
+        else:
+            _model_state = None
         if _model_state is not None and cmp_version(version, "1.12") < 0:
-            raise ValueError(f"'model_state' is not supported in SDF version {version} (added in 1.12)")
+            return SDFError(f"'model_state' is not supported in SDF version {version} (added in 1.12)")
         return cls(sdf_version=version, merge=_merge, plugin=_plugin, uri=_uri, pose=_pose, name=_name, static=_static, placement_frame=_placement_frame, model_state=_model_state)
 
 
-class Model(Model):
+class Model(BaseModel):
     def __init__(
         self,
         sdf_version: str,
@@ -12821,10 +17169,10 @@ class Model(Model):
         static: "Static" = None,
         allow_auto_disable: "AllowAutoDisable" = None,
         pose: "Pose" = None,
-        frame: List["Frame"] = None,
-        self_collide: "SelfCollide" = None,
         include: List["Include"] = None,
+        self_collide: "SelfCollide" = None,
         model: List["Model"] = None,
+        frame: List["Frame"] = None,
         enable_wind: "EnableWind" = None,
         model_state: "ModelState" = None
     ):
@@ -12839,10 +17187,10 @@ class Model(Model):
         self.static = static
         self.allow_auto_disable = allow_auto_disable
         self.pose = pose
-        self.frame = frame or []
-        self.self_collide = self_collide
         self.include = include or []
+        self.self_collide = self_collide
         self.model = model or []
+        self.frame = frame or []
         self.enable_wind = enable_wind
         self.model_state = model_state
 
@@ -12851,14 +17199,14 @@ class Model(Model):
             raise ValueError(f"'canonical_link' is not supported in SDF version {target_version} (added in 1.7)")
         if self.placement_frame is not None and cmp_version(target_version, "1.8") < 0:
             raise ValueError(f"'placement_frame' is not supported in SDF version {target_version} (added in 1.8)")
-        if self.frame is not None and cmp_version(target_version, "1.5") < 0:
-            raise ValueError(f"'frame' is not supported in SDF version {target_version} (added in 1.5)")
-        if self.self_collide is not None and cmp_version(target_version, "1.5") < 0:
-            raise ValueError(f"'self_collide' is not supported in SDF version {target_version} (added in 1.5)")
         if self.include is not None and cmp_version(target_version, "1.5") < 0:
             raise ValueError(f"'include' is not supported in SDF version {target_version} (added in 1.5)")
+        if self.self_collide is not None and cmp_version(target_version, "1.5") < 0:
+            raise ValueError(f"'self_collide' is not supported in SDF version {target_version} (added in 1.5)")
         if self.model is not None and cmp_version(target_version, "1.5") < 0:
             raise ValueError(f"'model' is not supported in SDF version {target_version} (added in 1.5)")
+        if self.frame is not None and cmp_version(target_version, "1.5") < 0:
+            raise ValueError(f"'frame' is not supported in SDF version {target_version} (added in 1.5)")
         if self.enable_wind is not None and cmp_version(target_version, "1.6") < 0:
             raise ValueError(f"'enable_wind' is not supported in SDF version {target_version} (added in 1.6)")
         if self.model_state is not None and cmp_version(target_version, "1.12") < 0:
@@ -12874,10 +17222,10 @@ class Model(Model):
         kwargs["static"] = self.static.to_version(target_version) if self.static is not None else None
         kwargs["allow_auto_disable"] = self.allow_auto_disable.to_version(target_version) if self.allow_auto_disable is not None else None
         kwargs["pose"] = self.pose.to_version(target_version) if self.pose is not None else None
-        kwargs["frame"] = [c.to_version(target_version) for c in (self.frame or [])]
-        kwargs["self_collide"] = self.self_collide.to_version(target_version) if self.self_collide is not None else None
         kwargs["include"] = [c.to_version(target_version) for c in (self.include or [])]
+        kwargs["self_collide"] = self.self_collide.to_version(target_version) if self.self_collide is not None else None
         kwargs["model"] = [c.to_version(target_version) for c in (self.model or [])]
+        kwargs["frame"] = [c.to_version(target_version) for c in (self.frame or [])]
         kwargs["enable_wind"] = self.enable_wind.to_version(target_version) if self.enable_wind is not None else None
         kwargs["model_state"] = self.model_state.to_version(target_version) if self.model_state is not None else None
         new_obj = self.__class__(**kwargs)
@@ -12888,12 +17236,17 @@ class Model(Model):
             return self.to_version(version).to_sdf()
         version = version or self.__version__
         el = ET.Element("model")
+        if self.name is None:
+            raise ValueError(f"'name' is required in SDF version {version}")
         if self.name is not None:
             el.set("name", self.name)
         if self.canonical_link is not None:
             el.set("canonical_link", self.canonical_link)
         if self.placement_frame is not None:
             el.set("placement_frame", self.placement_frame)
+        if cmp_version(version, "1.12") < 0:
+            if not self.link:
+                raise ValueError(f"'link' is required in SDF version {version}")
         for item in (self.link or []):
             el.append(item.to_sdf(version))
         for item in (self.joint or []):
@@ -12908,13 +17261,13 @@ class Model(Model):
             el.append(self.allow_auto_disable.to_sdf(version))
         if self.pose is not None:
             el.append(self.pose.to_sdf(version))
-        for item in (self.frame or []):
+        for item in (self.include or []):
             el.append(item.to_sdf(version))
         if self.self_collide is not None:
             el.append(self.self_collide.to_sdf(version))
-        for item in (self.include or []):
-            el.append(item.to_sdf(version))
         for item in (self.model or []):
+            el.append(item.to_sdf(version))
+        for item in (self.frame or []):
             el.append(item.to_sdf(version))
         if self.enable_wind is not None:
             el.append(self.enable_wind.to_sdf(version))
@@ -12923,51 +17276,133 @@ class Model(Model):
         return el
 
     @classmethod
-    def from_sdf(cls, el: ET.Element, version: str) -> "Model":
+    def _from_sdf(cls, el: ET.Element, version: str):
+        if el.get("name") is None:
+            return SDFError(f"'name' is required in SDF version {version}")
         _name = el.get("name", "__default__")
+        if isinstance(_name, SDFError):
+            return _name.extend("@name")
         _canonical_link = el.get("canonical_link", "")
+        if isinstance(_canonical_link, SDFError):
+            return _canonical_link.extend("@canonical_link")
         if _canonical_link is not None and cmp_version(version, "1.7") < 0:
             if _canonical_link != "":
-                raise ValueError(f"'canonical_link' is not supported in SDF version {version} (added in 1.7)")
+                return SDFError(f"'canonical_link' is not supported in SDF version {version} (added in 1.7)")
         _placement_frame = el.get("placement_frame", "")
+        if isinstance(_placement_frame, SDFError):
+            return _placement_frame.extend("@placement_frame")
         if _placement_frame is not None and cmp_version(version, "1.8") < 0:
             if _placement_frame != "":
-                raise ValueError(f"'placement_frame' is not supported in SDF version {version} (added in 1.8)")
-        _link = [Link.from_sdf(c, version) for c in el.findall("link")]
-        _joint = [Joint.from_sdf(c, version) for c in el.findall("joint")]
-        _plugin = [Plugin.from_sdf(c, version) for c in el.findall("plugin")]
-        _gripper = [Gripper.from_sdf(c, version) for c in el.findall("gripper")]
+                return SDFError(f"'placement_frame' is not supported in SDF version {version} (added in 1.8)")
+        _link = []
+        for c in el.findall("link"):
+            _res = Link._from_sdf(c, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("link")
+            _link.append(_res)
+        if cmp_version(version, "1.12") < 0:
+            if not _link:
+                return SDFError(f"'link' is required in SDF version {version}")
+        _joint = []
+        for c in el.findall("joint"):
+            _res = Joint._from_sdf(c, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("joint")
+            _joint.append(_res)
+        _plugin = []
+        for c in el.findall("plugin"):
+            _res = Plugin._from_sdf(c, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("plugin")
+            _plugin.append(_res)
+        _gripper = []
+        for c in el.findall("gripper"):
+            _res = Gripper._from_sdf(c, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("gripper")
+            _gripper.append(_res)
         _c_static = el.find("static")
-        _static = Static.from_sdf(_c_static, version) if _c_static is not None else None
+        if _c_static is not None:
+            _res = Static._from_sdf(_c_static, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("static")
+            _static = _res
+        else:
+            _static = None
         _c_allow_auto_disable = el.find("allow_auto_disable")
-        _allow_auto_disable = AllowAutoDisable.from_sdf(_c_allow_auto_disable, version) if _c_allow_auto_disable is not None else None
+        if _c_allow_auto_disable is not None:
+            _res = AllowAutoDisable._from_sdf(_c_allow_auto_disable, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("allow_auto_disable")
+            _allow_auto_disable = _res
+        else:
+            _allow_auto_disable = None
         _c_pose = el.find("pose")
-        _pose = Pose.from_sdf(_c_pose, version) if _c_pose is not None else None
-        _frame = [Frame.from_sdf(c, version) for c in el.findall("frame")]
-        if _frame and cmp_version(version, "1.5") < 0:
-            raise ValueError(f"'frame' is not supported in SDF version {version} (added in 1.5)")
-        _c_self_collide = el.find("self_collide")
-        _self_collide = SelfCollide.from_sdf(_c_self_collide, version) if _c_self_collide is not None else None
-        if _self_collide is not None and cmp_version(version, "1.5") < 0:
-            raise ValueError(f"'self_collide' is not supported in SDF version {version} (added in 1.5)")
-        _include = [Include.from_sdf(c, version) for c in el.findall("include")]
+        if _c_pose is not None:
+            _res = Pose._from_sdf(_c_pose, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("pose")
+            _pose = _res
+        else:
+            _pose = None
+        _include = []
+        for c in el.findall("include"):
+            _res = Include._from_sdf(c, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("include")
+            _include.append(_res)
         if _include and cmp_version(version, "1.5") < 0:
-            raise ValueError(f"'include' is not supported in SDF version {version} (added in 1.5)")
-        _model = [Model.from_sdf(c, version) for c in el.findall("model")]
+            return SDFError(f"'include' is not supported in SDF version {version} (added in 1.5)")
+        _c_self_collide = el.find("self_collide")
+        if _c_self_collide is not None:
+            _res = SelfCollide._from_sdf(_c_self_collide, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("self_collide")
+            _self_collide = _res
+        else:
+            _self_collide = None
+        if _self_collide is not None and cmp_version(version, "1.5") < 0:
+            return SDFError(f"'self_collide' is not supported in SDF version {version} (added in 1.5)")
+        _model = []
+        for c in el.findall("model"):
+            _res = Model._from_sdf(c, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("model")
+            _model.append(_res)
         if _model and cmp_version(version, "1.5") < 0:
-            raise ValueError(f"'model' is not supported in SDF version {version} (added in 1.5)")
+            return SDFError(f"'model' is not supported in SDF version {version} (added in 1.5)")
+        _frame = []
+        for c in el.findall("frame"):
+            _res = Frame._from_sdf(c, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("frame")
+            _frame.append(_res)
+        if _frame and cmp_version(version, "1.5") < 0:
+            return SDFError(f"'frame' is not supported in SDF version {version} (added in 1.5)")
         _c_enable_wind = el.find("enable_wind")
-        _enable_wind = EnableWind.from_sdf(_c_enable_wind, version) if _c_enable_wind is not None else None
+        if _c_enable_wind is not None:
+            _res = EnableWind._from_sdf(_c_enable_wind, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("enable_wind")
+            _enable_wind = _res
+        else:
+            _enable_wind = None
         if _enable_wind is not None and cmp_version(version, "1.6") < 0:
-            raise ValueError(f"'enable_wind' is not supported in SDF version {version} (added in 1.6)")
+            return SDFError(f"'enable_wind' is not supported in SDF version {version} (added in 1.6)")
         _c_model_state = el.find("model_state")
-        _model_state = ModelState.from_sdf(_c_model_state, version) if _c_model_state is not None else None
+        if _c_model_state is not None:
+            _res = ModelState._from_sdf(_c_model_state, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("model_state")
+            _model_state = _res
+        else:
+            _model_state = None
         if _model_state is not None and cmp_version(version, "1.12") < 0:
-            raise ValueError(f"'model_state' is not supported in SDF version {version} (added in 1.12)")
-        return cls(sdf_version=version, name=_name, canonical_link=_canonical_link, placement_frame=_placement_frame, link=_link, joint=_joint, plugin=_plugin, gripper=_gripper, static=_static, allow_auto_disable=_allow_auto_disable, pose=_pose, frame=_frame, self_collide=_self_collide, include=_include, model=_model, enable_wind=_enable_wind, model_state=_model_state)
+            return SDFError(f"'model_state' is not supported in SDF version {version} (added in 1.12)")
+        return cls(sdf_version=version, name=_name, canonical_link=_canonical_link, placement_frame=_placement_frame, link=_link, joint=_joint, plugin=_plugin, gripper=_gripper, static=_static, allow_auto_disable=_allow_auto_disable, pose=_pose, include=_include, self_collide=_self_collide, model=_model, frame=_frame, enable_wind=_enable_wind, model_state=_model_state)
 
 
-class Filename(Model):
+class Filename(BaseModel):
     def __init__(self, sdf_version: str, filename: str = "__default__"):
         self.__version__ = sdf_version
         self.filename = filename
@@ -12983,18 +17418,24 @@ class Filename(Model):
             return self.to_version(version).to_sdf()
         version = version or self.__version__
         el = ET.Element("filename")
+        if self.filename is None:
+            raise ValueError(f"'filename' is required in SDF version {version}")
         if self.filename is not None:
             el.text = self.filename
         return el
 
     @classmethod
-    def from_sdf(cls, el: ET.Element, version: str) -> "Filename":
+    def _from_sdf(cls, el: ET.Element, version: str):
+        if el.text is None:
+            return SDFError(f"'filename' is required in SDF version {version}")
         _text = el.text or "__default__"
         _filename = _text
+        if isinstance(_filename, SDFError):
+            return _filename
         return cls(sdf_version=version, filename=_filename)
 
 
-class Skin(Model):
+class Skin(BaseModel):
     def __init__(self, sdf_version: str, filename: "Filename" = None, scale: "Scale" = None):
         self.__version__ = sdf_version
         self.filename = filename
@@ -13012,6 +17453,8 @@ class Skin(Model):
             return self.to_version(version).to_sdf()
         version = version or self.__version__
         el = ET.Element("skin")
+        if self.filename is None:
+            raise ValueError(f"'filename' is required in SDF version {version}")
         if self.filename is not None:
             el.append(self.filename.to_sdf(version))
         if self.scale is not None:
@@ -13019,15 +17462,29 @@ class Skin(Model):
         return el
 
     @classmethod
-    def from_sdf(cls, el: ET.Element, version: str) -> "Skin":
+    def _from_sdf(cls, el: ET.Element, version: str):
         _c_filename = el.find("filename")
-        _filename = Filename.from_sdf(_c_filename, version) if _c_filename is not None else None
+        if _c_filename is not None:
+            _res = Filename._from_sdf(_c_filename, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("filename")
+            _filename = _res
+        else:
+            _filename = None
+        if _filename is None:
+            return SDFError(f"'filename' is required in SDF version {version}")
         _c_scale = el.find("scale")
-        _scale = Scale.from_sdf(_c_scale, version) if _c_scale is not None else None
+        if _c_scale is not None:
+            _res = Scale._from_sdf(_c_scale, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("scale")
+            _scale = _res
+        else:
+            _scale = None
         return cls(sdf_version=version, filename=_filename, scale=_scale)
 
 
-class InterpolateX(Model):
+class InterpolateX(BaseModel):
     def __init__(self, sdf_version: str, interpolate_x: bool = False):
         self.__version__ = sdf_version
         self.interpolate_x = interpolate_x
@@ -13048,13 +17505,15 @@ class InterpolateX(Model):
         return el
 
     @classmethod
-    def from_sdf(cls, el: ET.Element, version: str) -> "InterpolateX":
+    def _from_sdf(cls, el: ET.Element, version: str):
         _text = el.text or False
-        _interpolate_x = _text.strip().lower() == 'true'
+        _interpolate_x = str(_text).strip().lower() == 'true'
+        if isinstance(_interpolate_x, SDFError):
+            return _interpolate_x
         return cls(sdf_version=version, interpolate_x=_interpolate_x)
 
 
-class Animation(Model):
+class Animation(BaseModel):
     def __init__(
         self,
         sdf_version: str,
@@ -13083,8 +17542,12 @@ class Animation(Model):
             return self.to_version(version).to_sdf()
         version = version or self.__version__
         el = ET.Element("animation")
+        if self.name is None:
+            raise ValueError(f"'name' is required in SDF version {version}")
         if self.name is not None:
             el.set("name", self.name)
+        if self.filename is None:
+            raise ValueError(f"'filename' is required in SDF version {version}")
         if self.filename is not None:
             el.append(self.filename.to_sdf(version))
         if self.scale is not None:
@@ -13094,18 +17557,42 @@ class Animation(Model):
         return el
 
     @classmethod
-    def from_sdf(cls, el: ET.Element, version: str) -> "Animation":
+    def _from_sdf(cls, el: ET.Element, version: str):
+        if el.get("name") is None:
+            return SDFError(f"'name' is required in SDF version {version}")
         _name = el.get("name", "__default__")
+        if isinstance(_name, SDFError):
+            return _name.extend("@name")
         _c_filename = el.find("filename")
-        _filename = Filename.from_sdf(_c_filename, version) if _c_filename is not None else None
+        if _c_filename is not None:
+            _res = Filename._from_sdf(_c_filename, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("filename")
+            _filename = _res
+        else:
+            _filename = None
+        if _filename is None:
+            return SDFError(f"'filename' is required in SDF version {version}")
         _c_scale = el.find("scale")
-        _scale = Scale.from_sdf(_c_scale, version) if _c_scale is not None else None
+        if _c_scale is not None:
+            _res = Scale._from_sdf(_c_scale, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("scale")
+            _scale = _res
+        else:
+            _scale = None
         _c_interpolate_x = el.find("interpolate_x")
-        _interpolate_x = InterpolateX.from_sdf(_c_interpolate_x, version) if _c_interpolate_x is not None else None
+        if _c_interpolate_x is not None:
+            _res = InterpolateX._from_sdf(_c_interpolate_x, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("interpolate_x")
+            _interpolate_x = _res
+        else:
+            _interpolate_x = None
         return cls(sdf_version=version, name=_name, filename=_filename, scale=_scale, interpolate_x=_interpolate_x)
 
 
-class Actor(Model):
+class Actor(BaseModel):
     def __init__(
         self,
         sdf_version: str,
@@ -13133,8 +17620,12 @@ class Actor(Model):
         self.frame = frame or []
 
     def to_version(self, target_version: str) -> "Actor":
+        if self.static is not None and cmp_version(target_version, "1.5") >= 0:
+            raise ValueError(f"'static' is not supported in SDF version {target_version} (removed in 1.5)")
         if self.frame is not None and cmp_version(target_version, "1.5") < 0:
             raise ValueError(f"'frame' is not supported in SDF version {target_version} (added in 1.5)")
+        if self.frame is not None and cmp_version(target_version, "1.7") >= 0:
+            raise ValueError(f"'frame' is not supported in SDF version {target_version} (removed in 1.7)")
         kwargs = {"sdf_version": target_version}
         kwargs["name"] = self.name
         kwargs["static"] = self.static
@@ -13154,10 +17645,14 @@ class Actor(Model):
             return self.to_version(version).to_sdf()
         version = version or self.__version__
         el = ET.Element("actor")
+        if self.name is None:
+            raise ValueError(f"'name' is required in SDF version {version}")
         if self.name is not None:
             el.set("name", self.name)
         if self.static is not None:
             el.set("static", str(self.static).lower())
+        if not self.link:
+            raise ValueError(f"'link' is required in SDF version {version}")
         for item in (self.link or []):
             el.append(item.to_sdf(version))
         for item in (self.joint or []):
@@ -13166,10 +17661,18 @@ class Actor(Model):
             el.append(item.to_sdf(version))
         if self.pose is not None:
             el.append(self.pose.to_sdf(version))
+        if cmp_version(version, "1.12") < 0:
+            if self.skin is None:
+                raise ValueError(f"'skin' is required in SDF version {version}")
         if self.skin is not None:
             el.append(self.skin.to_sdf(version))
+        if cmp_version(version, "1.12") < 0:
+            if not self.animation:
+                raise ValueError(f"'animation' is required in SDF version {version}")
         for item in (self.animation or []):
             el.append(item.to_sdf(version))
+        if self.script is None:
+            raise ValueError(f"'script' is required in SDF version {version}")
         if self.script is not None:
             el.append(self.script.to_sdf(version))
         for item in (self.frame or []):
@@ -13177,26 +17680,85 @@ class Actor(Model):
         return el
 
     @classmethod
-    def from_sdf(cls, el: ET.Element, version: str) -> "Actor":
+    def _from_sdf(cls, el: ET.Element, version: str):
+        if el.get("name") is None:
+            return SDFError(f"'name' is required in SDF version {version}")
         _name = el.get("name", "__default__")
-        _static = el.get("static", False).strip().lower() == 'true'
-        _link = [Link.from_sdf(c, version) for c in el.findall("link")]
-        _joint = [Joint.from_sdf(c, version) for c in el.findall("joint")]
-        _plugin = [Plugin.from_sdf(c, version) for c in el.findall("plugin")]
+        if isinstance(_name, SDFError):
+            return _name.extend("@name")
+        _static = str(el.get("static", False)).strip().lower() == 'true'
+        if isinstance(_static, SDFError):
+            return _static.extend("@static")
+        _link = []
+        for c in el.findall("link"):
+            _res = Link._from_sdf(c, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("link")
+            _link.append(_res)
+        if not _link:
+            return SDFError(f"'link' is required in SDF version {version}")
+        _joint = []
+        for c in el.findall("joint"):
+            _res = Joint._from_sdf(c, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("joint")
+            _joint.append(_res)
+        _plugin = []
+        for c in el.findall("plugin"):
+            _res = Plugin._from_sdf(c, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("plugin")
+            _plugin.append(_res)
         _c_pose = el.find("pose")
-        _pose = Pose.from_sdf(_c_pose, version) if _c_pose is not None else None
+        if _c_pose is not None:
+            _res = Pose._from_sdf(_c_pose, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("pose")
+            _pose = _res
+        else:
+            _pose = None
         _c_skin = el.find("skin")
-        _skin = Skin.from_sdf(_c_skin, version) if _c_skin is not None else None
-        _animation = [Animation.from_sdf(c, version) for c in el.findall("animation")]
+        if _c_skin is not None:
+            _res = Skin._from_sdf(_c_skin, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("skin")
+            _skin = _res
+        else:
+            _skin = None
+        if cmp_version(version, "1.12") < 0:
+            if _skin is None:
+                return SDFError(f"'skin' is required in SDF version {version}")
+        _animation = []
+        for c in el.findall("animation"):
+            _res = Animation._from_sdf(c, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("animation")
+            _animation.append(_res)
+        if cmp_version(version, "1.12") < 0:
+            if not _animation:
+                return SDFError(f"'animation' is required in SDF version {version}")
         _c_script = el.find("script")
-        _script = Script.from_sdf(_c_script, version) if _c_script is not None else None
-        _frame = [Frame.from_sdf(c, version) for c in el.findall("frame")]
+        if _c_script is not None:
+            _res = Script._from_sdf(_c_script, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("script")
+            _script = _res
+        else:
+            _script = None
+        if _script is None:
+            return SDFError(f"'script' is required in SDF version {version}")
+        _frame = []
+        for c in el.findall("frame"):
+            _res = Frame._from_sdf(c, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("frame")
+            _frame.append(_res)
         if _frame and cmp_version(version, "1.5") < 0:
-            raise ValueError(f"'frame' is not supported in SDF version {version} (added in 1.5)")
+            return SDFError(f"'frame' is not supported in SDF version {version} (added in 1.5)")
         return cls(sdf_version=version, name=_name, static=_static, link=_link, joint=_joint, plugin=_plugin, pose=_pose, skin=_skin, animation=_animation, script=_script, frame=_frame)
 
 
-class Width(Model):
+class Width(BaseModel):
     def __init__(self, sdf_version: str, width: float = 1.0):
         self.__version__ = sdf_version
         self.width = width
@@ -13212,18 +17774,24 @@ class Width(Model):
             return self.to_version(version).to_sdf()
         version = version or self.__version__
         el = ET.Element("width")
+        if self.width is None:
+            raise ValueError(f"'width' is required in SDF version {version}")
         if self.width is not None:
             el.text = str(self.width)
         return el
 
     @classmethod
-    def from_sdf(cls, el: ET.Element, version: str) -> "Width":
+    def _from_sdf(cls, el: ET.Element, version: str):
+        if el.text is None:
+            return SDFError(f"'width' is required in SDF version {version}")
         _text = el.text or 1.0
         _width = _parse_double(_text)
+        if isinstance(_width, SDFError):
+            return _width
         return cls(sdf_version=version, width=_width)
 
 
-class Road(Model):
+class Road(BaseModel):
     def __init__(
         self,
         sdf_version: str,
@@ -13254,10 +17822,16 @@ class Road(Model):
             return self.to_version(version).to_sdf()
         version = version or self.__version__
         el = ET.Element("road")
+        if self.name is None:
+            raise ValueError(f"'name' is required in SDF version {version}")
         if self.name is not None:
             el.set("name", self.name)
+        if self.width is None:
+            raise ValueError(f"'width' is required in SDF version {version}")
         if self.width is not None:
             el.append(self.width.to_sdf(version))
+        if not self.point:
+            raise ValueError(f"'point' is required in SDF version {version}")
         for item in (self.point or []):
             el.append(item.to_sdf(version))
         if self.material is not None:
@@ -13265,19 +17839,44 @@ class Road(Model):
         return el
 
     @classmethod
-    def from_sdf(cls, el: ET.Element, version: str) -> "Road":
+    def _from_sdf(cls, el: ET.Element, version: str):
+        if el.get("name") is None:
+            return SDFError(f"'name' is required in SDF version {version}")
         _name = el.get("name", "__default__")
+        if isinstance(_name, SDFError):
+            return _name.extend("@name")
         _c_width = el.find("width")
-        _width = Width.from_sdf(_c_width, version) if _c_width is not None else None
-        _point = [Point.from_sdf(c, version) for c in el.findall("point")]
+        if _c_width is not None:
+            _res = Width._from_sdf(_c_width, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("width")
+            _width = _res
+        else:
+            _width = None
+        if _width is None:
+            return SDFError(f"'width' is required in SDF version {version}")
+        _point = []
+        for c in el.findall("point"):
+            _res = Point._from_sdf(c, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("point")
+            _point.append(_res)
+        if not _point:
+            return SDFError(f"'point' is required in SDF version {version}")
         _c_material = el.find("material")
-        _material = Material.from_sdf(_c_material, version) if _c_material is not None else None
+        if _c_material is not None:
+            _res = Material._from_sdf(_c_material, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("material")
+            _material = _res
+        else:
+            _material = None
         if _material is not None and cmp_version(version, "1.5") < 0:
-            raise ValueError(f"'material' is not supported in SDF version {version} (added in 1.5)")
+            return SDFError(f"'material' is not supported in SDF version {version} (added in 1.5)")
         return cls(sdf_version=version, name=_name, width=_width, point=_point, material=_material)
 
 
-class SimTime(Model):
+class SimTime(BaseModel):
     def __init__(self, sdf_version: str, sim_time: float = "0 0"):
         self.__version__ = sdf_version
         self.sim_time = sim_time
@@ -13298,13 +17897,15 @@ class SimTime(Model):
         return el
 
     @classmethod
-    def from_sdf(cls, el: ET.Element, version: str) -> "SimTime":
+    def _from_sdf(cls, el: ET.Element, version: str):
         _text = el.text or "0 0"
         _sim_time = _parse_double(_text)
+        if isinstance(_sim_time, SDFError):
+            return _sim_time
         return cls(sdf_version=version, sim_time=_sim_time)
 
 
-class WallTime(Model):
+class WallTime(BaseModel):
     def __init__(self, sdf_version: str, wall_time: float = "0 0"):
         self.__version__ = sdf_version
         self.wall_time = wall_time
@@ -13325,13 +17926,15 @@ class WallTime(Model):
         return el
 
     @classmethod
-    def from_sdf(cls, el: ET.Element, version: str) -> "WallTime":
+    def _from_sdf(cls, el: ET.Element, version: str):
         _text = el.text or "0 0"
         _wall_time = _parse_double(_text)
+        if isinstance(_wall_time, SDFError):
+            return _wall_time
         return cls(sdf_version=version, wall_time=_wall_time)
 
 
-class RealTime(Model):
+class RealTime(BaseModel):
     def __init__(self, sdf_version: str, real_time: float = "0 0"):
         self.__version__ = sdf_version
         self.real_time = real_time
@@ -13352,13 +17955,15 @@ class RealTime(Model):
         return el
 
     @classmethod
-    def from_sdf(cls, el: ET.Element, version: str) -> "RealTime":
+    def _from_sdf(cls, el: ET.Element, version: str):
         _text = el.text or "0 0"
         _real_time = _parse_double(_text)
+        if isinstance(_real_time, SDFError):
+            return _real_time
         return cls(sdf_version=version, real_time=_real_time)
 
 
-class Insertions(Model):
+class Insertions(BaseModel):
     def __init__(
         self,
         sdf_version: str,
@@ -13388,27 +17993,58 @@ class Insertions(Model):
             return self.to_version(version).to_sdf()
         version = version or self.__version__
         el = ET.Element("insertions")
+        if not self.model:
+            raise ValueError(f"'model' is required in SDF version {version}")
         for item in (self.model or []):
             el.append(item.to_sdf(version))
+        if cmp_version(version, "1.6") >= 0:
+            if not self.light:
+                raise ValueError(f"'light' is required in SDF version {version}")
         for item in (self.light or []):
             el.append(item.to_sdf(version))
+        if cmp_version(version, "1.12") >= 0:
+            if not self.joint:
+                raise ValueError(f"'joint' is required in SDF version {version}")
         for item in (self.joint or []):
             el.append(item.to_sdf(version))
         return el
 
     @classmethod
-    def from_sdf(cls, el: ET.Element, version: str) -> "Insertions":
-        _model = [Model.from_sdf(c, version) for c in el.findall("model")]
-        _light = [Light.from_sdf(c, version) for c in el.findall("light")]
+    def _from_sdf(cls, el: ET.Element, version: str):
+        _model = []
+        for c in el.findall("model"):
+            _res = Model._from_sdf(c, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("model")
+            _model.append(_res)
+        if not _model:
+            return SDFError(f"'model' is required in SDF version {version}")
+        _light = []
+        for c in el.findall("light"):
+            _res = Light._from_sdf(c, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("light")
+            _light.append(_res)
+        if cmp_version(version, "1.6") >= 0:
+            if not _light:
+                return SDFError(f"'light' is required in SDF version {version}")
         if _light and cmp_version(version, "1.6") < 0:
-            raise ValueError(f"'light' is not supported in SDF version {version} (added in 1.6)")
-        _joint = [Joint.from_sdf(c, version) for c in el.findall("joint")]
+            return SDFError(f"'light' is not supported in SDF version {version} (added in 1.6)")
+        _joint = []
+        for c in el.findall("joint"):
+            _res = Joint._from_sdf(c, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("joint")
+            _joint.append(_res)
+        if cmp_version(version, "1.12") >= 0:
+            if not _joint:
+                return SDFError(f"'joint' is required in SDF version {version}")
         if _joint and cmp_version(version, "1.12") < 0:
-            raise ValueError(f"'joint' is not supported in SDF version {version} (added in 1.12)")
+            return SDFError(f"'joint' is not supported in SDF version {version} (added in 1.12)")
         return cls(sdf_version=version, model=_model, light=_light, joint=_joint)
 
 
-class Deletions(Model):
+class Deletions(BaseModel):
     def __init__(self, sdf_version: str, name: List["Name"] = None):
         self.__version__ = sdf_version
         self.name = name or []
@@ -13424,17 +18060,26 @@ class Deletions(Model):
             return self.to_version(version).to_sdf()
         version = version or self.__version__
         el = ET.Element("deletions")
+        if not self.name:
+            raise ValueError(f"'name' is required in SDF version {version}")
         for item in (self.name or []):
             el.append(item.to_sdf(version))
         return el
 
     @classmethod
-    def from_sdf(cls, el: ET.Element, version: str) -> "Deletions":
-        _name = [Name.from_sdf(c, version) for c in el.findall("name")]
+    def _from_sdf(cls, el: ET.Element, version: str):
+        _name = []
+        for c in el.findall("name"):
+            _res = Name._from_sdf(c, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("name")
+            _name.append(_res)
+        if not _name:
+            return SDFError(f"'name' is required in SDF version {version}")
         return cls(sdf_version=version, name=_name)
 
 
-class Iterations(Model):
+class Iterations(BaseModel):
     def __init__(self, sdf_version: str, iterations: int = 0):
         self.__version__ = sdf_version
         self.iterations = iterations
@@ -13452,21 +18097,29 @@ class Iterations(Model):
             return self.to_version(version).to_sdf()
         version = version or self.__version__
         el = ET.Element("iterations")
+        if cmp_version(version, "1.5") >= 0:
+            if self.iterations is None:
+                raise ValueError(f"'iterations' is required in SDF version {version}")
         if self.iterations is not None:
             el.text = str(self.iterations)
         return el
 
     @classmethod
-    def from_sdf(cls, el: ET.Element, version: str) -> "Iterations":
+    def _from_sdf(cls, el: ET.Element, version: str):
+        if cmp_version(version, "1.5") >= 0:
+            if el.text is None:
+                return SDFError(f"'iterations' is required in SDF version {version}")
         _text = el.text or 0
         _iterations = _parse_uint32(_text)
+        if isinstance(_iterations, SDFError):
+            return _iterations
         if _iterations is not None and cmp_version(version, "1.5") < 0:
             if _iterations != 0:
-                raise ValueError(f"'iterations' is not supported in SDF version {version} (added in 1.5)")
+                return SDFError(f"'iterations' is not supported in SDF version {version} (added in 1.5)")
         return cls(sdf_version=version, iterations=_iterations)
 
 
-class LightState(Model):
+class LightState(BaseModel):
     def __init__(self, sdf_version: str, name: str = "__default__", pose: "Pose" = None):
         self.__version__ = sdf_version
         self.name = name
@@ -13484,6 +18137,8 @@ class LightState(Model):
             return self.to_version(version).to_sdf()
         version = version or self.__version__
         el = ET.Element("light_state")
+        if self.name is None:
+            raise ValueError(f"'name' is required in SDF version {version}")
         if self.name is not None:
             el.set("name", self.name)
         if self.pose is not None:
@@ -13491,14 +18146,24 @@ class LightState(Model):
         return el
 
     @classmethod
-    def from_sdf(cls, el: ET.Element, version: str) -> "LightState":
+    def _from_sdf(cls, el: ET.Element, version: str):
+        if el.get("name") is None:
+            return SDFError(f"'name' is required in SDF version {version}")
         _name = el.get("name", "__default__")
+        if isinstance(_name, SDFError):
+            return _name.extend("@name")
         _c_pose = el.find("pose")
-        _pose = Pose.from_sdf(_c_pose, version) if _c_pose is not None else None
+        if _c_pose is not None:
+            _res = Pose._from_sdf(_c_pose, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("pose")
+            _pose = _res
+        else:
+            _pose = None
         return cls(sdf_version=version, name=_name, pose=_pose)
 
 
-class State(Model):
+class State(BaseModel):
     def __init__(
         self,
         sdf_version: str,
@@ -13509,11 +18174,11 @@ class State(Model):
         insertions: "Insertions" = None,
         deletions: "Deletions" = None,
         model: List["Model"] = None,
-        light: List["Light"] = None,
         iterations: "Iterations" = None,
+        light: List["Light"] = None,
         model_state: List["ModelState"] = None,
-        light_state: List["LightState"] = None,
-        joint_state: List["JointState"] = None
+        joint_state: List["JointState"] = None,
+        light_state: List["LightState"] = None
     ):
         self.__version__ = sdf_version
         self.world_name = world_name
@@ -13523,23 +18188,27 @@ class State(Model):
         self.insertions = insertions
         self.deletions = deletions
         self.model = model or []
-        self.light = light or []
         self.iterations = iterations
+        self.light = light or []
         self.model_state = model_state or []
-        self.light_state = light_state or []
         self.joint_state = joint_state or []
+        self.light_state = light_state or []
 
     def to_version(self, target_version: str) -> "State":
-        if self.light is not None and cmp_version(target_version, "1.5") < 0:
-            raise ValueError(f"'light' is not supported in SDF version {target_version} (added in 1.5)")
+        if self.model is not None and cmp_version(target_version, "1.12") >= 0:
+            raise ValueError(f"'model' is not supported in SDF version {target_version} (removed in 1.12)")
         if self.iterations is not None and cmp_version(target_version, "1.5") < 0:
             raise ValueError(f"'iterations' is not supported in SDF version {target_version} (added in 1.5)")
+        if self.light is not None and cmp_version(target_version, "1.5") < 0:
+            raise ValueError(f"'light' is not supported in SDF version {target_version} (added in 1.5)")
+        if self.light is not None and cmp_version(target_version, "1.12") >= 0:
+            raise ValueError(f"'light' is not supported in SDF version {target_version} (removed in 1.12)")
         if self.model_state is not None and cmp_version(target_version, "1.12") < 0:
             raise ValueError(f"'model_state' is not supported in SDF version {target_version} (added in 1.12)")
-        if self.light_state is not None and cmp_version(target_version, "1.12") < 0:
-            raise ValueError(f"'light_state' is not supported in SDF version {target_version} (added in 1.12)")
         if self.joint_state is not None and cmp_version(target_version, "1.12") < 0:
             raise ValueError(f"'joint_state' is not supported in SDF version {target_version} (added in 1.12)")
+        if self.light_state is not None and cmp_version(target_version, "1.12") < 0:
+            raise ValueError(f"'light_state' is not supported in SDF version {target_version} (added in 1.12)")
         kwargs = {"sdf_version": target_version}
         kwargs["world_name"] = self.world_name
         kwargs["sim_time"] = self.sim_time.to_version(target_version) if self.sim_time is not None else None
@@ -13548,11 +18217,11 @@ class State(Model):
         kwargs["insertions"] = self.insertions.to_version(target_version) if self.insertions is not None else None
         kwargs["deletions"] = self.deletions.to_version(target_version) if self.deletions is not None else None
         kwargs["model"] = [c.to_version(target_version) for c in (self.model or [])]
-        kwargs["light"] = [c.to_version(target_version) for c in (self.light or [])]
         kwargs["iterations"] = self.iterations.to_version(target_version) if self.iterations is not None else None
+        kwargs["light"] = [c.to_version(target_version) for c in (self.light or [])]
         kwargs["model_state"] = [c.to_version(target_version) for c in (self.model_state or [])]
-        kwargs["light_state"] = [c.to_version(target_version) for c in (self.light_state or [])]
         kwargs["joint_state"] = [c.to_version(target_version) for c in (self.joint_state or [])]
+        kwargs["light_state"] = [c.to_version(target_version) for c in (self.light_state or [])]
         new_obj = self.__class__(**kwargs)
         return new_obj
 
@@ -13561,6 +18230,8 @@ class State(Model):
             return self.to_version(version).to_sdf()
         version = version or self.__version__
         el = ET.Element("state")
+        if self.world_name is None:
+            raise ValueError(f"'world_name' is required in SDF version {version}")
         if self.world_name is not None:
             el.set("world_name", self.world_name)
         if self.sim_time is not None:
@@ -13575,52 +18246,123 @@ class State(Model):
             el.append(self.deletions.to_sdf(version))
         for item in (self.model or []):
             el.append(item.to_sdf(version))
-        for item in (self.light or []):
-            el.append(item.to_sdf(version))
+        if cmp_version(version, "1.5") >= 0:
+            if self.iterations is None:
+                raise ValueError(f"'iterations' is required in SDF version {version}")
         if self.iterations is not None:
             el.append(self.iterations.to_sdf(version))
+        for item in (self.light or []):
+            el.append(item.to_sdf(version))
         for item in (self.model_state or []):
             el.append(item.to_sdf(version))
-        for item in (self.light_state or []):
-            el.append(item.to_sdf(version))
         for item in (self.joint_state or []):
+            el.append(item.to_sdf(version))
+        for item in (self.light_state or []):
             el.append(item.to_sdf(version))
         return el
 
     @classmethod
-    def from_sdf(cls, el: ET.Element, version: str) -> "State":
+    def _from_sdf(cls, el: ET.Element, version: str):
+        if el.get("world_name") is None:
+            return SDFError(f"'world_name' is required in SDF version {version}")
         _world_name = el.get("world_name", "__default__")
+        if isinstance(_world_name, SDFError):
+            return _world_name.extend("@world_name")
         _c_sim_time = el.find("sim_time")
-        _sim_time = SimTime.from_sdf(_c_sim_time, version) if _c_sim_time is not None else None
+        if _c_sim_time is not None:
+            _res = SimTime._from_sdf(_c_sim_time, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("sim_time")
+            _sim_time = _res
+        else:
+            _sim_time = None
         _c_wall_time = el.find("wall_time")
-        _wall_time = WallTime.from_sdf(_c_wall_time, version) if _c_wall_time is not None else None
+        if _c_wall_time is not None:
+            _res = WallTime._from_sdf(_c_wall_time, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("wall_time")
+            _wall_time = _res
+        else:
+            _wall_time = None
         _c_real_time = el.find("real_time")
-        _real_time = RealTime.from_sdf(_c_real_time, version) if _c_real_time is not None else None
+        if _c_real_time is not None:
+            _res = RealTime._from_sdf(_c_real_time, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("real_time")
+            _real_time = _res
+        else:
+            _real_time = None
         _c_insertions = el.find("insertions")
-        _insertions = Insertions.from_sdf(_c_insertions, version) if _c_insertions is not None else None
+        if _c_insertions is not None:
+            _res = Insertions._from_sdf(_c_insertions, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("insertions")
+            _insertions = _res
+        else:
+            _insertions = None
         _c_deletions = el.find("deletions")
-        _deletions = Deletions.from_sdf(_c_deletions, version) if _c_deletions is not None else None
-        _model = [Model.from_sdf(c, version) for c in el.findall("model")]
-        _light = [Light.from_sdf(c, version) for c in el.findall("light")]
-        if _light and cmp_version(version, "1.5") < 0:
-            raise ValueError(f"'light' is not supported in SDF version {version} (added in 1.5)")
+        if _c_deletions is not None:
+            _res = Deletions._from_sdf(_c_deletions, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("deletions")
+            _deletions = _res
+        else:
+            _deletions = None
+        _model = []
+        for c in el.findall("model"):
+            _res = Model._from_sdf(c, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("model")
+            _model.append(_res)
         _c_iterations = el.find("iterations")
-        _iterations = Iterations.from_sdf(_c_iterations, version) if _c_iterations is not None else None
+        if _c_iterations is not None:
+            _res = Iterations._from_sdf(_c_iterations, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("iterations")
+            _iterations = _res
+        else:
+            _iterations = None
+        if cmp_version(version, "1.5") >= 0:
+            if _iterations is None:
+                return SDFError(f"'iterations' is required in SDF version {version}")
         if _iterations is not None and cmp_version(version, "1.5") < 0:
-            raise ValueError(f"'iterations' is not supported in SDF version {version} (added in 1.5)")
-        _model_state = [ModelState.from_sdf(c, version) for c in el.findall("model_state")]
+            return SDFError(f"'iterations' is not supported in SDF version {version} (added in 1.5)")
+        _light = []
+        for c in el.findall("light"):
+            _res = Light._from_sdf(c, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("light")
+            _light.append(_res)
+        if _light and cmp_version(version, "1.5") < 0:
+            return SDFError(f"'light' is not supported in SDF version {version} (added in 1.5)")
+        _model_state = []
+        for c in el.findall("model_state"):
+            _res = ModelState._from_sdf(c, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("model_state")
+            _model_state.append(_res)
         if _model_state and cmp_version(version, "1.12") < 0:
-            raise ValueError(f"'model_state' is not supported in SDF version {version} (added in 1.12)")
-        _light_state = [LightState.from_sdf(c, version) for c in el.findall("light_state")]
-        if _light_state and cmp_version(version, "1.12") < 0:
-            raise ValueError(f"'light_state' is not supported in SDF version {version} (added in 1.12)")
-        _joint_state = [JointState.from_sdf(c, version) for c in el.findall("joint_state")]
+            return SDFError(f"'model_state' is not supported in SDF version {version} (added in 1.12)")
+        _joint_state = []
+        for c in el.findall("joint_state"):
+            _res = JointState._from_sdf(c, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("joint_state")
+            _joint_state.append(_res)
         if _joint_state and cmp_version(version, "1.12") < 0:
-            raise ValueError(f"'joint_state' is not supported in SDF version {version} (added in 1.12)")
-        return cls(sdf_version=version, world_name=_world_name, sim_time=_sim_time, wall_time=_wall_time, real_time=_real_time, insertions=_insertions, deletions=_deletions, model=_model, light=_light, iterations=_iterations, model_state=_model_state, light_state=_light_state, joint_state=_joint_state)
+            return SDFError(f"'joint_state' is not supported in SDF version {version} (added in 1.12)")
+        _light_state = []
+        for c in el.findall("light_state"):
+            _res = LightState._from_sdf(c, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("light_state")
+            _light_state.append(_res)
+        if _light_state and cmp_version(version, "1.12") < 0:
+            return SDFError(f"'light_state' is not supported in SDF version {version} (added in 1.12)")
+        return cls(sdf_version=version, world_name=_world_name, sim_time=_sim_time, wall_time=_wall_time, real_time=_real_time, insertions=_insertions, deletions=_deletions, model=_model, iterations=_iterations, light=_light, model_state=_model_state, joint_state=_joint_state, light_state=_light_state)
 
 
-class SurfaceModel(Model):
+class SurfaceModel(BaseModel):
     def __init__(self, sdf_version: str, surface_model: str = "EARTH_WGS84"):
         self.__version__ = sdf_version
         self.surface_model = surface_model
@@ -13636,18 +18378,24 @@ class SurfaceModel(Model):
             return self.to_version(version).to_sdf()
         version = version or self.__version__
         el = ET.Element("surface_model")
+        if self.surface_model is None:
+            raise ValueError(f"'surface_model' is required in SDF version {version}")
         if self.surface_model is not None:
             el.text = self.surface_model
         return el
 
     @classmethod
-    def from_sdf(cls, el: ET.Element, version: str) -> "SurfaceModel":
+    def _from_sdf(cls, el: ET.Element, version: str):
+        if el.text is None:
+            return SDFError(f"'surface_model' is required in SDF version {version}")
         _text = el.text or "EARTH_WGS84"
         _surface_model = _text
+        if isinstance(_surface_model, SDFError):
+            return _surface_model
         return cls(sdf_version=version, surface_model=_surface_model)
 
 
-class LatitudeDeg(Model):
+class LatitudeDeg(BaseModel):
     def __init__(self, sdf_version: str, latitude_deg: float = 0.0):
         self.__version__ = sdf_version
         self.latitude_deg = latitude_deg
@@ -13663,18 +18411,24 @@ class LatitudeDeg(Model):
             return self.to_version(version).to_sdf()
         version = version or self.__version__
         el = ET.Element("latitude_deg")
+        if self.latitude_deg is None:
+            raise ValueError(f"'latitude_deg' is required in SDF version {version}")
         if self.latitude_deg is not None:
             el.text = str(self.latitude_deg)
         return el
 
     @classmethod
-    def from_sdf(cls, el: ET.Element, version: str) -> "LatitudeDeg":
+    def _from_sdf(cls, el: ET.Element, version: str):
+        if el.text is None:
+            return SDFError(f"'latitude_deg' is required in SDF version {version}")
         _text = el.text or 0.0
         _latitude_deg = _parse_double(_text)
+        if isinstance(_latitude_deg, SDFError):
+            return _latitude_deg
         return cls(sdf_version=version, latitude_deg=_latitude_deg)
 
 
-class LongitudeDeg(Model):
+class LongitudeDeg(BaseModel):
     def __init__(self, sdf_version: str, longitude_deg: float = 0.0):
         self.__version__ = sdf_version
         self.longitude_deg = longitude_deg
@@ -13690,18 +18444,24 @@ class LongitudeDeg(Model):
             return self.to_version(version).to_sdf()
         version = version or self.__version__
         el = ET.Element("longitude_deg")
+        if self.longitude_deg is None:
+            raise ValueError(f"'longitude_deg' is required in SDF version {version}")
         if self.longitude_deg is not None:
             el.text = str(self.longitude_deg)
         return el
 
     @classmethod
-    def from_sdf(cls, el: ET.Element, version: str) -> "LongitudeDeg":
+    def _from_sdf(cls, el: ET.Element, version: str):
+        if el.text is None:
+            return SDFError(f"'longitude_deg' is required in SDF version {version}")
         _text = el.text or 0.0
         _longitude_deg = _parse_double(_text)
+        if isinstance(_longitude_deg, SDFError):
+            return _longitude_deg
         return cls(sdf_version=version, longitude_deg=_longitude_deg)
 
 
-class Elevation(Model):
+class Elevation(BaseModel):
     def __init__(self, sdf_version: str, elevation: float = 0.0):
         self.__version__ = sdf_version
         self.elevation = elevation
@@ -13717,18 +18477,24 @@ class Elevation(Model):
             return self.to_version(version).to_sdf()
         version = version or self.__version__
         el = ET.Element("elevation")
+        if self.elevation is None:
+            raise ValueError(f"'elevation' is required in SDF version {version}")
         if self.elevation is not None:
             el.text = str(self.elevation)
         return el
 
     @classmethod
-    def from_sdf(cls, el: ET.Element, version: str) -> "Elevation":
+    def _from_sdf(cls, el: ET.Element, version: str):
+        if el.text is None:
+            return SDFError(f"'elevation' is required in SDF version {version}")
         _text = el.text or 0.0
         _elevation = _parse_double(_text)
+        if isinstance(_elevation, SDFError):
+            return _elevation
         return cls(sdf_version=version, elevation=_elevation)
 
 
-class HeadingDeg(Model):
+class HeadingDeg(BaseModel):
     def __init__(self, sdf_version: str, heading_deg: float = 0.0):
         self.__version__ = sdf_version
         self.heading_deg = heading_deg
@@ -13744,18 +18510,24 @@ class HeadingDeg(Model):
             return self.to_version(version).to_sdf()
         version = version or self.__version__
         el = ET.Element("heading_deg")
+        if self.heading_deg is None:
+            raise ValueError(f"'heading_deg' is required in SDF version {version}")
         if self.heading_deg is not None:
             el.text = str(self.heading_deg)
         return el
 
     @classmethod
-    def from_sdf(cls, el: ET.Element, version: str) -> "HeadingDeg":
+    def _from_sdf(cls, el: ET.Element, version: str):
+        if el.text is None:
+            return SDFError(f"'heading_deg' is required in SDF version {version}")
         _text = el.text or 0.0
         _heading_deg = _parse_double(_text)
+        if isinstance(_heading_deg, SDFError):
+            return _heading_deg
         return cls(sdf_version=version, heading_deg=_heading_deg)
 
 
-class WorldFrameOrientation(Model):
+class WorldFrameOrientation(BaseModel):
     def __init__(self, sdf_version: str, world_frame_orientation: str = "ENU"):
         self.__version__ = sdf_version
         self.world_frame_orientation = world_frame_orientation
@@ -13778,48 +18550,18 @@ class WorldFrameOrientation(Model):
         return el
 
     @classmethod
-    def from_sdf(cls, el: ET.Element, version: str) -> "WorldFrameOrientation":
+    def _from_sdf(cls, el: ET.Element, version: str):
         _text = el.text or "ENU"
         _world_frame_orientation = _text
+        if isinstance(_world_frame_orientation, SDFError):
+            return _world_frame_orientation
         if _world_frame_orientation is not None and cmp_version(version, "1.6") < 0:
             if _world_frame_orientation != "ENU":
-                raise ValueError(f"'world_frame_orientation' is not supported in SDF version {version} (added in 1.6)")
+                return SDFError(f"'world_frame_orientation' is not supported in SDF version {version} (added in 1.6)")
         return cls(sdf_version=version, world_frame_orientation=_world_frame_orientation)
 
 
-class SurfaceAxisEquatorial(Model):
-    def __init__(self, sdf_version: str, surface_axis_equatorial: float = 0.0):
-        self.__version__ = sdf_version
-        self.surface_axis_equatorial = surface_axis_equatorial
-
-    def to_version(self, target_version: str) -> "SurfaceAxisEquatorial":
-        if self.surface_axis_equatorial is not None and cmp_version(target_version, "1.10") < 0:
-            raise ValueError(f"'surface_axis_equatorial' is not supported in SDF version {target_version} (added in 1.10)")
-        kwargs = {"sdf_version": target_version}
-        kwargs["surface_axis_equatorial"] = self.surface_axis_equatorial
-        new_obj = self.__class__(**kwargs)
-        return new_obj
-
-    def to_sdf(self, version: str = None) -> ET.Element:
-        if version is not None and version != self.__version__:
-            return self.to_version(version).to_sdf()
-        version = version or self.__version__
-        el = ET.Element("surface_axis_equatorial")
-        if self.surface_axis_equatorial is not None:
-            el.text = str(self.surface_axis_equatorial)
-        return el
-
-    @classmethod
-    def from_sdf(cls, el: ET.Element, version: str) -> "SurfaceAxisEquatorial":
-        _text = el.text or 0.0
-        _surface_axis_equatorial = _parse_double(_text)
-        if _surface_axis_equatorial is not None and cmp_version(version, "1.10") < 0:
-            if _surface_axis_equatorial != 0.0:
-                raise ValueError(f"'surface_axis_equatorial' is not supported in SDF version {version} (added in 1.10)")
-        return cls(sdf_version=version, surface_axis_equatorial=_surface_axis_equatorial)
-
-
-class SurfaceAxisPolar(Model):
+class SurfaceAxisPolar(BaseModel):
     def __init__(self, sdf_version: str, surface_axis_polar: float = 0.0):
         self.__version__ = sdf_version
         self.surface_axis_polar = surface_axis_polar
@@ -13842,16 +18584,52 @@ class SurfaceAxisPolar(Model):
         return el
 
     @classmethod
-    def from_sdf(cls, el: ET.Element, version: str) -> "SurfaceAxisPolar":
+    def _from_sdf(cls, el: ET.Element, version: str):
         _text = el.text or 0.0
         _surface_axis_polar = _parse_double(_text)
+        if isinstance(_surface_axis_polar, SDFError):
+            return _surface_axis_polar
         if _surface_axis_polar is not None and cmp_version(version, "1.10") < 0:
             if _surface_axis_polar != 0.0:
-                raise ValueError(f"'surface_axis_polar' is not supported in SDF version {version} (added in 1.10)")
+                return SDFError(f"'surface_axis_polar' is not supported in SDF version {version} (added in 1.10)")
         return cls(sdf_version=version, surface_axis_polar=_surface_axis_polar)
 
 
-class SphericalCoordinates(Model):
+class SurfaceAxisEquatorial(BaseModel):
+    def __init__(self, sdf_version: str, surface_axis_equatorial: float = 0.0):
+        self.__version__ = sdf_version
+        self.surface_axis_equatorial = surface_axis_equatorial
+
+    def to_version(self, target_version: str) -> "SurfaceAxisEquatorial":
+        if self.surface_axis_equatorial is not None and cmp_version(target_version, "1.10") < 0:
+            raise ValueError(f"'surface_axis_equatorial' is not supported in SDF version {target_version} (added in 1.10)")
+        kwargs = {"sdf_version": target_version}
+        kwargs["surface_axis_equatorial"] = self.surface_axis_equatorial
+        new_obj = self.__class__(**kwargs)
+        return new_obj
+
+    def to_sdf(self, version: str = None) -> ET.Element:
+        if version is not None and version != self.__version__:
+            return self.to_version(version).to_sdf()
+        version = version or self.__version__
+        el = ET.Element("surface_axis_equatorial")
+        if self.surface_axis_equatorial is not None:
+            el.text = str(self.surface_axis_equatorial)
+        return el
+
+    @classmethod
+    def _from_sdf(cls, el: ET.Element, version: str):
+        _text = el.text or 0.0
+        _surface_axis_equatorial = _parse_double(_text)
+        if isinstance(_surface_axis_equatorial, SDFError):
+            return _surface_axis_equatorial
+        if _surface_axis_equatorial is not None and cmp_version(version, "1.10") < 0:
+            if _surface_axis_equatorial != 0.0:
+                return SDFError(f"'surface_axis_equatorial' is not supported in SDF version {version} (added in 1.10)")
+        return cls(sdf_version=version, surface_axis_equatorial=_surface_axis_equatorial)
+
+
+class SphericalCoordinates(BaseModel):
     def __init__(
         self,
         sdf_version: str,
@@ -13861,8 +18639,8 @@ class SphericalCoordinates(Model):
         elevation: "Elevation" = None,
         heading_deg: "HeadingDeg" = None,
         world_frame_orientation: "WorldFrameOrientation" = None,
-        surface_axis_equatorial: "SurfaceAxisEquatorial" = None,
-        surface_axis_polar: "SurfaceAxisPolar" = None
+        surface_axis_polar: "SurfaceAxisPolar" = None,
+        surface_axis_equatorial: "SurfaceAxisEquatorial" = None
     ):
         self.__version__ = sdf_version
         self.surface_model = surface_model
@@ -13871,16 +18649,16 @@ class SphericalCoordinates(Model):
         self.elevation = elevation
         self.heading_deg = heading_deg
         self.world_frame_orientation = world_frame_orientation
-        self.surface_axis_equatorial = surface_axis_equatorial
         self.surface_axis_polar = surface_axis_polar
+        self.surface_axis_equatorial = surface_axis_equatorial
 
     def to_version(self, target_version: str) -> "SphericalCoordinates":
         if self.world_frame_orientation is not None and cmp_version(target_version, "1.6") < 0:
             raise ValueError(f"'world_frame_orientation' is not supported in SDF version {target_version} (added in 1.6)")
-        if self.surface_axis_equatorial is not None and cmp_version(target_version, "1.10") < 0:
-            raise ValueError(f"'surface_axis_equatorial' is not supported in SDF version {target_version} (added in 1.10)")
         if self.surface_axis_polar is not None and cmp_version(target_version, "1.10") < 0:
             raise ValueError(f"'surface_axis_polar' is not supported in SDF version {target_version} (added in 1.10)")
+        if self.surface_axis_equatorial is not None and cmp_version(target_version, "1.10") < 0:
+            raise ValueError(f"'surface_axis_equatorial' is not supported in SDF version {target_version} (added in 1.10)")
         kwargs = {"sdf_version": target_version}
         kwargs["surface_model"] = self.surface_model.to_version(target_version) if self.surface_model is not None else None
         kwargs["latitude_deg"] = self.latitude_deg.to_version(target_version) if self.latitude_deg is not None else None
@@ -13888,8 +18666,8 @@ class SphericalCoordinates(Model):
         kwargs["elevation"] = self.elevation.to_version(target_version) if self.elevation is not None else None
         kwargs["heading_deg"] = self.heading_deg.to_version(target_version) if self.heading_deg is not None else None
         kwargs["world_frame_orientation"] = self.world_frame_orientation.to_version(target_version) if self.world_frame_orientation is not None else None
-        kwargs["surface_axis_equatorial"] = self.surface_axis_equatorial.to_version(target_version) if self.surface_axis_equatorial is not None else None
         kwargs["surface_axis_polar"] = self.surface_axis_polar.to_version(target_version) if self.surface_axis_polar is not None else None
+        kwargs["surface_axis_equatorial"] = self.surface_axis_equatorial.to_version(target_version) if self.surface_axis_equatorial is not None else None
         new_obj = self.__class__(**kwargs)
         return new_obj
 
@@ -13898,52 +18676,120 @@ class SphericalCoordinates(Model):
             return self.to_version(version).to_sdf()
         version = version or self.__version__
         el = ET.Element("spherical_coordinates")
+        if self.surface_model is None:
+            raise ValueError(f"'surface_model' is required in SDF version {version}")
         if self.surface_model is not None:
             el.append(self.surface_model.to_sdf(version))
+        if self.latitude_deg is None:
+            raise ValueError(f"'latitude_deg' is required in SDF version {version}")
         if self.latitude_deg is not None:
             el.append(self.latitude_deg.to_sdf(version))
+        if self.longitude_deg is None:
+            raise ValueError(f"'longitude_deg' is required in SDF version {version}")
         if self.longitude_deg is not None:
             el.append(self.longitude_deg.to_sdf(version))
+        if self.elevation is None:
+            raise ValueError(f"'elevation' is required in SDF version {version}")
         if self.elevation is not None:
             el.append(self.elevation.to_sdf(version))
+        if self.heading_deg is None:
+            raise ValueError(f"'heading_deg' is required in SDF version {version}")
         if self.heading_deg is not None:
             el.append(self.heading_deg.to_sdf(version))
         if self.world_frame_orientation is not None:
             el.append(self.world_frame_orientation.to_sdf(version))
-        if self.surface_axis_equatorial is not None:
-            el.append(self.surface_axis_equatorial.to_sdf(version))
         if self.surface_axis_polar is not None:
             el.append(self.surface_axis_polar.to_sdf(version))
+        if self.surface_axis_equatorial is not None:
+            el.append(self.surface_axis_equatorial.to_sdf(version))
         return el
 
     @classmethod
-    def from_sdf(cls, el: ET.Element, version: str) -> "SphericalCoordinates":
+    def _from_sdf(cls, el: ET.Element, version: str):
         _c_surface_model = el.find("surface_model")
-        _surface_model = SurfaceModel.from_sdf(_c_surface_model, version) if _c_surface_model is not None else None
+        if _c_surface_model is not None:
+            _res = SurfaceModel._from_sdf(_c_surface_model, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("surface_model")
+            _surface_model = _res
+        else:
+            _surface_model = None
+        if _surface_model is None:
+            return SDFError(f"'surface_model' is required in SDF version {version}")
         _c_latitude_deg = el.find("latitude_deg")
-        _latitude_deg = LatitudeDeg.from_sdf(_c_latitude_deg, version) if _c_latitude_deg is not None else None
+        if _c_latitude_deg is not None:
+            _res = LatitudeDeg._from_sdf(_c_latitude_deg, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("latitude_deg")
+            _latitude_deg = _res
+        else:
+            _latitude_deg = None
+        if _latitude_deg is None:
+            return SDFError(f"'latitude_deg' is required in SDF version {version}")
         _c_longitude_deg = el.find("longitude_deg")
-        _longitude_deg = LongitudeDeg.from_sdf(_c_longitude_deg, version) if _c_longitude_deg is not None else None
+        if _c_longitude_deg is not None:
+            _res = LongitudeDeg._from_sdf(_c_longitude_deg, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("longitude_deg")
+            _longitude_deg = _res
+        else:
+            _longitude_deg = None
+        if _longitude_deg is None:
+            return SDFError(f"'longitude_deg' is required in SDF version {version}")
         _c_elevation = el.find("elevation")
-        _elevation = Elevation.from_sdf(_c_elevation, version) if _c_elevation is not None else None
+        if _c_elevation is not None:
+            _res = Elevation._from_sdf(_c_elevation, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("elevation")
+            _elevation = _res
+        else:
+            _elevation = None
+        if _elevation is None:
+            return SDFError(f"'elevation' is required in SDF version {version}")
         _c_heading_deg = el.find("heading_deg")
-        _heading_deg = HeadingDeg.from_sdf(_c_heading_deg, version) if _c_heading_deg is not None else None
+        if _c_heading_deg is not None:
+            _res = HeadingDeg._from_sdf(_c_heading_deg, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("heading_deg")
+            _heading_deg = _res
+        else:
+            _heading_deg = None
+        if _heading_deg is None:
+            return SDFError(f"'heading_deg' is required in SDF version {version}")
         _c_world_frame_orientation = el.find("world_frame_orientation")
-        _world_frame_orientation = WorldFrameOrientation.from_sdf(_c_world_frame_orientation, version) if _c_world_frame_orientation is not None else None
+        if _c_world_frame_orientation is not None:
+            _res = WorldFrameOrientation._from_sdf(_c_world_frame_orientation, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("world_frame_orientation")
+            _world_frame_orientation = _res
+        else:
+            _world_frame_orientation = None
         if _world_frame_orientation is not None and cmp_version(version, "1.6") < 0:
-            raise ValueError(f"'world_frame_orientation' is not supported in SDF version {version} (added in 1.6)")
-        _c_surface_axis_equatorial = el.find("surface_axis_equatorial")
-        _surface_axis_equatorial = SurfaceAxisEquatorial.from_sdf(_c_surface_axis_equatorial, version) if _c_surface_axis_equatorial is not None else None
-        if _surface_axis_equatorial is not None and cmp_version(version, "1.10") < 0:
-            raise ValueError(f"'surface_axis_equatorial' is not supported in SDF version {version} (added in 1.10)")
+            return SDFError(f"'world_frame_orientation' is not supported in SDF version {version} (added in 1.6)")
         _c_surface_axis_polar = el.find("surface_axis_polar")
-        _surface_axis_polar = SurfaceAxisPolar.from_sdf(_c_surface_axis_polar, version) if _c_surface_axis_polar is not None else None
+        if _c_surface_axis_polar is not None:
+            _res = SurfaceAxisPolar._from_sdf(_c_surface_axis_polar, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("surface_axis_polar")
+            _surface_axis_polar = _res
+        else:
+            _surface_axis_polar = None
         if _surface_axis_polar is not None and cmp_version(version, "1.10") < 0:
-            raise ValueError(f"'surface_axis_polar' is not supported in SDF version {version} (added in 1.10)")
-        return cls(sdf_version=version, surface_model=_surface_model, latitude_deg=_latitude_deg, longitude_deg=_longitude_deg, elevation=_elevation, heading_deg=_heading_deg, world_frame_orientation=_world_frame_orientation, surface_axis_equatorial=_surface_axis_equatorial, surface_axis_polar=_surface_axis_polar)
+            return SDFError(f"'surface_axis_polar' is not supported in SDF version {version} (added in 1.10)")
+        _c_surface_axis_equatorial = el.find("surface_axis_equatorial")
+        if _c_surface_axis_equatorial is not None:
+            _res = SurfaceAxisEquatorial._from_sdf(_c_surface_axis_equatorial, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("surface_axis_equatorial")
+            _surface_axis_equatorial = _res
+        else:
+            _surface_axis_equatorial = None
+        if _surface_axis_equatorial is not None and cmp_version(version, "1.10") < 0:
+            return SDFError(f"'surface_axis_equatorial' is not supported in SDF version {version} (added in 1.10)")
+        return cls(sdf_version=version, surface_model=_surface_model, latitude_deg=_latitude_deg, longitude_deg=_longitude_deg, elevation=_elevation, heading_deg=_heading_deg, world_frame_orientation=_world_frame_orientation, surface_axis_polar=_surface_axis_polar, surface_axis_equatorial=_surface_axis_equatorial)
 
 
-class Device(Model):
+class Device(BaseModel):
     def __init__(self, sdf_version: str, device: str = "default"):
         self.__version__ = sdf_version
         self.device = device
@@ -13959,18 +18805,24 @@ class Device(Model):
             return self.to_version(version).to_sdf()
         version = version or self.__version__
         el = ET.Element("device")
+        if self.device is None:
+            raise ValueError(f"'device' is required in SDF version {version}")
         if self.device is not None:
             el.text = self.device
         return el
 
     @classmethod
-    def from_sdf(cls, el: ET.Element, version: str) -> "Device":
+    def _from_sdf(cls, el: ET.Element, version: str):
+        if el.text is None:
+            return SDFError(f"'device' is required in SDF version {version}")
         _text = el.text or "default"
         _device = _text
+        if isinstance(_device, SDFError):
+            return _device
         return cls(sdf_version=version, device=_device)
 
 
-class Audio(Model):
+class Audio(BaseModel):
     def __init__(self, sdf_version: str, device: "Device" = None):
         self.__version__ = sdf_version
         self.device = device
@@ -13986,18 +18838,28 @@ class Audio(Model):
             return self.to_version(version).to_sdf()
         version = version or self.__version__
         el = ET.Element("audio")
+        if self.device is None:
+            raise ValueError(f"'device' is required in SDF version {version}")
         if self.device is not None:
             el.append(self.device.to_sdf(version))
         return el
 
     @classmethod
-    def from_sdf(cls, el: ET.Element, version: str) -> "Audio":
+    def _from_sdf(cls, el: ET.Element, version: str):
         _c_device = el.find("device")
-        _device = Device.from_sdf(_c_device, version) if _c_device is not None else None
+        if _c_device is not None:
+            _res = Device._from_sdf(_c_device, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("device")
+            _device = _res
+        else:
+            _device = None
+        if _device is None:
+            return SDFError(f"'device' is required in SDF version {version}")
         return cls(sdf_version=version, device=_device)
 
 
-class ModelCount(Model):
+class ModelCount(BaseModel):
     def __init__(self, sdf_version: str, model_count: int = 1):
         self.__version__ = sdf_version
         self.model_count = model_count
@@ -14013,18 +18875,24 @@ class ModelCount(Model):
             return self.to_version(version).to_sdf()
         version = version or self.__version__
         el = ET.Element("model_count")
+        if self.model_count is None:
+            raise ValueError(f"'model_count' is required in SDF version {version}")
         if self.model_count is not None:
             el.text = str(self.model_count)
         return el
 
     @classmethod
-    def from_sdf(cls, el: ET.Element, version: str) -> "ModelCount":
+    def _from_sdf(cls, el: ET.Element, version: str):
+        if el.text is None:
+            return SDFError(f"'model_count' is required in SDF version {version}")
         _text = el.text or 1
         _model_count = _parse_int32(_text)
+        if isinstance(_model_count, SDFError):
+            return _model_count
         return cls(sdf_version=version, model_count=_model_count)
 
 
-class Rows(Model):
+class Rows(BaseModel):
     def __init__(self, sdf_version: str, rows: int = 1):
         self.__version__ = sdf_version
         self.rows = rows
@@ -14045,13 +18913,15 @@ class Rows(Model):
         return el
 
     @classmethod
-    def from_sdf(cls, el: ET.Element, version: str) -> "Rows":
+    def _from_sdf(cls, el: ET.Element, version: str):
         _text = el.text or 1
         _rows = _parse_int32(_text)
+        if isinstance(_rows, SDFError):
+            return _rows
         return cls(sdf_version=version, rows=_rows)
 
 
-class Cols(Model):
+class Cols(BaseModel):
     def __init__(self, sdf_version: str, cols: int = 1):
         self.__version__ = sdf_version
         self.cols = cols
@@ -14072,13 +18942,15 @@ class Cols(Model):
         return el
 
     @classmethod
-    def from_sdf(cls, el: ET.Element, version: str) -> "Cols":
+    def _from_sdf(cls, el: ET.Element, version: str):
         _text = el.text or 1
         _cols = _parse_int32(_text)
+        if isinstance(_cols, SDFError):
+            return _cols
         return cls(sdf_version=version, cols=_cols)
 
 
-class Step(Model):
+class Step(BaseModel):
     def __init__(self, sdf_version: str, step: Vector3 = None):
         self.__version__ = sdf_version
         if step is None:
@@ -14101,13 +18973,15 @@ class Step(Model):
         return el
 
     @classmethod
-    def from_sdf(cls, el: ET.Element, version: str) -> "Step":
+    def _from_sdf(cls, el: ET.Element, version: str):
         _text = el.text or "0.5 0.5 0"
-        _step = Vector3.from_sdf(_text)
+        _step = Vector3._from_sdf(_text, version)
+        if isinstance(_step, SDFError):
+            return _step
         return cls(sdf_version=version, step=_step)
 
 
-class Distribution(Model):
+class Distribution(BaseModel):
     def __init__(
         self,
         sdf_version: str,
@@ -14136,6 +19010,8 @@ class Distribution(Model):
             return self.to_version(version).to_sdf()
         version = version or self.__version__
         el = ET.Element("distribution")
+        if self.type is None:
+            raise ValueError(f"'type' is required in SDF version {version}")
         if self.type is not None:
             el.append(self.type.to_sdf(version))
         if self.rows is not None:
@@ -14147,19 +19023,45 @@ class Distribution(Model):
         return el
 
     @classmethod
-    def from_sdf(cls, el: ET.Element, version: str) -> "Distribution":
+    def _from_sdf(cls, el: ET.Element, version: str):
         _c_type = el.find("type")
-        _type = Type.from_sdf(_c_type, version) if _c_type is not None else None
+        if _c_type is not None:
+            _res = Type._from_sdf(_c_type, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("type")
+            _type = _res
+        else:
+            _type = None
+        if _type is None:
+            return SDFError(f"'type' is required in SDF version {version}")
         _c_rows = el.find("rows")
-        _rows = Rows.from_sdf(_c_rows, version) if _c_rows is not None else None
+        if _c_rows is not None:
+            _res = Rows._from_sdf(_c_rows, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("rows")
+            _rows = _res
+        else:
+            _rows = None
         _c_cols = el.find("cols")
-        _cols = Cols.from_sdf(_c_cols, version) if _c_cols is not None else None
+        if _c_cols is not None:
+            _res = Cols._from_sdf(_c_cols, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("cols")
+            _cols = _res
+        else:
+            _cols = None
         _c_step = el.find("step")
-        _step = Step.from_sdf(_c_step, version) if _c_step is not None else None
+        if _c_step is not None:
+            _res = Step._from_sdf(_c_step, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("step")
+            _step = _res
+        else:
+            _step = None
         return cls(sdf_version=version, type=_type, rows=_rows, cols=_cols, step=_step)
 
 
-class Population(Model):
+class Population(BaseModel):
     def __init__(
         self,
         sdf_version: str,
@@ -14183,6 +19085,8 @@ class Population(Model):
         self.distribution = distribution
 
     def to_version(self, target_version: str) -> "Population":
+        if self.frame is not None and cmp_version(target_version, "1.7") >= 0:
+            raise ValueError(f"'frame' is not supported in SDF version {target_version} (removed in 1.7)")
         kwargs = {"sdf_version": target_version}
         kwargs["name"] = self.name
         kwargs["box"] = self.box.to_version(target_version) if self.box is not None else None
@@ -14200,6 +19104,8 @@ class Population(Model):
             return self.to_version(version).to_sdf()
         version = version or self.__version__
         el = ET.Element("population")
+        if self.name is None:
+            raise ValueError(f"'name' is required in SDF version {version}")
         if self.name is not None:
             el.set("name", self.name)
         if self.box is not None:
@@ -14210,34 +19116,91 @@ class Population(Model):
             el.append(item.to_sdf(version))
         if self.pose is not None:
             el.append(self.pose.to_sdf(version))
+        if self.model is None:
+            raise ValueError(f"'model' is required in SDF version {version}")
         if self.model is not None:
             el.append(self.model.to_sdf(version))
+        if self.model_count is None:
+            raise ValueError(f"'model_count' is required in SDF version {version}")
         if self.model_count is not None:
             el.append(self.model_count.to_sdf(version))
+        if self.distribution is None:
+            raise ValueError(f"'distribution' is required in SDF version {version}")
         if self.distribution is not None:
             el.append(self.distribution.to_sdf(version))
         return el
 
     @classmethod
-    def from_sdf(cls, el: ET.Element, version: str) -> "Population":
+    def _from_sdf(cls, el: ET.Element, version: str):
+        if el.get("name") is None:
+            return SDFError(f"'name' is required in SDF version {version}")
         _name = el.get("name", "__default__")
+        if isinstance(_name, SDFError):
+            return _name.extend("@name")
         _c_box = el.find("box")
-        _box = Box.from_sdf(_c_box, version) if _c_box is not None else None
+        if _c_box is not None:
+            _res = Box._from_sdf(_c_box, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("box")
+            _box = _res
+        else:
+            _box = None
         _c_cylinder = el.find("cylinder")
-        _cylinder = Cylinder.from_sdf(_c_cylinder, version) if _c_cylinder is not None else None
-        _frame = [Frame.from_sdf(c, version) for c in el.findall("frame")]
+        if _c_cylinder is not None:
+            _res = Cylinder._from_sdf(_c_cylinder, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("cylinder")
+            _cylinder = _res
+        else:
+            _cylinder = None
+        _frame = []
+        for c in el.findall("frame"):
+            _res = Frame._from_sdf(c, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("frame")
+            _frame.append(_res)
         _c_pose = el.find("pose")
-        _pose = Pose.from_sdf(_c_pose, version) if _c_pose is not None else None
+        if _c_pose is not None:
+            _res = Pose._from_sdf(_c_pose, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("pose")
+            _pose = _res
+        else:
+            _pose = None
         _c_model = el.find("model")
-        _model = Model.from_sdf(_c_model, version) if _c_model is not None else None
+        if _c_model is not None:
+            _res = Model._from_sdf(_c_model, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("model")
+            _model = _res
+        else:
+            _model = None
+        if _model is None:
+            return SDFError(f"'model' is required in SDF version {version}")
         _c_model_count = el.find("model_count")
-        _model_count = ModelCount.from_sdf(_c_model_count, version) if _c_model_count is not None else None
+        if _c_model_count is not None:
+            _res = ModelCount._from_sdf(_c_model_count, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("model_count")
+            _model_count = _res
+        else:
+            _model_count = None
+        if _model_count is None:
+            return SDFError(f"'model_count' is required in SDF version {version}")
         _c_distribution = el.find("distribution")
-        _distribution = Distribution.from_sdf(_c_distribution, version) if _c_distribution is not None else None
+        if _c_distribution is not None:
+            _res = Distribution._from_sdf(_c_distribution, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("distribution")
+            _distribution = _res
+        else:
+            _distribution = None
+        if _distribution is None:
+            return SDFError(f"'distribution' is required in SDF version {version}")
         return cls(sdf_version=version, name=_name, box=_box, cylinder=_cylinder, frame=_frame, pose=_pose, model=_model, model_count=_model_count, distribution=_distribution)
 
 
-class Temperature(Model):
+class Temperature(BaseModel):
     def __init__(self, sdf_version: str, temperature: float = 288.15):
         self.__version__ = sdf_version
         self.temperature = temperature
@@ -14258,13 +19221,15 @@ class Temperature(Model):
         return el
 
     @classmethod
-    def from_sdf(cls, el: ET.Element, version: str) -> "Temperature":
+    def _from_sdf(cls, el: ET.Element, version: str):
         _text = el.text or 288.15
         _temperature = _parse_double(_text)
+        if isinstance(_temperature, SDFError):
+            return _temperature
         return cls(sdf_version=version, temperature=_temperature)
 
 
-class TemperatureGradient(Model):
+class TemperatureGradient(BaseModel):
     def __init__(self, sdf_version: str, temperature_gradient: float = -0.0065):
         self.__version__ = sdf_version
         self.temperature_gradient = temperature_gradient
@@ -14285,13 +19250,15 @@ class TemperatureGradient(Model):
         return el
 
     @classmethod
-    def from_sdf(cls, el: ET.Element, version: str) -> "TemperatureGradient":
+    def _from_sdf(cls, el: ET.Element, version: str):
         _text = el.text or -0.0065
         _temperature_gradient = _parse_double(_text)
+        if isinstance(_temperature_gradient, SDFError):
+            return _temperature_gradient
         return cls(sdf_version=version, temperature_gradient=_temperature_gradient)
 
 
-class Atmosphere(Model):
+class Atmosphere(BaseModel):
     def __init__(
         self,
         sdf_version: str,
@@ -14320,6 +19287,8 @@ class Atmosphere(Model):
             return self.to_version(version).to_sdf()
         version = version or self.__version__
         el = ET.Element("atmosphere")
+        if self.type is None:
+            raise ValueError(f"'type' is required in SDF version {version}")
         if self.type is not None:
             el.set("type", self.type)
         if self.temperature is not None:
@@ -14331,18 +19300,40 @@ class Atmosphere(Model):
         return el
 
     @classmethod
-    def from_sdf(cls, el: ET.Element, version: str) -> "Atmosphere":
+    def _from_sdf(cls, el: ET.Element, version: str):
+        if el.get("type") is None:
+            return SDFError(f"'type' is required in SDF version {version}")
         _type = el.get("type", "adiabatic")
+        if isinstance(_type, SDFError):
+            return _type.extend("@type")
         _c_temperature = el.find("temperature")
-        _temperature = Temperature.from_sdf(_c_temperature, version) if _c_temperature is not None else None
+        if _c_temperature is not None:
+            _res = Temperature._from_sdf(_c_temperature, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("temperature")
+            _temperature = _res
+        else:
+            _temperature = None
         _c_pressure = el.find("pressure")
-        _pressure = Pressure.from_sdf(_c_pressure, version) if _c_pressure is not None else None
+        if _c_pressure is not None:
+            _res = Pressure._from_sdf(_c_pressure, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("pressure")
+            _pressure = _res
+        else:
+            _pressure = None
         _c_temperature_gradient = el.find("temperature_gradient")
-        _temperature_gradient = TemperatureGradient.from_sdf(_c_temperature_gradient, version) if _c_temperature_gradient is not None else None
+        if _c_temperature_gradient is not None:
+            _res = TemperatureGradient._from_sdf(_c_temperature_gradient, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("temperature_gradient")
+            _temperature_gradient = _res
+        else:
+            _temperature_gradient = None
         return cls(sdf_version=version, type=_type, temperature=_temperature, pressure=_pressure, temperature_gradient=_temperature_gradient)
 
 
-class Wind(Model):
+class Wind(BaseModel):
     def __init__(self, sdf_version: str, linear_velocity: "LinearVelocity" = None):
         self.__version__ = sdf_version
         self.linear_velocity = linear_velocity
@@ -14363,13 +19354,19 @@ class Wind(Model):
         return el
 
     @classmethod
-    def from_sdf(cls, el: ET.Element, version: str) -> "Wind":
+    def _from_sdf(cls, el: ET.Element, version: str):
         _c_linear_velocity = el.find("linear_velocity")
-        _linear_velocity = LinearVelocity.from_sdf(_c_linear_velocity, version) if _c_linear_velocity is not None else None
+        if _c_linear_velocity is not None:
+            _res = LinearVelocity._from_sdf(_c_linear_velocity, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("linear_velocity")
+            _linear_velocity = _res
+        else:
+            _linear_velocity = None
         return cls(sdf_version=version, linear_velocity=_linear_velocity)
 
 
-class World(Model):
+class World(BaseModel):
     _MIGRATIONS = [{"version": "1.6", "ops": [{"type": "move", "from": "physics::gravity", "to": "gravity"}, {"type": "move", "from": "physics::magnetic_field", "to": "magnetic_field"}]}]
 
     def __init__(
@@ -14387,13 +19384,13 @@ class World(Model):
         road: List["Road"] = None,
         state: List["State"] = None,
         spherical_coordinates: "SphericalCoordinates" = None,
-        audio: "Audio" = None,
         include: List["Include"] = None,
+        audio: "Audio" = None,
         population: List["Population"] = None,
         atmosphere: "Atmosphere" = None,
-        wind: "Wind" = None,
         gravity: "Gravity" = None,
         magnetic_field: "MagneticField" = None,
+        wind: "Wind" = None,
         frame: List["Frame"] = None
     ):
         self.__version__ = sdf_version
@@ -14409,32 +19406,34 @@ class World(Model):
         self.road = road or []
         self.state = state or []
         self.spherical_coordinates = spherical_coordinates
-        self.audio = audio
         self.include = include or []
+        self.audio = audio
         self.population = population or []
         self.atmosphere = atmosphere
-        self.wind = wind
         self.gravity = gravity
         self.magnetic_field = magnetic_field
+        self.wind = wind
         self.frame = frame or []
 
     def to_version(self, target_version: str) -> "World":
+        if self.joint is not None and cmp_version(target_version, "1.7") >= 0:
+            raise ValueError(f"'joint' is not supported in SDF version {target_version} (removed in 1.7)")
         if self.spherical_coordinates is not None and cmp_version(target_version, "1.4") < 0:
             raise ValueError(f"'spherical_coordinates' is not supported in SDF version {target_version} (added in 1.4)")
-        if self.audio is not None and cmp_version(target_version, "1.4") < 0:
-            raise ValueError(f"'audio' is not supported in SDF version {target_version} (added in 1.4)")
         if self.include is not None and cmp_version(target_version, "1.4") < 0:
             raise ValueError(f"'include' is not supported in SDF version {target_version} (added in 1.4)")
+        if self.audio is not None and cmp_version(target_version, "1.4") < 0:
+            raise ValueError(f"'audio' is not supported in SDF version {target_version} (added in 1.4)")
         if self.population is not None and cmp_version(target_version, "1.5") < 0:
             raise ValueError(f"'population' is not supported in SDF version {target_version} (added in 1.5)")
         if self.atmosphere is not None and cmp_version(target_version, "1.6") < 0:
             raise ValueError(f"'atmosphere' is not supported in SDF version {target_version} (added in 1.6)")
-        if self.wind is not None and cmp_version(target_version, "1.6") < 0:
-            raise ValueError(f"'wind' is not supported in SDF version {target_version} (added in 1.6)")
         if self.gravity is not None and cmp_version(target_version, "1.6") < 0:
             raise ValueError(f"'gravity' is not supported in SDF version {target_version} (added in 1.6)")
         if self.magnetic_field is not None and cmp_version(target_version, "1.6") < 0:
             raise ValueError(f"'magnetic_field' is not supported in SDF version {target_version} (added in 1.6)")
+        if self.wind is not None and cmp_version(target_version, "1.6") < 0:
+            raise ValueError(f"'wind' is not supported in SDF version {target_version} (added in 1.6)")
         if self.frame is not None and cmp_version(target_version, "1.7") < 0:
             raise ValueError(f"'frame' is not supported in SDF version {target_version} (added in 1.7)")
         kwargs = {"sdf_version": target_version}
@@ -14450,13 +19449,13 @@ class World(Model):
         kwargs["road"] = [c.to_version(target_version) for c in (self.road or [])]
         kwargs["state"] = [c.to_version(target_version) for c in (self.state or [])]
         kwargs["spherical_coordinates"] = self.spherical_coordinates.to_version(target_version) if self.spherical_coordinates is not None else None
-        kwargs["audio"] = self.audio.to_version(target_version) if self.audio is not None else None
         kwargs["include"] = [c.to_version(target_version) for c in (self.include or [])]
+        kwargs["audio"] = self.audio.to_version(target_version) if self.audio is not None else None
         kwargs["population"] = [c.to_version(target_version) for c in (self.population or [])]
         kwargs["atmosphere"] = self.atmosphere.to_version(target_version) if self.atmosphere is not None else None
-        kwargs["wind"] = self.wind.to_version(target_version) if self.wind is not None else None
         kwargs["gravity"] = self.gravity.to_version(target_version) if self.gravity is not None else None
         kwargs["magnetic_field"] = self.magnetic_field.to_version(target_version) if self.magnetic_field is not None else None
+        kwargs["wind"] = self.wind.to_version(target_version) if self.wind is not None else None
         kwargs["frame"] = [c.to_version(target_version) for c in (self.frame or [])]
         new_obj = self.__class__(**kwargs)
         apply_migrations(new_obj, target_version)
@@ -14467,12 +19466,18 @@ class World(Model):
             return self.to_version(version).to_sdf()
         version = version or self.__version__
         el = ET.Element("world")
+        if self.name is None:
+            raise ValueError(f"'name' is required in SDF version {version}")
         if self.name is not None:
             el.set("name", self.name)
         if self.gui is not None:
             el.append(self.gui.to_sdf(version))
+        if self.physics is None:
+            raise ValueError(f"'physics' is required in SDF version {version}")
         if self.physics is not None:
             el.append(self.physics.to_sdf(version))
+        if self.scene is None:
+            raise ValueError(f"'scene' is required in SDF version {version}")
         if self.scene is not None:
             el.append(self.scene.to_sdf(version))
         for item in (self.light or []):
@@ -14491,77 +19496,207 @@ class World(Model):
             el.append(item.to_sdf(version))
         if self.spherical_coordinates is not None:
             el.append(self.spherical_coordinates.to_sdf(version))
-        if self.audio is not None:
-            el.append(self.audio.to_sdf(version))
         for item in (self.include or []):
             el.append(item.to_sdf(version))
+        if self.audio is not None:
+            el.append(self.audio.to_sdf(version))
         for item in (self.population or []):
             el.append(item.to_sdf(version))
+        if cmp_version(version, "1.6") >= 0:
+            if self.atmosphere is None:
+                raise ValueError(f"'atmosphere' is required in SDF version {version}")
         if self.atmosphere is not None:
             el.append(self.atmosphere.to_sdf(version))
-        if self.wind is not None:
-            el.append(self.wind.to_sdf(version))
+        if cmp_version(version, "1.6") >= 0:
+            if self.gravity is None:
+                raise ValueError(f"'gravity' is required in SDF version {version}")
         if self.gravity is not None:
             el.append(self.gravity.to_sdf(version))
+        if cmp_version(version, "1.6") >= 0:
+            if self.magnetic_field is None:
+                raise ValueError(f"'magnetic_field' is required in SDF version {version}")
         if self.magnetic_field is not None:
             el.append(self.magnetic_field.to_sdf(version))
+        if self.wind is not None:
+            el.append(self.wind.to_sdf(version))
         for item in (self.frame or []):
             el.append(item.to_sdf(version))
         return el
 
     @classmethod
-    def from_sdf(cls, el: ET.Element, version: str) -> "World":
+    def _from_sdf(cls, el: ET.Element, version: str):
+        if el.get("name") is None:
+            return SDFError(f"'name' is required in SDF version {version}")
         _name = el.get("name", "__default__")
+        if isinstance(_name, SDFError):
+            return _name.extend("@name")
         _c_gui = el.find("gui")
-        _gui = Gui.from_sdf(_c_gui, version) if _c_gui is not None else None
+        if _c_gui is not None:
+            _res = Gui._from_sdf(_c_gui, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("gui")
+            _gui = _res
+        else:
+            _gui = None
         _c_physics = el.find("physics")
-        _physics = Physics.from_sdf(_c_physics, version) if _c_physics is not None else None
+        if _c_physics is not None:
+            _res = Physics._from_sdf(_c_physics, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("physics")
+            _physics = _res
+        else:
+            _physics = None
+        if _physics is None:
+            return SDFError(f"'physics' is required in SDF version {version}")
         _c_scene = el.find("scene")
-        _scene = Scene.from_sdf(_c_scene, version) if _c_scene is not None else None
-        _light = [Light.from_sdf(c, version) for c in el.findall("light")]
-        _model = [Model.from_sdf(c, version) for c in el.findall("model")]
-        _actor = [Actor.from_sdf(c, version) for c in el.findall("actor")]
-        _plugin = [Plugin.from_sdf(c, version) for c in el.findall("plugin")]
-        _joint = [Joint.from_sdf(c, version) for c in el.findall("joint")]
-        _road = [Road.from_sdf(c, version) for c in el.findall("road")]
-        _state = [State.from_sdf(c, version) for c in el.findall("state")]
+        if _c_scene is not None:
+            _res = Scene._from_sdf(_c_scene, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("scene")
+            _scene = _res
+        else:
+            _scene = None
+        if _scene is None:
+            return SDFError(f"'scene' is required in SDF version {version}")
+        _light = []
+        for c in el.findall("light"):
+            _res = Light._from_sdf(c, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("light")
+            _light.append(_res)
+        _model = []
+        for c in el.findall("model"):
+            _res = Model._from_sdf(c, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("model")
+            _model.append(_res)
+        _actor = []
+        for c in el.findall("actor"):
+            _res = Actor._from_sdf(c, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("actor")
+            _actor.append(_res)
+        _plugin = []
+        for c in el.findall("plugin"):
+            _res = Plugin._from_sdf(c, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("plugin")
+            _plugin.append(_res)
+        _joint = []
+        for c in el.findall("joint"):
+            _res = Joint._from_sdf(c, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("joint")
+            _joint.append(_res)
+        _road = []
+        for c in el.findall("road"):
+            _res = Road._from_sdf(c, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("road")
+            _road.append(_res)
+        _state = []
+        for c in el.findall("state"):
+            _res = State._from_sdf(c, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("state")
+            _state.append(_res)
         _c_spherical_coordinates = el.find("spherical_coordinates")
-        _spherical_coordinates = SphericalCoordinates.from_sdf(_c_spherical_coordinates, version) if _c_spherical_coordinates is not None else None
+        if _c_spherical_coordinates is not None:
+            _res = SphericalCoordinates._from_sdf(_c_spherical_coordinates, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("spherical_coordinates")
+            _spherical_coordinates = _res
+        else:
+            _spherical_coordinates = None
         if _spherical_coordinates is not None and cmp_version(version, "1.4") < 0:
-            raise ValueError(f"'spherical_coordinates' is not supported in SDF version {version} (added in 1.4)")
-        _c_audio = el.find("audio")
-        _audio = Audio.from_sdf(_c_audio, version) if _c_audio is not None else None
-        if _audio is not None and cmp_version(version, "1.4") < 0:
-            raise ValueError(f"'audio' is not supported in SDF version {version} (added in 1.4)")
-        _include = [Include.from_sdf(c, version) for c in el.findall("include")]
+            return SDFError(f"'spherical_coordinates' is not supported in SDF version {version} (added in 1.4)")
+        _include = []
+        for c in el.findall("include"):
+            _res = Include._from_sdf(c, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("include")
+            _include.append(_res)
         if _include and cmp_version(version, "1.4") < 0:
-            raise ValueError(f"'include' is not supported in SDF version {version} (added in 1.4)")
-        _population = [Population.from_sdf(c, version) for c in el.findall("population")]
+            return SDFError(f"'include' is not supported in SDF version {version} (added in 1.4)")
+        _c_audio = el.find("audio")
+        if _c_audio is not None:
+            _res = Audio._from_sdf(_c_audio, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("audio")
+            _audio = _res
+        else:
+            _audio = None
+        if _audio is not None and cmp_version(version, "1.4") < 0:
+            return SDFError(f"'audio' is not supported in SDF version {version} (added in 1.4)")
+        _population = []
+        for c in el.findall("population"):
+            _res = Population._from_sdf(c, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("population")
+            _population.append(_res)
         if _population and cmp_version(version, "1.5") < 0:
-            raise ValueError(f"'population' is not supported in SDF version {version} (added in 1.5)")
+            return SDFError(f"'population' is not supported in SDF version {version} (added in 1.5)")
         _c_atmosphere = el.find("atmosphere")
-        _atmosphere = Atmosphere.from_sdf(_c_atmosphere, version) if _c_atmosphere is not None else None
+        if _c_atmosphere is not None:
+            _res = Atmosphere._from_sdf(_c_atmosphere, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("atmosphere")
+            _atmosphere = _res
+        else:
+            _atmosphere = None
+        if cmp_version(version, "1.6") >= 0:
+            if _atmosphere is None:
+                return SDFError(f"'atmosphere' is required in SDF version {version}")
         if _atmosphere is not None and cmp_version(version, "1.6") < 0:
-            raise ValueError(f"'atmosphere' is not supported in SDF version {version} (added in 1.6)")
-        _c_wind = el.find("wind")
-        _wind = Wind.from_sdf(_c_wind, version) if _c_wind is not None else None
-        if _wind is not None and cmp_version(version, "1.6") < 0:
-            raise ValueError(f"'wind' is not supported in SDF version {version} (added in 1.6)")
+            return SDFError(f"'atmosphere' is not supported in SDF version {version} (added in 1.6)")
         _c_gravity = el.find("gravity")
-        _gravity = Gravity.from_sdf(_c_gravity, version) if _c_gravity is not None else None
+        if _c_gravity is not None:
+            _res = Gravity._from_sdf(_c_gravity, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("gravity")
+            _gravity = _res
+        else:
+            _gravity = None
+        if cmp_version(version, "1.6") >= 0:
+            if _gravity is None:
+                return SDFError(f"'gravity' is required in SDF version {version}")
         if _gravity is not None and cmp_version(version, "1.6") < 0:
-            raise ValueError(f"'gravity' is not supported in SDF version {version} (added in 1.6)")
+            return SDFError(f"'gravity' is not supported in SDF version {version} (added in 1.6)")
         _c_magnetic_field = el.find("magnetic_field")
-        _magnetic_field = MagneticField.from_sdf(_c_magnetic_field, version) if _c_magnetic_field is not None else None
+        if _c_magnetic_field is not None:
+            _res = MagneticField._from_sdf(_c_magnetic_field, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("magnetic_field")
+            _magnetic_field = _res
+        else:
+            _magnetic_field = None
+        if cmp_version(version, "1.6") >= 0:
+            if _magnetic_field is None:
+                return SDFError(f"'magnetic_field' is required in SDF version {version}")
         if _magnetic_field is not None and cmp_version(version, "1.6") < 0:
-            raise ValueError(f"'magnetic_field' is not supported in SDF version {version} (added in 1.6)")
-        _frame = [Frame.from_sdf(c, version) for c in el.findall("frame")]
+            return SDFError(f"'magnetic_field' is not supported in SDF version {version} (added in 1.6)")
+        _c_wind = el.find("wind")
+        if _c_wind is not None:
+            _res = Wind._from_sdf(_c_wind, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("wind")
+            _wind = _res
+        else:
+            _wind = None
+        if _wind is not None and cmp_version(version, "1.6") < 0:
+            return SDFError(f"'wind' is not supported in SDF version {version} (added in 1.6)")
+        _frame = []
+        for c in el.findall("frame"):
+            _res = Frame._from_sdf(c, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("frame")
+            _frame.append(_res)
         if _frame and cmp_version(version, "1.7") < 0:
-            raise ValueError(f"'frame' is not supported in SDF version {version} (added in 1.7)")
-        return cls(sdf_version=version, name=_name, gui=_gui, physics=_physics, scene=_scene, light=_light, model=_model, actor=_actor, plugin=_plugin, joint=_joint, road=_road, state=_state, spherical_coordinates=_spherical_coordinates, audio=_audio, include=_include, population=_population, atmosphere=_atmosphere, wind=_wind, gravity=_gravity, magnetic_field=_magnetic_field, frame=_frame)
+            return SDFError(f"'frame' is not supported in SDF version {version} (added in 1.7)")
+        return cls(sdf_version=version, name=_name, gui=_gui, physics=_physics, scene=_scene, light=_light, model=_model, actor=_actor, plugin=_plugin, joint=_joint, road=_road, state=_state, spherical_coordinates=_spherical_coordinates, include=_include, audio=_audio, population=_population, atmosphere=_atmosphere, gravity=_gravity, magnetic_field=_magnetic_field, wind=_wind, frame=_frame)
 
 
-class Sdf(Model):
+class Sdf(BaseModel):
     def __init__(
         self,
         sdf_version: str,
@@ -14593,6 +19728,8 @@ class Sdf(Model):
             return self.to_version(version).to_sdf()
         version = version or self.__version__
         el = ET.Element("sdf")
+        if self.version is None:
+            raise ValueError(f"'version' is required in SDF version {version}")
         if self.version is not None:
             el.set("version", self.version)
         for item in (self.world or []):
@@ -14606,10 +19743,34 @@ class Sdf(Model):
         return el
 
     @classmethod
-    def from_sdf(cls, el: ET.Element, version: str) -> "Sdf":
+    def _from_sdf(cls, el: ET.Element, version: str):
+        if el.get("version") is None:
+            return SDFError(f"'version' is required in SDF version {version}")
         _version = el.get("version", "1.3")
-        _world = [World.from_sdf(c, version) for c in el.findall("world")]
-        _model = [Model.from_sdf(c, version) for c in el.findall("model")]
-        _actor = [Actor.from_sdf(c, version) for c in el.findall("actor")]
-        _light = [Light.from_sdf(c, version) for c in el.findall("light")]
+        if isinstance(_version, SDFError):
+            return _version.extend("@version")
+        _world = []
+        for c in el.findall("world"):
+            _res = World._from_sdf(c, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("world")
+            _world.append(_res)
+        _model = []
+        for c in el.findall("model"):
+            _res = Model._from_sdf(c, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("model")
+            _model.append(_res)
+        _actor = []
+        for c in el.findall("actor"):
+            _res = Actor._from_sdf(c, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("actor")
+            _actor.append(_res)
+        _light = []
+        for c in el.findall("light"):
+            _res = Light._from_sdf(c, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("light")
+            _light.append(_res)
         return cls(sdf_version=version, version=_version, world=_world, model=_model, actor=_actor, light=_light)

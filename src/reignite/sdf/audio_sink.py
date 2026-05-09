@@ -3,10 +3,11 @@ from __future__ import annotations
 
 from xml.etree import ElementTree as ET
 
-from ..utils.model import Model
+from ..utils.model import BaseModel
+from ..utils.errors import SDFError
 
 
-class AudioSink(Model):
+class AudioSink(BaseModel):
     def __init__(self, sdf_version: str):
         self.__version__ = sdf_version
 
@@ -23,5 +24,5 @@ class AudioSink(Model):
         return el
 
     @classmethod
-    def from_sdf(cls, el: ET.Element, version: str) -> "AudioSink":
+    def _from_sdf(cls, el: ET.Element, version: str):
         return cls(sdf_version=version)

@@ -3,11 +3,12 @@ from __future__ import annotations
 
 from xml.etree import ElementTree as ET
 
-from ..utils.model import Model
+from ..utils.model import BaseModel
+from ..utils.errors import SDFError
 from ..utils.vector3 import Vector3
 
 
-class Radii(Model):
+class Radii(BaseModel):
     def __init__(self, sdf_version: str, radii: Vector3 = None):
         self.__version__ = sdf_version
         if radii is None:
@@ -25,18 +26,24 @@ class Radii(Model):
             return self.to_version(version).to_sdf()
         version = version or self.__version__
         el = ET.Element("radii")
+        if self.radii is None:
+            raise ValueError(f"'radii' is required in SDF version {version}")
         if self.radii is not None:
             el.text = self.radii.to_sdf()
         return el
 
     @classmethod
-    def from_sdf(cls, el: ET.Element, version: str) -> "Radii":
+    def _from_sdf(cls, el: ET.Element, version: str):
+        if el.text is None:
+            return SDFError(f"'radii' is required in SDF version {version}")
         _text = el.text or "1 1 1"
-        _radii = Vector3.from_sdf(_text)
+        _radii = Vector3._from_sdf(_text, version)
+        if isinstance(_radii, SDFError):
+            return _radii
         return cls(sdf_version=version, radii=_radii)
 
 
-class Ellipsoid(Model):
+class Ellipsoid(BaseModel):
     def __init__(self, sdf_version: str, radii: "Radii" = None):
         self.__version__ = sdf_version
         self.radii = radii
@@ -52,12 +59,22 @@ class Ellipsoid(Model):
             return self.to_version(version).to_sdf()
         version = version or self.__version__
         el = ET.Element("ellipsoid")
+        if self.radii is None:
+            raise ValueError(f"'radii' is required in SDF version {version}")
         if self.radii is not None:
             el.append(self.radii.to_sdf(version))
         return el
 
     @classmethod
-    def from_sdf(cls, el: ET.Element, version: str) -> "Ellipsoid":
+    def _from_sdf(cls, el: ET.Element, version: str):
         _c_radii = el.find("radii")
-        _radii = Radii.from_sdf(_c_radii, version) if _c_radii is not None else None
+        if _c_radii is not None:
+            _res = Radii._from_sdf(_c_radii, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("radii")
+            _radii = _res
+        else:
+            _radii = None
+        if _radii is None:
+            return SDFError(f"'radii' is required in SDF version {version}")
         return cls(sdf_version=version, radii=_radii)

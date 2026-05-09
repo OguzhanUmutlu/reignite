@@ -3,34 +3,44 @@ from __future__ import annotations
 
 from xml.etree import ElementTree as ET
 
-from ..utils.model import Model
+from ..utils.model import BaseModel
+from ..utils.errors import SDFError
 
 
 import math
 
-def _parse_int32(raw: str) -> int:
-    v = int(raw)
-    if not (-2147483648 <= v <= 2147483647):
-        raise ValueError(f"int32 out of range: {v}")
-    return v
+def _parse_int32(raw: str) -> int | SDFError:
+    try:
+        v = int(raw)
+        if not (-2147483648 <= v <= 2147483647):
+            return SDFError(f"int32 out of range: {v}")
+        return v
+    except ValueError:
+        return SDFError(f"Invalid int32: {raw}")
 
 
-def _parse_uint32(raw: str) -> int:
-    v = int(raw)
-    if not (0 <= v <= 4294967295):
-        raise ValueError(f"uint32 out of range: {v}")
-    return v
+def _parse_uint32(raw: str) -> int | SDFError:
+    try:
+        v = int(raw)
+        if not (0 <= v <= 4294967295):
+            return SDFError(f"uint32 out of range: {v}")
+        return v
+    except ValueError:
+        return SDFError(f"Invalid uint32: {raw}")
 
 
-def _parse_double(raw: str) -> float:
-    v = float(raw)
-    if not math.isfinite(v) or abs(v) > math.inf:
-        raise ValueError(f"double out of range: {raw}")
-    return v
+def _parse_double(raw: str) -> float | SDFError:
+    try:
+        v = float(raw)
+        if not math.isfinite(v) or abs(v) > math.inf:
+            return SDFError(f"double out of range: {raw}")
+        return v
+    except ValueError:
+        return SDFError(f"Invalid double: {raw}")
 
 
 
-class Voltage(Model):
+class Voltage(BaseModel):
     def __init__(self, sdf_version: str, voltage: float = 0.0):
         self.__version__ = sdf_version
         self.voltage = voltage
@@ -46,18 +56,24 @@ class Voltage(Model):
             return self.to_version(version).to_sdf()
         version = version or self.__version__
         el = ET.Element("voltage")
+        if self.voltage is None:
+            raise ValueError(f"'voltage' is required in SDF version {version}")
         if self.voltage is not None:
             el.text = str(self.voltage)
         return el
 
     @classmethod
-    def from_sdf(cls, el: ET.Element, version: str) -> "Voltage":
+    def _from_sdf(cls, el: ET.Element, version: str):
+        if el.text is None:
+            return SDFError(f"'voltage' is required in SDF version {version}")
         _text = el.text or 0.0
         _voltage = _parse_double(_text)
+        if isinstance(_voltage, SDFError):
+            return _voltage
         return cls(sdf_version=version, voltage=_voltage)
 
 
-class Battery(Model):
+class Battery(BaseModel):
     def __init__(self, sdf_version: str, name: str = "__default__", voltage: "Voltage" = None):
         self.__version__ = sdf_version
         self.name = name
@@ -75,15 +91,31 @@ class Battery(Model):
             return self.to_version(version).to_sdf()
         version = version or self.__version__
         el = ET.Element("battery")
+        if self.name is None:
+            raise ValueError(f"'name' is required in SDF version {version}")
         if self.name is not None:
             el.set("name", self.name)
+        if self.voltage is None:
+            raise ValueError(f"'voltage' is required in SDF version {version}")
         if self.voltage is not None:
             el.append(self.voltage.to_sdf(version))
         return el
 
     @classmethod
-    def from_sdf(cls, el: ET.Element, version: str) -> "Battery":
+    def _from_sdf(cls, el: ET.Element, version: str):
+        if el.get("name") is None:
+            return SDFError(f"'name' is required in SDF version {version}")
         _name = el.get("name", "__default__")
+        if isinstance(_name, SDFError):
+            return _name.extend("@name")
         _c_voltage = el.find("voltage")
-        _voltage = Voltage.from_sdf(_c_voltage, version) if _c_voltage is not None else None
+        if _c_voltage is not None:
+            _res = Voltage._from_sdf(_c_voltage, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("voltage")
+            _voltage = _res
+        else:
+            _voltage = None
+        if _voltage is None:
+            return SDFError(f"'voltage' is required in SDF version {version}")
         return cls(sdf_version=version, name=_name, voltage=_voltage)

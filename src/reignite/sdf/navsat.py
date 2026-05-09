@@ -3,34 +3,44 @@ from __future__ import annotations
 
 from xml.etree import ElementTree as ET
 
-from ..utils.model import Model
+from ..utils.model import BaseModel
+from ..utils.errors import SDFError
 
 
 import math
 
-def _parse_int32(raw: str) -> int:
-    v = int(raw)
-    if not (-2147483648 <= v <= 2147483647):
-        raise ValueError(f"int32 out of range: {v}")
-    return v
+def _parse_int32(raw: str) -> int | SDFError:
+    try:
+        v = int(raw)
+        if not (-2147483648 <= v <= 2147483647):
+            return SDFError(f"int32 out of range: {v}")
+        return v
+    except ValueError:
+        return SDFError(f"Invalid int32: {raw}")
 
 
-def _parse_uint32(raw: str) -> int:
-    v = int(raw)
-    if not (0 <= v <= 4294967295):
-        raise ValueError(f"uint32 out of range: {v}")
-    return v
+def _parse_uint32(raw: str) -> int | SDFError:
+    try:
+        v = int(raw)
+        if not (0 <= v <= 4294967295):
+            return SDFError(f"uint32 out of range: {v}")
+        return v
+    except ValueError:
+        return SDFError(f"Invalid uint32: {raw}")
 
 
-def _parse_double(raw: str) -> float:
-    v = float(raw)
-    if not math.isfinite(v) or abs(v) > math.inf:
-        raise ValueError(f"double out of range: {raw}")
-    return v
+def _parse_double(raw: str) -> float | SDFError:
+    try:
+        v = float(raw)
+        if not math.isfinite(v) or abs(v) > math.inf:
+            return SDFError(f"double out of range: {raw}")
+        return v
+    except ValueError:
+        return SDFError(f"Invalid double: {raw}")
 
 
 
-class Mean(Model):
+class Mean(BaseModel):
     def __init__(self, sdf_version: str, mean: float = 0.0):
         self.__version__ = sdf_version
         self.mean = mean
@@ -51,13 +61,15 @@ class Mean(Model):
         return el
 
     @classmethod
-    def from_sdf(cls, el: ET.Element, version: str) -> "Mean":
+    def _from_sdf(cls, el: ET.Element, version: str):
         _text = el.text or 0.0
         _mean = _parse_double(_text)
+        if isinstance(_mean, SDFError):
+            return _mean
         return cls(sdf_version=version, mean=_mean)
 
 
-class Stddev(Model):
+class Stddev(BaseModel):
     def __init__(self, sdf_version: str, stddev: float = 0.0):
         self.__version__ = sdf_version
         self.stddev = stddev
@@ -78,13 +90,15 @@ class Stddev(Model):
         return el
 
     @classmethod
-    def from_sdf(cls, el: ET.Element, version: str) -> "Stddev":
+    def _from_sdf(cls, el: ET.Element, version: str):
         _text = el.text or 0.0
         _stddev = _parse_double(_text)
+        if isinstance(_stddev, SDFError):
+            return _stddev
         return cls(sdf_version=version, stddev=_stddev)
 
 
-class BiasMean(Model):
+class BiasMean(BaseModel):
     def __init__(self, sdf_version: str, bias_mean: float = 0.0):
         self.__version__ = sdf_version
         self.bias_mean = bias_mean
@@ -105,13 +119,15 @@ class BiasMean(Model):
         return el
 
     @classmethod
-    def from_sdf(cls, el: ET.Element, version: str) -> "BiasMean":
+    def _from_sdf(cls, el: ET.Element, version: str):
         _text = el.text or 0.0
         _bias_mean = _parse_double(_text)
+        if isinstance(_bias_mean, SDFError):
+            return _bias_mean
         return cls(sdf_version=version, bias_mean=_bias_mean)
 
 
-class BiasStddev(Model):
+class BiasStddev(BaseModel):
     def __init__(self, sdf_version: str, bias_stddev: float = 0.0):
         self.__version__ = sdf_version
         self.bias_stddev = bias_stddev
@@ -132,13 +148,15 @@ class BiasStddev(Model):
         return el
 
     @classmethod
-    def from_sdf(cls, el: ET.Element, version: str) -> "BiasStddev":
+    def _from_sdf(cls, el: ET.Element, version: str):
         _text = el.text or 0.0
         _bias_stddev = _parse_double(_text)
+        if isinstance(_bias_stddev, SDFError):
+            return _bias_stddev
         return cls(sdf_version=version, bias_stddev=_bias_stddev)
 
 
-class DynamicBiasStddev(Model):
+class DynamicBiasStddev(BaseModel):
     def __init__(self, sdf_version: str, dynamic_bias_stddev: float = 0.0):
         self.__version__ = sdf_version
         self.dynamic_bias_stddev = dynamic_bias_stddev
@@ -159,13 +177,15 @@ class DynamicBiasStddev(Model):
         return el
 
     @classmethod
-    def from_sdf(cls, el: ET.Element, version: str) -> "DynamicBiasStddev":
+    def _from_sdf(cls, el: ET.Element, version: str):
         _text = el.text or 0.0
         _dynamic_bias_stddev = _parse_double(_text)
+        if isinstance(_dynamic_bias_stddev, SDFError):
+            return _dynamic_bias_stddev
         return cls(sdf_version=version, dynamic_bias_stddev=_dynamic_bias_stddev)
 
 
-class DynamicBiasCorrelationTime(Model):
+class DynamicBiasCorrelationTime(BaseModel):
     def __init__(self, sdf_version: str, dynamic_bias_correlation_time: float = 0.0):
         self.__version__ = sdf_version
         self.dynamic_bias_correlation_time = dynamic_bias_correlation_time
@@ -186,13 +206,15 @@ class DynamicBiasCorrelationTime(Model):
         return el
 
     @classmethod
-    def from_sdf(cls, el: ET.Element, version: str) -> "DynamicBiasCorrelationTime":
+    def _from_sdf(cls, el: ET.Element, version: str):
         _text = el.text or 0.0
         _dynamic_bias_correlation_time = _parse_double(_text)
+        if isinstance(_dynamic_bias_correlation_time, SDFError):
+            return _dynamic_bias_correlation_time
         return cls(sdf_version=version, dynamic_bias_correlation_time=_dynamic_bias_correlation_time)
 
 
-class Precision(Model):
+class Precision(BaseModel):
     def __init__(self, sdf_version: str, precision: float = 0.0):
         self.__version__ = sdf_version
         self.precision = precision
@@ -213,13 +235,15 @@ class Precision(Model):
         return el
 
     @classmethod
-    def from_sdf(cls, el: ET.Element, version: str) -> "Precision":
+    def _from_sdf(cls, el: ET.Element, version: str):
         _text = el.text or 0.0
         _precision = _parse_double(_text)
+        if isinstance(_precision, SDFError):
+            return _precision
         return cls(sdf_version=version, precision=_precision)
 
 
-class Noise(Model):
+class Noise(BaseModel):
     def __init__(
         self,
         sdf_version: str,
@@ -260,6 +284,8 @@ class Noise(Model):
             return self.to_version(version).to_sdf()
         version = version or self.__version__
         el = ET.Element("noise")
+        if self.type is None:
+            raise ValueError(f"'type' is required in SDF version {version}")
         if self.type is not None:
             el.set("type", self.type)
         if self.mean is not None:
@@ -279,26 +305,72 @@ class Noise(Model):
         return el
 
     @classmethod
-    def from_sdf(cls, el: ET.Element, version: str) -> "Noise":
+    def _from_sdf(cls, el: ET.Element, version: str):
+        if el.get("type") is None:
+            return SDFError(f"'type' is required in SDF version {version}")
         _type = el.get("type", "none")
+        if isinstance(_type, SDFError):
+            return _type.extend("@type")
         _c_mean = el.find("mean")
-        _mean = Mean.from_sdf(_c_mean, version) if _c_mean is not None else None
+        if _c_mean is not None:
+            _res = Mean._from_sdf(_c_mean, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("mean")
+            _mean = _res
+        else:
+            _mean = None
         _c_stddev = el.find("stddev")
-        _stddev = Stddev.from_sdf(_c_stddev, version) if _c_stddev is not None else None
+        if _c_stddev is not None:
+            _res = Stddev._from_sdf(_c_stddev, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("stddev")
+            _stddev = _res
+        else:
+            _stddev = None
         _c_bias_mean = el.find("bias_mean")
-        _bias_mean = BiasMean.from_sdf(_c_bias_mean, version) if _c_bias_mean is not None else None
+        if _c_bias_mean is not None:
+            _res = BiasMean._from_sdf(_c_bias_mean, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("bias_mean")
+            _bias_mean = _res
+        else:
+            _bias_mean = None
         _c_bias_stddev = el.find("bias_stddev")
-        _bias_stddev = BiasStddev.from_sdf(_c_bias_stddev, version) if _c_bias_stddev is not None else None
+        if _c_bias_stddev is not None:
+            _res = BiasStddev._from_sdf(_c_bias_stddev, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("bias_stddev")
+            _bias_stddev = _res
+        else:
+            _bias_stddev = None
         _c_dynamic_bias_stddev = el.find("dynamic_bias_stddev")
-        _dynamic_bias_stddev = DynamicBiasStddev.from_sdf(_c_dynamic_bias_stddev, version) if _c_dynamic_bias_stddev is not None else None
+        if _c_dynamic_bias_stddev is not None:
+            _res = DynamicBiasStddev._from_sdf(_c_dynamic_bias_stddev, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("dynamic_bias_stddev")
+            _dynamic_bias_stddev = _res
+        else:
+            _dynamic_bias_stddev = None
         _c_dynamic_bias_correlation_time = el.find("dynamic_bias_correlation_time")
-        _dynamic_bias_correlation_time = DynamicBiasCorrelationTime.from_sdf(_c_dynamic_bias_correlation_time, version) if _c_dynamic_bias_correlation_time is not None else None
+        if _c_dynamic_bias_correlation_time is not None:
+            _res = DynamicBiasCorrelationTime._from_sdf(_c_dynamic_bias_correlation_time, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("dynamic_bias_correlation_time")
+            _dynamic_bias_correlation_time = _res
+        else:
+            _dynamic_bias_correlation_time = None
         _c_precision = el.find("precision")
-        _precision = Precision.from_sdf(_c_precision, version) if _c_precision is not None else None
+        if _c_precision is not None:
+            _res = Precision._from_sdf(_c_precision, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("precision")
+            _precision = _res
+        else:
+            _precision = None
         return cls(sdf_version=version, type=_type, mean=_mean, stddev=_stddev, bias_mean=_bias_mean, bias_stddev=_bias_stddev, dynamic_bias_stddev=_dynamic_bias_stddev, dynamic_bias_correlation_time=_dynamic_bias_correlation_time, precision=_precision)
 
 
-class Horizontal(Model):
+class Horizontal(BaseModel):
     def __init__(self, sdf_version: str, noise: "Noise" = None):
         self.__version__ = sdf_version
         self.noise = noise
@@ -319,13 +391,19 @@ class Horizontal(Model):
         return el
 
     @classmethod
-    def from_sdf(cls, el: ET.Element, version: str) -> "Horizontal":
+    def _from_sdf(cls, el: ET.Element, version: str):
         _c_noise = el.find("noise")
-        _noise = Noise.from_sdf(_c_noise, version) if _c_noise is not None else None
+        if _c_noise is not None:
+            _res = Noise._from_sdf(_c_noise, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("noise")
+            _noise = _res
+        else:
+            _noise = None
         return cls(sdf_version=version, noise=_noise)
 
 
-class Vertical(Model):
+class Vertical(BaseModel):
     def __init__(self, sdf_version: str, noise: "Noise" = None):
         self.__version__ = sdf_version
         self.noise = noise
@@ -346,13 +424,19 @@ class Vertical(Model):
         return el
 
     @classmethod
-    def from_sdf(cls, el: ET.Element, version: str) -> "Vertical":
+    def _from_sdf(cls, el: ET.Element, version: str):
         _c_noise = el.find("noise")
-        _noise = Noise.from_sdf(_c_noise, version) if _c_noise is not None else None
+        if _c_noise is not None:
+            _res = Noise._from_sdf(_c_noise, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("noise")
+            _noise = _res
+        else:
+            _noise = None
         return cls(sdf_version=version, noise=_noise)
 
 
-class PositionSensing(Model):
+class PositionSensing(BaseModel):
     def __init__(
         self,
         sdf_version: str,
@@ -382,15 +466,27 @@ class PositionSensing(Model):
         return el
 
     @classmethod
-    def from_sdf(cls, el: ET.Element, version: str) -> "PositionSensing":
+    def _from_sdf(cls, el: ET.Element, version: str):
         _c_horizontal = el.find("horizontal")
-        _horizontal = Horizontal.from_sdf(_c_horizontal, version) if _c_horizontal is not None else None
+        if _c_horizontal is not None:
+            _res = Horizontal._from_sdf(_c_horizontal, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("horizontal")
+            _horizontal = _res
+        else:
+            _horizontal = None
         _c_vertical = el.find("vertical")
-        _vertical = Vertical.from_sdf(_c_vertical, version) if _c_vertical is not None else None
+        if _c_vertical is not None:
+            _res = Vertical._from_sdf(_c_vertical, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("vertical")
+            _vertical = _res
+        else:
+            _vertical = None
         return cls(sdf_version=version, horizontal=_horizontal, vertical=_vertical)
 
 
-class VelocitySensing(Model):
+class VelocitySensing(BaseModel):
     def __init__(
         self,
         sdf_version: str,
@@ -420,15 +516,27 @@ class VelocitySensing(Model):
         return el
 
     @classmethod
-    def from_sdf(cls, el: ET.Element, version: str) -> "VelocitySensing":
+    def _from_sdf(cls, el: ET.Element, version: str):
         _c_horizontal = el.find("horizontal")
-        _horizontal = Horizontal.from_sdf(_c_horizontal, version) if _c_horizontal is not None else None
+        if _c_horizontal is not None:
+            _res = Horizontal._from_sdf(_c_horizontal, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("horizontal")
+            _horizontal = _res
+        else:
+            _horizontal = None
         _c_vertical = el.find("vertical")
-        _vertical = Vertical.from_sdf(_c_vertical, version) if _c_vertical is not None else None
+        if _c_vertical is not None:
+            _res = Vertical._from_sdf(_c_vertical, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("vertical")
+            _vertical = _res
+        else:
+            _vertical = None
         return cls(sdf_version=version, horizontal=_horizontal, vertical=_vertical)
 
 
-class Navsat(Model):
+class Navsat(BaseModel):
     def __init__(
         self,
         sdf_version: str,
@@ -458,9 +566,21 @@ class Navsat(Model):
         return el
 
     @classmethod
-    def from_sdf(cls, el: ET.Element, version: str) -> "Navsat":
+    def _from_sdf(cls, el: ET.Element, version: str):
         _c_position_sensing = el.find("position_sensing")
-        _position_sensing = PositionSensing.from_sdf(_c_position_sensing, version) if _c_position_sensing is not None else None
+        if _c_position_sensing is not None:
+            _res = PositionSensing._from_sdf(_c_position_sensing, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("position_sensing")
+            _position_sensing = _res
+        else:
+            _position_sensing = None
         _c_velocity_sensing = el.find("velocity_sensing")
-        _velocity_sensing = VelocitySensing.from_sdf(_c_velocity_sensing, version) if _c_velocity_sensing is not None else None
+        if _c_velocity_sensing is not None:
+            _res = VelocitySensing._from_sdf(_c_velocity_sensing, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("velocity_sensing")
+            _velocity_sensing = _res
+        else:
+            _velocity_sensing = None
         return cls(sdf_version=version, position_sensing=_position_sensing, velocity_sensing=_velocity_sensing)

@@ -3,10 +3,11 @@ from __future__ import annotations
 
 from xml.etree import ElementTree as ET
 
-from ..utils.model import Model
+from ..utils.model import BaseModel
+from ..utils.errors import SDFError
 
 
-class Ode(Model):
+class Ode(BaseModel):
     def __init__(self, sdf_version: str, type: str = "__default__"):
         self.__version__ = sdf_version
         self.type = type
@@ -27,12 +28,14 @@ class Ode(Model):
         return el
 
     @classmethod
-    def from_sdf(cls, el: ET.Element, version: str) -> "Ode":
+    def _from_sdf(cls, el: ET.Element, version: str):
         _type = el.get("type", "__default__")
+        if isinstance(_type, SDFError):
+            return _type.extend("@type")
         return cls(sdf_version=version, type=_type)
 
 
-class Bullet(Model):
+class Bullet(BaseModel):
     def __init__(self, sdf_version: str, type: str = "__default__"):
         self.__version__ = sdf_version
         self.type = type
@@ -53,12 +56,14 @@ class Bullet(Model):
         return el
 
     @classmethod
-    def from_sdf(cls, el: ET.Element, version: str) -> "Bullet":
+    def _from_sdf(cls, el: ET.Element, version: str):
         _type = el.get("type", "__default__")
+        if isinstance(_type, SDFError):
+            return _type.extend("@type")
         return cls(sdf_version=version, type=_type)
 
 
-class CollisionEngine(Model):
+class CollisionEngine(BaseModel):
     def __init__(self, sdf_version: str, ode: "Ode" = None, bullet: "Bullet" = None):
         self.__version__ = sdf_version
         self.ode = ode
@@ -83,9 +88,21 @@ class CollisionEngine(Model):
         return el
 
     @classmethod
-    def from_sdf(cls, el: ET.Element, version: str) -> "CollisionEngine":
+    def _from_sdf(cls, el: ET.Element, version: str):
         _c_ode = el.find("ode")
-        _ode = Ode.from_sdf(_c_ode, version) if _c_ode is not None else None
+        if _c_ode is not None:
+            _res = Ode._from_sdf(_c_ode, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("ode")
+            _ode = _res
+        else:
+            _ode = None
         _c_bullet = el.find("bullet")
-        _bullet = Bullet.from_sdf(_c_bullet, version) if _c_bullet is not None else None
+        if _c_bullet is not None:
+            _res = Bullet._from_sdf(_c_bullet, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("bullet")
+            _bullet = _res
+        else:
+            _bullet = None
         return cls(sdf_version=version, ode=_ode, bullet=_bullet)

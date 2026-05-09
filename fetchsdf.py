@@ -17,9 +17,18 @@ SDF_REPO_URL = "https://github.com/gazebosim/sdformat.git"
 
 BASE_VERSION = "1.0"
 
+
+def cmp_version(v1: str, v2: str) -> int:
+    t1 = tuple(int(x) for x in v1.split("."))
+    t2 = tuple(int(x) for x in v2.split("."))
+    if t1 < t2: return -1
+    if t1 > t2: return 1
+    return 0
+
+
 PRIMITIVE_TYPES: dict[str, tuple[str, str, str, str]] = {
     "string": ("str", '""', "{val}", "{raw}"),
-    "bool": ("bool", "False", "str({val}).lower()", "{raw}.strip().lower() == 'true'"),
+    "bool": ("bool", "False", "str({val}).lower()", "str({raw}).strip().lower() == 'true'"),
     "int": ("int", "0", "str({val})", "_parse_int32({raw})"),
     "uint": ("int", "0", "str({val})", "_parse_uint32({raw})"),
     "unsigned int": ("int", "0", "str({val})", "_parse_uint32({raw})"),
@@ -36,25 +45,34 @@ UINT32_MAX = 2 ** 32 - 1
 INT_HELPERS = f'''\
 import math
 
-def _parse_int32(raw: str) -> int:
-    v = int(raw)
-    if not ({INT32_MIN} <= v <= {INT32_MAX}):
-        raise ValueError(f"int32 out of range: {{v}}")
-    return v
+def _parse_int32(raw: str) -> int | SDFError:
+    try:
+        v = int(raw)
+        if not ({INT32_MIN} <= v <= {INT32_MAX}):
+            return SDFError(f"int32 out of range: {{v}}")
+        return v
+    except ValueError:
+        return SDFError(f"Invalid int32: {{raw}}")
 
 
-def _parse_uint32(raw: str) -> int:
-    v = int(raw)
-    if not (0 <= v <= {UINT32_MAX}):
-        raise ValueError(f"uint32 out of range: {{v}}")
-    return v
+def _parse_uint32(raw: str) -> int | SDFError:
+    try:
+        v = int(raw)
+        if not (0 <= v <= {UINT32_MAX}):
+            return SDFError(f"uint32 out of range: {{v}}")
+        return v
+    except ValueError:
+        return SDFError(f"Invalid uint32: {{raw}}")
 
 
-def _parse_double(raw: str) -> float:
-    v = float(raw)
-    if not math.isfinite(v) or abs(v) > math.inf:
-        raise ValueError(f"double out of range: {{raw}}")
-    return v
+def _parse_double(raw: str) -> float | SDFError:
+    try:
+        v = float(raw)
+        if not math.isfinite(v) or abs(v) > math.inf:
+            return SDFError(f"double out of range: {{raw}}")
+        return v
+    except ValueError:
+        return SDFError(f"Invalid double: {{raw}}")
 
 '''
 
@@ -75,7 +93,7 @@ def resolve_type(sdf_type: Optional[str]) -> tuple[str, str, str, str, Optional[
         cls,
         f"{cls}()",
         "{val}.to_sdf()",
-        f"{cls}.from_sdf({{raw}})",
+        f"{cls}._from_sdf({{raw}}, version)",
         t,
     )
 
@@ -193,6 +211,12 @@ def parse_element(el: ET.Element, version_files: dict[str, str]) -> dict:
 
 
 def union_schema(base: dict, new: dict, version: str):
+    if "_required" in new and "_required" in base:
+        if new["_required"] != base["_required"]:
+            if "_required_history" not in base:
+                base["_required_history"] = {}
+            base["_required_history"][version] = new["_required"]
+
     for k in ("_description", "_type", "_default", "_required"):
         if k in new and k not in base:
             base[k] = new[k]
@@ -200,25 +224,39 @@ def union_schema(base: dict, new: dict, version: str):
     if "_attributes" in new:
         if "_attributes" not in base:
             base["_attributes"] = {}
+
         for aname, ameta in new["_attributes"].items():
             if aname not in base["_attributes"]:
                 ameta["_added_in"] = version
                 base["_attributes"][aname] = ameta
+            else:
+                bmeta = base["_attributes"][aname]
+                if ameta.get("required") != bmeta.get("required"):
+                    if "_required_history" not in bmeta:
+                        bmeta["_required_history"] = {}
+                    bmeta["_required_history"][version] = ameta.get("required")
 
-    if "_includes" in new:
-        if "_includes" not in base:
-            base["_includes"] = []
-        for inc in new["_includes"]:
-            if inc not in base["_includes"]:
-                base["_includes"].append(inc)
+        for aname, bmeta in base["_attributes"].items():
+            if aname not in new["_attributes"] and "_removed_in" not in bmeta:
+                bmeta["_removed_in"] = version
+    elif "_attributes" in base:
+        for aname, bmeta in base["_attributes"].items():
+            if "_removed_in" not in bmeta:
+                bmeta["_removed_in"] = version
 
-    child_keys = [k for k in new.keys() if not k.startswith("_")]
-    for cname in child_keys:
+    child_keys_new = set(k for k in new.keys() if not k.startswith("_"))
+    child_keys_base = set(k for k in base.keys() if not k.startswith("_"))
+
+    for cname in child_keys_new:
         if cname not in base:
             base[cname] = dict(new[cname])
             base[cname]["_added_in"] = version
         else:
             union_schema(base[cname], new[cname], version)
+
+    for cname in child_keys_base:
+        if cname not in child_keys_new and "_removed_in" not in base[cname]:
+            base[cname]["_removed_in"] = version
 
 
 def parse_all_versions() -> dict:
@@ -411,10 +449,11 @@ def _collect_classes(
         seen_py_names.add(py_name)
         added_in = ameta.get("_added_in")
 
-        removed_in = None
+        removed_in = ameta.get("_removed_in")
         for op in applicable_ops:
             if op.get("type") == "remove" and op.get("attribute") == aname:
-                removed_in = op["_version"]
+                if not removed_in or cmp_version(op["_version"], removed_in) < 0:
+                    removed_in = op["_version"]
 
         ameta["_removed_in"] = removed_in
         hint, default, to_expr, from_expr, mod = resolve_type(ameta.get("type"))
@@ -441,10 +480,12 @@ def _collect_classes(
                     renames[op["_version"]] = {"kind": "leaf", "name": op["to_element"]}
                 elif op.get("to_attribute"):
                     renames[op["_version"]] = {"kind": "attr", "name": op["to_attribute"]}
+        is_required = ameta.get("required") == "1"
+        required_history = ameta.get("_required_history", {})
         params.append((
             py_name, hint, default, raw_default, to_expr, from_expr,
             ameta.get("description", ""), False, "attr", aname, init_default_expr, renames, added_in,
-            ameta.get("_removed_in")
+            removed_in, is_required, required_history
         ))
 
     for cname, cnode in child_items.items():
@@ -453,10 +494,11 @@ def _collect_classes(
         seen_py_names.add(py_name)
         added_in = cnode.get("_added_in")
 
-        removed_in = None
+        removed_in = cnode.get("_removed_in")
         for op in applicable_ops:
             if op.get("type") == "remove" and op.get("element") == cname:
-                removed_in = op["_version"]
+                if not removed_in or cmp_version(op["_version"], removed_in) < 0:
+                    removed_in = op["_version"]
 
         cnode["_removed_in"] = removed_in
         child_cls = _to_classname(cname)
@@ -472,9 +514,11 @@ def _collect_classes(
                     renames[op["_version"]] = {"kind": "child", "name": op["to_element"]}
                 elif op.get("to_attribute"):
                     renames[op["_version"]] = {"kind": "attr", "name": op["to_attribute"]}
+        is_required = required == "1" or required == "+"
+        required_history = cnode.get("_required_history", {})
         params.append((
             py_name, hint, default, default, "", "", desc,
-            is_list, "child", cname, None, renames, added_in, cnode.get("_removed_in")
+            is_list, "child", cname, None, renames, added_in, removed_in, is_required, required_history
         ))
 
     if node.get("_type") and not child_items:
@@ -506,9 +550,12 @@ def _collect_classes(
                     renames[op["_version"]] = {"kind": "leaf", "name": op["to_element"]}
                 elif op.get("to_attribute"):
                     renames[op["_version"]] = {"kind": "attr", "name": op["to_attribute"]}
+        is_required = node.get("_required") == "1" or node.get("_required") == "+"
+        required_history = node.get("_required_history", {})
         params = [(
             name.replace("-", "_"), hint, default, raw_default, to_expr, from_expr,
-            node.get("_description", ""), False, "leaf", name, init_default_expr, renames, added_in, None
+            node.get("_description", ""), False, "leaf", name, init_default_expr, renames, added_in,
+            node.get("_removed_in"), is_required, required_history
         )] + params
 
     class_migrations = {}
@@ -552,7 +599,7 @@ def _render_class(spec: dict) -> str:
     class_name = spec["class_name"]
     params = spec["params"]
 
-    block: list[str] = [f"class {class_name}(Model):"]
+    block: list[str] = [f"class {class_name}(BaseModel):"]
 
     if spec.get("migrations"):
         import json
@@ -587,7 +634,7 @@ def _render_class(spec: dict) -> str:
                 block.append(f"            {py_name} = {init_default_expr}")
 
         for p in params:
-            py_name, _, _, _, _, _, _, is_list, _, _, _, _, _, _ = p
+            py_name, _, _, _, _, _, _, is_list, _, _, _, _, _, _, _, _ = p
             block.append(
                 f"        self.{py_name} = {py_name}" + (" or []" if is_list else "")
             )
@@ -595,15 +642,20 @@ def _render_class(spec: dict) -> str:
     block.append("")
     block.append(f'    def to_version(self, target_version: str) -> "{class_name}":')
     for p in params:
-        py_name, _, _, _, _, _, _, is_list, xml_kind, _, _, _, added_in, removed_in = p
+        py_name, _, _, _, _, _, _, is_list, xml_kind, _, _, _, added_in, removed_in, _, _ = p
         if added_in:
             block.append(f"        if self.{py_name} is not None and cmp_version(target_version, \"{added_in}\") < 0:")
             block.append(
                 f'            raise ValueError(f"\'{py_name}\' is not supported in SDF version {{target_version}} (added in {added_in})")')
+        if removed_in:
+            block.append(
+                f"        if self.{py_name} is not None and cmp_version(target_version, \"{removed_in}\") >= 0:")
+            block.append(
+                f'            raise ValueError(f"\'{py_name}\' is not supported in SDF version {{target_version}} (removed in {removed_in})")')
 
     block.append('        kwargs = {"sdf_version": target_version}')
     for p in params:
-        py_name, _, _, _, _, _, _, is_list, xml_kind, _, _, _, _, _ = p
+        py_name, _, _, _, _, _, _, is_list, xml_kind, _, _, _, _, _, _, _ = p
         if xml_kind == "child":
             if is_list:
                 block.append(
@@ -625,8 +677,36 @@ def _render_class(spec: dict) -> str:
     block.append("        version = version or self.__version__")
     block.append(f'        el = ET.Element("{name}")')
     for p in params:
-        py_name, _, _, _, to_expr, _, _, is_list, xml_kind, xml_name, _, renames, _, _ = p
+        py_name, _, _, _, to_expr, _, _, is_list, xml_kind, xml_name, _, renames, added_in, removed_in, is_required, required_history = p
         val_ref = f"self.{py_name}"
+        if is_required:
+            check_conds = []
+            if added_in:
+                check_conds.append(f'cmp_version(version, "{added_in}") >= 0')
+            if removed_in:
+                check_conds.append(f'cmp_version(version, "{removed_in}") < 0')
+
+            sorted_history = sorted(required_history.items(), key=lambda x: tuple(int(v) for v in x[0].split(".")),
+                                    reverse=True)
+            for v, req in sorted_history:
+                if req == "0" or req == "*":
+                    check_conds.append(f'cmp_version(version, "{v}") < 0')
+                    break
+
+            if check_conds:
+                cond = " and ".join(check_conds)
+                block.append(f"        if {cond}:")
+                indent = "            "
+            else:
+                indent = "        "
+
+            if is_list:
+                block.append(f"{indent}if not self.{py_name}:")
+                block.append(f'{indent}    raise ValueError(f"\'{py_name}\' is required in SDF version {{version}}")')
+            else:
+                block.append(f"{indent}if self.{py_name} is None:")
+                block.append(f'{indent}    raise ValueError(f"\'{py_name}\' is required in SDF version {{version}}")')
+
         if xml_kind in ("attr", "leaf"):
             expr = to_expr.replace("{val}", val_ref)
             if not renames:
@@ -693,21 +773,52 @@ def _render_class(spec: dict) -> str:
     block.append("")
     block.append("    @classmethod")
     block.append(
-        f'    def from_sdf(cls, el: ET.Element, version: str) -> "{class_name}":'
+        f'    def _from_sdf(cls, el: ET.Element, version: str):'
     )
     init_args: list[str] = ["sdf_version=version"]
     for p in params:
-        py_name, _, _, raw_default, _, from_expr, _, is_list, xml_kind, xml_name, _, renames, added_in, removed_in = p
+        py_name, _, _, raw_default, _, from_expr, _, is_list, xml_kind, xml_name, _, renames, added_in, removed_in, is_required, required_history = p
         if xml_kind in ("attr", "leaf"):
+            if is_required:
+                check_conds = []
+                if added_in:
+                    check_conds.append(f'cmp_version(version, "{added_in}") >= 0')
+                if removed_in:
+                    check_conds.append(f'cmp_version(version, "{removed_in}") < 0')
+
+                sorted_history = sorted(required_history.items(), key=lambda x: tuple(int(v) for v in x[0].split(".")),
+                                        reverse=True)
+                for v, req in sorted_history:
+                    if req == "0" or req == "*":
+                        check_conds.append(f'cmp_version(version, "{v}") < 0')
+                        break
+
+                if check_conds:
+                    cond = " and ".join(check_conds)
+                    block.append(f"        if {cond}:")
+                    indent = "            "
+                else:
+                    indent = "        "
+
+                if xml_kind == "attr":
+                    block.append(f'{indent}if el.get("{xml_name}") is None:')
+                else:
+                    block.append(f'{indent}if el.text is None:')
+                block.append(f'{indent}    return SDFError(f"\'{py_name}\' is required in SDF version {{version}}")')
+
             if not renames:
                 if xml_kind == "attr":
                     raw_expr = f'el.get("{xml_name}", {raw_default})'
                     val_expr = from_expr.replace("{raw}", raw_expr)
                     block.append(f"        _{py_name} = {val_expr}")
+                    block.append(f"        if isinstance(_{py_name}, SDFError):")
+                    block.append(f'            return _{py_name}.extend("@{xml_name}")')
                 else:
                     block.append(f"        _text = el.text or {raw_default}")
                     val_expr = from_expr.replace("{raw}", "_text")
                     block.append(f"        _{py_name} = {val_expr}")
+                    block.append(f"        if isinstance(_{py_name}, SDFError):")
+                    block.append(f'            return _{py_name}')
             else:
                 block.append(f"        _raw_{py_name} = None")
                 sorted_versions = sorted(renames.keys(), key=lambda v: tuple(int(x) for x in v.split(".")),
@@ -737,21 +848,31 @@ def _render_class(spec: dict) -> str:
                 block.append(f'        if _raw_{py_name} is None: _raw_{py_name} = {raw_default}')
                 val_expr = from_expr.replace("{raw}", f"_raw_{py_name}")
                 block.append(f"        _{py_name} = {val_expr}")
+                block.append(f"        if isinstance(_{py_name}, SDFError):")
+                if xml_kind == "attr":
+                    block.append(f'            return _{py_name}.extend("@{xml_name}")')
+                else:
+                    block.append(f'            return _{py_name}')
 
         elif xml_kind == "child":
             child_cls = _to_classname(xml_name)
             if not renames:
                 if is_list:
-                    block.append(
-                        f'        _{py_name} = [{child_cls}.from_sdf(c, version) '
-                        f'for c in el.findall("{xml_name}")]'
-                    )
+                    block.append(f'        _{py_name} = []')
+                    block.append(f'        for c in el.findall("{xml_name}"):')
+                    block.append(f'            _res = {child_cls}._from_sdf(c, version)')
+                    block.append(f'            if isinstance(_res, SDFError):')
+                    block.append(f'                return _res.extend("{xml_name}")')
+                    block.append(f'            _{py_name}.append(_res)')
                 else:
                     block.append(f'        _c_{py_name} = el.find("{xml_name}")')
-                    block.append(
-                        f"        _{py_name} = {child_cls}.from_sdf(_c_{py_name}, version) "
-                        f"if _c_{py_name} is not None else None"
-                    )
+                    block.append(f'        if _c_{py_name} is not None:')
+                    block.append(f'            _res = {child_cls}._from_sdf(_c_{py_name}, version)')
+                    block.append(f'            if isinstance(_res, SDFError):')
+                    block.append(f'                return _res.extend("{xml_name}")')
+                    block.append(f'            _{py_name} = _res')
+                    block.append(f'        else:')
+                    block.append(f'            _{py_name} = None')
             else:
                 if is_list:
                     block.append(f'        _els_{py_name} = []')
@@ -781,26 +902,64 @@ def _render_class(spec: dict) -> str:
                     block.append(f'            _c_{py_name} = el.find("{xml_name}")')
 
                 if is_list:
-                    block.append(f'        _{py_name} = [{child_cls}.from_sdf(c, version) for c in _els_{py_name}]')
+                    block.append(f'        _{py_name} = []')
+                    block.append(f'        for c in _els_{py_name}:')
+                    block.append(f'            _res = {child_cls}._from_sdf(c, version)')
+                    block.append(f'            if isinstance(_res, SDFError):')
+                    block.append(f'                return _res.extend("{xml_name}")')
+                    block.append(f'            _{py_name}.append(_res)')
                 else:
-                    block.append(
-                        f"        _{py_name} = {child_cls}.from_sdf(_c_{py_name}, version) "
-                        f"if _c_{py_name} is not None else None"
-                    )
+                    block.append(f'        if _c_{py_name} is not None:')
+                    block.append(f'            _res = {child_cls}._from_sdf(_c_{py_name}, version)')
+                    block.append(f'            if isinstance(_res, SDFError):')
+                    block.append(f'                return _res.extend("{xml_name}")')
+                    block.append(f'            _{py_name} = _res')
+                    block.append(f'        else:')
+                    block.append(f'            _{py_name} = None')
+
+        if is_required and xml_kind == "child":
+            check_conds = []
+            if added_in:
+                check_conds.append(f'cmp_version(version, "{added_in}") >= 0')
+            if removed_in:
+                check_conds.append(f'cmp_version(version, "{removed_in}") < 0')
+
+            sorted_history = sorted(required_history.items(), key=lambda x: tuple(int(v) for v in x[0].split(".")),
+                                    reverse=True)
+            for v, req in sorted_history:
+                if req == "0" or req == "*":
+                    check_conds.append(f'cmp_version(version, "{v}") < 0')
+                    break
+
+            if check_conds:
+                cond = " and ".join(check_conds)
+                block.append(f"        if {cond}:")
+                indent = "            "
+            else:
+                indent = "        "
+
+            if is_list:
+                block.append(f"{indent}if not _{py_name}:")
+                block.append(f'{indent}    return SDFError(f"\'{py_name}\' is required in SDF version {{version}}")')
+            elif xml_kind == "child":
+                block.append(f"{indent}if _{py_name} is None:")
+                block.append(f'{indent}    return SDFError(f"\'{py_name}\' is required in SDF version {{version}}")')
+
         if added_in:
             if is_list:
-                block.append(f"        if _{py_name} and cmp_version(version, \"{added_in}\") < 0:")
+                block.append(f'        if _{py_name} and cmp_version(version, "{added_in}") < 0:')
                 block.append(
-                    f'            raise ValueError(f"\'{py_name}\' is not supported in SDF version {{version}} (added in {added_in})")')
+                    f'            return SDFError(f"\'{py_name}\' is not supported in SDF version {{version}} (added in {added_in})")')
             else:
-                block.append(f"        if _{py_name} is not None and cmp_version(version, \"{added_in}\") < 0:")
+                block.append(f'        if _{py_name} is not None and cmp_version(version, "{added_in}") < 0:')
                 if xml_kind in ("attr", "leaf"):
                     block.append(f"            if _{py_name} != {raw_default}:")
                     block.append(
-                        f'                raise ValueError(f"\'{py_name}\' is not supported in SDF version {{version}} (added in {added_in})")')
+                        f'                return SDFError(f"\'{py_name}\' is not supported in SDF version {{version}} (added in {added_in})")')
                 else:
                     block.append(
-                        f'            raise ValueError(f"\'{py_name}\' is not supported in SDF version {{version}} (added in {added_in})")')
+                        f'            return SDFError(f"\'{py_name}\' is not supported in SDF version {{version}} (added in {added_in})")')
+
         init_args.append(f"{py_name}=_{py_name}")
 
     if init_args:
@@ -848,7 +1007,8 @@ def generate_element_file(
         lines.append("from typing import List")
         lines.append("")
 
-    lines.append("from ..utils.model import Model")
+    lines.append("from ..utils.model import BaseModel")
+    lines.append("from ..utils.errors import SDFError")
 
     for mod, cls in sorted(all_type_imports.items()):
         lines.append(f"from ..utils.{mod} import {cls}")
@@ -856,7 +1016,7 @@ def generate_element_file(
     if needs_version_cmp:
         lines.append("from ..utils.version import cmp_version")
 
-    if spec.get("migrations"):
+    if any(s.get("migrations") for s in class_specs):
         lines.append("from ..utils.migration import apply_migrations")
 
     lines.append("")

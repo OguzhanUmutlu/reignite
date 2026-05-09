@@ -2,13 +2,22 @@ import sys
 import typing
 
 
+def cmp_version(v1: str, v2: str) -> int:
+    t1 = tuple(int(x) for x in v1.split("."))
+    t2 = tuple(int(x) for x in v2.split("."))
+    if t1 > t2:
+        return 1
+    elif t1 < t2:
+        return -1
+    return 0
+
+
 def _get_path(obj, path: str):
     parts = path.split("::")
     current = obj
     for part in parts:
         if current is None:
             return None
-        # Handle lists gracefully: we just use the first item for migrations.
         if isinstance(current, list):
             if not current:
                 return None
@@ -27,7 +36,6 @@ def _set_path(obj, path: str, value):
             hints = typing.get_type_hints(type(current).__init__, globalns=mod.__dict__)
             cls = hints.get(part)
             if not cls:
-                # If no type hint (e.g. primitive), we can't instantiate
                 return
             if typing.get_origin(cls) == list:
                 cls = typing.get_args(cls)[0]
@@ -42,7 +50,6 @@ def _set_path(obj, path: str, value):
         else:
             if isinstance(val, list):
                 if not val:
-                    # Instantiate empty list item
                     mod = sys.modules[current.__module__]
                     hints = typing.get_type_hints(type(current).__init__, globalns=mod.__dict__)
                     cls = typing.get_args(hints[part])[0]
@@ -50,7 +57,6 @@ def _set_path(obj, path: str, value):
                 current = val[0]
             else:
                 current = val
-    # Handle the leaf
     leaf_part = parts[-1]
     if isinstance(current, list) and current:
         current = current[0]
@@ -58,10 +64,6 @@ def _set_path(obj, path: str, value):
 
 
 def apply_migrations(obj, target_version: str):
-    """
-    Applies migrations defined in obj._MIGRATIONS to migrate obj to target_version.
-    Mutates obj in place.
-    """
     from .version import cmp_version
     current_version = getattr(obj, "__version__", "1.0")
     if current_version == target_version:
@@ -73,7 +75,6 @@ def apply_migrations(obj, target_version: str):
 
     forward = cmp_version(target_version, current_version) > 0
 
-    # Sort migrations. If forward, sort ascending. If backward, sort descending.
     sorted_migrations = sorted(
         migrations,
         key=lambda m: tuple(int(x) for x in m["version"].split(".")),
@@ -82,8 +83,6 @@ def apply_migrations(obj, target_version: str):
 
     for mig in sorted_migrations:
         v = mig["version"]
-        # If moving forward, we apply migration if we are crossing its boundary.
-        # Boundary is when target >= v AND current < v
         if forward:
             if cmp_version(target_version, v) >= 0 and cmp_version(current_version, v) < 0:
                 for op in mig["ops"]:
@@ -100,10 +99,8 @@ def apply_migrations(obj, target_version: str):
                         val = _get_path(obj, op["from"])
                         if val in op["from_values"]:
                             _set_path(obj, op["to"], op["to_value"])
-        # If moving backward, we cross boundary if target < v AND current >= v
         else:
             if cmp_version(target_version, v) < 0 and cmp_version(current_version, v) >= 0:
-                # Reverse ops
                 for op in reversed(mig["ops"]):
                     if op["type"] == "move":
                         val = _get_path(obj, op["to"])
@@ -113,5 +110,4 @@ def apply_migrations(obj, target_version: str):
                     elif op["type"] == "map":
                         val = _get_path(obj, op["to"])
                         if val == op["to_value"]:
-                            # We can only restore the first from_value since we lost the original
                             _set_path(obj, op["from"], op["from_values"][0])

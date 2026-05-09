@@ -3,11 +3,13 @@ from __future__ import annotations
 
 from xml.etree import ElementTree as ET
 
-from ..utils.model import Model
+from ..utils.model import BaseModel
+from ..utils.errors import SDFError
 from ..utils.pose import Pose
+from ..utils.migration import apply_migrations
 
 
-class Pose(Model):
+class Pose(BaseModel):
     _MIGRATIONS = [{"version": "1.7", "ops": [{"type": "move", "from": "frame", "to": "relative_to"}]}]
 
     def __init__(
@@ -52,16 +54,24 @@ class Pose(Model):
         return el
 
     @classmethod
-    def from_sdf(cls, el: ET.Element, version: str) -> "Pose":
+    def _from_sdf(cls, el: ET.Element, version: str):
         _text = el.text or "0 0 0 0 0 0"
-        _pose = Pose.from_sdf(_text)
+        _pose = Pose._from_sdf(_text, version)
+        if isinstance(_pose, SDFError):
+            return _pose
         _relative_to = el.get("relative_to", "")
+        if isinstance(_relative_to, SDFError):
+            return _relative_to.extend("@relative_to")
         _rotation_format = el.get("rotation_format", "euler_rpy")
-        _degrees = el.get("degrees", False).strip().lower() == 'true'
+        if isinstance(_rotation_format, SDFError):
+            return _rotation_format.extend("@rotation_format")
+        _degrees = str(el.get("degrees", False)).strip().lower() == 'true'
+        if isinstance(_degrees, SDFError):
+            return _degrees.extend("@degrees")
         return cls(sdf_version=version, pose=_pose, relative_to=_relative_to, rotation_format=_rotation_format, degrees=_degrees)
 
 
-class LightState(Model):
+class LightState(BaseModel):
     def __init__(self, sdf_version: str, name: str = "__default__", pose: "Pose" = None):
         self.__version__ = sdf_version
         self.name = name
@@ -79,6 +89,8 @@ class LightState(Model):
             return self.to_version(version).to_sdf()
         version = version or self.__version__
         el = ET.Element("light_state")
+        if self.name is None:
+            raise ValueError(f"'name' is required in SDF version {version}")
         if self.name is not None:
             el.set("name", self.name)
         if self.pose is not None:
@@ -86,8 +98,18 @@ class LightState(Model):
         return el
 
     @classmethod
-    def from_sdf(cls, el: ET.Element, version: str) -> "LightState":
+    def _from_sdf(cls, el: ET.Element, version: str):
+        if el.get("name") is None:
+            return SDFError(f"'name' is required in SDF version {version}")
         _name = el.get("name", "__default__")
+        if isinstance(_name, SDFError):
+            return _name.extend("@name")
         _c_pose = el.find("pose")
-        _pose = Pose.from_sdf(_c_pose, version) if _c_pose is not None else None
+        if _c_pose is not None:
+            _res = Pose._from_sdf(_c_pose, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("pose")
+            _pose = _res
+        else:
+            _pose = None
         return cls(sdf_version=version, name=_name, pose=_pose)

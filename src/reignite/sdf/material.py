@@ -5,36 +5,46 @@ from xml.etree import ElementTree as ET
 
 from typing import List
 
-from ..utils.model import Model
+from ..utils.model import BaseModel
+from ..utils.errors import SDFError
 from ..utils.color import Color
 from ..utils.version import cmp_version
 
 
 import math
 
-def _parse_int32(raw: str) -> int:
-    v = int(raw)
-    if not (-2147483648 <= v <= 2147483647):
-        raise ValueError(f"int32 out of range: {v}")
-    return v
+def _parse_int32(raw: str) -> int | SDFError:
+    try:
+        v = int(raw)
+        if not (-2147483648 <= v <= 2147483647):
+            return SDFError(f"int32 out of range: {v}")
+        return v
+    except ValueError:
+        return SDFError(f"Invalid int32: {raw}")
 
 
-def _parse_uint32(raw: str) -> int:
-    v = int(raw)
-    if not (0 <= v <= 4294967295):
-        raise ValueError(f"uint32 out of range: {v}")
-    return v
+def _parse_uint32(raw: str) -> int | SDFError:
+    try:
+        v = int(raw)
+        if not (0 <= v <= 4294967295):
+            return SDFError(f"uint32 out of range: {v}")
+        return v
+    except ValueError:
+        return SDFError(f"Invalid uint32: {raw}")
 
 
-def _parse_double(raw: str) -> float:
-    v = float(raw)
-    if not math.isfinite(v) or abs(v) > math.inf:
-        raise ValueError(f"double out of range: {raw}")
-    return v
+def _parse_double(raw: str) -> float | SDFError:
+    try:
+        v = float(raw)
+        if not math.isfinite(v) or abs(v) > math.inf:
+            return SDFError(f"double out of range: {raw}")
+        return v
+    except ValueError:
+        return SDFError(f"Invalid double: {raw}")
 
 
 
-class Uri(Model):
+class Uri(BaseModel):
     def __init__(self, sdf_version: str, uri: str = "__default__"):
         self.__version__ = sdf_version
         self.uri = uri
@@ -50,18 +60,24 @@ class Uri(Model):
             return self.to_version(version).to_sdf()
         version = version or self.__version__
         el = ET.Element("uri")
+        if self.uri is None:
+            raise ValueError(f"'uri' is required in SDF version {version}")
         if self.uri is not None:
             el.text = self.uri
         return el
 
     @classmethod
-    def from_sdf(cls, el: ET.Element, version: str) -> "Uri":
+    def _from_sdf(cls, el: ET.Element, version: str):
+        if el.text is None:
+            return SDFError(f"'uri' is required in SDF version {version}")
         _text = el.text or "__default__"
         _uri = _text
+        if isinstance(_uri, SDFError):
+            return _uri
         return cls(sdf_version=version, uri=_uri)
 
 
-class Name(Model):
+class Name(BaseModel):
     def __init__(self, sdf_version: str, name: str = "__default__"):
         self.__version__ = sdf_version
         self.name = name
@@ -77,18 +93,24 @@ class Name(Model):
             return self.to_version(version).to_sdf()
         version = version or self.__version__
         el = ET.Element("name")
+        if self.name is None:
+            raise ValueError(f"'name' is required in SDF version {version}")
         if self.name is not None:
             el.text = self.name
         return el
 
     @classmethod
-    def from_sdf(cls, el: ET.Element, version: str) -> "Name":
+    def _from_sdf(cls, el: ET.Element, version: str):
+        if el.text is None:
+            return SDFError(f"'name' is required in SDF version {version}")
         _text = el.text or "__default__"
         _name = _text
+        if isinstance(_name, SDFError):
+            return _name
         return cls(sdf_version=version, name=_name)
 
 
-class Script(Model):
+class Script(BaseModel):
     def __init__(self, sdf_version: str, uri: List["Uri"] = None, name: "Name" = None):
         self.__version__ = sdf_version
         self.uri = uri or []
@@ -106,21 +128,40 @@ class Script(Model):
             return self.to_version(version).to_sdf()
         version = version or self.__version__
         el = ET.Element("script")
+        if not self.uri:
+            raise ValueError(f"'uri' is required in SDF version {version}")
         for item in (self.uri or []):
             el.append(item.to_sdf(version))
+        if self.name is None:
+            raise ValueError(f"'name' is required in SDF version {version}")
         if self.name is not None:
             el.append(self.name.to_sdf(version))
         return el
 
     @classmethod
-    def from_sdf(cls, el: ET.Element, version: str) -> "Script":
-        _uri = [Uri.from_sdf(c, version) for c in el.findall("uri")]
+    def _from_sdf(cls, el: ET.Element, version: str):
+        _uri = []
+        for c in el.findall("uri"):
+            _res = Uri._from_sdf(c, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("uri")
+            _uri.append(_res)
+        if not _uri:
+            return SDFError(f"'uri' is required in SDF version {version}")
         _c_name = el.find("name")
-        _name = Name.from_sdf(_c_name, version) if _c_name is not None else None
+        if _c_name is not None:
+            _res = Name._from_sdf(_c_name, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("name")
+            _name = _res
+        else:
+            _name = None
+        if _name is None:
+            return SDFError(f"'name' is required in SDF version {version}")
         return cls(sdf_version=version, uri=_uri, name=_name)
 
 
-class NormalMap(Model):
+class NormalMap(BaseModel):
     def __init__(self, sdf_version: str, normal_map: str = "__default__"):
         self.__version__ = sdf_version
         self.normal_map = normal_map
@@ -141,13 +182,15 @@ class NormalMap(Model):
         return el
 
     @classmethod
-    def from_sdf(cls, el: ET.Element, version: str) -> "NormalMap":
+    def _from_sdf(cls, el: ET.Element, version: str):
         _text = el.text or "__default__"
         _normal_map = _text
+        if isinstance(_normal_map, SDFError):
+            return _normal_map
         return cls(sdf_version=version, normal_map=_normal_map)
 
 
-class Shader(Model):
+class Shader(BaseModel):
     def __init__(self, sdf_version: str, type: str = "pixel", normal_map: "NormalMap" = None):
         self.__version__ = sdf_version
         self.type = type
@@ -165,6 +208,8 @@ class Shader(Model):
             return self.to_version(version).to_sdf()
         version = version or self.__version__
         el = ET.Element("shader")
+        if self.type is None:
+            raise ValueError(f"'type' is required in SDF version {version}")
         if self.type is not None:
             el.set("type", self.type)
         if self.normal_map is not None:
@@ -172,14 +217,24 @@ class Shader(Model):
         return el
 
     @classmethod
-    def from_sdf(cls, el: ET.Element, version: str) -> "Shader":
+    def _from_sdf(cls, el: ET.Element, version: str):
+        if el.get("type") is None:
+            return SDFError(f"'type' is required in SDF version {version}")
         _type = el.get("type", "pixel")
+        if isinstance(_type, SDFError):
+            return _type.extend("@type")
         _c_normal_map = el.find("normal_map")
-        _normal_map = NormalMap.from_sdf(_c_normal_map, version) if _c_normal_map is not None else None
+        if _c_normal_map is not None:
+            _res = NormalMap._from_sdf(_c_normal_map, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("normal_map")
+            _normal_map = _res
+        else:
+            _normal_map = None
         return cls(sdf_version=version, type=_type, normal_map=_normal_map)
 
 
-class Lighting(Model):
+class Lighting(BaseModel):
     def __init__(self, sdf_version: str, lighting: bool = True):
         self.__version__ = sdf_version
         self.lighting = lighting
@@ -200,13 +255,15 @@ class Lighting(Model):
         return el
 
     @classmethod
-    def from_sdf(cls, el: ET.Element, version: str) -> "Lighting":
+    def _from_sdf(cls, el: ET.Element, version: str):
         _text = el.text or True
-        _lighting = _text.strip().lower() == 'true'
+        _lighting = str(_text).strip().lower() == 'true'
+        if isinstance(_lighting, SDFError):
+            return _lighting
         return cls(sdf_version=version, lighting=_lighting)
 
 
-class Ambient(Model):
+class Ambient(BaseModel):
     def __init__(self, sdf_version: str, ambient: Color = None):
         self.__version__ = sdf_version
         if ambient is None:
@@ -229,13 +286,15 @@ class Ambient(Model):
         return el
 
     @classmethod
-    def from_sdf(cls, el: ET.Element, version: str) -> "Ambient":
+    def _from_sdf(cls, el: ET.Element, version: str):
         _text = el.text or "0 0 0 1"
-        _ambient = Color.from_sdf(_text)
+        _ambient = Color._from_sdf(_text, version)
+        if isinstance(_ambient, SDFError):
+            return _ambient
         return cls(sdf_version=version, ambient=_ambient)
 
 
-class Diffuse(Model):
+class Diffuse(BaseModel):
     def __init__(self, sdf_version: str, diffuse: Color = None):
         self.__version__ = sdf_version
         if diffuse is None:
@@ -258,13 +317,15 @@ class Diffuse(Model):
         return el
 
     @classmethod
-    def from_sdf(cls, el: ET.Element, version: str) -> "Diffuse":
+    def _from_sdf(cls, el: ET.Element, version: str):
         _text = el.text or "0 0 0 1"
-        _diffuse = Color.from_sdf(_text)
+        _diffuse = Color._from_sdf(_text, version)
+        if isinstance(_diffuse, SDFError):
+            return _diffuse
         return cls(sdf_version=version, diffuse=_diffuse)
 
 
-class Specular(Model):
+class Specular(BaseModel):
     def __init__(self, sdf_version: str, specular: Color = None):
         self.__version__ = sdf_version
         if specular is None:
@@ -287,13 +348,15 @@ class Specular(Model):
         return el
 
     @classmethod
-    def from_sdf(cls, el: ET.Element, version: str) -> "Specular":
+    def _from_sdf(cls, el: ET.Element, version: str):
         _text = el.text or "0 0 0 1"
-        _specular = Color.from_sdf(_text)
+        _specular = Color._from_sdf(_text, version)
+        if isinstance(_specular, SDFError):
+            return _specular
         return cls(sdf_version=version, specular=_specular)
 
 
-class Emissive(Model):
+class Emissive(BaseModel):
     def __init__(self, sdf_version: str, emissive: Color = None):
         self.__version__ = sdf_version
         if emissive is None:
@@ -316,13 +379,15 @@ class Emissive(Model):
         return el
 
     @classmethod
-    def from_sdf(cls, el: ET.Element, version: str) -> "Emissive":
+    def _from_sdf(cls, el: ET.Element, version: str):
         _text = el.text or "0 0 0 1"
-        _emissive = Color.from_sdf(_text)
+        _emissive = Color._from_sdf(_text, version)
+        if isinstance(_emissive, SDFError):
+            return _emissive
         return cls(sdf_version=version, emissive=_emissive)
 
 
-class AlbedoMap(Model):
+class AlbedoMap(BaseModel):
     def __init__(self, sdf_version: str, albedo_map: str = ""):
         self.__version__ = sdf_version
         self.albedo_map = albedo_map
@@ -343,13 +408,15 @@ class AlbedoMap(Model):
         return el
 
     @classmethod
-    def from_sdf(cls, el: ET.Element, version: str) -> "AlbedoMap":
+    def _from_sdf(cls, el: ET.Element, version: str):
         _text = el.text or ""
         _albedo_map = _text
+        if isinstance(_albedo_map, SDFError):
+            return _albedo_map
         return cls(sdf_version=version, albedo_map=_albedo_map)
 
 
-class RoughnessMap(Model):
+class RoughnessMap(BaseModel):
     def __init__(self, sdf_version: str, roughness_map: str = ""):
         self.__version__ = sdf_version
         self.roughness_map = roughness_map
@@ -370,13 +437,15 @@ class RoughnessMap(Model):
         return el
 
     @classmethod
-    def from_sdf(cls, el: ET.Element, version: str) -> "RoughnessMap":
+    def _from_sdf(cls, el: ET.Element, version: str):
         _text = el.text or ""
         _roughness_map = _text
+        if isinstance(_roughness_map, SDFError):
+            return _roughness_map
         return cls(sdf_version=version, roughness_map=_roughness_map)
 
 
-class Roughness(Model):
+class Roughness(BaseModel):
     def __init__(self, sdf_version: str, roughness: str = "0.5"):
         self.__version__ = sdf_version
         self.roughness = roughness
@@ -397,13 +466,15 @@ class Roughness(Model):
         return el
 
     @classmethod
-    def from_sdf(cls, el: ET.Element, version: str) -> "Roughness":
+    def _from_sdf(cls, el: ET.Element, version: str):
         _text = el.text or "0.5"
         _roughness = _text
+        if isinstance(_roughness, SDFError):
+            return _roughness
         return cls(sdf_version=version, roughness=_roughness)
 
 
-class MetalnessMap(Model):
+class MetalnessMap(BaseModel):
     def __init__(self, sdf_version: str, metalness_map: str = ""):
         self.__version__ = sdf_version
         self.metalness_map = metalness_map
@@ -424,13 +495,15 @@ class MetalnessMap(Model):
         return el
 
     @classmethod
-    def from_sdf(cls, el: ET.Element, version: str) -> "MetalnessMap":
+    def _from_sdf(cls, el: ET.Element, version: str):
         _text = el.text or ""
         _metalness_map = _text
+        if isinstance(_metalness_map, SDFError):
+            return _metalness_map
         return cls(sdf_version=version, metalness_map=_metalness_map)
 
 
-class Metalness(Model):
+class Metalness(BaseModel):
     def __init__(self, sdf_version: str, metalness: str = "0.5"):
         self.__version__ = sdf_version
         self.metalness = metalness
@@ -451,13 +524,15 @@ class Metalness(Model):
         return el
 
     @classmethod
-    def from_sdf(cls, el: ET.Element, version: str) -> "Metalness":
+    def _from_sdf(cls, el: ET.Element, version: str):
         _text = el.text or "0.5"
         _metalness = _text
+        if isinstance(_metalness, SDFError):
+            return _metalness
         return cls(sdf_version=version, metalness=_metalness)
 
 
-class EnvironmentMap(Model):
+class EnvironmentMap(BaseModel):
     def __init__(self, sdf_version: str, environment_map: str = ""):
         self.__version__ = sdf_version
         self.environment_map = environment_map
@@ -478,13 +553,15 @@ class EnvironmentMap(Model):
         return el
 
     @classmethod
-    def from_sdf(cls, el: ET.Element, version: str) -> "EnvironmentMap":
+    def _from_sdf(cls, el: ET.Element, version: str):
         _text = el.text or ""
         _environment_map = _text
+        if isinstance(_environment_map, SDFError):
+            return _environment_map
         return cls(sdf_version=version, environment_map=_environment_map)
 
 
-class AmbientOcclusionMap(Model):
+class AmbientOcclusionMap(BaseModel):
     def __init__(self, sdf_version: str, ambient_occlusion_map: str = ""):
         self.__version__ = sdf_version
         self.ambient_occlusion_map = ambient_occlusion_map
@@ -505,13 +582,15 @@ class AmbientOcclusionMap(Model):
         return el
 
     @classmethod
-    def from_sdf(cls, el: ET.Element, version: str) -> "AmbientOcclusionMap":
+    def _from_sdf(cls, el: ET.Element, version: str):
         _text = el.text or ""
         _ambient_occlusion_map = _text
+        if isinstance(_ambient_occlusion_map, SDFError):
+            return _ambient_occlusion_map
         return cls(sdf_version=version, ambient_occlusion_map=_ambient_occlusion_map)
 
 
-class EmissiveMap(Model):
+class EmissiveMap(BaseModel):
     def __init__(self, sdf_version: str, emissive_map: str = ""):
         self.__version__ = sdf_version
         self.emissive_map = emissive_map
@@ -532,13 +611,15 @@ class EmissiveMap(Model):
         return el
 
     @classmethod
-    def from_sdf(cls, el: ET.Element, version: str) -> "EmissiveMap":
+    def _from_sdf(cls, el: ET.Element, version: str):
         _text = el.text or ""
         _emissive_map = _text
+        if isinstance(_emissive_map, SDFError):
+            return _emissive_map
         return cls(sdf_version=version, emissive_map=_emissive_map)
 
 
-class LightMap(Model):
+class LightMap(BaseModel):
     def __init__(self, sdf_version: str, light_map: str = "", uv_set: int = 0):
         self.__version__ = sdf_version
         self.light_map = light_map
@@ -565,17 +646,21 @@ class LightMap(Model):
         return el
 
     @classmethod
-    def from_sdf(cls, el: ET.Element, version: str) -> "LightMap":
+    def _from_sdf(cls, el: ET.Element, version: str):
         _text = el.text or ""
         _light_map = _text
+        if isinstance(_light_map, SDFError):
+            return _light_map
         if _light_map is not None and cmp_version(version, "1.7") < 0:
             if _light_map != "":
-                raise ValueError(f"'light_map' is not supported in SDF version {version} (added in 1.7)")
+                return SDFError(f"'light_map' is not supported in SDF version {version} (added in 1.7)")
         _uv_set = _parse_uint32(el.get("uv_set", 0))
+        if isinstance(_uv_set, SDFError):
+            return _uv_set.extend("@uv_set")
         return cls(sdf_version=version, light_map=_light_map, uv_set=_uv_set)
 
 
-class Metal(Model):
+class Metal(BaseModel):
     def __init__(
         self,
         sdf_version: str,
@@ -647,33 +732,93 @@ class Metal(Model):
         return el
 
     @classmethod
-    def from_sdf(cls, el: ET.Element, version: str) -> "Metal":
+    def _from_sdf(cls, el: ET.Element, version: str):
         _c_albedo_map = el.find("albedo_map")
-        _albedo_map = AlbedoMap.from_sdf(_c_albedo_map, version) if _c_albedo_map is not None else None
+        if _c_albedo_map is not None:
+            _res = AlbedoMap._from_sdf(_c_albedo_map, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("albedo_map")
+            _albedo_map = _res
+        else:
+            _albedo_map = None
         _c_roughness_map = el.find("roughness_map")
-        _roughness_map = RoughnessMap.from_sdf(_c_roughness_map, version) if _c_roughness_map is not None else None
+        if _c_roughness_map is not None:
+            _res = RoughnessMap._from_sdf(_c_roughness_map, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("roughness_map")
+            _roughness_map = _res
+        else:
+            _roughness_map = None
         _c_roughness = el.find("roughness")
-        _roughness = Roughness.from_sdf(_c_roughness, version) if _c_roughness is not None else None
+        if _c_roughness is not None:
+            _res = Roughness._from_sdf(_c_roughness, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("roughness")
+            _roughness = _res
+        else:
+            _roughness = None
         _c_metalness_map = el.find("metalness_map")
-        _metalness_map = MetalnessMap.from_sdf(_c_metalness_map, version) if _c_metalness_map is not None else None
+        if _c_metalness_map is not None:
+            _res = MetalnessMap._from_sdf(_c_metalness_map, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("metalness_map")
+            _metalness_map = _res
+        else:
+            _metalness_map = None
         _c_metalness = el.find("metalness")
-        _metalness = Metalness.from_sdf(_c_metalness, version) if _c_metalness is not None else None
+        if _c_metalness is not None:
+            _res = Metalness._from_sdf(_c_metalness, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("metalness")
+            _metalness = _res
+        else:
+            _metalness = None
         _c_environment_map = el.find("environment_map")
-        _environment_map = EnvironmentMap.from_sdf(_c_environment_map, version) if _c_environment_map is not None else None
+        if _c_environment_map is not None:
+            _res = EnvironmentMap._from_sdf(_c_environment_map, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("environment_map")
+            _environment_map = _res
+        else:
+            _environment_map = None
         _c_ambient_occlusion_map = el.find("ambient_occlusion_map")
-        _ambient_occlusion_map = AmbientOcclusionMap.from_sdf(_c_ambient_occlusion_map, version) if _c_ambient_occlusion_map is not None else None
+        if _c_ambient_occlusion_map is not None:
+            _res = AmbientOcclusionMap._from_sdf(_c_ambient_occlusion_map, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("ambient_occlusion_map")
+            _ambient_occlusion_map = _res
+        else:
+            _ambient_occlusion_map = None
         _c_normal_map = el.find("normal_map")
-        _normal_map = NormalMap.from_sdf(_c_normal_map, version) if _c_normal_map is not None else None
+        if _c_normal_map is not None:
+            _res = NormalMap._from_sdf(_c_normal_map, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("normal_map")
+            _normal_map = _res
+        else:
+            _normal_map = None
         _c_emissive_map = el.find("emissive_map")
-        _emissive_map = EmissiveMap.from_sdf(_c_emissive_map, version) if _c_emissive_map is not None else None
+        if _c_emissive_map is not None:
+            _res = EmissiveMap._from_sdf(_c_emissive_map, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("emissive_map")
+            _emissive_map = _res
+        else:
+            _emissive_map = None
         _c_light_map = el.find("light_map")
-        _light_map = LightMap.from_sdf(_c_light_map, version) if _c_light_map is not None else None
+        if _c_light_map is not None:
+            _res = LightMap._from_sdf(_c_light_map, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("light_map")
+            _light_map = _res
+        else:
+            _light_map = None
         if _light_map is not None and cmp_version(version, "1.7") < 0:
-            raise ValueError(f"'light_map' is not supported in SDF version {version} (added in 1.7)")
+            return SDFError(f"'light_map' is not supported in SDF version {version} (added in 1.7)")
         return cls(sdf_version=version, albedo_map=_albedo_map, roughness_map=_roughness_map, roughness=_roughness, metalness_map=_metalness_map, metalness=_metalness, environment_map=_environment_map, ambient_occlusion_map=_ambient_occlusion_map, normal_map=_normal_map, emissive_map=_emissive_map, light_map=_light_map)
 
 
-class Pbr(Model):
+class Pbr(BaseModel):
     def __init__(self, sdf_version: str, metal: "Metal" = None, specular: "Specular" = None):
         self.__version__ = sdf_version
         self.metal = metal
@@ -698,47 +843,27 @@ class Pbr(Model):
         return el
 
     @classmethod
-    def from_sdf(cls, el: ET.Element, version: str) -> "Pbr":
+    def _from_sdf(cls, el: ET.Element, version: str):
         _c_metal = el.find("metal")
-        _metal = Metal.from_sdf(_c_metal, version) if _c_metal is not None else None
+        if _c_metal is not None:
+            _res = Metal._from_sdf(_c_metal, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("metal")
+            _metal = _res
+        else:
+            _metal = None
         _c_specular = el.find("specular")
-        _specular = Specular.from_sdf(_c_specular, version) if _c_specular is not None else None
+        if _c_specular is not None:
+            _res = Specular._from_sdf(_c_specular, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("specular")
+            _specular = _res
+        else:
+            _specular = None
         return cls(sdf_version=version, metal=_metal, specular=_specular)
 
 
-class RenderOrder(Model):
-    def __init__(self, sdf_version: str, render_order: float = 0.0):
-        self.__version__ = sdf_version
-        self.render_order = render_order
-
-    def to_version(self, target_version: str) -> "RenderOrder":
-        if self.render_order is not None and cmp_version(target_version, "1.7") < 0:
-            raise ValueError(f"'render_order' is not supported in SDF version {target_version} (added in 1.7)")
-        kwargs = {"sdf_version": target_version}
-        kwargs["render_order"] = self.render_order
-        new_obj = self.__class__(**kwargs)
-        return new_obj
-
-    def to_sdf(self, version: str = None) -> ET.Element:
-        if version is not None and version != self.__version__:
-            return self.to_version(version).to_sdf()
-        version = version or self.__version__
-        el = ET.Element("render_order")
-        if self.render_order is not None:
-            el.text = str(self.render_order)
-        return el
-
-    @classmethod
-    def from_sdf(cls, el: ET.Element, version: str) -> "RenderOrder":
-        _text = el.text or 0.0
-        _render_order = _parse_double(_text)
-        if _render_order is not None and cmp_version(version, "1.7") < 0:
-            if _render_order != 0.0:
-                raise ValueError(f"'render_order' is not supported in SDF version {version} (added in 1.7)")
-        return cls(sdf_version=version, render_order=_render_order)
-
-
-class Shininess(Model):
+class Shininess(BaseModel):
     def __init__(self, sdf_version: str, shininess: float = 0):
         self.__version__ = sdf_version
         self.shininess = shininess
@@ -761,16 +886,52 @@ class Shininess(Model):
         return el
 
     @classmethod
-    def from_sdf(cls, el: ET.Element, version: str) -> "Shininess":
+    def _from_sdf(cls, el: ET.Element, version: str):
         _text = el.text or 0
         _shininess = _parse_double(_text)
+        if isinstance(_shininess, SDFError):
+            return _shininess
         if _shininess is not None and cmp_version(version, "1.7") < 0:
             if _shininess != 0:
-                raise ValueError(f"'shininess' is not supported in SDF version {version} (added in 1.7)")
+                return SDFError(f"'shininess' is not supported in SDF version {version} (added in 1.7)")
         return cls(sdf_version=version, shininess=_shininess)
 
 
-class DoubleSided(Model):
+class RenderOrder(BaseModel):
+    def __init__(self, sdf_version: str, render_order: float = 0.0):
+        self.__version__ = sdf_version
+        self.render_order = render_order
+
+    def to_version(self, target_version: str) -> "RenderOrder":
+        if self.render_order is not None and cmp_version(target_version, "1.7") < 0:
+            raise ValueError(f"'render_order' is not supported in SDF version {target_version} (added in 1.7)")
+        kwargs = {"sdf_version": target_version}
+        kwargs["render_order"] = self.render_order
+        new_obj = self.__class__(**kwargs)
+        return new_obj
+
+    def to_sdf(self, version: str = None) -> ET.Element:
+        if version is not None and version != self.__version__:
+            return self.to_version(version).to_sdf()
+        version = version or self.__version__
+        el = ET.Element("render_order")
+        if self.render_order is not None:
+            el.text = str(self.render_order)
+        return el
+
+    @classmethod
+    def _from_sdf(cls, el: ET.Element, version: str):
+        _text = el.text or 0.0
+        _render_order = _parse_double(_text)
+        if isinstance(_render_order, SDFError):
+            return _render_order
+        if _render_order is not None and cmp_version(version, "1.7") < 0:
+            if _render_order != 0.0:
+                return SDFError(f"'render_order' is not supported in SDF version {version} (added in 1.7)")
+        return cls(sdf_version=version, render_order=_render_order)
+
+
+class DoubleSided(BaseModel):
     def __init__(self, sdf_version: str, double_sided: bool = False):
         self.__version__ = sdf_version
         self.double_sided = double_sided
@@ -793,16 +954,18 @@ class DoubleSided(Model):
         return el
 
     @classmethod
-    def from_sdf(cls, el: ET.Element, version: str) -> "DoubleSided":
+    def _from_sdf(cls, el: ET.Element, version: str):
         _text = el.text or False
-        _double_sided = _text.strip().lower() == 'true'
+        _double_sided = str(_text).strip().lower() == 'true'
+        if isinstance(_double_sided, SDFError):
+            return _double_sided
         if _double_sided is not None and cmp_version(version, "1.7") < 0:
             if _double_sided != False:
-                raise ValueError(f"'double_sided' is not supported in SDF version {version} (added in 1.7)")
+                return SDFError(f"'double_sided' is not supported in SDF version {version} (added in 1.7)")
         return cls(sdf_version=version, double_sided=_double_sided)
 
 
-class Material(Model):
+class Material(BaseModel):
     def __init__(
         self,
         sdf_version: str,
@@ -814,8 +977,8 @@ class Material(Model):
         specular: "Specular" = None,
         emissive: "Emissive" = None,
         pbr: "Pbr" = None,
-        render_order: "RenderOrder" = None,
         shininess: "Shininess" = None,
+        render_order: "RenderOrder" = None,
         double_sided: "DoubleSided" = None
     ):
         self.__version__ = sdf_version
@@ -827,17 +990,17 @@ class Material(Model):
         self.specular = specular
         self.emissive = emissive
         self.pbr = pbr
-        self.render_order = render_order
         self.shininess = shininess
+        self.render_order = render_order
         self.double_sided = double_sided
 
     def to_version(self, target_version: str) -> "Material":
         if self.pbr is not None and cmp_version(target_version, "1.6") < 0:
             raise ValueError(f"'pbr' is not supported in SDF version {target_version} (added in 1.6)")
-        if self.render_order is not None and cmp_version(target_version, "1.7") < 0:
-            raise ValueError(f"'render_order' is not supported in SDF version {target_version} (added in 1.7)")
         if self.shininess is not None and cmp_version(target_version, "1.7") < 0:
             raise ValueError(f"'shininess' is not supported in SDF version {target_version} (added in 1.7)")
+        if self.render_order is not None and cmp_version(target_version, "1.7") < 0:
+            raise ValueError(f"'render_order' is not supported in SDF version {target_version} (added in 1.7)")
         if self.double_sided is not None and cmp_version(target_version, "1.7") < 0:
             raise ValueError(f"'double_sided' is not supported in SDF version {target_version} (added in 1.7)")
         kwargs = {"sdf_version": target_version}
@@ -849,8 +1012,8 @@ class Material(Model):
         kwargs["specular"] = self.specular.to_version(target_version) if self.specular is not None else None
         kwargs["emissive"] = self.emissive.to_version(target_version) if self.emissive is not None else None
         kwargs["pbr"] = self.pbr.to_version(target_version) if self.pbr is not None else None
-        kwargs["render_order"] = self.render_order.to_version(target_version) if self.render_order is not None else None
         kwargs["shininess"] = self.shininess.to_version(target_version) if self.shininess is not None else None
+        kwargs["render_order"] = self.render_order.to_version(target_version) if self.render_order is not None else None
         kwargs["double_sided"] = self.double_sided.to_version(target_version) if self.double_sided is not None else None
         new_obj = self.__class__(**kwargs)
         return new_obj
@@ -876,44 +1039,110 @@ class Material(Model):
             el.append(self.emissive.to_sdf(version))
         if self.pbr is not None:
             el.append(self.pbr.to_sdf(version))
-        if self.render_order is not None:
-            el.append(self.render_order.to_sdf(version))
         if self.shininess is not None:
             el.append(self.shininess.to_sdf(version))
+        if self.render_order is not None:
+            el.append(self.render_order.to_sdf(version))
         if self.double_sided is not None:
             el.append(self.double_sided.to_sdf(version))
         return el
 
     @classmethod
-    def from_sdf(cls, el: ET.Element, version: str) -> "Material":
+    def _from_sdf(cls, el: ET.Element, version: str):
         _c_script = el.find("script")
-        _script = Script.from_sdf(_c_script, version) if _c_script is not None else None
+        if _c_script is not None:
+            _res = Script._from_sdf(_c_script, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("script")
+            _script = _res
+        else:
+            _script = None
         _c_shader = el.find("shader")
-        _shader = Shader.from_sdf(_c_shader, version) if _c_shader is not None else None
+        if _c_shader is not None:
+            _res = Shader._from_sdf(_c_shader, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("shader")
+            _shader = _res
+        else:
+            _shader = None
         _c_lighting = el.find("lighting")
-        _lighting = Lighting.from_sdf(_c_lighting, version) if _c_lighting is not None else None
+        if _c_lighting is not None:
+            _res = Lighting._from_sdf(_c_lighting, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("lighting")
+            _lighting = _res
+        else:
+            _lighting = None
         _c_ambient = el.find("ambient")
-        _ambient = Ambient.from_sdf(_c_ambient, version) if _c_ambient is not None else None
+        if _c_ambient is not None:
+            _res = Ambient._from_sdf(_c_ambient, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("ambient")
+            _ambient = _res
+        else:
+            _ambient = None
         _c_diffuse = el.find("diffuse")
-        _diffuse = Diffuse.from_sdf(_c_diffuse, version) if _c_diffuse is not None else None
+        if _c_diffuse is not None:
+            _res = Diffuse._from_sdf(_c_diffuse, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("diffuse")
+            _diffuse = _res
+        else:
+            _diffuse = None
         _c_specular = el.find("specular")
-        _specular = Specular.from_sdf(_c_specular, version) if _c_specular is not None else None
+        if _c_specular is not None:
+            _res = Specular._from_sdf(_c_specular, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("specular")
+            _specular = _res
+        else:
+            _specular = None
         _c_emissive = el.find("emissive")
-        _emissive = Emissive.from_sdf(_c_emissive, version) if _c_emissive is not None else None
+        if _c_emissive is not None:
+            _res = Emissive._from_sdf(_c_emissive, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("emissive")
+            _emissive = _res
+        else:
+            _emissive = None
         _c_pbr = el.find("pbr")
-        _pbr = Pbr.from_sdf(_c_pbr, version) if _c_pbr is not None else None
+        if _c_pbr is not None:
+            _res = Pbr._from_sdf(_c_pbr, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("pbr")
+            _pbr = _res
+        else:
+            _pbr = None
         if _pbr is not None and cmp_version(version, "1.6") < 0:
-            raise ValueError(f"'pbr' is not supported in SDF version {version} (added in 1.6)")
-        _c_render_order = el.find("render_order")
-        _render_order = RenderOrder.from_sdf(_c_render_order, version) if _c_render_order is not None else None
-        if _render_order is not None and cmp_version(version, "1.7") < 0:
-            raise ValueError(f"'render_order' is not supported in SDF version {version} (added in 1.7)")
+            return SDFError(f"'pbr' is not supported in SDF version {version} (added in 1.6)")
         _c_shininess = el.find("shininess")
-        _shininess = Shininess.from_sdf(_c_shininess, version) if _c_shininess is not None else None
+        if _c_shininess is not None:
+            _res = Shininess._from_sdf(_c_shininess, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("shininess")
+            _shininess = _res
+        else:
+            _shininess = None
         if _shininess is not None and cmp_version(version, "1.7") < 0:
-            raise ValueError(f"'shininess' is not supported in SDF version {version} (added in 1.7)")
+            return SDFError(f"'shininess' is not supported in SDF version {version} (added in 1.7)")
+        _c_render_order = el.find("render_order")
+        if _c_render_order is not None:
+            _res = RenderOrder._from_sdf(_c_render_order, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("render_order")
+            _render_order = _res
+        else:
+            _render_order = None
+        if _render_order is not None and cmp_version(version, "1.7") < 0:
+            return SDFError(f"'render_order' is not supported in SDF version {version} (added in 1.7)")
         _c_double_sided = el.find("double_sided")
-        _double_sided = DoubleSided.from_sdf(_c_double_sided, version) if _c_double_sided is not None else None
+        if _c_double_sided is not None:
+            _res = DoubleSided._from_sdf(_c_double_sided, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("double_sided")
+            _double_sided = _res
+        else:
+            _double_sided = None
         if _double_sided is not None and cmp_version(version, "1.7") < 0:
-            raise ValueError(f"'double_sided' is not supported in SDF version {version} (added in 1.7)")
-        return cls(sdf_version=version, script=_script, shader=_shader, lighting=_lighting, ambient=_ambient, diffuse=_diffuse, specular=_specular, emissive=_emissive, pbr=_pbr, render_order=_render_order, shininess=_shininess, double_sided=_double_sided)
+            return SDFError(f"'double_sided' is not supported in SDF version {version} (added in 1.7)")
+        return cls(sdf_version=version, script=_script, shader=_shader, lighting=_lighting, ambient=_ambient, diffuse=_diffuse, specular=_specular, emissive=_emissive, pbr=_pbr, shininess=_shininess, render_order=_render_order, double_sided=_double_sided)

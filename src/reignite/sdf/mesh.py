@@ -3,36 +3,46 @@ from __future__ import annotations
 
 from xml.etree import ElementTree as ET
 
-from ..utils.model import Model
+from ..utils.model import BaseModel
+from ..utils.errors import SDFError
 from ..utils.vector3 import Vector3
 from ..utils.version import cmp_version
 
 
 import math
 
-def _parse_int32(raw: str) -> int:
-    v = int(raw)
-    if not (-2147483648 <= v <= 2147483647):
-        raise ValueError(f"int32 out of range: {v}")
-    return v
+def _parse_int32(raw: str) -> int | SDFError:
+    try:
+        v = int(raw)
+        if not (-2147483648 <= v <= 2147483647):
+            return SDFError(f"int32 out of range: {v}")
+        return v
+    except ValueError:
+        return SDFError(f"Invalid int32: {raw}")
 
 
-def _parse_uint32(raw: str) -> int:
-    v = int(raw)
-    if not (0 <= v <= 4294967295):
-        raise ValueError(f"uint32 out of range: {v}")
-    return v
+def _parse_uint32(raw: str) -> int | SDFError:
+    try:
+        v = int(raw)
+        if not (0 <= v <= 4294967295):
+            return SDFError(f"uint32 out of range: {v}")
+        return v
+    except ValueError:
+        return SDFError(f"Invalid uint32: {raw}")
 
 
-def _parse_double(raw: str) -> float:
-    v = float(raw)
-    if not math.isfinite(v) or abs(v) > math.inf:
-        raise ValueError(f"double out of range: {raw}")
-    return v
+def _parse_double(raw: str) -> float | SDFError:
+    try:
+        v = float(raw)
+        if not math.isfinite(v) or abs(v) > math.inf:
+            return SDFError(f"double out of range: {raw}")
+        return v
+    except ValueError:
+        return SDFError(f"Invalid double: {raw}")
 
 
 
-class Uri(Model):
+class Uri(BaseModel):
     def __init__(self, sdf_version: str, uri: str = "__default__"):
         self.__version__ = sdf_version
         self.uri = uri
@@ -48,18 +58,24 @@ class Uri(Model):
             return self.to_version(version).to_sdf()
         version = version or self.__version__
         el = ET.Element("uri")
+        if self.uri is None:
+            raise ValueError(f"'uri' is required in SDF version {version}")
         if self.uri is not None:
             el.text = self.uri
         return el
 
     @classmethod
-    def from_sdf(cls, el: ET.Element, version: str) -> "Uri":
+    def _from_sdf(cls, el: ET.Element, version: str):
+        if el.text is None:
+            return SDFError(f"'uri' is required in SDF version {version}")
         _text = el.text or "__default__"
         _uri = _text
+        if isinstance(_uri, SDFError):
+            return _uri
         return cls(sdf_version=version, uri=_uri)
 
 
-class Name(Model):
+class Name(BaseModel):
     def __init__(self, sdf_version: str, name: str = "__default__"):
         self.__version__ = sdf_version
         self.name = name
@@ -75,18 +91,24 @@ class Name(Model):
             return self.to_version(version).to_sdf()
         version = version or self.__version__
         el = ET.Element("name")
+        if self.name is None:
+            raise ValueError(f"'name' is required in SDF version {version}")
         if self.name is not None:
             el.text = self.name
         return el
 
     @classmethod
-    def from_sdf(cls, el: ET.Element, version: str) -> "Name":
+    def _from_sdf(cls, el: ET.Element, version: str):
+        if el.text is None:
+            return SDFError(f"'name' is required in SDF version {version}")
         _text = el.text or "__default__"
         _name = _text
+        if isinstance(_name, SDFError):
+            return _name
         return cls(sdf_version=version, name=_name)
 
 
-class Center(Model):
+class Center(BaseModel):
     def __init__(self, sdf_version: str, center: bool = False):
         self.__version__ = sdf_version
         self.center = center
@@ -107,13 +129,15 @@ class Center(Model):
         return el
 
     @classmethod
-    def from_sdf(cls, el: ET.Element, version: str) -> "Center":
+    def _from_sdf(cls, el: ET.Element, version: str):
         _text = el.text or False
-        _center = _text.strip().lower() == 'true'
+        _center = str(_text).strip().lower() == 'true'
+        if isinstance(_center, SDFError):
+            return _center
         return cls(sdf_version=version, center=_center)
 
 
-class Submesh(Model):
+class Submesh(BaseModel):
     def __init__(self, sdf_version: str, name: "Name" = None, center: "Center" = None):
         self.__version__ = sdf_version
         self.name = name
@@ -131,6 +155,8 @@ class Submesh(Model):
             return self.to_version(version).to_sdf()
         version = version or self.__version__
         el = ET.Element("submesh")
+        if self.name is None:
+            raise ValueError(f"'name' is required in SDF version {version}")
         if self.name is not None:
             el.append(self.name.to_sdf(version))
         if self.center is not None:
@@ -138,15 +164,29 @@ class Submesh(Model):
         return el
 
     @classmethod
-    def from_sdf(cls, el: ET.Element, version: str) -> "Submesh":
+    def _from_sdf(cls, el: ET.Element, version: str):
         _c_name = el.find("name")
-        _name = Name.from_sdf(_c_name, version) if _c_name is not None else None
+        if _c_name is not None:
+            _res = Name._from_sdf(_c_name, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("name")
+            _name = _res
+        else:
+            _name = None
+        if _name is None:
+            return SDFError(f"'name' is required in SDF version {version}")
         _c_center = el.find("center")
-        _center = Center.from_sdf(_c_center, version) if _c_center is not None else None
+        if _c_center is not None:
+            _res = Center._from_sdf(_c_center, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("center")
+            _center = _res
+        else:
+            _center = None
         return cls(sdf_version=version, name=_name, center=_center)
 
 
-class Scale(Model):
+class Scale(BaseModel):
     def __init__(self, sdf_version: str, scale: Vector3 = None):
         self.__version__ = sdf_version
         if scale is None:
@@ -169,13 +209,15 @@ class Scale(Model):
         return el
 
     @classmethod
-    def from_sdf(cls, el: ET.Element, version: str) -> "Scale":
+    def _from_sdf(cls, el: ET.Element, version: str):
         _text = el.text or "1 1 1"
-        _scale = Vector3.from_sdf(_text)
+        _scale = Vector3._from_sdf(_text, version)
+        if isinstance(_scale, SDFError):
+            return _scale
         return cls(sdf_version=version, scale=_scale)
 
 
-class MaxConvexHulls(Model):
+class MaxConvexHulls(BaseModel):
     def __init__(self, sdf_version: str, max_convex_hulls: int = 16):
         self.__version__ = sdf_version
         self.max_convex_hulls = max_convex_hulls
@@ -196,13 +238,15 @@ class MaxConvexHulls(Model):
         return el
 
     @classmethod
-    def from_sdf(cls, el: ET.Element, version: str) -> "MaxConvexHulls":
+    def _from_sdf(cls, el: ET.Element, version: str):
         _text = el.text or 16
         _max_convex_hulls = _parse_uint32(_text)
+        if isinstance(_max_convex_hulls, SDFError):
+            return _max_convex_hulls
         return cls(sdf_version=version, max_convex_hulls=_max_convex_hulls)
 
 
-class VoxelResolution(Model):
+class VoxelResolution(BaseModel):
     def __init__(self, sdf_version: str, voxel_resolution: int = 200000):
         self.__version__ = sdf_version
         self.voxel_resolution = voxel_resolution
@@ -223,13 +267,15 @@ class VoxelResolution(Model):
         return el
 
     @classmethod
-    def from_sdf(cls, el: ET.Element, version: str) -> "VoxelResolution":
+    def _from_sdf(cls, el: ET.Element, version: str):
         _text = el.text or 200000
         _voxel_resolution = _parse_uint32(_text)
+        if isinstance(_voxel_resolution, SDFError):
+            return _voxel_resolution
         return cls(sdf_version=version, voxel_resolution=_voxel_resolution)
 
 
-class ConvexDecomposition(Model):
+class ConvexDecomposition(BaseModel):
     def __init__(
         self,
         sdf_version: str,
@@ -259,15 +305,27 @@ class ConvexDecomposition(Model):
         return el
 
     @classmethod
-    def from_sdf(cls, el: ET.Element, version: str) -> "ConvexDecomposition":
+    def _from_sdf(cls, el: ET.Element, version: str):
         _c_max_convex_hulls = el.find("max_convex_hulls")
-        _max_convex_hulls = MaxConvexHulls.from_sdf(_c_max_convex_hulls, version) if _c_max_convex_hulls is not None else None
+        if _c_max_convex_hulls is not None:
+            _res = MaxConvexHulls._from_sdf(_c_max_convex_hulls, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("max_convex_hulls")
+            _max_convex_hulls = _res
+        else:
+            _max_convex_hulls = None
         _c_voxel_resolution = el.find("voxel_resolution")
-        _voxel_resolution = VoxelResolution.from_sdf(_c_voxel_resolution, version) if _c_voxel_resolution is not None else None
+        if _c_voxel_resolution is not None:
+            _res = VoxelResolution._from_sdf(_c_voxel_resolution, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("voxel_resolution")
+            _voxel_resolution = _res
+        else:
+            _voxel_resolution = None
         return cls(sdf_version=version, max_convex_hulls=_max_convex_hulls, voxel_resolution=_voxel_resolution)
 
 
-class Mesh(Model):
+class Mesh(BaseModel):
     def __init__(
         self,
         sdf_version: str,
@@ -305,6 +363,8 @@ class Mesh(Model):
         el = ET.Element("mesh")
         if self.optimization is not None:
             el.set("optimization", self.optimization)
+        if self.uri is None:
+            raise ValueError(f"'uri' is required in SDF version {version}")
         if self.uri is not None:
             el.append(self.uri.to_sdf(version))
         if self.submesh is not None:
@@ -316,19 +376,47 @@ class Mesh(Model):
         return el
 
     @classmethod
-    def from_sdf(cls, el: ET.Element, version: str) -> "Mesh":
+    def _from_sdf(cls, el: ET.Element, version: str):
         _optimization = el.get("optimization", "")
+        if isinstance(_optimization, SDFError):
+            return _optimization.extend("@optimization")
         if _optimization is not None and cmp_version(version, "1.11") < 0:
             if _optimization != "":
-                raise ValueError(f"'optimization' is not supported in SDF version {version} (added in 1.11)")
+                return SDFError(f"'optimization' is not supported in SDF version {version} (added in 1.11)")
         _c_uri = el.find("uri")
-        _uri = Uri.from_sdf(_c_uri, version) if _c_uri is not None else None
+        if _c_uri is not None:
+            _res = Uri._from_sdf(_c_uri, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("uri")
+            _uri = _res
+        else:
+            _uri = None
+        if _uri is None:
+            return SDFError(f"'uri' is required in SDF version {version}")
         _c_submesh = el.find("submesh")
-        _submesh = Submesh.from_sdf(_c_submesh, version) if _c_submesh is not None else None
+        if _c_submesh is not None:
+            _res = Submesh._from_sdf(_c_submesh, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("submesh")
+            _submesh = _res
+        else:
+            _submesh = None
         _c_scale = el.find("scale")
-        _scale = Scale.from_sdf(_c_scale, version) if _c_scale is not None else None
+        if _c_scale is not None:
+            _res = Scale._from_sdf(_c_scale, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("scale")
+            _scale = _res
+        else:
+            _scale = None
         _c_convex_decomposition = el.find("convex_decomposition")
-        _convex_decomposition = ConvexDecomposition.from_sdf(_c_convex_decomposition, version) if _c_convex_decomposition is not None else None
+        if _c_convex_decomposition is not None:
+            _res = ConvexDecomposition._from_sdf(_c_convex_decomposition, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("convex_decomposition")
+            _convex_decomposition = _res
+        else:
+            _convex_decomposition = None
         if _convex_decomposition is not None and cmp_version(version, "1.11") < 0:
-            raise ValueError(f"'convex_decomposition' is not supported in SDF version {version} (added in 1.11)")
+            return SDFError(f"'convex_decomposition' is not supported in SDF version {version} (added in 1.11)")
         return cls(sdf_version=version, optimization=_optimization, uri=_uri, submesh=_submesh, scale=_scale, convex_decomposition=_convex_decomposition)

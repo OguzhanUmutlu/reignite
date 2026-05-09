@@ -3,34 +3,44 @@ from __future__ import annotations
 
 from xml.etree import ElementTree as ET
 
-from ..utils.model import Model
+from ..utils.model import BaseModel
+from ..utils.errors import SDFError
 
 
 import math
 
-def _parse_int32(raw: str) -> int:
-    v = int(raw)
-    if not (-2147483648 <= v <= 2147483647):
-        raise ValueError(f"int32 out of range: {v}")
-    return v
+def _parse_int32(raw: str) -> int | SDFError:
+    try:
+        v = int(raw)
+        if not (-2147483648 <= v <= 2147483647):
+            return SDFError(f"int32 out of range: {v}")
+        return v
+    except ValueError:
+        return SDFError(f"Invalid int32: {raw}")
 
 
-def _parse_uint32(raw: str) -> int:
-    v = int(raw)
-    if not (0 <= v <= 4294967295):
-        raise ValueError(f"uint32 out of range: {v}")
-    return v
+def _parse_uint32(raw: str) -> int | SDFError:
+    try:
+        v = int(raw)
+        if not (0 <= v <= 4294967295):
+            return SDFError(f"uint32 out of range: {v}")
+        return v
+    except ValueError:
+        return SDFError(f"Invalid uint32: {raw}")
 
 
-def _parse_double(raw: str) -> float:
-    v = float(raw)
-    if not math.isfinite(v) or abs(v) > math.inf:
-        raise ValueError(f"double out of range: {raw}")
-    return v
+def _parse_double(raw: str) -> float | SDFError:
+    try:
+        v = float(raw)
+        if not math.isfinite(v) or abs(v) > math.inf:
+            return SDFError(f"double out of range: {raw}")
+        return v
+    except ValueError:
+        return SDFError(f"Invalid double: {raw}")
 
 
 
-class Temperature(Model):
+class Temperature(BaseModel):
     def __init__(self, sdf_version: str, temperature: float = 288.15):
         self.__version__ = sdf_version
         self.temperature = temperature
@@ -51,13 +61,15 @@ class Temperature(Model):
         return el
 
     @classmethod
-    def from_sdf(cls, el: ET.Element, version: str) -> "Temperature":
+    def _from_sdf(cls, el: ET.Element, version: str):
         _text = el.text or 288.15
         _temperature = _parse_double(_text)
+        if isinstance(_temperature, SDFError):
+            return _temperature
         return cls(sdf_version=version, temperature=_temperature)
 
 
-class Pressure(Model):
+class Pressure(BaseModel):
     def __init__(self, sdf_version: str, pressure: float = 101325):
         self.__version__ = sdf_version
         self.pressure = pressure
@@ -78,13 +90,15 @@ class Pressure(Model):
         return el
 
     @classmethod
-    def from_sdf(cls, el: ET.Element, version: str) -> "Pressure":
+    def _from_sdf(cls, el: ET.Element, version: str):
         _text = el.text or 101325
         _pressure = _parse_double(_text)
+        if isinstance(_pressure, SDFError):
+            return _pressure
         return cls(sdf_version=version, pressure=_pressure)
 
 
-class TemperatureGradient(Model):
+class TemperatureGradient(BaseModel):
     def __init__(self, sdf_version: str, temperature_gradient: float = -0.0065):
         self.__version__ = sdf_version
         self.temperature_gradient = temperature_gradient
@@ -105,13 +119,15 @@ class TemperatureGradient(Model):
         return el
 
     @classmethod
-    def from_sdf(cls, el: ET.Element, version: str) -> "TemperatureGradient":
+    def _from_sdf(cls, el: ET.Element, version: str):
         _text = el.text or -0.0065
         _temperature_gradient = _parse_double(_text)
+        if isinstance(_temperature_gradient, SDFError):
+            return _temperature_gradient
         return cls(sdf_version=version, temperature_gradient=_temperature_gradient)
 
 
-class Atmosphere(Model):
+class Atmosphere(BaseModel):
     def __init__(
         self,
         sdf_version: str,
@@ -140,6 +156,8 @@ class Atmosphere(Model):
             return self.to_version(version).to_sdf()
         version = version or self.__version__
         el = ET.Element("atmosphere")
+        if self.type is None:
+            raise ValueError(f"'type' is required in SDF version {version}")
         if self.type is not None:
             el.set("type", self.type)
         if self.temperature is not None:
@@ -151,12 +169,34 @@ class Atmosphere(Model):
         return el
 
     @classmethod
-    def from_sdf(cls, el: ET.Element, version: str) -> "Atmosphere":
+    def _from_sdf(cls, el: ET.Element, version: str):
+        if el.get("type") is None:
+            return SDFError(f"'type' is required in SDF version {version}")
         _type = el.get("type", "adiabatic")
+        if isinstance(_type, SDFError):
+            return _type.extend("@type")
         _c_temperature = el.find("temperature")
-        _temperature = Temperature.from_sdf(_c_temperature, version) if _c_temperature is not None else None
+        if _c_temperature is not None:
+            _res = Temperature._from_sdf(_c_temperature, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("temperature")
+            _temperature = _res
+        else:
+            _temperature = None
         _c_pressure = el.find("pressure")
-        _pressure = Pressure.from_sdf(_c_pressure, version) if _c_pressure is not None else None
+        if _c_pressure is not None:
+            _res = Pressure._from_sdf(_c_pressure, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("pressure")
+            _pressure = _res
+        else:
+            _pressure = None
         _c_temperature_gradient = el.find("temperature_gradient")
-        _temperature_gradient = TemperatureGradient.from_sdf(_c_temperature_gradient, version) if _c_temperature_gradient is not None else None
+        if _c_temperature_gradient is not None:
+            _res = TemperatureGradient._from_sdf(_c_temperature_gradient, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("temperature_gradient")
+            _temperature_gradient = _res
+        else:
+            _temperature_gradient = None
         return cls(sdf_version=version, type=_type, temperature=_temperature, pressure=_pressure, temperature_gradient=_temperature_gradient)

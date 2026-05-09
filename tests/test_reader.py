@@ -6,9 +6,11 @@ from reignite import read_sdf, read_sdf_string
 
 
 def test_read_sdf_string_model():
-    xml = """<?xml version=\"1.0\"?>
-<sdf version=\"1.0\">
-  <model name=\"demo\" static=\"false\" />
+    xml = """<?xml version="1.0"?>
+<sdf version="1.9">
+  <model name="demo" static="false">
+    <link name="base_link"/>
+  </model>
 </sdf>
 """
     model = read_sdf_string(xml)

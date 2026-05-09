@@ -5,36 +5,47 @@ from xml.etree import ElementTree as ET
 
 from typing import List
 
-from ..utils.model import Model
+from ..utils.model import BaseModel
+from ..utils.errors import SDFError
 from ..utils.pose import Pose
 from ..utils.vector3 import Vector3
+from ..utils.migration import apply_migrations
 
 
 import math
 
-def _parse_int32(raw: str) -> int:
-    v = int(raw)
-    if not (-2147483648 <= v <= 2147483647):
-        raise ValueError(f"int32 out of range: {v}")
-    return v
+def _parse_int32(raw: str) -> int | SDFError:
+    try:
+        v = int(raw)
+        if not (-2147483648 <= v <= 2147483647):
+            return SDFError(f"int32 out of range: {v}")
+        return v
+    except ValueError:
+        return SDFError(f"Invalid int32: {raw}")
 
 
-def _parse_uint32(raw: str) -> int:
-    v = int(raw)
-    if not (0 <= v <= 4294967295):
-        raise ValueError(f"uint32 out of range: {v}")
-    return v
+def _parse_uint32(raw: str) -> int | SDFError:
+    try:
+        v = int(raw)
+        if not (0 <= v <= 4294967295):
+            return SDFError(f"uint32 out of range: {v}")
+        return v
+    except ValueError:
+        return SDFError(f"Invalid uint32: {raw}")
 
 
-def _parse_double(raw: str) -> float:
-    v = float(raw)
-    if not math.isfinite(v) or abs(v) > math.inf:
-        raise ValueError(f"double out of range: {raw}")
-    return v
+def _parse_double(raw: str) -> float | SDFError:
+    try:
+        v = float(raw)
+        if not math.isfinite(v) or abs(v) > math.inf:
+            return SDFError(f"double out of range: {raw}")
+        return v
+    except ValueError:
+        return SDFError(f"Invalid double: {raw}")
 
 
 
-class Angle(Model):
+class Angle(BaseModel):
     def __init__(self, sdf_version: str, angle: float = 0, axis: int = 0):
         self.__version__ = sdf_version
         self.angle = angle
@@ -54,19 +65,27 @@ class Angle(Model):
         el = ET.Element("angle")
         if self.angle is not None:
             el.text = str(self.angle)
+        if self.axis is None:
+            raise ValueError(f"'axis' is required in SDF version {version}")
         if self.axis is not None:
             el.set("axis", str(self.axis))
         return el
 
     @classmethod
-    def from_sdf(cls, el: ET.Element, version: str) -> "Angle":
+    def _from_sdf(cls, el: ET.Element, version: str):
         _text = el.text or 0
         _angle = _parse_double(_text)
+        if isinstance(_angle, SDFError):
+            return _angle
+        if el.get("axis") is None:
+            return SDFError(f"'axis' is required in SDF version {version}")
         _axis = _parse_uint32(el.get("axis", 0))
+        if isinstance(_axis, SDFError):
+            return _axis.extend("@axis")
         return cls(sdf_version=version, angle=_angle, axis=_axis)
 
 
-class Position(Model):
+class Position(BaseModel):
     def __init__(self, sdf_version: str, position: float = 0, degrees: bool = False):
         self.__version__ = sdf_version
         self.position = position
@@ -91,14 +110,18 @@ class Position(Model):
         return el
 
     @classmethod
-    def from_sdf(cls, el: ET.Element, version: str) -> "Position":
+    def _from_sdf(cls, el: ET.Element, version: str):
         _text = el.text or 0
         _position = _parse_double(_text)
-        _degrees = el.get("degrees", False).strip().lower() == 'true'
+        if isinstance(_position, SDFError):
+            return _position
+        _degrees = str(el.get("degrees", False)).strip().lower() == 'true'
+        if isinstance(_degrees, SDFError):
+            return _degrees.extend("@degrees")
         return cls(sdf_version=version, position=_position, degrees=_degrees)
 
 
-class Velocity(Model):
+class Velocity(BaseModel):
     def __init__(self, sdf_version: str, velocity: float = 0, degrees: bool = False):
         self.__version__ = sdf_version
         self.velocity = velocity
@@ -123,14 +146,18 @@ class Velocity(Model):
         return el
 
     @classmethod
-    def from_sdf(cls, el: ET.Element, version: str) -> "Velocity":
+    def _from_sdf(cls, el: ET.Element, version: str):
         _text = el.text or 0
         _velocity = _parse_double(_text)
-        _degrees = el.get("degrees", False).strip().lower() == 'true'
+        if isinstance(_velocity, SDFError):
+            return _velocity
+        _degrees = str(el.get("degrees", False)).strip().lower() == 'true'
+        if isinstance(_degrees, SDFError):
+            return _degrees.extend("@degrees")
         return cls(sdf_version=version, velocity=_velocity, degrees=_degrees)
 
 
-class Acceleration(Model):
+class Acceleration(BaseModel):
     def __init__(self, sdf_version: str, acceleration: float = 0, degrees: bool = False):
         self.__version__ = sdf_version
         self.acceleration = acceleration
@@ -155,14 +182,18 @@ class Acceleration(Model):
         return el
 
     @classmethod
-    def from_sdf(cls, el: ET.Element, version: str) -> "Acceleration":
+    def _from_sdf(cls, el: ET.Element, version: str):
         _text = el.text or 0
         _acceleration = _parse_double(_text)
-        _degrees = el.get("degrees", False).strip().lower() == 'true'
+        if isinstance(_acceleration, SDFError):
+            return _acceleration
+        _degrees = str(el.get("degrees", False)).strip().lower() == 'true'
+        if isinstance(_degrees, SDFError):
+            return _degrees.extend("@degrees")
         return cls(sdf_version=version, acceleration=_acceleration, degrees=_degrees)
 
 
-class Effort(Model):
+class Effort(BaseModel):
     def __init__(self, sdf_version: str, effort: float = 0):
         self.__version__ = sdf_version
         self.effort = effort
@@ -183,13 +214,15 @@ class Effort(Model):
         return el
 
     @classmethod
-    def from_sdf(cls, el: ET.Element, version: str) -> "Effort":
+    def _from_sdf(cls, el: ET.Element, version: str):
         _text = el.text or 0
         _effort = _parse_double(_text)
+        if isinstance(_effort, SDFError):
+            return _effort
         return cls(sdf_version=version, effort=_effort)
 
 
-class AxisState(Model):
+class AxisState(BaseModel):
     def __init__(
         self,
         sdf_version: str,
@@ -229,19 +262,43 @@ class AxisState(Model):
         return el
 
     @classmethod
-    def from_sdf(cls, el: ET.Element, version: str) -> "AxisState":
+    def _from_sdf(cls, el: ET.Element, version: str):
         _c_position = el.find("position")
-        _position = Position.from_sdf(_c_position, version) if _c_position is not None else None
+        if _c_position is not None:
+            _res = Position._from_sdf(_c_position, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("position")
+            _position = _res
+        else:
+            _position = None
         _c_velocity = el.find("velocity")
-        _velocity = Velocity.from_sdf(_c_velocity, version) if _c_velocity is not None else None
+        if _c_velocity is not None:
+            _res = Velocity._from_sdf(_c_velocity, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("velocity")
+            _velocity = _res
+        else:
+            _velocity = None
         _c_acceleration = el.find("acceleration")
-        _acceleration = Acceleration.from_sdf(_c_acceleration, version) if _c_acceleration is not None else None
+        if _c_acceleration is not None:
+            _res = Acceleration._from_sdf(_c_acceleration, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("acceleration")
+            _acceleration = _res
+        else:
+            _acceleration = None
         _c_effort = el.find("effort")
-        _effort = Effort.from_sdf(_c_effort, version) if _c_effort is not None else None
+        if _c_effort is not None:
+            _res = Effort._from_sdf(_c_effort, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("effort")
+            _effort = _res
+        else:
+            _effort = None
         return cls(sdf_version=version, position=_position, velocity=_velocity, acceleration=_acceleration, effort=_effort)
 
 
-class Axis2State(Model):
+class Axis2State(BaseModel):
     def __init__(
         self,
         sdf_version: str,
@@ -281,19 +338,43 @@ class Axis2State(Model):
         return el
 
     @classmethod
-    def from_sdf(cls, el: ET.Element, version: str) -> "Axis2State":
+    def _from_sdf(cls, el: ET.Element, version: str):
         _c_position = el.find("position")
-        _position = Position.from_sdf(_c_position, version) if _c_position is not None else None
+        if _c_position is not None:
+            _res = Position._from_sdf(_c_position, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("position")
+            _position = _res
+        else:
+            _position = None
         _c_velocity = el.find("velocity")
-        _velocity = Velocity.from_sdf(_c_velocity, version) if _c_velocity is not None else None
+        if _c_velocity is not None:
+            _res = Velocity._from_sdf(_c_velocity, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("velocity")
+            _velocity = _res
+        else:
+            _velocity = None
         _c_acceleration = el.find("acceleration")
-        _acceleration = Acceleration.from_sdf(_c_acceleration, version) if _c_acceleration is not None else None
+        if _c_acceleration is not None:
+            _res = Acceleration._from_sdf(_c_acceleration, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("acceleration")
+            _acceleration = _res
+        else:
+            _acceleration = None
         _c_effort = el.find("effort")
-        _effort = Effort.from_sdf(_c_effort, version) if _c_effort is not None else None
+        if _c_effort is not None:
+            _res = Effort._from_sdf(_c_effort, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("effort")
+            _effort = _res
+        else:
+            _effort = None
         return cls(sdf_version=version, position=_position, velocity=_velocity, acceleration=_acceleration, effort=_effort)
 
 
-class JointState(Model):
+class JointState(BaseModel):
     def __init__(
         self,
         sdf_version: str,
@@ -322,6 +403,8 @@ class JointState(Model):
             return self.to_version(version).to_sdf()
         version = version or self.__version__
         el = ET.Element("joint_state")
+        if self.name is None:
+            raise ValueError(f"'name' is required in SDF version {version}")
         if self.name is not None:
             el.set("name", self.name)
         if self.angle is not None:
@@ -333,18 +416,40 @@ class JointState(Model):
         return el
 
     @classmethod
-    def from_sdf(cls, el: ET.Element, version: str) -> "JointState":
+    def _from_sdf(cls, el: ET.Element, version: str):
+        if el.get("name") is None:
+            return SDFError(f"'name' is required in SDF version {version}")
         _name = el.get("name", "__default__")
+        if isinstance(_name, SDFError):
+            return _name.extend("@name")
         _c_angle = el.find("angle")
-        _angle = Angle.from_sdf(_c_angle, version) if _c_angle is not None else None
+        if _c_angle is not None:
+            _res = Angle._from_sdf(_c_angle, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("angle")
+            _angle = _res
+        else:
+            _angle = None
         _c_axis_state = el.find("axis_state")
-        _axis_state = AxisState.from_sdf(_c_axis_state, version) if _c_axis_state is not None else None
+        if _c_axis_state is not None:
+            _res = AxisState._from_sdf(_c_axis_state, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("axis_state")
+            _axis_state = _res
+        else:
+            _axis_state = None
         _c_axis2_state = el.find("axis2_state")
-        _axis2_state = Axis2State.from_sdf(_c_axis2_state, version) if _c_axis2_state is not None else None
+        if _c_axis2_state is not None:
+            _res = Axis2State._from_sdf(_c_axis2_state, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("axis2_state")
+            _axis2_state = _res
+        else:
+            _axis2_state = None
         return cls(sdf_version=version, name=_name, angle=_angle, axis_state=_axis_state, axis2_state=_axis2_state)
 
 
-class Pose(Model):
+class Pose(BaseModel):
     _MIGRATIONS = [{"version": "1.7", "ops": [{"type": "move", "from": "frame", "to": "relative_to"}]}]
 
     def __init__(
@@ -389,16 +494,24 @@ class Pose(Model):
         return el
 
     @classmethod
-    def from_sdf(cls, el: ET.Element, version: str) -> "Pose":
+    def _from_sdf(cls, el: ET.Element, version: str):
         _text = el.text or "0 0 0 0 0 0"
-        _pose = Pose.from_sdf(_text)
+        _pose = Pose._from_sdf(_text, version)
+        if isinstance(_pose, SDFError):
+            return _pose
         _relative_to = el.get("relative_to", "")
+        if isinstance(_relative_to, SDFError):
+            return _relative_to.extend("@relative_to")
         _rotation_format = el.get("rotation_format", "euler_rpy")
-        _degrees = el.get("degrees", False).strip().lower() == 'true'
+        if isinstance(_rotation_format, SDFError):
+            return _rotation_format.extend("@rotation_format")
+        _degrees = str(el.get("degrees", False)).strip().lower() == 'true'
+        if isinstance(_degrees, SDFError):
+            return _degrees.extend("@degrees")
         return cls(sdf_version=version, pose=_pose, relative_to=_relative_to, rotation_format=_rotation_format, degrees=_degrees)
 
 
-class Frame(Model):
+class Frame(BaseModel):
     def __init__(
         self,
         sdf_version: str,
@@ -424,6 +537,8 @@ class Frame(Model):
             return self.to_version(version).to_sdf()
         version = version or self.__version__
         el = ET.Element("frame")
+        if self.name is None:
+            raise ValueError(f"'name' is required in SDF version {version}")
         if self.name is not None:
             el.set("name", self.name)
         if self.attached_to is not None:
@@ -433,15 +548,27 @@ class Frame(Model):
         return el
 
     @classmethod
-    def from_sdf(cls, el: ET.Element, version: str) -> "Frame":
+    def _from_sdf(cls, el: ET.Element, version: str):
+        if el.get("name") is None:
+            return SDFError(f"'name' is required in SDF version {version}")
         _name = el.get("name", "")
+        if isinstance(_name, SDFError):
+            return _name.extend("@name")
         _attached_to = el.get("attached_to", "")
+        if isinstance(_attached_to, SDFError):
+            return _attached_to.extend("@attached_to")
         _c_pose = el.find("pose")
-        _pose = Pose.from_sdf(_c_pose, version) if _c_pose is not None else None
+        if _c_pose is not None:
+            _res = Pose._from_sdf(_c_pose, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("pose")
+            _pose = _res
+        else:
+            _pose = None
         return cls(sdf_version=version, name=_name, attached_to=_attached_to, pose=_pose)
 
 
-class AngularVelocity(Model):
+class AngularVelocity(BaseModel):
     def __init__(self, sdf_version: str, angular_velocity: Vector3 = None, degrees: bool = False):
         self.__version__ = sdf_version
         if angular_velocity is None:
@@ -468,14 +595,18 @@ class AngularVelocity(Model):
         return el
 
     @classmethod
-    def from_sdf(cls, el: ET.Element, version: str) -> "AngularVelocity":
+    def _from_sdf(cls, el: ET.Element, version: str):
         _text = el.text or "0 0 0"
-        _angular_velocity = Vector3.from_sdf(_text)
-        _degrees = el.get("degrees", False).strip().lower() == 'true'
+        _angular_velocity = Vector3._from_sdf(_text, version)
+        if isinstance(_angular_velocity, SDFError):
+            return _angular_velocity
+        _degrees = str(el.get("degrees", False)).strip().lower() == 'true'
+        if isinstance(_degrees, SDFError):
+            return _degrees.extend("@degrees")
         return cls(sdf_version=version, angular_velocity=_angular_velocity, degrees=_degrees)
 
 
-class LinearVelocity(Model):
+class LinearVelocity(BaseModel):
     def __init__(self, sdf_version: str, linear_velocity: Vector3 = None):
         self.__version__ = sdf_version
         if linear_velocity is None:
@@ -498,13 +629,15 @@ class LinearVelocity(Model):
         return el
 
     @classmethod
-    def from_sdf(cls, el: ET.Element, version: str) -> "LinearVelocity":
+    def _from_sdf(cls, el: ET.Element, version: str):
         _text = el.text or "0 0 0"
-        _linear_velocity = Vector3.from_sdf(_text)
+        _linear_velocity = Vector3._from_sdf(_text, version)
+        if isinstance(_linear_velocity, SDFError):
+            return _linear_velocity
         return cls(sdf_version=version, linear_velocity=_linear_velocity)
 
 
-class AngularAcceleration(Model):
+class AngularAcceleration(BaseModel):
     def __init__(
         self,
         sdf_version: str,
@@ -536,14 +669,18 @@ class AngularAcceleration(Model):
         return el
 
     @classmethod
-    def from_sdf(cls, el: ET.Element, version: str) -> "AngularAcceleration":
+    def _from_sdf(cls, el: ET.Element, version: str):
         _text = el.text or "0 0 0"
-        _angular_acceleration = Vector3.from_sdf(_text)
-        _degrees = el.get("degrees", False).strip().lower() == 'true'
+        _angular_acceleration = Vector3._from_sdf(_text, version)
+        if isinstance(_angular_acceleration, SDFError):
+            return _angular_acceleration
+        _degrees = str(el.get("degrees", False)).strip().lower() == 'true'
+        if isinstance(_degrees, SDFError):
+            return _degrees.extend("@degrees")
         return cls(sdf_version=version, angular_acceleration=_angular_acceleration, degrees=_degrees)
 
 
-class LinearAcceleration(Model):
+class LinearAcceleration(BaseModel):
     def __init__(self, sdf_version: str, linear_acceleration: Vector3 = None):
         self.__version__ = sdf_version
         if linear_acceleration is None:
@@ -566,13 +703,15 @@ class LinearAcceleration(Model):
         return el
 
     @classmethod
-    def from_sdf(cls, el: ET.Element, version: str) -> "LinearAcceleration":
+    def _from_sdf(cls, el: ET.Element, version: str):
         _text = el.text or "0 0 0"
-        _linear_acceleration = Vector3.from_sdf(_text)
+        _linear_acceleration = Vector3._from_sdf(_text, version)
+        if isinstance(_linear_acceleration, SDFError):
+            return _linear_acceleration
         return cls(sdf_version=version, linear_acceleration=_linear_acceleration)
 
 
-class Torque(Model):
+class Torque(BaseModel):
     def __init__(self, sdf_version: str, torque: Vector3 = None):
         self.__version__ = sdf_version
         if torque is None:
@@ -595,13 +734,15 @@ class Torque(Model):
         return el
 
     @classmethod
-    def from_sdf(cls, el: ET.Element, version: str) -> "Torque":
+    def _from_sdf(cls, el: ET.Element, version: str):
         _text = el.text or "0 0 0"
-        _torque = Vector3.from_sdf(_text)
+        _torque = Vector3._from_sdf(_text, version)
+        if isinstance(_torque, SDFError):
+            return _torque
         return cls(sdf_version=version, torque=_torque)
 
 
-class Force(Model):
+class Force(BaseModel):
     def __init__(self, sdf_version: str, force: Vector3 = None):
         self.__version__ = sdf_version
         if force is None:
@@ -624,13 +765,15 @@ class Force(Model):
         return el
 
     @classmethod
-    def from_sdf(cls, el: ET.Element, version: str) -> "Force":
+    def _from_sdf(cls, el: ET.Element, version: str):
         _text = el.text or "0 0 0"
-        _force = Vector3.from_sdf(_text)
+        _force = Vector3._from_sdf(_text, version)
+        if isinstance(_force, SDFError):
+            return _force
         return cls(sdf_version=version, force=_force)
 
 
-class Wrench(Model):
+class Wrench(BaseModel):
     def __init__(self, sdf_version: str, wrench: Pose = None):
         self.__version__ = sdf_version
         if wrench is None:
@@ -653,13 +796,15 @@ class Wrench(Model):
         return el
 
     @classmethod
-    def from_sdf(cls, el: ET.Element, version: str) -> "Wrench":
+    def _from_sdf(cls, el: ET.Element, version: str):
         _text = el.text or "0 0 0 0 0 0"
-        _wrench = Pose.from_sdf(_text)
+        _wrench = Pose._from_sdf(_text, version)
+        if isinstance(_wrench, SDFError):
+            return _wrench
         return cls(sdf_version=version, wrench=_wrench)
 
 
-class CollisionState(Model):
+class CollisionState(BaseModel):
     def __init__(self, sdf_version: str, name: str = "__default__"):
         self.__version__ = sdf_version
         self.name = name
@@ -675,17 +820,23 @@ class CollisionState(Model):
             return self.to_version(version).to_sdf()
         version = version or self.__version__
         el = ET.Element("collision_state")
+        if self.name is None:
+            raise ValueError(f"'name' is required in SDF version {version}")
         if self.name is not None:
             el.set("name", self.name)
         return el
 
     @classmethod
-    def from_sdf(cls, el: ET.Element, version: str) -> "CollisionState":
+    def _from_sdf(cls, el: ET.Element, version: str):
+        if el.get("name") is None:
+            return SDFError(f"'name' is required in SDF version {version}")
         _name = el.get("name", "__default__")
+        if isinstance(_name, SDFError):
+            return _name.extend("@name")
         return cls(sdf_version=version, name=_name)
 
 
-class LinkState(Model):
+class LinkState(BaseModel):
     def __init__(
         self,
         sdf_version: str,
@@ -738,6 +889,8 @@ class LinkState(Model):
             return self.to_version(version).to_sdf()
         version = version or self.__version__
         el = ET.Element("link_state")
+        if self.name is None:
+            raise ValueError(f"'name' is required in SDF version {version}")
         if self.name is not None:
             el.set("name", self.name)
         if self.pose is not None:
@@ -765,33 +918,102 @@ class LinkState(Model):
         return el
 
     @classmethod
-    def from_sdf(cls, el: ET.Element, version: str) -> "LinkState":
+    def _from_sdf(cls, el: ET.Element, version: str):
+        if el.get("name") is None:
+            return SDFError(f"'name' is required in SDF version {version}")
         _name = el.get("name", "__default__")
+        if isinstance(_name, SDFError):
+            return _name.extend("@name")
         _c_pose = el.find("pose")
-        _pose = Pose.from_sdf(_c_pose, version) if _c_pose is not None else None
+        if _c_pose is not None:
+            _res = Pose._from_sdf(_c_pose, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("pose")
+            _pose = _res
+        else:
+            _pose = None
         _c_angular_velocity = el.find("angular_velocity")
-        _angular_velocity = AngularVelocity.from_sdf(_c_angular_velocity, version) if _c_angular_velocity is not None else None
+        if _c_angular_velocity is not None:
+            _res = AngularVelocity._from_sdf(_c_angular_velocity, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("angular_velocity")
+            _angular_velocity = _res
+        else:
+            _angular_velocity = None
         _c_linear_velocity = el.find("linear_velocity")
-        _linear_velocity = LinearVelocity.from_sdf(_c_linear_velocity, version) if _c_linear_velocity is not None else None
+        if _c_linear_velocity is not None:
+            _res = LinearVelocity._from_sdf(_c_linear_velocity, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("linear_velocity")
+            _linear_velocity = _res
+        else:
+            _linear_velocity = None
         _c_velocity = el.find("velocity")
-        _velocity = Velocity.from_sdf(_c_velocity, version) if _c_velocity is not None else None
+        if _c_velocity is not None:
+            _res = Velocity._from_sdf(_c_velocity, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("velocity")
+            _velocity = _res
+        else:
+            _velocity = None
         _c_angular_acceleration = el.find("angular_acceleration")
-        _angular_acceleration = AngularAcceleration.from_sdf(_c_angular_acceleration, version) if _c_angular_acceleration is not None else None
+        if _c_angular_acceleration is not None:
+            _res = AngularAcceleration._from_sdf(_c_angular_acceleration, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("angular_acceleration")
+            _angular_acceleration = _res
+        else:
+            _angular_acceleration = None
         _c_linear_acceleration = el.find("linear_acceleration")
-        _linear_acceleration = LinearAcceleration.from_sdf(_c_linear_acceleration, version) if _c_linear_acceleration is not None else None
+        if _c_linear_acceleration is not None:
+            _res = LinearAcceleration._from_sdf(_c_linear_acceleration, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("linear_acceleration")
+            _linear_acceleration = _res
+        else:
+            _linear_acceleration = None
         _c_acceleration = el.find("acceleration")
-        _acceleration = Acceleration.from_sdf(_c_acceleration, version) if _c_acceleration is not None else None
+        if _c_acceleration is not None:
+            _res = Acceleration._from_sdf(_c_acceleration, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("acceleration")
+            _acceleration = _res
+        else:
+            _acceleration = None
         _c_torque = el.find("torque")
-        _torque = Torque.from_sdf(_c_torque, version) if _c_torque is not None else None
+        if _c_torque is not None:
+            _res = Torque._from_sdf(_c_torque, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("torque")
+            _torque = _res
+        else:
+            _torque = None
         _c_force = el.find("force")
-        _force = Force.from_sdf(_c_force, version) if _c_force is not None else None
+        if _c_force is not None:
+            _res = Force._from_sdf(_c_force, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("force")
+            _force = _res
+        else:
+            _force = None
         _c_wrench = el.find("wrench")
-        _wrench = Wrench.from_sdf(_c_wrench, version) if _c_wrench is not None else None
-        _collision_state = [CollisionState.from_sdf(c, version) for c in el.findall("collision_state")]
+        if _c_wrench is not None:
+            _res = Wrench._from_sdf(_c_wrench, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("wrench")
+            _wrench = _res
+        else:
+            _wrench = None
+        _collision_state = []
+        for c in el.findall("collision_state"):
+            _res = CollisionState._from_sdf(c, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("collision_state")
+            _collision_state.append(_res)
         return cls(sdf_version=version, name=_name, pose=_pose, angular_velocity=_angular_velocity, linear_velocity=_linear_velocity, velocity=_velocity, angular_acceleration=_angular_acceleration, linear_acceleration=_linear_acceleration, acceleration=_acceleration, torque=_torque, force=_force, wrench=_wrench, collision_state=_collision_state)
 
 
-class Scale(Model):
+class Scale(BaseModel):
     def __init__(self, sdf_version: str, scale: Vector3 = None):
         self.__version__ = sdf_version
         if scale is None:
@@ -814,13 +1036,15 @@ class Scale(Model):
         return el
 
     @classmethod
-    def from_sdf(cls, el: ET.Element, version: str) -> "Scale":
+    def _from_sdf(cls, el: ET.Element, version: str):
         _text = el.text or "1 1 1"
-        _scale = Vector3.from_sdf(_text)
+        _scale = Vector3._from_sdf(_text, version)
+        if isinstance(_scale, SDFError):
+            return _scale
         return cls(sdf_version=version, scale=_scale)
 
 
-class ModelState(Model):
+class ModelState(BaseModel):
     def __init__(
         self,
         sdf_version: str,
@@ -858,6 +1082,8 @@ class ModelState(Model):
             return self.to_version(version).to_sdf()
         version = version or self.__version__
         el = ET.Element("model_state")
+        if self.name is None:
+            raise ValueError(f"'name' is required in SDF version {version}")
         if self.name is not None:
             el.set("name", self.name)
         for item in (self.joint_state or []):
@@ -875,14 +1101,50 @@ class ModelState(Model):
         return el
 
     @classmethod
-    def from_sdf(cls, el: ET.Element, version: str) -> "ModelState":
+    def _from_sdf(cls, el: ET.Element, version: str):
+        if el.get("name") is None:
+            return SDFError(f"'name' is required in SDF version {version}")
         _name = el.get("name", "__default__")
-        _joint_state = [JointState.from_sdf(c, version) for c in el.findall("joint_state")]
-        _frame = [Frame.from_sdf(c, version) for c in el.findall("frame")]
+        if isinstance(_name, SDFError):
+            return _name.extend("@name")
+        _joint_state = []
+        for c in el.findall("joint_state"):
+            _res = JointState._from_sdf(c, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("joint_state")
+            _joint_state.append(_res)
+        _frame = []
+        for c in el.findall("frame"):
+            _res = Frame._from_sdf(c, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("frame")
+            _frame.append(_res)
         _c_pose = el.find("pose")
-        _pose = Pose.from_sdf(_c_pose, version) if _c_pose is not None else None
-        _link_state = [LinkState.from_sdf(c, version) for c in el.findall("link_state")]
-        _model_state = [ModelState.from_sdf(c, version) for c in el.findall("model_state")]
+        if _c_pose is not None:
+            _res = Pose._from_sdf(_c_pose, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("pose")
+            _pose = _res
+        else:
+            _pose = None
+        _link_state = []
+        for c in el.findall("link_state"):
+            _res = LinkState._from_sdf(c, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("link_state")
+            _link_state.append(_res)
+        _model_state = []
+        for c in el.findall("model_state"):
+            _res = ModelState._from_sdf(c, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("model_state")
+            _model_state.append(_res)
         _c_scale = el.find("scale")
-        _scale = Scale.from_sdf(_c_scale, version) if _c_scale is not None else None
+        if _c_scale is not None:
+            _res = Scale._from_sdf(_c_scale, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("scale")
+            _scale = _res
+        else:
+            _scale = None
         return cls(sdf_version=version, name=_name, joint_state=_joint_state, frame=_frame, pose=_pose, link_state=_link_state, model_state=_model_state, scale=_scale)
