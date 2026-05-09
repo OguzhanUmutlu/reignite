@@ -226,20 +226,20 @@ class Texture(BaseModel):
     def __init__(
         self,
         sdf_version: str,
-        size: "TextureSize" = None,
         diffuse: "Diffuse" = None,
-        normal: "Normal" = None
+        normal: "Normal" = None,
+        size: "TextureSize" = None
     ):
         self.__version__ = sdf_version
-        self.size = size
         self.diffuse = diffuse
         self.normal = normal
+        self.size = size
 
     def to_version(self, target_version: str) -> "Texture":
         kwargs = {"sdf_version": target_version}
-        kwargs["size"] = self.size.to_version(target_version) if self.size is not None else None
         kwargs["diffuse"] = self.diffuse.to_version(target_version) if self.diffuse is not None else None
         kwargs["normal"] = self.normal.to_version(target_version) if self.normal is not None else None
+        kwargs["size"] = self.size.to_version(target_version) if self.size is not None else None
         new_obj = self.__class__(**kwargs)
         return new_obj
 
@@ -248,24 +248,16 @@ class Texture(BaseModel):
             return self.to_version(version).to_sdf()
         version = version or self.__version__
         el = ET.Element("texture")
-        if self.size is not None:
-            el.append(self.size.to_sdf(version))
         if self.diffuse is not None:
             el.append(self.diffuse.to_sdf(version))
         if self.normal is not None:
             el.append(self.normal.to_sdf(version))
+        if self.size is not None:
+            el.append(self.size.to_sdf(version))
         return el
 
     @classmethod
     def _from_sdf(cls, el: ET.Element, version: str):
-        _c_size = el.find("size")
-        if _c_size is not None:
-            _res = TextureSize._from_sdf(_c_size, version)
-            if isinstance(_res, SDFError):
-                return _res.extend("size")
-            _size = _res
-        else:
-            _size = None
         _c_diffuse = el.find("diffuse")
         if _c_diffuse is not None:
             _res = Diffuse._from_sdf(_c_diffuse, version)
@@ -282,7 +274,15 @@ class Texture(BaseModel):
             _normal = _res
         else:
             _normal = None
-        return cls(sdf_version=version, size=_size, diffuse=_diffuse, normal=_normal)
+        _c_size = el.find("size")
+        if _c_size is not None:
+            _res = TextureSize._from_sdf(_c_size, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("size")
+            _size = _res
+        else:
+            _size = None
+        return cls(sdf_version=version, diffuse=_diffuse, normal=_normal, size=_size)
 
 
 class MinHeight(BaseModel):
@@ -347,17 +347,17 @@ class Blend(BaseModel):
     def __init__(
         self,
         sdf_version: str,
-        min_height: "MinHeight" = None,
-        fade_dist: "FadeDist" = None
+        fade_dist: "FadeDist" = None,
+        min_height: "MinHeight" = None
     ):
         self.__version__ = sdf_version
-        self.min_height = min_height
         self.fade_dist = fade_dist
+        self.min_height = min_height
 
     def to_version(self, target_version: str) -> "Blend":
         kwargs = {"sdf_version": target_version}
-        kwargs["min_height"] = self.min_height.to_version(target_version) if self.min_height is not None else None
         kwargs["fade_dist"] = self.fade_dist.to_version(target_version) if self.fade_dist is not None else None
+        kwargs["min_height"] = self.min_height.to_version(target_version) if self.min_height is not None else None
         new_obj = self.__class__(**kwargs)
         return new_obj
 
@@ -366,22 +366,14 @@ class Blend(BaseModel):
             return self.to_version(version).to_sdf()
         version = version or self.__version__
         el = ET.Element("blend")
-        if self.min_height is not None:
-            el.append(self.min_height.to_sdf(version))
         if self.fade_dist is not None:
             el.append(self.fade_dist.to_sdf(version))
+        if self.min_height is not None:
+            el.append(self.min_height.to_sdf(version))
         return el
 
     @classmethod
     def _from_sdf(cls, el: ET.Element, version: str):
-        _c_min_height = el.find("min_height")
-        if _c_min_height is not None:
-            _res = MinHeight._from_sdf(_c_min_height, version)
-            if isinstance(_res, SDFError):
-                return _res.extend("min_height")
-            _min_height = _res
-        else:
-            _min_height = None
         _c_fade_dist = el.find("fade_dist")
         if _c_fade_dist is not None:
             _res = FadeDist._from_sdf(_c_fade_dist, version)
@@ -390,7 +382,15 @@ class Blend(BaseModel):
             _fade_dist = _res
         else:
             _fade_dist = None
-        return cls(sdf_version=version, min_height=_min_height, fade_dist=_fade_dist)
+        _c_min_height = el.find("min_height")
+        if _c_min_height is not None:
+            _res = MinHeight._from_sdf(_c_min_height, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("min_height")
+            _min_height = _res
+        else:
+            _min_height = None
+        return cls(sdf_version=version, fade_dist=_fade_dist, min_height=_min_height)
 
 
 class UseTerrainPaging(BaseModel):
@@ -460,34 +460,34 @@ class Heightmap(BaseModel):
     def __init__(
         self,
         sdf_version: str,
-        uri: "Uri" = None,
-        size: "Size" = None,
-        pos: "Pos" = None,
-        texture: List["Texture"] = None,
         blend: List["Blend"] = None,
-        use_terrain_paging: "UseTerrainPaging" = None,
-        sampling: "Sampling" = None
+        pos: "Pos" = None,
+        sampling: "Sampling" = None,
+        size: "Size" = None,
+        texture: List["Texture"] = None,
+        uri: "Uri" = None,
+        use_terrain_paging: "UseTerrainPaging" = None
     ):
         self.__version__ = sdf_version
-        self.uri = uri
-        self.size = size
-        self.pos = pos
-        self.texture = texture or []
         self.blend = blend or []
-        self.use_terrain_paging = use_terrain_paging
+        self.pos = pos
         self.sampling = sampling
+        self.size = size
+        self.texture = texture or []
+        self.uri = uri
+        self.use_terrain_paging = use_terrain_paging
 
     def to_version(self, target_version: str) -> "Heightmap":
         if self.sampling is not None and cmp_version(target_version, "1.6") < 0:
             raise ValueError(f"'sampling' is not supported in SDF version {target_version} (added in 1.6)")
         kwargs = {"sdf_version": target_version}
-        kwargs["uri"] = self.uri.to_version(target_version) if self.uri is not None else None
-        kwargs["size"] = self.size.to_version(target_version) if self.size is not None else None
-        kwargs["pos"] = self.pos.to_version(target_version) if self.pos is not None else None
-        kwargs["texture"] = [c.to_version(target_version) for c in (self.texture or [])]
         kwargs["blend"] = [c.to_version(target_version) for c in (self.blend or [])]
-        kwargs["use_terrain_paging"] = self.use_terrain_paging.to_version(target_version) if self.use_terrain_paging is not None else None
+        kwargs["pos"] = self.pos.to_version(target_version) if self.pos is not None else None
         kwargs["sampling"] = self.sampling.to_version(target_version) if self.sampling is not None else None
+        kwargs["size"] = self.size.to_version(target_version) if self.size is not None else None
+        kwargs["texture"] = [c.to_version(target_version) for c in (self.texture or [])]
+        kwargs["uri"] = self.uri.to_version(target_version) if self.uri is not None else None
+        kwargs["use_terrain_paging"] = self.use_terrain_paging.to_version(target_version) if self.use_terrain_paging is not None else None
         new_obj = self.__class__(**kwargs)
         return new_obj
 
@@ -496,40 +496,30 @@ class Heightmap(BaseModel):
             return self.to_version(version).to_sdf()
         version = version or self.__version__
         el = ET.Element("heightmap")
-        if self.uri is not None:
-            el.append(self.uri.to_sdf(version))
-        if self.size is not None:
-            el.append(self.size.to_sdf(version))
-        if self.pos is not None:
-            el.append(self.pos.to_sdf(version))
-        for item in (self.texture or []):
-            el.append(item.to_sdf(version))
         for item in (self.blend or []):
             el.append(item.to_sdf(version))
-        if self.use_terrain_paging is not None:
-            el.append(self.use_terrain_paging.to_sdf(version))
+        if self.pos is not None:
+            el.append(self.pos.to_sdf(version))
         if self.sampling is not None:
             el.append(self.sampling.to_sdf(version))
+        if self.size is not None:
+            el.append(self.size.to_sdf(version))
+        for item in (self.texture or []):
+            el.append(item.to_sdf(version))
+        if self.uri is not None:
+            el.append(self.uri.to_sdf(version))
+        if self.use_terrain_paging is not None:
+            el.append(self.use_terrain_paging.to_sdf(version))
         return el
 
     @classmethod
     def _from_sdf(cls, el: ET.Element, version: str):
-        _c_uri = el.find("uri")
-        if _c_uri is not None:
-            _res = Uri._from_sdf(_c_uri, version)
+        _blend = []
+        for c in el.findall("blend"):
+            _res = Blend._from_sdf(c, version)
             if isinstance(_res, SDFError):
-                return _res.extend("uri")
-            _uri = _res
-        else:
-            _uri = None
-        _c_size = el.find("size")
-        if _c_size is not None:
-            _res = Size._from_sdf(_c_size, version)
-            if isinstance(_res, SDFError):
-                return _res.extend("size")
-            _size = _res
-        else:
-            _size = None
+                return _res.extend("blend")
+            _blend.append(_res)
         _c_pos = el.find("pos")
         if _c_pos is not None:
             _res = Pos._from_sdf(_c_pos, version)
@@ -538,26 +528,6 @@ class Heightmap(BaseModel):
             _pos = _res
         else:
             _pos = None
-        _texture = []
-        for c in el.findall("texture"):
-            _res = Texture._from_sdf(c, version)
-            if isinstance(_res, SDFError):
-                return _res.extend("texture")
-            _texture.append(_res)
-        _blend = []
-        for c in el.findall("blend"):
-            _res = Blend._from_sdf(c, version)
-            if isinstance(_res, SDFError):
-                return _res.extend("blend")
-            _blend.append(_res)
-        _c_use_terrain_paging = el.find("use_terrain_paging")
-        if _c_use_terrain_paging is not None:
-            _res = UseTerrainPaging._from_sdf(_c_use_terrain_paging, version)
-            if isinstance(_res, SDFError):
-                return _res.extend("use_terrain_paging")
-            _use_terrain_paging = _res
-        else:
-            _use_terrain_paging = None
         _c_sampling = el.find("sampling")
         if _c_sampling is not None:
             _res = Sampling._from_sdf(_c_sampling, version)
@@ -568,4 +538,34 @@ class Heightmap(BaseModel):
             _sampling = None
         if _sampling is not None and cmp_version(version, "1.6") < 0:
             return SDFError(f"'sampling' is not supported in SDF version {version} (added in 1.6)")
-        return cls(sdf_version=version, uri=_uri, size=_size, pos=_pos, texture=_texture, blend=_blend, use_terrain_paging=_use_terrain_paging, sampling=_sampling)
+        _c_size = el.find("size")
+        if _c_size is not None:
+            _res = Size._from_sdf(_c_size, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("size")
+            _size = _res
+        else:
+            _size = None
+        _texture = []
+        for c in el.findall("texture"):
+            _res = Texture._from_sdf(c, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("texture")
+            _texture.append(_res)
+        _c_uri = el.find("uri")
+        if _c_uri is not None:
+            _res = Uri._from_sdf(_c_uri, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("uri")
+            _uri = _res
+        else:
+            _uri = None
+        _c_use_terrain_paging = el.find("use_terrain_paging")
+        if _c_use_terrain_paging is not None:
+            _res = UseTerrainPaging._from_sdf(_c_use_terrain_paging, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("use_terrain_paging")
+            _use_terrain_paging = _res
+        else:
+            _use_terrain_paging = None
+        return cls(sdf_version=version, blend=_blend, pos=_pos, sampling=_sampling, size=_size, texture=_texture, uri=_uri, use_terrain_paging=_use_terrain_paging)

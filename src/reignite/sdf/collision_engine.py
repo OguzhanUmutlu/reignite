@@ -64,15 +64,15 @@ class Bullet(BaseModel):
 
 
 class CollisionEngine(BaseModel):
-    def __init__(self, sdf_version: str, ode: "Ode" = None, bullet: "Bullet" = None):
+    def __init__(self, sdf_version: str, bullet: "Bullet" = None, ode: "Ode" = None):
         self.__version__ = sdf_version
-        self.ode = ode
         self.bullet = bullet
+        self.ode = ode
 
     def to_version(self, target_version: str) -> "CollisionEngine":
         kwargs = {"sdf_version": target_version}
-        kwargs["ode"] = self.ode.to_version(target_version) if self.ode is not None else None
         kwargs["bullet"] = self.bullet.to_version(target_version) if self.bullet is not None else None
+        kwargs["ode"] = self.ode.to_version(target_version) if self.ode is not None else None
         new_obj = self.__class__(**kwargs)
         return new_obj
 
@@ -81,22 +81,14 @@ class CollisionEngine(BaseModel):
             return self.to_version(version).to_sdf()
         version = version or self.__version__
         el = ET.Element("collision_engine")
-        if self.ode is not None:
-            el.append(self.ode.to_sdf(version))
         if self.bullet is not None:
             el.append(self.bullet.to_sdf(version))
+        if self.ode is not None:
+            el.append(self.ode.to_sdf(version))
         return el
 
     @classmethod
     def _from_sdf(cls, el: ET.Element, version: str):
-        _c_ode = el.find("ode")
-        if _c_ode is not None:
-            _res = Ode._from_sdf(_c_ode, version)
-            if isinstance(_res, SDFError):
-                return _res.extend("ode")
-            _ode = _res
-        else:
-            _ode = None
         _c_bullet = el.find("bullet")
         if _c_bullet is not None:
             _res = Bullet._from_sdf(_c_bullet, version)
@@ -105,4 +97,12 @@ class CollisionEngine(BaseModel):
             _bullet = _res
         else:
             _bullet = None
-        return cls(sdf_version=version, ode=_ode, bullet=_bullet)
+        _c_ode = el.find("ode")
+        if _c_ode is not None:
+            _res = Ode._from_sdf(_c_ode, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("ode")
+            _ode = _res
+        else:
+            _ode = None
+        return cls(sdf_version=version, bullet=_bullet, ode=_ode)

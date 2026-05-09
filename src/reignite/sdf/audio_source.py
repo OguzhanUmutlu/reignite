@@ -227,22 +227,24 @@ class Pose(BaseModel):
     def __init__(
         self,
         sdf_version: str,
-        pose: _SDFPose = None,
+        degrees: bool = False,
         frame: str = "",
+        pose: _SDFPose = None,
         relative_to: str = "",
-        rotation_format: str = "euler_rpy",
-        degrees: bool = False
+        rotation_format: str = "euler_rpy"
     ):
         self.__version__ = sdf_version
         if pose is None:
             pose = _SDFPose.from_sdf("0 0 0 0 0 0")
-        self.pose = pose
+        self.degrees = degrees
         self.frame = frame
+        self.pose = pose
         self.relative_to = relative_to
         self.rotation_format = rotation_format
-        self.degrees = degrees
 
     def to_version(self, target_version: str) -> "Pose":
+        if self.degrees is not None and cmp_version(target_version, "1.9") < 0:
+            raise ValueError(f"'degrees' is not supported in SDF version {target_version} (added in 1.9)")
         if self.frame is not None and cmp_version(target_version, "1.5") < 0:
             raise ValueError(f"'frame' is not supported in SDF version {target_version} (added in 1.5)")
         if self.frame is not None and cmp_version(target_version, "1.7") >= 0:
@@ -251,14 +253,12 @@ class Pose(BaseModel):
             raise ValueError(f"'relative_to' is not supported in SDF version {target_version} (added in 1.7)")
         if self.rotation_format is not None and cmp_version(target_version, "1.9") < 0:
             raise ValueError(f"'rotation_format' is not supported in SDF version {target_version} (added in 1.9)")
-        if self.degrees is not None and cmp_version(target_version, "1.9") < 0:
-            raise ValueError(f"'degrees' is not supported in SDF version {target_version} (added in 1.9)")
         kwargs = {"sdf_version": target_version}
-        kwargs["pose"] = self.pose
+        kwargs["degrees"] = self.degrees
         kwargs["frame"] = self.frame
+        kwargs["pose"] = self.pose
         kwargs["relative_to"] = self.relative_to
         kwargs["rotation_format"] = self.rotation_format
-        kwargs["degrees"] = self.degrees
         new_obj = self.__class__(**kwargs)
         apply_migrations(new_obj, target_version)
         return new_obj
@@ -268,30 +268,36 @@ class Pose(BaseModel):
             return self.to_version(version).to_sdf()
         version = version or self.__version__
         el = ET.Element("pose")
-        if self.pose is not None:
-            el.text = self.pose.to_sdf()
+        if self.degrees is not None:
+            el.set("degrees", str(self.degrees).lower())
         if self.frame is not None:
             el.set("frame", self.frame)
+        if self.pose is not None:
+            el.text = self.pose.to_sdf()
         if self.relative_to is not None:
             el.set("relative_to", self.relative_to)
         if self.rotation_format is not None:
             el.set("rotation_format", self.rotation_format)
-        if self.degrees is not None:
-            el.set("degrees", str(self.degrees).lower())
         return el
 
     @classmethod
     def _from_sdf(cls, el: ET.Element, version: str):
-        _text = el.text or "0 0 0 0 0 0"
-        _pose = _SDFPose._from_sdf(_text, version)
-        if isinstance(_pose, SDFError):
-            return _pose
+        _degrees = str(el.get("degrees", False)).strip().lower() == 'true'
+        if isinstance(_degrees, SDFError):
+            return _degrees.extend("@degrees")
+        if _degrees is not None and cmp_version(version, "1.9") < 0:
+            if _degrees != False:
+                return SDFError(f"'degrees' is not supported in SDF version {version} (added in 1.9)")
         _frame = el.get("frame", "")
         if isinstance(_frame, SDFError):
             return _frame.extend("@frame")
         if _frame is not None and cmp_version(version, "1.5") < 0:
             if _frame != "":
                 return SDFError(f"'frame' is not supported in SDF version {version} (added in 1.5)")
+        _text = el.text or "0 0 0 0 0 0"
+        _pose = _SDFPose._from_sdf(_text, version)
+        if isinstance(_pose, SDFError):
+            return _pose
         _relative_to = el.get("relative_to", "")
         if isinstance(_relative_to, SDFError):
             return _relative_to.extend("@relative_to")
@@ -304,29 +310,23 @@ class Pose(BaseModel):
         if _rotation_format is not None and cmp_version(version, "1.9") < 0:
             if _rotation_format != "euler_rpy":
                 return SDFError(f"'rotation_format' is not supported in SDF version {version} (added in 1.9)")
-        _degrees = str(el.get("degrees", False)).strip().lower() == 'true'
-        if isinstance(_degrees, SDFError):
-            return _degrees.extend("@degrees")
-        if _degrees is not None and cmp_version(version, "1.9") < 0:
-            if _degrees != False:
-                return SDFError(f"'degrees' is not supported in SDF version {version} (added in 1.9)")
-        return cls(sdf_version=version, pose=_pose, frame=_frame, relative_to=_relative_to, rotation_format=_rotation_format, degrees=_degrees)
+        return cls(sdf_version=version, degrees=_degrees, frame=_frame, pose=_pose, relative_to=_relative_to, rotation_format=_rotation_format)
 
 
 class FramePose(BaseModel):
     _MIGRATIONS = [{"version": "1.7", "ops": [{"type": "move", "from": "frame", "to": "relative_to"}]}]
 
-    def __init__(self, sdf_version: str, pose: _SDFPose = None, frame: str = ""):
+    def __init__(self, sdf_version: str, frame: str = "", pose: _SDFPose = None):
         self.__version__ = sdf_version
         if pose is None:
             pose = _SDFPose.from_sdf("0 0 0 0 0 0")
-        self.pose = pose
         self.frame = frame
+        self.pose = pose
 
     def to_version(self, target_version: str) -> "FramePose":
         kwargs = {"sdf_version": target_version}
-        kwargs["pose"] = self.pose
         kwargs["frame"] = self.frame
+        kwargs["pose"] = self.pose
         new_obj = self.__class__(**kwargs)
         apply_migrations(new_obj, target_version)
         return new_obj
@@ -336,22 +336,22 @@ class FramePose(BaseModel):
             return self.to_version(version).to_sdf()
         version = version or self.__version__
         el = ET.Element("pose")
-        if self.pose is not None:
-            el.text = self.pose.to_sdf()
         if self.frame is not None:
             el.set("frame", self.frame)
+        if self.pose is not None:
+            el.text = self.pose.to_sdf()
         return el
 
     @classmethod
     def _from_sdf(cls, el: ET.Element, version: str):
+        _frame = el.get("frame", "")
+        if isinstance(_frame, SDFError):
+            return _frame.extend("@frame")
         _text = el.text or "0 0 0 0 0 0"
         _pose = _SDFPose._from_sdf(_text, version)
         if isinstance(_pose, SDFError):
             return _pose
-        _frame = el.get("frame", "")
-        if isinstance(_frame, SDFError):
-            return _frame.extend("@frame")
-        return cls(sdf_version=version, pose=_pose, frame=_frame)
+        return cls(sdf_version=version, frame=_frame, pose=_pose)
 
 
 class Frame(BaseModel):
@@ -402,22 +402,22 @@ class AudioSource(BaseModel):
     def __init__(
         self,
         sdf_version: str,
-        uri: "Uri" = None,
-        pitch: "Pitch" = None,
-        gain: "Gain" = None,
         contact: "Contact" = None,
+        frame: List["Frame"] = None,
+        gain: "Gain" = None,
         loop: "Loop" = None,
+        pitch: "Pitch" = None,
         pose: "Pose" = None,
-        frame: List["Frame"] = None
+        uri: "Uri" = None
     ):
         self.__version__ = sdf_version
-        self.uri = uri
-        self.pitch = pitch
-        self.gain = gain
         self.contact = contact
-        self.loop = loop
-        self.pose = pose
         self.frame = frame or []
+        self.gain = gain
+        self.loop = loop
+        self.pitch = pitch
+        self.pose = pose
+        self.uri = uri
 
     def to_version(self, target_version: str) -> "AudioSource":
         if self.frame is not None and cmp_version(target_version, "1.5") < 0:
@@ -425,13 +425,13 @@ class AudioSource(BaseModel):
         if self.frame is not None and cmp_version(target_version, "1.7") >= 0:
             raise ValueError(f"'frame' is not supported in SDF version {target_version} (removed in 1.7)")
         kwargs = {"sdf_version": target_version}
-        kwargs["uri"] = self.uri.to_version(target_version) if self.uri is not None else None
-        kwargs["pitch"] = self.pitch.to_version(target_version) if self.pitch is not None else None
-        kwargs["gain"] = self.gain.to_version(target_version) if self.gain is not None else None
         kwargs["contact"] = self.contact.to_version(target_version) if self.contact is not None else None
-        kwargs["loop"] = self.loop.to_version(target_version) if self.loop is not None else None
-        kwargs["pose"] = self.pose.to_version(target_version) if self.pose is not None else None
         kwargs["frame"] = [c.to_version(target_version) for c in (self.frame or [])]
+        kwargs["gain"] = self.gain.to_version(target_version) if self.gain is not None else None
+        kwargs["loop"] = self.loop.to_version(target_version) if self.loop is not None else None
+        kwargs["pitch"] = self.pitch.to_version(target_version) if self.pitch is not None else None
+        kwargs["pose"] = self.pose.to_version(target_version) if self.pose is not None else None
+        kwargs["uri"] = self.uri.to_version(target_version) if self.uri is not None else None
         new_obj = self.__class__(**kwargs)
         return new_obj
 
@@ -440,48 +440,24 @@ class AudioSource(BaseModel):
             return self.to_version(version).to_sdf()
         version = version or self.__version__
         el = ET.Element("audio_source")
-        if self.uri is not None:
-            el.append(self.uri.to_sdf(version))
-        if self.pitch is not None:
-            el.append(self.pitch.to_sdf(version))
-        if self.gain is not None:
-            el.append(self.gain.to_sdf(version))
         if self.contact is not None:
             el.append(self.contact.to_sdf(version))
-        if self.loop is not None:
-            el.append(self.loop.to_sdf(version))
-        if self.pose is not None:
-            el.append(self.pose.to_sdf(version))
         for item in (self.frame or []):
             el.append(item.to_sdf(version))
+        if self.gain is not None:
+            el.append(self.gain.to_sdf(version))
+        if self.loop is not None:
+            el.append(self.loop.to_sdf(version))
+        if self.pitch is not None:
+            el.append(self.pitch.to_sdf(version))
+        if self.pose is not None:
+            el.append(self.pose.to_sdf(version))
+        if self.uri is not None:
+            el.append(self.uri.to_sdf(version))
         return el
 
     @classmethod
     def _from_sdf(cls, el: ET.Element, version: str):
-        _c_uri = el.find("uri")
-        if _c_uri is not None:
-            _res = Uri._from_sdf(_c_uri, version)
-            if isinstance(_res, SDFError):
-                return _res.extend("uri")
-            _uri = _res
-        else:
-            _uri = None
-        _c_pitch = el.find("pitch")
-        if _c_pitch is not None:
-            _res = Pitch._from_sdf(_c_pitch, version)
-            if isinstance(_res, SDFError):
-                return _res.extend("pitch")
-            _pitch = _res
-        else:
-            _pitch = None
-        _c_gain = el.find("gain")
-        if _c_gain is not None:
-            _res = Gain._from_sdf(_c_gain, version)
-            if isinstance(_res, SDFError):
-                return _res.extend("gain")
-            _gain = _res
-        else:
-            _gain = None
         _c_contact = el.find("contact")
         if _c_contact is not None:
             _res = Contact._from_sdf(_c_contact, version)
@@ -490,22 +466,6 @@ class AudioSource(BaseModel):
             _contact = _res
         else:
             _contact = None
-        _c_loop = el.find("loop")
-        if _c_loop is not None:
-            _res = Loop._from_sdf(_c_loop, version)
-            if isinstance(_res, SDFError):
-                return _res.extend("loop")
-            _loop = _res
-        else:
-            _loop = None
-        _c_pose = el.find("pose")
-        if _c_pose is not None:
-            _res = Pose._from_sdf(_c_pose, version)
-            if isinstance(_res, SDFError):
-                return _res.extend("pose")
-            _pose = _res
-        else:
-            _pose = None
         _frame = []
         for c in el.findall("frame"):
             _res = Frame._from_sdf(c, version)
@@ -514,4 +474,44 @@ class AudioSource(BaseModel):
             _frame.append(_res)
         if _frame and cmp_version(version, "1.5") < 0:
             return SDFError(f"'frame' is not supported in SDF version {version} (added in 1.5)")
-        return cls(sdf_version=version, uri=_uri, pitch=_pitch, gain=_gain, contact=_contact, loop=_loop, pose=_pose, frame=_frame)
+        _c_gain = el.find("gain")
+        if _c_gain is not None:
+            _res = Gain._from_sdf(_c_gain, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("gain")
+            _gain = _res
+        else:
+            _gain = None
+        _c_loop = el.find("loop")
+        if _c_loop is not None:
+            _res = Loop._from_sdf(_c_loop, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("loop")
+            _loop = _res
+        else:
+            _loop = None
+        _c_pitch = el.find("pitch")
+        if _c_pitch is not None:
+            _res = Pitch._from_sdf(_c_pitch, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("pitch")
+            _pitch = _res
+        else:
+            _pitch = None
+        _c_pose = el.find("pose")
+        if _c_pose is not None:
+            _res = Pose._from_sdf(_c_pose, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("pose")
+            _pose = _res
+        else:
+            _pose = None
+        _c_uri = el.find("uri")
+        if _c_uri is not None:
+            _res = Uri._from_sdf(_c_uri, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("uri")
+            _uri = _res
+        else:
+            _uri = None
+        return cls(sdf_version=version, contact=_contact, frame=_frame, gain=_gain, loop=_loop, pitch=_pitch, pose=_pose, uri=_uri)

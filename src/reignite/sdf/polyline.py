@@ -104,15 +104,15 @@ class Height(BaseModel):
 
 
 class Polyline(BaseModel):
-    def __init__(self, sdf_version: str, point: List["Point"] = None, height: "Height" = None):
+    def __init__(self, sdf_version: str, height: "Height" = None, point: List["Point"] = None):
         self.__version__ = sdf_version
-        self.point = point or []
         self.height = height
+        self.point = point or []
 
     def to_version(self, target_version: str) -> "Polyline":
         kwargs = {"sdf_version": target_version}
-        kwargs["point"] = [c.to_version(target_version) for c in (self.point or [])]
         kwargs["height"] = self.height.to_version(target_version) if self.height is not None else None
+        kwargs["point"] = [c.to_version(target_version) for c in (self.point or [])]
         new_obj = self.__class__(**kwargs)
         return new_obj
 
@@ -121,20 +121,14 @@ class Polyline(BaseModel):
             return self.to_version(version).to_sdf()
         version = version or self.__version__
         el = ET.Element("polyline")
-        for item in (self.point or []):
-            el.append(item.to_sdf(version))
         if self.height is not None:
             el.append(self.height.to_sdf(version))
+        for item in (self.point or []):
+            el.append(item.to_sdf(version))
         return el
 
     @classmethod
     def _from_sdf(cls, el: ET.Element, version: str):
-        _point = []
-        for c in el.findall("point"):
-            _res = Point._from_sdf(c, version)
-            if isinstance(_res, SDFError):
-                return _res.extend("point")
-            _point.append(_res)
         _c_height = el.find("height")
         if _c_height is not None:
             _res = Height._from_sdf(_c_height, version)
@@ -143,4 +137,10 @@ class Polyline(BaseModel):
             _height = _res
         else:
             _height = None
-        return cls(sdf_version=version, point=_point, height=_height)
+        _point = []
+        for c in el.findall("point"):
+            _res = Point._from_sdf(c, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("point")
+            _point.append(_res)
+        return cls(sdf_version=version, height=_height, point=_point)

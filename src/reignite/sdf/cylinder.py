@@ -99,15 +99,15 @@ class Length(BaseModel):
 
 
 class Cylinder(BaseModel):
-    def __init__(self, sdf_version: str, radius: "Radius" = None, length: "Length" = None):
+    def __init__(self, sdf_version: str, length: "Length" = None, radius: "Radius" = None):
         self.__version__ = sdf_version
-        self.radius = radius
         self.length = length
+        self.radius = radius
 
     def to_version(self, target_version: str) -> "Cylinder":
         kwargs = {"sdf_version": target_version}
-        kwargs["radius"] = self.radius.to_version(target_version) if self.radius is not None else None
         kwargs["length"] = self.length.to_version(target_version) if self.length is not None else None
+        kwargs["radius"] = self.radius.to_version(target_version) if self.radius is not None else None
         new_obj = self.__class__(**kwargs)
         return new_obj
 
@@ -116,22 +116,14 @@ class Cylinder(BaseModel):
             return self.to_version(version).to_sdf()
         version = version or self.__version__
         el = ET.Element("cylinder")
-        if self.radius is not None:
-            el.append(self.radius.to_sdf(version))
         if self.length is not None:
             el.append(self.length.to_sdf(version))
+        if self.radius is not None:
+            el.append(self.radius.to_sdf(version))
         return el
 
     @classmethod
     def _from_sdf(cls, el: ET.Element, version: str):
-        _c_radius = el.find("radius")
-        if _c_radius is not None:
-            _res = Radius._from_sdf(_c_radius, version)
-            if isinstance(_res, SDFError):
-                return _res.extend("radius")
-            _radius = _res
-        else:
-            _radius = None
         _c_length = el.find("length")
         if _c_length is not None:
             _res = Length._from_sdf(_c_length, version)
@@ -140,4 +132,12 @@ class Cylinder(BaseModel):
             _length = _res
         else:
             _length = None
-        return cls(sdf_version=version, radius=_radius, length=_length)
+        _c_radius = el.find("radius")
+        if _c_radius is not None:
+            _res = Radius._from_sdf(_c_radius, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("radius")
+            _radius = _res
+        else:
+            _radius = None
+        return cls(sdf_version=version, length=_length, radius=_radius)

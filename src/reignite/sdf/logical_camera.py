@@ -160,23 +160,23 @@ class LogicalCamera(BaseModel):
     def __init__(
         self,
         sdf_version: str,
-        near: "Near" = None,
-        far: "Far" = None,
         aspect_ratio: "AspectRatio" = None,
-        horizontal_fov: "HorizontalFov" = None
+        far: "Far" = None,
+        horizontal_fov: "HorizontalFov" = None,
+        near: "Near" = None
     ):
         self.__version__ = sdf_version
-        self.near = near
-        self.far = far
         self.aspect_ratio = aspect_ratio
+        self.far = far
         self.horizontal_fov = horizontal_fov
+        self.near = near
 
     def to_version(self, target_version: str) -> "LogicalCamera":
         kwargs = {"sdf_version": target_version}
-        kwargs["near"] = self.near.to_version(target_version) if self.near is not None else None
-        kwargs["far"] = self.far.to_version(target_version) if self.far is not None else None
         kwargs["aspect_ratio"] = self.aspect_ratio.to_version(target_version) if self.aspect_ratio is not None else None
+        kwargs["far"] = self.far.to_version(target_version) if self.far is not None else None
         kwargs["horizontal_fov"] = self.horizontal_fov.to_version(target_version) if self.horizontal_fov is not None else None
+        kwargs["near"] = self.near.to_version(target_version) if self.near is not None else None
         new_obj = self.__class__(**kwargs)
         return new_obj
 
@@ -185,34 +185,18 @@ class LogicalCamera(BaseModel):
             return self.to_version(version).to_sdf()
         version = version or self.__version__
         el = ET.Element("logical_camera")
-        if self.near is not None:
-            el.append(self.near.to_sdf(version))
-        if self.far is not None:
-            el.append(self.far.to_sdf(version))
         if self.aspect_ratio is not None:
             el.append(self.aspect_ratio.to_sdf(version))
+        if self.far is not None:
+            el.append(self.far.to_sdf(version))
         if self.horizontal_fov is not None:
             el.append(self.horizontal_fov.to_sdf(version))
+        if self.near is not None:
+            el.append(self.near.to_sdf(version))
         return el
 
     @classmethod
     def _from_sdf(cls, el: ET.Element, version: str):
-        _c_near = el.find("near")
-        if _c_near is not None:
-            _res = Near._from_sdf(_c_near, version)
-            if isinstance(_res, SDFError):
-                return _res.extend("near")
-            _near = _res
-        else:
-            _near = None
-        _c_far = el.find("far")
-        if _c_far is not None:
-            _res = Far._from_sdf(_c_far, version)
-            if isinstance(_res, SDFError):
-                return _res.extend("far")
-            _far = _res
-        else:
-            _far = None
         _c_aspect_ratio = el.find("aspect_ratio")
         if _c_aspect_ratio is not None:
             _res = AspectRatio._from_sdf(_c_aspect_ratio, version)
@@ -221,6 +205,14 @@ class LogicalCamera(BaseModel):
             _aspect_ratio = _res
         else:
             _aspect_ratio = None
+        _c_far = el.find("far")
+        if _c_far is not None:
+            _res = Far._from_sdf(_c_far, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("far")
+            _far = _res
+        else:
+            _far = None
         _c_horizontal_fov = el.find("horizontal_fov")
         if _c_horizontal_fov is not None:
             _res = HorizontalFov._from_sdf(_c_horizontal_fov, version)
@@ -229,4 +221,12 @@ class LogicalCamera(BaseModel):
             _horizontal_fov = _res
         else:
             _horizontal_fov = None
-        return cls(sdf_version=version, near=_near, far=_far, aspect_ratio=_aspect_ratio, horizontal_fov=_horizontal_fov)
+        _c_near = el.find("near")
+        if _c_near is not None:
+            _res = Near._from_sdf(_c_near, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("near")
+            _near = _res
+        else:
+            _near = None
+        return cls(sdf_version=version, aspect_ratio=_aspect_ratio, far=_far, horizontal_fov=_horizontal_fov, near=_near)

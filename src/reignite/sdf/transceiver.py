@@ -249,18 +249,18 @@ class Transceiver(BaseModel):
         sdf_version: str,
         essid: "Essid" = None,
         frequency: "Frequency" = None,
-        min_frequency: "MinFrequency" = None,
-        max_frequency: "MaxFrequency" = None,
         gain: "Gain" = None,
+        max_frequency: "MaxFrequency" = None,
+        min_frequency: "MinFrequency" = None,
         power: "Power" = None,
         sensitivity: "Sensitivity" = None
     ):
         self.__version__ = sdf_version
         self.essid = essid
         self.frequency = frequency
-        self.min_frequency = min_frequency
-        self.max_frequency = max_frequency
         self.gain = gain
+        self.max_frequency = max_frequency
+        self.min_frequency = min_frequency
         self.power = power
         self.sensitivity = sensitivity
 
@@ -268,9 +268,9 @@ class Transceiver(BaseModel):
         kwargs = {"sdf_version": target_version}
         kwargs["essid"] = self.essid.to_version(target_version) if self.essid is not None else None
         kwargs["frequency"] = self.frequency.to_version(target_version) if self.frequency is not None else None
-        kwargs["min_frequency"] = self.min_frequency.to_version(target_version) if self.min_frequency is not None else None
-        kwargs["max_frequency"] = self.max_frequency.to_version(target_version) if self.max_frequency is not None else None
         kwargs["gain"] = self.gain.to_version(target_version) if self.gain is not None else None
+        kwargs["max_frequency"] = self.max_frequency.to_version(target_version) if self.max_frequency is not None else None
+        kwargs["min_frequency"] = self.min_frequency.to_version(target_version) if self.min_frequency is not None else None
         kwargs["power"] = self.power.to_version(target_version) if self.power is not None else None
         kwargs["sensitivity"] = self.sensitivity.to_version(target_version) if self.sensitivity is not None else None
         new_obj = self.__class__(**kwargs)
@@ -285,12 +285,12 @@ class Transceiver(BaseModel):
             el.append(self.essid.to_sdf(version))
         if self.frequency is not None:
             el.append(self.frequency.to_sdf(version))
-        if self.min_frequency is not None:
-            el.append(self.min_frequency.to_sdf(version))
-        if self.max_frequency is not None:
-            el.append(self.max_frequency.to_sdf(version))
         if self.gain is not None:
             el.append(self.gain.to_sdf(version))
+        if self.max_frequency is not None:
+            el.append(self.max_frequency.to_sdf(version))
+        if self.min_frequency is not None:
+            el.append(self.min_frequency.to_sdf(version))
         if self.power is not None:
             el.append(self.power.to_sdf(version))
         if self.sensitivity is not None:
@@ -315,22 +315,6 @@ class Transceiver(BaseModel):
             _frequency = _res
         else:
             _frequency = None
-        _c_min_frequency = el.find("min_frequency")
-        if _c_min_frequency is not None:
-            _res = MinFrequency._from_sdf(_c_min_frequency, version)
-            if isinstance(_res, SDFError):
-                return _res.extend("min_frequency")
-            _min_frequency = _res
-        else:
-            _min_frequency = None
-        _c_max_frequency = el.find("max_frequency")
-        if _c_max_frequency is not None:
-            _res = MaxFrequency._from_sdf(_c_max_frequency, version)
-            if isinstance(_res, SDFError):
-                return _res.extend("max_frequency")
-            _max_frequency = _res
-        else:
-            _max_frequency = None
         _c_gain = el.find("gain")
         if _c_gain is not None:
             _res = Gain._from_sdf(_c_gain, version)
@@ -339,6 +323,22 @@ class Transceiver(BaseModel):
             _gain = _res
         else:
             _gain = None
+        _c_max_frequency = el.find("max_frequency")
+        if _c_max_frequency is not None:
+            _res = MaxFrequency._from_sdf(_c_max_frequency, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("max_frequency")
+            _max_frequency = _res
+        else:
+            _max_frequency = None
+        _c_min_frequency = el.find("min_frequency")
+        if _c_min_frequency is not None:
+            _res = MinFrequency._from_sdf(_c_min_frequency, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("min_frequency")
+            _min_frequency = _res
+        else:
+            _min_frequency = None
         _c_power = el.find("power")
         if _c_power is not None:
             _res = Power._from_sdf(_c_power, version)
@@ -355,4 +355,4 @@ class Transceiver(BaseModel):
             _sensitivity = _res
         else:
             _sensitivity = None
-        return cls(sdf_version=version, essid=_essid, frequency=_frequency, min_frequency=_min_frequency, max_frequency=_max_frequency, gain=_gain, power=_power, sensitivity=_sensitivity)
+        return cls(sdf_version=version, essid=_essid, frequency=_frequency, gain=_gain, max_frequency=_max_frequency, min_frequency=_min_frequency, power=_power, sensitivity=_sensitivity)

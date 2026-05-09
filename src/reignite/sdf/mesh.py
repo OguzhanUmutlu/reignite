@@ -130,15 +130,15 @@ class Center(BaseModel):
 
 
 class Submesh(BaseModel):
-    def __init__(self, sdf_version: str, name: "Name" = None, center: "Center" = None):
+    def __init__(self, sdf_version: str, center: "Center" = None, name: "Name" = None):
         self.__version__ = sdf_version
-        self.name = name
         self.center = center
+        self.name = name
 
     def to_version(self, target_version: str) -> "Submesh":
         kwargs = {"sdf_version": target_version}
-        kwargs["name"] = self.name.to_version(target_version) if self.name is not None else None
         kwargs["center"] = self.center.to_version(target_version) if self.center is not None else None
+        kwargs["name"] = self.name.to_version(target_version) if self.name is not None else None
         new_obj = self.__class__(**kwargs)
         return new_obj
 
@@ -147,22 +147,14 @@ class Submesh(BaseModel):
             return self.to_version(version).to_sdf()
         version = version or self.__version__
         el = ET.Element("submesh")
-        if self.name is not None:
-            el.append(self.name.to_sdf(version))
         if self.center is not None:
             el.append(self.center.to_sdf(version))
+        if self.name is not None:
+            el.append(self.name.to_sdf(version))
         return el
 
     @classmethod
     def _from_sdf(cls, el: ET.Element, version: str):
-        _c_name = el.find("name")
-        if _c_name is not None:
-            _res = Name._from_sdf(_c_name, version)
-            if isinstance(_res, SDFError):
-                return _res.extend("name")
-            _name = _res
-        else:
-            _name = None
         _c_center = el.find("center")
         if _c_center is not None:
             _res = Center._from_sdf(_c_center, version)
@@ -171,7 +163,15 @@ class Submesh(BaseModel):
             _center = _res
         else:
             _center = None
-        return cls(sdf_version=version, name=_name, center=_center)
+        _c_name = el.find("name")
+        if _c_name is not None:
+            _res = Name._from_sdf(_c_name, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("name")
+            _name = _res
+        else:
+            _name = None
+        return cls(sdf_version=version, center=_center, name=_name)
 
 
 class Scale(BaseModel):
@@ -317,30 +317,30 @@ class Mesh(BaseModel):
     def __init__(
         self,
         sdf_version: str,
+        convex_decomposition: "ConvexDecomposition" = None,
         optimization: str = "",
-        uri: "Uri" = None,
-        submesh: "Submesh" = None,
         scale: "Scale" = None,
-        convex_decomposition: "ConvexDecomposition" = None
+        submesh: "Submesh" = None,
+        uri: "Uri" = None
     ):
         self.__version__ = sdf_version
-        self.optimization = optimization
-        self.uri = uri
-        self.submesh = submesh
-        self.scale = scale
         self.convex_decomposition = convex_decomposition
+        self.optimization = optimization
+        self.scale = scale
+        self.submesh = submesh
+        self.uri = uri
 
     def to_version(self, target_version: str) -> "Mesh":
-        if self.optimization is not None and cmp_version(target_version, "1.11") < 0:
-            raise ValueError(f"'optimization' is not supported in SDF version {target_version} (added in 1.11)")
         if self.convex_decomposition is not None and cmp_version(target_version, "1.11") < 0:
             raise ValueError(f"'convex_decomposition' is not supported in SDF version {target_version} (added in 1.11)")
+        if self.optimization is not None and cmp_version(target_version, "1.11") < 0:
+            raise ValueError(f"'optimization' is not supported in SDF version {target_version} (added in 1.11)")
         kwargs = {"sdf_version": target_version}
-        kwargs["optimization"] = self.optimization
-        kwargs["uri"] = self.uri.to_version(target_version) if self.uri is not None else None
-        kwargs["submesh"] = self.submesh.to_version(target_version) if self.submesh is not None else None
-        kwargs["scale"] = self.scale.to_version(target_version) if self.scale is not None else None
         kwargs["convex_decomposition"] = self.convex_decomposition.to_version(target_version) if self.convex_decomposition is not None else None
+        kwargs["optimization"] = self.optimization
+        kwargs["scale"] = self.scale.to_version(target_version) if self.scale is not None else None
+        kwargs["submesh"] = self.submesh.to_version(target_version) if self.submesh is not None else None
+        kwargs["uri"] = self.uri.to_version(target_version) if self.uri is not None else None
         new_obj = self.__class__(**kwargs)
         return new_obj
 
@@ -349,50 +349,20 @@ class Mesh(BaseModel):
             return self.to_version(version).to_sdf()
         version = version or self.__version__
         el = ET.Element("mesh")
-        if self.optimization is not None:
-            el.set("optimization", self.optimization)
-        if self.uri is not None:
-            el.append(self.uri.to_sdf(version))
-        if self.submesh is not None:
-            el.append(self.submesh.to_sdf(version))
-        if self.scale is not None:
-            el.append(self.scale.to_sdf(version))
         if self.convex_decomposition is not None:
             el.append(self.convex_decomposition.to_sdf(version))
+        if self.optimization is not None:
+            el.set("optimization", self.optimization)
+        if self.scale is not None:
+            el.append(self.scale.to_sdf(version))
+        if self.submesh is not None:
+            el.append(self.submesh.to_sdf(version))
+        if self.uri is not None:
+            el.append(self.uri.to_sdf(version))
         return el
 
     @classmethod
     def _from_sdf(cls, el: ET.Element, version: str):
-        _optimization = el.get("optimization", "")
-        if isinstance(_optimization, SDFError):
-            return _optimization.extend("@optimization")
-        if _optimization is not None and cmp_version(version, "1.11") < 0:
-            if _optimization != "":
-                return SDFError(f"'optimization' is not supported in SDF version {version} (added in 1.11)")
-        _c_uri = el.find("uri")
-        if _c_uri is not None:
-            _res = Uri._from_sdf(_c_uri, version)
-            if isinstance(_res, SDFError):
-                return _res.extend("uri")
-            _uri = _res
-        else:
-            _uri = None
-        _c_submesh = el.find("submesh")
-        if _c_submesh is not None:
-            _res = Submesh._from_sdf(_c_submesh, version)
-            if isinstance(_res, SDFError):
-                return _res.extend("submesh")
-            _submesh = _res
-        else:
-            _submesh = None
-        _c_scale = el.find("scale")
-        if _c_scale is not None:
-            _res = Scale._from_sdf(_c_scale, version)
-            if isinstance(_res, SDFError):
-                return _res.extend("scale")
-            _scale = _res
-        else:
-            _scale = None
         _c_convex_decomposition = el.find("convex_decomposition")
         if _c_convex_decomposition is not None:
             _res = ConvexDecomposition._from_sdf(_c_convex_decomposition, version)
@@ -403,4 +373,34 @@ class Mesh(BaseModel):
             _convex_decomposition = None
         if _convex_decomposition is not None and cmp_version(version, "1.11") < 0:
             return SDFError(f"'convex_decomposition' is not supported in SDF version {version} (added in 1.11)")
-        return cls(sdf_version=version, optimization=_optimization, uri=_uri, submesh=_submesh, scale=_scale, convex_decomposition=_convex_decomposition)
+        _optimization = el.get("optimization", "")
+        if isinstance(_optimization, SDFError):
+            return _optimization.extend("@optimization")
+        if _optimization is not None and cmp_version(version, "1.11") < 0:
+            if _optimization != "":
+                return SDFError(f"'optimization' is not supported in SDF version {version} (added in 1.11)")
+        _c_scale = el.find("scale")
+        if _c_scale is not None:
+            _res = Scale._from_sdf(_c_scale, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("scale")
+            _scale = _res
+        else:
+            _scale = None
+        _c_submesh = el.find("submesh")
+        if _c_submesh is not None:
+            _res = Submesh._from_sdf(_c_submesh, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("submesh")
+            _submesh = _res
+        else:
+            _submesh = None
+        _c_uri = el.find("uri")
+        if _c_uri is not None:
+            _res = Uri._from_sdf(_c_uri, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("uri")
+            _uri = _res
+        else:
+            _uri = None
+        return cls(sdf_version=version, convex_decomposition=_convex_decomposition, optimization=_optimization, scale=_scale, submesh=_submesh, uri=_uri)

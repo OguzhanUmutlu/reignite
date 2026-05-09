@@ -189,26 +189,26 @@ class Image(BaseModel):
     def __init__(
         self,
         sdf_version: str,
-        uri: "Uri" = None,
+        granularity: "Granularity" = None,
+        height: "Height" = None,
         scale: "Scale" = None,
         threshold: "Threshold" = None,
-        height: "Height" = None,
-        granularity: "Granularity" = None
+        uri: "Uri" = None
     ):
         self.__version__ = sdf_version
-        self.uri = uri
+        self.granularity = granularity
+        self.height = height
         self.scale = scale
         self.threshold = threshold
-        self.height = height
-        self.granularity = granularity
+        self.uri = uri
 
     def to_version(self, target_version: str) -> "Image":
         kwargs = {"sdf_version": target_version}
-        kwargs["uri"] = self.uri.to_version(target_version) if self.uri is not None else None
+        kwargs["granularity"] = self.granularity.to_version(target_version) if self.granularity is not None else None
+        kwargs["height"] = self.height.to_version(target_version) if self.height is not None else None
         kwargs["scale"] = self.scale.to_version(target_version) if self.scale is not None else None
         kwargs["threshold"] = self.threshold.to_version(target_version) if self.threshold is not None else None
-        kwargs["height"] = self.height.to_version(target_version) if self.height is not None else None
-        kwargs["granularity"] = self.granularity.to_version(target_version) if self.granularity is not None else None
+        kwargs["uri"] = self.uri.to_version(target_version) if self.uri is not None else None
         new_obj = self.__class__(**kwargs)
         return new_obj
 
@@ -217,28 +217,36 @@ class Image(BaseModel):
             return self.to_version(version).to_sdf()
         version = version or self.__version__
         el = ET.Element("image")
-        if self.uri is not None:
-            el.append(self.uri.to_sdf(version))
+        if self.granularity is not None:
+            el.append(self.granularity.to_sdf(version))
+        if self.height is not None:
+            el.append(self.height.to_sdf(version))
         if self.scale is not None:
             el.append(self.scale.to_sdf(version))
         if self.threshold is not None:
             el.append(self.threshold.to_sdf(version))
-        if self.height is not None:
-            el.append(self.height.to_sdf(version))
-        if self.granularity is not None:
-            el.append(self.granularity.to_sdf(version))
+        if self.uri is not None:
+            el.append(self.uri.to_sdf(version))
         return el
 
     @classmethod
     def _from_sdf(cls, el: ET.Element, version: str):
-        _c_uri = el.find("uri")
-        if _c_uri is not None:
-            _res = Uri._from_sdf(_c_uri, version)
+        _c_granularity = el.find("granularity")
+        if _c_granularity is not None:
+            _res = Granularity._from_sdf(_c_granularity, version)
             if isinstance(_res, SDFError):
-                return _res.extend("uri")
-            _uri = _res
+                return _res.extend("granularity")
+            _granularity = _res
         else:
-            _uri = None
+            _granularity = None
+        _c_height = el.find("height")
+        if _c_height is not None:
+            _res = Height._from_sdf(_c_height, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("height")
+            _height = _res
+        else:
+            _height = None
         _c_scale = el.find("scale")
         if _c_scale is not None:
             _res = Scale._from_sdf(_c_scale, version)
@@ -255,20 +263,12 @@ class Image(BaseModel):
             _threshold = _res
         else:
             _threshold = None
-        _c_height = el.find("height")
-        if _c_height is not None:
-            _res = Height._from_sdf(_c_height, version)
+        _c_uri = el.find("uri")
+        if _c_uri is not None:
+            _res = Uri._from_sdf(_c_uri, version)
             if isinstance(_res, SDFError):
-                return _res.extend("height")
-            _height = _res
+                return _res.extend("uri")
+            _uri = _res
         else:
-            _height = None
-        _c_granularity = el.find("granularity")
-        if _c_granularity is not None:
-            _res = Granularity._from_sdf(_c_granularity, version)
-            if isinstance(_res, SDFError):
-                return _res.extend("granularity")
-            _granularity = _res
-        else:
-            _granularity = None
-        return cls(sdf_version=version, uri=_uri, scale=_scale, threshold=_threshold, height=_height, granularity=_granularity)
+            _uri = None
+        return cls(sdf_version=version, granularity=_granularity, height=_height, scale=_scale, threshold=_threshold, uri=_uri)
