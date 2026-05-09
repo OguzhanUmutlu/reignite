@@ -45,35 +45,6 @@ class Collision(BaseModel):
         return cls(sdf_version=version, collision=_collision, name=_name)
 
 
-class Topic(BaseModel):
-    def __init__(self, sdf_version: str, topic: str = "__default_topic__"):
-        self.__version__ = sdf_version
-        self.topic = topic
-
-    def to_version(self, target_version: str) -> "Topic":
-        kwargs = {"sdf_version": target_version}
-        kwargs["topic"] = self.topic
-        new_obj = self.__class__(**kwargs)
-        return new_obj
-
-    def to_sdf(self, version: str = None) -> ET.Element:
-        if version is not None and version != self.__version__:
-            return self.to_version(version).to_sdf()
-        version = version or self.__version__
-        el = ET.Element("topic")
-        if self.topic is not None:
-            el.text = self.topic
-        return el
-
-    @classmethod
-    def _from_sdf(cls, el: ET.Element, version: str):
-        _text = el.text or "__default_topic__"
-        _topic = _text
-        if isinstance(_topic, SDFError):
-            return _topic
-        return cls(sdf_version=version, topic=_topic)
-
-
 class Contact(BaseModel):
     def __init__(self, sdf_version: str, collision: "Collision" = None, topic: "Topic" = None):
         self.__version__ = sdf_version
@@ -117,3 +88,32 @@ class Contact(BaseModel):
         else:
             _topic = None
         return cls(sdf_version=version, collision=_collision, topic=_topic)
+
+
+class Topic(BaseModel):
+    def __init__(self, sdf_version: str, topic: str = "__default_topic__"):
+        self.__version__ = sdf_version
+        self.topic = topic
+
+    def to_version(self, target_version: str) -> "Topic":
+        kwargs = {"sdf_version": target_version}
+        kwargs["topic"] = self.topic
+        new_obj = self.__class__(**kwargs)
+        return new_obj
+
+    def to_sdf(self, version: str = None) -> ET.Element:
+        if version is not None and version != self.__version__:
+            return self.to_version(version).to_sdf()
+        version = version or self.__version__
+        el = ET.Element("topic")
+        if self.topic is not None:
+            el.text = self.topic
+        return el
+
+    @classmethod
+    def _from_sdf(cls, el: ET.Element, version: str):
+        _text = el.text or "__default_topic__"
+        _topic = _text
+        if isinstance(_topic, SDFError):
+            return _topic
+        return cls(sdf_version=version, topic=_topic)

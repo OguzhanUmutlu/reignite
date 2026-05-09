@@ -40,6 +40,89 @@ def _parse_double(raw: str) -> float | SDFError:
 
 
 
+class Mimic(BaseModel):
+    def __init__(
+        self,
+        sdf_version: str,
+        axis: str = "axis",
+        joint: str = "",
+        multiplier: "Multiplier" = None,
+        offset: "Offset" = None,
+        reference: "Reference" = None
+    ):
+        self.__version__ = sdf_version
+        self.axis = axis
+        self.joint = joint
+        self.multiplier = multiplier
+        self.offset = offset
+        self.reference = reference
+
+    def to_version(self, target_version: str) -> "Mimic":
+        kwargs = {"sdf_version": target_version}
+        kwargs["axis"] = self.axis
+        kwargs["joint"] = self.joint
+        kwargs["multiplier"] = self.multiplier.to_version(target_version) if self.multiplier is not None else None
+        kwargs["offset"] = self.offset.to_version(target_version) if self.offset is not None else None
+        kwargs["reference"] = self.reference.to_version(target_version) if self.reference is not None else None
+        new_obj = self.__class__(**kwargs)
+        return new_obj
+
+    def to_sdf(self, version: str = None) -> ET.Element:
+        if version is not None and version != self.__version__:
+            return self.to_version(version).to_sdf()
+        version = version or self.__version__
+        el = ET.Element("mimic")
+        if self.axis is not None:
+            el.set("axis", self.axis)
+        if self.joint is None:
+            raise ValueError(f"'joint' is required in SDF version {version}")
+        if self.joint is not None:
+            el.set("joint", self.joint)
+        if self.multiplier is not None:
+            el.append(self.multiplier.to_sdf(version))
+        if self.offset is not None:
+            el.append(self.offset.to_sdf(version))
+        if self.reference is not None:
+            el.append(self.reference.to_sdf(version))
+        return el
+
+    @classmethod
+    def _from_sdf(cls, el: ET.Element, version: str):
+        _axis = el.get("axis", "axis")
+        if isinstance(_axis, SDFError):
+            return _axis.extend("@axis")
+        if el.get("joint") is None:
+            return SDFError(f"'joint' is required in SDF version {version}")
+        _joint = el.get("joint", "")
+        if isinstance(_joint, SDFError):
+            return _joint.extend("@joint")
+        _c_multiplier = el.find("multiplier")
+        if _c_multiplier is not None:
+            _res = Multiplier._from_sdf(_c_multiplier, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("multiplier")
+            _multiplier = _res
+        else:
+            _multiplier = None
+        _c_offset = el.find("offset")
+        if _c_offset is not None:
+            _res = Offset._from_sdf(_c_offset, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("offset")
+            _offset = _res
+        else:
+            _offset = None
+        _c_reference = el.find("reference")
+        if _c_reference is not None:
+            _res = Reference._from_sdf(_c_reference, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("reference")
+            _reference = _res
+        else:
+            _reference = None
+        return cls(sdf_version=version, axis=_axis, joint=_joint, multiplier=_multiplier, offset=_offset, reference=_reference)
+
+
 class Multiplier(BaseModel):
     def __init__(self, sdf_version: str, multiplier: float = 1.0):
         self.__version__ = sdf_version
@@ -125,86 +208,3 @@ class Reference(BaseModel):
         if isinstance(_reference, SDFError):
             return _reference
         return cls(sdf_version=version, reference=_reference)
-
-
-class Mimic(BaseModel):
-    def __init__(
-        self,
-        sdf_version: str,
-        axis: str = "axis",
-        joint: str = "",
-        multiplier: "Multiplier" = None,
-        offset: "Offset" = None,
-        reference: "Reference" = None
-    ):
-        self.__version__ = sdf_version
-        self.axis = axis
-        self.joint = joint
-        self.multiplier = multiplier
-        self.offset = offset
-        self.reference = reference
-
-    def to_version(self, target_version: str) -> "Mimic":
-        kwargs = {"sdf_version": target_version}
-        kwargs["axis"] = self.axis
-        kwargs["joint"] = self.joint
-        kwargs["multiplier"] = self.multiplier.to_version(target_version) if self.multiplier is not None else None
-        kwargs["offset"] = self.offset.to_version(target_version) if self.offset is not None else None
-        kwargs["reference"] = self.reference.to_version(target_version) if self.reference is not None else None
-        new_obj = self.__class__(**kwargs)
-        return new_obj
-
-    def to_sdf(self, version: str = None) -> ET.Element:
-        if version is not None and version != self.__version__:
-            return self.to_version(version).to_sdf()
-        version = version or self.__version__
-        el = ET.Element("mimic")
-        if self.axis is not None:
-            el.set("axis", self.axis)
-        if self.joint is None:
-            raise ValueError(f"'joint' is required in SDF version {version}")
-        if self.joint is not None:
-            el.set("joint", self.joint)
-        if self.multiplier is not None:
-            el.append(self.multiplier.to_sdf(version))
-        if self.offset is not None:
-            el.append(self.offset.to_sdf(version))
-        if self.reference is not None:
-            el.append(self.reference.to_sdf(version))
-        return el
-
-    @classmethod
-    def _from_sdf(cls, el: ET.Element, version: str):
-        _axis = el.get("axis", "axis")
-        if isinstance(_axis, SDFError):
-            return _axis.extend("@axis")
-        if el.get("joint") is None:
-            return SDFError(f"'joint' is required in SDF version {version}")
-        _joint = el.get("joint", "")
-        if isinstance(_joint, SDFError):
-            return _joint.extend("@joint")
-        _c_multiplier = el.find("multiplier")
-        if _c_multiplier is not None:
-            _res = Multiplier._from_sdf(_c_multiplier, version)
-            if isinstance(_res, SDFError):
-                return _res.extend("multiplier")
-            _multiplier = _res
-        else:
-            _multiplier = None
-        _c_offset = el.find("offset")
-        if _c_offset is not None:
-            _res = Offset._from_sdf(_c_offset, version)
-            if isinstance(_res, SDFError):
-                return _res.extend("offset")
-            _offset = _res
-        else:
-            _offset = None
-        _c_reference = el.find("reference")
-        if _c_reference is not None:
-            _res = Reference._from_sdf(_c_reference, version)
-            if isinstance(_res, SDFError):
-                return _res.extend("reference")
-            _reference = _res
-        else:
-            _reference = None
-        return cls(sdf_version=version, axis=_axis, joint=_joint, multiplier=_multiplier, offset=_offset, reference=_reference)

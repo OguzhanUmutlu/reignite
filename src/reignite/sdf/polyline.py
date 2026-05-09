@@ -43,6 +43,35 @@ def _parse_double(raw: str) -> float | SDFError:
 
 
 
+class Height(BaseModel):
+    def __init__(self, sdf_version: str, height: float = 1.0):
+        self.__version__ = sdf_version
+        self.height = height
+
+    def to_version(self, target_version: str) -> "Height":
+        kwargs = {"sdf_version": target_version}
+        kwargs["height"] = self.height
+        new_obj = self.__class__(**kwargs)
+        return new_obj
+
+    def to_sdf(self, version: str = None) -> ET.Element:
+        if version is not None and version != self.__version__:
+            return self.to_version(version).to_sdf()
+        version = version or self.__version__
+        el = ET.Element("height")
+        if self.height is not None:
+            el.text = str(self.height)
+        return el
+
+    @classmethod
+    def _from_sdf(cls, el: ET.Element, version: str):
+        _text = el.text or 1.0
+        _height = _parse_double(_text)
+        if isinstance(_height, SDFError):
+            return _height
+        return cls(sdf_version=version, height=_height)
+
+
 class Point(BaseModel):
     def __init__(self, sdf_version: str, point: _SDFVector2d = None):
         self.__version__ = sdf_version
@@ -72,35 +101,6 @@ class Point(BaseModel):
         if isinstance(_point, SDFError):
             return _point
         return cls(sdf_version=version, point=_point)
-
-
-class Height(BaseModel):
-    def __init__(self, sdf_version: str, height: float = 1.0):
-        self.__version__ = sdf_version
-        self.height = height
-
-    def to_version(self, target_version: str) -> "Height":
-        kwargs = {"sdf_version": target_version}
-        kwargs["height"] = self.height
-        new_obj = self.__class__(**kwargs)
-        return new_obj
-
-    def to_sdf(self, version: str = None) -> ET.Element:
-        if version is not None and version != self.__version__:
-            return self.to_version(version).to_sdf()
-        version = version or self.__version__
-        el = ET.Element("height")
-        if self.height is not None:
-            el.text = str(self.height)
-        return el
-
-    @classmethod
-    def _from_sdf(cls, el: ET.Element, version: str):
-        _text = el.text or 1.0
-        _height = _parse_double(_text)
-        if isinstance(_height, SDFError):
-            return _height
-        return cls(sdf_version=version, height=_height)
 
 
 class Polyline(BaseModel):

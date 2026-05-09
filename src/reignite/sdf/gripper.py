@@ -77,40 +77,6 @@ class AttachSteps(BaseModel):
         return cls(sdf_version=version, attach_steps=_attach_steps)
 
 
-class MinContactCount(BaseModel):
-    def __init__(self, sdf_version: str, min_contact_count: int = 2):
-        self.__version__ = sdf_version
-        self.min_contact_count = min_contact_count
-
-    def to_version(self, target_version: str) -> "MinContactCount":
-        if self.min_contact_count is not None and cmp_version(target_version, "1.2") < 0:
-            raise ValueError(f"'min_contact_count' is not supported in SDF version {target_version} (added in 1.2)")
-        kwargs = {"sdf_version": target_version}
-        kwargs["min_contact_count"] = self.min_contact_count
-        new_obj = self.__class__(**kwargs)
-        return new_obj
-
-    def to_sdf(self, version: str = None) -> ET.Element:
-        if version is not None and version != self.__version__:
-            return self.to_version(version).to_sdf()
-        version = version or self.__version__
-        el = ET.Element("min_contact_count")
-        if self.min_contact_count is not None:
-            el.text = str(self.min_contact_count)
-        return el
-
-    @classmethod
-    def _from_sdf(cls, el: ET.Element, version: str):
-        _text = el.text or 2
-        _min_contact_count = _parse_uint32(_text)
-        if isinstance(_min_contact_count, SDFError):
-            return _min_contact_count
-        if _min_contact_count is not None and cmp_version(version, "1.2") < 0:
-            if _min_contact_count != 2:
-                return SDFError(f"'min_contact_count' is not supported in SDF version {version} (added in 1.2)")
-        return cls(sdf_version=version, min_contact_count=_min_contact_count)
-
-
 class DetachSteps(BaseModel):
     def __init__(self, sdf_version: str, detach_steps: int = 40):
         self.__version__ = sdf_version
@@ -199,64 +165,6 @@ class GraspCheck(BaseModel):
         return cls(sdf_version=version, attach_steps=_attach_steps, detach_steps=_detach_steps, min_contact_count=_min_contact_count)
 
 
-class GripperLink(BaseModel):
-    def __init__(self, sdf_version: str, gripper_link: str = "__default__"):
-        self.__version__ = sdf_version
-        self.gripper_link = gripper_link
-
-    def to_version(self, target_version: str) -> "GripperLink":
-        kwargs = {"sdf_version": target_version}
-        kwargs["gripper_link"] = self.gripper_link
-        new_obj = self.__class__(**kwargs)
-        return new_obj
-
-    def to_sdf(self, version: str = None) -> ET.Element:
-        if version is not None and version != self.__version__:
-            return self.to_version(version).to_sdf()
-        version = version or self.__version__
-        el = ET.Element("gripper_link")
-        if self.gripper_link is not None:
-            el.text = self.gripper_link
-        return el
-
-    @classmethod
-    def _from_sdf(cls, el: ET.Element, version: str):
-        _text = el.text or "__default__"
-        _gripper_link = _text
-        if isinstance(_gripper_link, SDFError):
-            return _gripper_link
-        return cls(sdf_version=version, gripper_link=_gripper_link)
-
-
-class PalmLink(BaseModel):
-    def __init__(self, sdf_version: str, palm_link: str = "__default__"):
-        self.__version__ = sdf_version
-        self.palm_link = palm_link
-
-    def to_version(self, target_version: str) -> "PalmLink":
-        kwargs = {"sdf_version": target_version}
-        kwargs["palm_link"] = self.palm_link
-        new_obj = self.__class__(**kwargs)
-        return new_obj
-
-    def to_sdf(self, version: str = None) -> ET.Element:
-        if version is not None and version != self.__version__:
-            return self.to_version(version).to_sdf()
-        version = version or self.__version__
-        el = ET.Element("palm_link")
-        if self.palm_link is not None:
-            el.text = self.palm_link
-        return el
-
-    @classmethod
-    def _from_sdf(cls, el: ET.Element, version: str):
-        _text = el.text or "__default__"
-        _palm_link = _text
-        if isinstance(_palm_link, SDFError):
-            return _palm_link
-        return cls(sdf_version=version, palm_link=_palm_link)
-
-
 class Gripper(BaseModel):
     def __init__(
         self,
@@ -324,3 +232,95 @@ class Gripper(BaseModel):
         else:
             _palm_link = None
         return cls(sdf_version=version, grasp_check=_grasp_check, gripper_link=_gripper_link, name=_name, palm_link=_palm_link)
+
+
+class GripperLink(BaseModel):
+    def __init__(self, sdf_version: str, gripper_link: str = "__default__"):
+        self.__version__ = sdf_version
+        self.gripper_link = gripper_link
+
+    def to_version(self, target_version: str) -> "GripperLink":
+        kwargs = {"sdf_version": target_version}
+        kwargs["gripper_link"] = self.gripper_link
+        new_obj = self.__class__(**kwargs)
+        return new_obj
+
+    def to_sdf(self, version: str = None) -> ET.Element:
+        if version is not None and version != self.__version__:
+            return self.to_version(version).to_sdf()
+        version = version or self.__version__
+        el = ET.Element("gripper_link")
+        if self.gripper_link is not None:
+            el.text = self.gripper_link
+        return el
+
+    @classmethod
+    def _from_sdf(cls, el: ET.Element, version: str):
+        _text = el.text or "__default__"
+        _gripper_link = _text
+        if isinstance(_gripper_link, SDFError):
+            return _gripper_link
+        return cls(sdf_version=version, gripper_link=_gripper_link)
+
+
+class MinContactCount(BaseModel):
+    def __init__(self, sdf_version: str, min_contact_count: int = 2):
+        self.__version__ = sdf_version
+        self.min_contact_count = min_contact_count
+
+    def to_version(self, target_version: str) -> "MinContactCount":
+        if self.min_contact_count is not None and cmp_version(target_version, "1.2") < 0:
+            raise ValueError(f"'min_contact_count' is not supported in SDF version {target_version} (added in 1.2)")
+        kwargs = {"sdf_version": target_version}
+        kwargs["min_contact_count"] = self.min_contact_count
+        new_obj = self.__class__(**kwargs)
+        return new_obj
+
+    def to_sdf(self, version: str = None) -> ET.Element:
+        if version is not None and version != self.__version__:
+            return self.to_version(version).to_sdf()
+        version = version or self.__version__
+        el = ET.Element("min_contact_count")
+        if self.min_contact_count is not None:
+            el.text = str(self.min_contact_count)
+        return el
+
+    @classmethod
+    def _from_sdf(cls, el: ET.Element, version: str):
+        _text = el.text or 2
+        _min_contact_count = _parse_uint32(_text)
+        if isinstance(_min_contact_count, SDFError):
+            return _min_contact_count
+        if _min_contact_count is not None and cmp_version(version, "1.2") < 0:
+            if _min_contact_count != 2:
+                return SDFError(f"'min_contact_count' is not supported in SDF version {version} (added in 1.2)")
+        return cls(sdf_version=version, min_contact_count=_min_contact_count)
+
+
+class PalmLink(BaseModel):
+    def __init__(self, sdf_version: str, palm_link: str = "__default__"):
+        self.__version__ = sdf_version
+        self.palm_link = palm_link
+
+    def to_version(self, target_version: str) -> "PalmLink":
+        kwargs = {"sdf_version": target_version}
+        kwargs["palm_link"] = self.palm_link
+        new_obj = self.__class__(**kwargs)
+        return new_obj
+
+    def to_sdf(self, version: str = None) -> ET.Element:
+        if version is not None and version != self.__version__:
+            return self.to_version(version).to_sdf()
+        version = version or self.__version__
+        el = ET.Element("palm_link")
+        if self.palm_link is not None:
+            el.text = self.palm_link
+        return el
+
+    @classmethod
+    def _from_sdf(cls, el: ET.Element, version: str):
+        _text = el.text or "__default__"
+        _palm_link = _text
+        if isinstance(_palm_link, SDFError):
+            return _palm_link
+        return cls(sdf_version=version, palm_link=_palm_link)

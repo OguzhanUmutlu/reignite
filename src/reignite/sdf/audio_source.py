@@ -45,359 +45,6 @@ def _parse_double(raw: str) -> float | SDFError:
 
 
 
-class Uri(BaseModel):
-    def __init__(self, sdf_version: str, uri: str = "__default__"):
-        self.__version__ = sdf_version
-        self.uri = uri
-
-    def to_version(self, target_version: str) -> "Uri":
-        kwargs = {"sdf_version": target_version}
-        kwargs["uri"] = self.uri
-        new_obj = self.__class__(**kwargs)
-        return new_obj
-
-    def to_sdf(self, version: str = None) -> ET.Element:
-        if version is not None and version != self.__version__:
-            return self.to_version(version).to_sdf()
-        version = version or self.__version__
-        el = ET.Element("uri")
-        if self.uri is not None:
-            el.text = self.uri
-        return el
-
-    @classmethod
-    def _from_sdf(cls, el: ET.Element, version: str):
-        _text = el.text or "__default__"
-        _uri = _text
-        if isinstance(_uri, SDFError):
-            return _uri
-        return cls(sdf_version=version, uri=_uri)
-
-
-class Pitch(BaseModel):
-    def __init__(self, sdf_version: str, pitch: float = 1.0):
-        self.__version__ = sdf_version
-        self.pitch = pitch
-
-    def to_version(self, target_version: str) -> "Pitch":
-        kwargs = {"sdf_version": target_version}
-        kwargs["pitch"] = self.pitch
-        new_obj = self.__class__(**kwargs)
-        return new_obj
-
-    def to_sdf(self, version: str = None) -> ET.Element:
-        if version is not None and version != self.__version__:
-            return self.to_version(version).to_sdf()
-        version = version or self.__version__
-        el = ET.Element("pitch")
-        if self.pitch is not None:
-            el.text = str(self.pitch)
-        return el
-
-    @classmethod
-    def _from_sdf(cls, el: ET.Element, version: str):
-        _text = el.text or 1.0
-        _pitch = _parse_double(_text)
-        if isinstance(_pitch, SDFError):
-            return _pitch
-        return cls(sdf_version=version, pitch=_pitch)
-
-
-class Gain(BaseModel):
-    def __init__(self, sdf_version: str, gain: float = 1.0):
-        self.__version__ = sdf_version
-        self.gain = gain
-
-    def to_version(self, target_version: str) -> "Gain":
-        kwargs = {"sdf_version": target_version}
-        kwargs["gain"] = self.gain
-        new_obj = self.__class__(**kwargs)
-        return new_obj
-
-    def to_sdf(self, version: str = None) -> ET.Element:
-        if version is not None and version != self.__version__:
-            return self.to_version(version).to_sdf()
-        version = version or self.__version__
-        el = ET.Element("gain")
-        if self.gain is not None:
-            el.text = str(self.gain)
-        return el
-
-    @classmethod
-    def _from_sdf(cls, el: ET.Element, version: str):
-        _text = el.text or 1.0
-        _gain = _parse_double(_text)
-        if isinstance(_gain, SDFError):
-            return _gain
-        return cls(sdf_version=version, gain=_gain)
-
-
-class Collision(BaseModel):
-    def __init__(self, sdf_version: str, collision: str = "__default__"):
-        self.__version__ = sdf_version
-        self.collision = collision
-
-    def to_version(self, target_version: str) -> "Collision":
-        kwargs = {"sdf_version": target_version}
-        kwargs["collision"] = self.collision
-        new_obj = self.__class__(**kwargs)
-        return new_obj
-
-    def to_sdf(self, version: str = None) -> ET.Element:
-        if version is not None and version != self.__version__:
-            return self.to_version(version).to_sdf()
-        version = version or self.__version__
-        el = ET.Element("collision")
-        if self.collision is not None:
-            el.text = self.collision
-        return el
-
-    @classmethod
-    def _from_sdf(cls, el: ET.Element, version: str):
-        _text = el.text or "__default__"
-        _collision = _text
-        if isinstance(_collision, SDFError):
-            return _collision
-        return cls(sdf_version=version, collision=_collision)
-
-
-class Contact(BaseModel):
-    def __init__(self, sdf_version: str, collision: List["Collision"] = None):
-        self.__version__ = sdf_version
-        self.collision = collision or []
-
-    def to_version(self, target_version: str) -> "Contact":
-        kwargs = {"sdf_version": target_version}
-        kwargs["collision"] = [c.to_version(target_version) for c in (self.collision or [])]
-        new_obj = self.__class__(**kwargs)
-        return new_obj
-
-    def to_sdf(self, version: str = None) -> ET.Element:
-        if version is not None and version != self.__version__:
-            return self.to_version(version).to_sdf()
-        version = version or self.__version__
-        el = ET.Element("contact")
-        for item in (self.collision or []):
-            el.append(item.to_sdf(version))
-        return el
-
-    @classmethod
-    def _from_sdf(cls, el: ET.Element, version: str):
-        _collision = []
-        for c in el.findall("collision"):
-            _res = Collision._from_sdf(c, version)
-            if isinstance(_res, SDFError):
-                return _res.extend("collision")
-            _collision.append(_res)
-        return cls(sdf_version=version, collision=_collision)
-
-
-class Loop(BaseModel):
-    def __init__(self, sdf_version: str, loop: bool = False):
-        self.__version__ = sdf_version
-        self.loop = loop
-
-    def to_version(self, target_version: str) -> "Loop":
-        kwargs = {"sdf_version": target_version}
-        kwargs["loop"] = self.loop
-        new_obj = self.__class__(**kwargs)
-        return new_obj
-
-    def to_sdf(self, version: str = None) -> ET.Element:
-        if version is not None and version != self.__version__:
-            return self.to_version(version).to_sdf()
-        version = version or self.__version__
-        el = ET.Element("loop")
-        if self.loop is not None:
-            el.text = str(self.loop).lower()
-        return el
-
-    @classmethod
-    def _from_sdf(cls, el: ET.Element, version: str):
-        _text = el.text or False
-        _loop = str(_text).strip().lower() == 'true'
-        if isinstance(_loop, SDFError):
-            return _loop
-        return cls(sdf_version=version, loop=_loop)
-
-
-class Pose(BaseModel):
-    _MIGRATIONS = [{"version": "1.7", "ops": [{"type": "move", "from": "frame", "to": "relative_to"}]}]
-
-    def __init__(
-        self,
-        sdf_version: str,
-        degrees: bool = False,
-        frame: str = "",
-        pose: _SDFPose = None,
-        relative_to: str = "",
-        rotation_format: str = "euler_rpy"
-    ):
-        self.__version__ = sdf_version
-        if pose is None:
-            pose = _SDFPose.from_sdf("0 0 0 0 0 0")
-        self.degrees = degrees
-        self.frame = frame
-        self.pose = pose
-        self.relative_to = relative_to
-        self.rotation_format = rotation_format
-
-    def to_version(self, target_version: str) -> "Pose":
-        if self.degrees is not None and cmp_version(target_version, "1.9") < 0:
-            raise ValueError(f"'degrees' is not supported in SDF version {target_version} (added in 1.9)")
-        if self.frame is not None and cmp_version(target_version, "1.5") < 0:
-            raise ValueError(f"'frame' is not supported in SDF version {target_version} (added in 1.5)")
-        if self.frame is not None and cmp_version(target_version, "1.7") >= 0:
-            raise ValueError(f"'frame' is not supported in SDF version {target_version} (removed in 1.7)")
-        if self.relative_to is not None and cmp_version(target_version, "1.7") < 0:
-            raise ValueError(f"'relative_to' is not supported in SDF version {target_version} (added in 1.7)")
-        if self.rotation_format is not None and cmp_version(target_version, "1.9") < 0:
-            raise ValueError(f"'rotation_format' is not supported in SDF version {target_version} (added in 1.9)")
-        kwargs = {"sdf_version": target_version}
-        kwargs["degrees"] = self.degrees
-        kwargs["frame"] = self.frame
-        kwargs["pose"] = self.pose
-        kwargs["relative_to"] = self.relative_to
-        kwargs["rotation_format"] = self.rotation_format
-        new_obj = self.__class__(**kwargs)
-        apply_migrations(new_obj, target_version)
-        return new_obj
-
-    def to_sdf(self, version: str = None) -> ET.Element:
-        if version is not None and version != self.__version__:
-            return self.to_version(version).to_sdf()
-        version = version or self.__version__
-        el = ET.Element("pose")
-        if self.degrees is not None:
-            el.set("degrees", str(self.degrees).lower())
-        if self.frame is not None:
-            el.set("frame", self.frame)
-        if self.pose is not None:
-            el.text = self.pose.to_sdf()
-        if self.relative_to is not None:
-            el.set("relative_to", self.relative_to)
-        if self.rotation_format is not None:
-            el.set("rotation_format", self.rotation_format)
-        return el
-
-    @classmethod
-    def _from_sdf(cls, el: ET.Element, version: str):
-        _degrees = str(el.get("degrees", False)).strip().lower() == 'true'
-        if isinstance(_degrees, SDFError):
-            return _degrees.extend("@degrees")
-        if _degrees is not None and cmp_version(version, "1.9") < 0:
-            if _degrees != False:
-                return SDFError(f"'degrees' is not supported in SDF version {version} (added in 1.9)")
-        _frame = el.get("frame", "")
-        if isinstance(_frame, SDFError):
-            return _frame.extend("@frame")
-        if _frame is not None and cmp_version(version, "1.5") < 0:
-            if _frame != "":
-                return SDFError(f"'frame' is not supported in SDF version {version} (added in 1.5)")
-        _text = el.text or "0 0 0 0 0 0"
-        _pose = _SDFPose._from_sdf(_text, version)
-        if isinstance(_pose, SDFError):
-            return _pose
-        _relative_to = el.get("relative_to", "")
-        if isinstance(_relative_to, SDFError):
-            return _relative_to.extend("@relative_to")
-        if _relative_to is not None and cmp_version(version, "1.7") < 0:
-            if _relative_to != "":
-                return SDFError(f"'relative_to' is not supported in SDF version {version} (added in 1.7)")
-        _rotation_format = el.get("rotation_format", "euler_rpy")
-        if isinstance(_rotation_format, SDFError):
-            return _rotation_format.extend("@rotation_format")
-        if _rotation_format is not None and cmp_version(version, "1.9") < 0:
-            if _rotation_format != "euler_rpy":
-                return SDFError(f"'rotation_format' is not supported in SDF version {version} (added in 1.9)")
-        return cls(sdf_version=version, degrees=_degrees, frame=_frame, pose=_pose, relative_to=_relative_to, rotation_format=_rotation_format)
-
-
-class FramePose(BaseModel):
-    _MIGRATIONS = [{"version": "1.7", "ops": [{"type": "move", "from": "frame", "to": "relative_to"}]}]
-
-    def __init__(self, sdf_version: str, frame: str = "", pose: _SDFPose = None):
-        self.__version__ = sdf_version
-        if pose is None:
-            pose = _SDFPose.from_sdf("0 0 0 0 0 0")
-        self.frame = frame
-        self.pose = pose
-
-    def to_version(self, target_version: str) -> "FramePose":
-        kwargs = {"sdf_version": target_version}
-        kwargs["frame"] = self.frame
-        kwargs["pose"] = self.pose
-        new_obj = self.__class__(**kwargs)
-        apply_migrations(new_obj, target_version)
-        return new_obj
-
-    def to_sdf(self, version: str = None) -> ET.Element:
-        if version is not None and version != self.__version__:
-            return self.to_version(version).to_sdf()
-        version = version or self.__version__
-        el = ET.Element("pose")
-        if self.frame is not None:
-            el.set("frame", self.frame)
-        if self.pose is not None:
-            el.text = self.pose.to_sdf()
-        return el
-
-    @classmethod
-    def _from_sdf(cls, el: ET.Element, version: str):
-        _frame = el.get("frame", "")
-        if isinstance(_frame, SDFError):
-            return _frame.extend("@frame")
-        _text = el.text or "0 0 0 0 0 0"
-        _pose = _SDFPose._from_sdf(_text, version)
-        if isinstance(_pose, SDFError):
-            return _pose
-        return cls(sdf_version=version, frame=_frame, pose=_pose)
-
-
-class Frame(BaseModel):
-    def __init__(self, sdf_version: str, name: str = "", pose: "FramePose" = None):
-        self.__version__ = sdf_version
-        self.name = name
-        self.pose = pose
-
-    def to_version(self, target_version: str) -> "Frame":
-        kwargs = {"sdf_version": target_version}
-        kwargs["name"] = self.name
-        kwargs["pose"] = self.pose.to_version(target_version) if self.pose is not None else None
-        new_obj = self.__class__(**kwargs)
-        return new_obj
-
-    def to_sdf(self, version: str = None) -> ET.Element:
-        if version is not None and version != self.__version__:
-            return self.to_version(version).to_sdf()
-        version = version or self.__version__
-        el = ET.Element("frame")
-        if self.name is None:
-            raise ValueError(f"'name' is required in SDF version {version}")
-        if self.name is not None:
-            el.set("name", self.name)
-        if self.pose is not None:
-            el.append(self.pose.to_sdf(version))
-        return el
-
-    @classmethod
-    def _from_sdf(cls, el: ET.Element, version: str):
-        if el.get("name") is None:
-            return SDFError(f"'name' is required in SDF version {version}")
-        _name = el.get("name", "")
-        if isinstance(_name, SDFError):
-            return _name.extend("@name")
-        _c_pose = el.find("pose")
-        if _c_pose is not None:
-            _res = FramePose._from_sdf(_c_pose, version)
-            if isinstance(_res, SDFError):
-                return _res.extend("pose")
-            _pose = _res
-        else:
-            _pose = None
-        return cls(sdf_version=version, name=_name, pose=_pose)
-
-
 class AudioSource(BaseModel):
     def __init__(
         self,
@@ -515,3 +162,356 @@ class AudioSource(BaseModel):
         else:
             _uri = None
         return cls(sdf_version=version, contact=_contact, frame=_frame, gain=_gain, loop=_loop, pitch=_pitch, pose=_pose, uri=_uri)
+
+
+class Collision(BaseModel):
+    def __init__(self, sdf_version: str, collision: str = "__default__"):
+        self.__version__ = sdf_version
+        self.collision = collision
+
+    def to_version(self, target_version: str) -> "Collision":
+        kwargs = {"sdf_version": target_version}
+        kwargs["collision"] = self.collision
+        new_obj = self.__class__(**kwargs)
+        return new_obj
+
+    def to_sdf(self, version: str = None) -> ET.Element:
+        if version is not None and version != self.__version__:
+            return self.to_version(version).to_sdf()
+        version = version or self.__version__
+        el = ET.Element("collision")
+        if self.collision is not None:
+            el.text = self.collision
+        return el
+
+    @classmethod
+    def _from_sdf(cls, el: ET.Element, version: str):
+        _text = el.text or "__default__"
+        _collision = _text
+        if isinstance(_collision, SDFError):
+            return _collision
+        return cls(sdf_version=version, collision=_collision)
+
+
+class Contact(BaseModel):
+    def __init__(self, sdf_version: str, collision: List["Collision"] = None):
+        self.__version__ = sdf_version
+        self.collision = collision or []
+
+    def to_version(self, target_version: str) -> "Contact":
+        kwargs = {"sdf_version": target_version}
+        kwargs["collision"] = [c.to_version(target_version) for c in (self.collision or [])]
+        new_obj = self.__class__(**kwargs)
+        return new_obj
+
+    def to_sdf(self, version: str = None) -> ET.Element:
+        if version is not None and version != self.__version__:
+            return self.to_version(version).to_sdf()
+        version = version or self.__version__
+        el = ET.Element("contact")
+        for item in (self.collision or []):
+            el.append(item.to_sdf(version))
+        return el
+
+    @classmethod
+    def _from_sdf(cls, el: ET.Element, version: str):
+        _collision = []
+        for c in el.findall("collision"):
+            _res = Collision._from_sdf(c, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("collision")
+            _collision.append(_res)
+        return cls(sdf_version=version, collision=_collision)
+
+
+class Frame(BaseModel):
+    def __init__(self, sdf_version: str, name: str = "", pose: "FramePose" = None):
+        self.__version__ = sdf_version
+        self.name = name
+        self.pose = pose
+
+    def to_version(self, target_version: str) -> "Frame":
+        kwargs = {"sdf_version": target_version}
+        kwargs["name"] = self.name
+        kwargs["pose"] = self.pose.to_version(target_version) if self.pose is not None else None
+        new_obj = self.__class__(**kwargs)
+        return new_obj
+
+    def to_sdf(self, version: str = None) -> ET.Element:
+        if version is not None and version != self.__version__:
+            return self.to_version(version).to_sdf()
+        version = version or self.__version__
+        el = ET.Element("frame")
+        if self.name is None:
+            raise ValueError(f"'name' is required in SDF version {version}")
+        if self.name is not None:
+            el.set("name", self.name)
+        if self.pose is not None:
+            el.append(self.pose.to_sdf(version))
+        return el
+
+    @classmethod
+    def _from_sdf(cls, el: ET.Element, version: str):
+        if el.get("name") is None:
+            return SDFError(f"'name' is required in SDF version {version}")
+        _name = el.get("name", "")
+        if isinstance(_name, SDFError):
+            return _name.extend("@name")
+        _c_pose = el.find("pose")
+        if _c_pose is not None:
+            _res = FramePose._from_sdf(_c_pose, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("pose")
+            _pose = _res
+        else:
+            _pose = None
+        return cls(sdf_version=version, name=_name, pose=_pose)
+
+
+class FramePose(BaseModel):
+    _MIGRATIONS = [{"version": "1.7", "ops": [{"type": "move", "from": "frame", "to": "relative_to"}]}]
+
+    def __init__(self, sdf_version: str, frame: str = "", pose: _SDFPose = None):
+        self.__version__ = sdf_version
+        if pose is None:
+            pose = _SDFPose.from_sdf("0 0 0 0 0 0")
+        self.frame = frame
+        self.pose = pose
+
+    def to_version(self, target_version: str) -> "FramePose":
+        kwargs = {"sdf_version": target_version}
+        kwargs["frame"] = self.frame
+        kwargs["pose"] = self.pose
+        new_obj = self.__class__(**kwargs)
+        apply_migrations(new_obj, target_version)
+        return new_obj
+
+    def to_sdf(self, version: str = None) -> ET.Element:
+        if version is not None and version != self.__version__:
+            return self.to_version(version).to_sdf()
+        version = version or self.__version__
+        el = ET.Element("pose")
+        if self.frame is not None:
+            el.set("frame", self.frame)
+        if self.pose is not None:
+            el.text = self.pose.to_sdf()
+        return el
+
+    @classmethod
+    def _from_sdf(cls, el: ET.Element, version: str):
+        _frame = el.get("frame", "")
+        if isinstance(_frame, SDFError):
+            return _frame.extend("@frame")
+        _text = el.text or "0 0 0 0 0 0"
+        _pose = _SDFPose._from_sdf(_text, version)
+        if isinstance(_pose, SDFError):
+            return _pose
+        return cls(sdf_version=version, frame=_frame, pose=_pose)
+
+
+class Gain(BaseModel):
+    def __init__(self, sdf_version: str, gain: float = 1.0):
+        self.__version__ = sdf_version
+        self.gain = gain
+
+    def to_version(self, target_version: str) -> "Gain":
+        kwargs = {"sdf_version": target_version}
+        kwargs["gain"] = self.gain
+        new_obj = self.__class__(**kwargs)
+        return new_obj
+
+    def to_sdf(self, version: str = None) -> ET.Element:
+        if version is not None and version != self.__version__:
+            return self.to_version(version).to_sdf()
+        version = version or self.__version__
+        el = ET.Element("gain")
+        if self.gain is not None:
+            el.text = str(self.gain)
+        return el
+
+    @classmethod
+    def _from_sdf(cls, el: ET.Element, version: str):
+        _text = el.text or 1.0
+        _gain = _parse_double(_text)
+        if isinstance(_gain, SDFError):
+            return _gain
+        return cls(sdf_version=version, gain=_gain)
+
+
+class Loop(BaseModel):
+    def __init__(self, sdf_version: str, loop: bool = False):
+        self.__version__ = sdf_version
+        self.loop = loop
+
+    def to_version(self, target_version: str) -> "Loop":
+        kwargs = {"sdf_version": target_version}
+        kwargs["loop"] = self.loop
+        new_obj = self.__class__(**kwargs)
+        return new_obj
+
+    def to_sdf(self, version: str = None) -> ET.Element:
+        if version is not None and version != self.__version__:
+            return self.to_version(version).to_sdf()
+        version = version or self.__version__
+        el = ET.Element("loop")
+        if self.loop is not None:
+            el.text = str(self.loop).lower()
+        return el
+
+    @classmethod
+    def _from_sdf(cls, el: ET.Element, version: str):
+        _text = el.text or False
+        _loop = str(_text).strip().lower() == 'true'
+        if isinstance(_loop, SDFError):
+            return _loop
+        return cls(sdf_version=version, loop=_loop)
+
+
+class Pitch(BaseModel):
+    def __init__(self, sdf_version: str, pitch: float = 1.0):
+        self.__version__ = sdf_version
+        self.pitch = pitch
+
+    def to_version(self, target_version: str) -> "Pitch":
+        kwargs = {"sdf_version": target_version}
+        kwargs["pitch"] = self.pitch
+        new_obj = self.__class__(**kwargs)
+        return new_obj
+
+    def to_sdf(self, version: str = None) -> ET.Element:
+        if version is not None and version != self.__version__:
+            return self.to_version(version).to_sdf()
+        version = version or self.__version__
+        el = ET.Element("pitch")
+        if self.pitch is not None:
+            el.text = str(self.pitch)
+        return el
+
+    @classmethod
+    def _from_sdf(cls, el: ET.Element, version: str):
+        _text = el.text or 1.0
+        _pitch = _parse_double(_text)
+        if isinstance(_pitch, SDFError):
+            return _pitch
+        return cls(sdf_version=version, pitch=_pitch)
+
+
+class Pose(BaseModel):
+    _MIGRATIONS = [{"version": "1.7", "ops": [{"type": "move", "from": "frame", "to": "relative_to"}]}]
+
+    def __init__(
+        self,
+        sdf_version: str,
+        degrees: bool = False,
+        frame: str = "",
+        pose: _SDFPose = None,
+        relative_to: str = "",
+        rotation_format: str = "euler_rpy"
+    ):
+        self.__version__ = sdf_version
+        if pose is None:
+            pose = _SDFPose.from_sdf("0 0 0 0 0 0")
+        self.degrees = degrees
+        self.frame = frame
+        self.pose = pose
+        self.relative_to = relative_to
+        self.rotation_format = rotation_format
+
+    def to_version(self, target_version: str) -> "Pose":
+        if self.degrees is not None and cmp_version(target_version, "1.9") < 0:
+            raise ValueError(f"'degrees' is not supported in SDF version {target_version} (added in 1.9)")
+        if self.frame is not None and cmp_version(target_version, "1.5") < 0:
+            raise ValueError(f"'frame' is not supported in SDF version {target_version} (added in 1.5)")
+        if self.frame is not None and cmp_version(target_version, "1.7") >= 0:
+            raise ValueError(f"'frame' is not supported in SDF version {target_version} (removed in 1.7)")
+        if self.relative_to is not None and cmp_version(target_version, "1.7") < 0:
+            raise ValueError(f"'relative_to' is not supported in SDF version {target_version} (added in 1.7)")
+        if self.rotation_format is not None and cmp_version(target_version, "1.9") < 0:
+            raise ValueError(f"'rotation_format' is not supported in SDF version {target_version} (added in 1.9)")
+        kwargs = {"sdf_version": target_version}
+        kwargs["degrees"] = self.degrees
+        kwargs["frame"] = self.frame
+        kwargs["pose"] = self.pose
+        kwargs["relative_to"] = self.relative_to
+        kwargs["rotation_format"] = self.rotation_format
+        new_obj = self.__class__(**kwargs)
+        apply_migrations(new_obj, target_version)
+        return new_obj
+
+    def to_sdf(self, version: str = None) -> ET.Element:
+        if version is not None and version != self.__version__:
+            return self.to_version(version).to_sdf()
+        version = version or self.__version__
+        el = ET.Element("pose")
+        if self.degrees is not None:
+            el.set("degrees", str(self.degrees).lower())
+        if self.frame is not None:
+            el.set("frame", self.frame)
+        if self.pose is not None:
+            el.text = self.pose.to_sdf()
+        if self.relative_to is not None:
+            el.set("relative_to", self.relative_to)
+        if self.rotation_format is not None:
+            el.set("rotation_format", self.rotation_format)
+        return el
+
+    @classmethod
+    def _from_sdf(cls, el: ET.Element, version: str):
+        _degrees = str(el.get("degrees", False)).strip().lower() == 'true'
+        if isinstance(_degrees, SDFError):
+            return _degrees.extend("@degrees")
+        if _degrees is not None and cmp_version(version, "1.9") < 0:
+            if _degrees != False:
+                return SDFError(f"'degrees' is not supported in SDF version {version} (added in 1.9)")
+        _frame = el.get("frame", "")
+        if isinstance(_frame, SDFError):
+            return _frame.extend("@frame")
+        if _frame is not None and cmp_version(version, "1.5") < 0:
+            if _frame != "":
+                return SDFError(f"'frame' is not supported in SDF version {version} (added in 1.5)")
+        _text = el.text or "0 0 0 0 0 0"
+        _pose = _SDFPose._from_sdf(_text, version)
+        if isinstance(_pose, SDFError):
+            return _pose
+        _relative_to = el.get("relative_to", "")
+        if isinstance(_relative_to, SDFError):
+            return _relative_to.extend("@relative_to")
+        if _relative_to is not None and cmp_version(version, "1.7") < 0:
+            if _relative_to != "":
+                return SDFError(f"'relative_to' is not supported in SDF version {version} (added in 1.7)")
+        _rotation_format = el.get("rotation_format", "euler_rpy")
+        if isinstance(_rotation_format, SDFError):
+            return _rotation_format.extend("@rotation_format")
+        if _rotation_format is not None and cmp_version(version, "1.9") < 0:
+            if _rotation_format != "euler_rpy":
+                return SDFError(f"'rotation_format' is not supported in SDF version {version} (added in 1.9)")
+        return cls(sdf_version=version, degrees=_degrees, frame=_frame, pose=_pose, relative_to=_relative_to, rotation_format=_rotation_format)
+
+
+class Uri(BaseModel):
+    def __init__(self, sdf_version: str, uri: str = "__default__"):
+        self.__version__ = sdf_version
+        self.uri = uri
+
+    def to_version(self, target_version: str) -> "Uri":
+        kwargs = {"sdf_version": target_version}
+        kwargs["uri"] = self.uri
+        new_obj = self.__class__(**kwargs)
+        return new_obj
+
+    def to_sdf(self, version: str = None) -> ET.Element:
+        if version is not None and version != self.__version__:
+            return self.to_version(version).to_sdf()
+        version = version or self.__version__
+        el = ET.Element("uri")
+        if self.uri is not None:
+            el.text = self.uri
+        return el
+
+    @classmethod
+    def _from_sdf(cls, el: ET.Element, version: str):
+        _text = el.text or "__default__"
+        _uri = _text
+        if isinstance(_uri, SDFError):
+            return _uri
+        return cls(sdf_version=version, uri=_uri)

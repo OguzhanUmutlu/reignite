@@ -40,14 +40,14 @@ def _parse_double(raw: str) -> float | SDFError:
 
 
 
-class Near(BaseModel):
-    def __init__(self, sdf_version: str, near: float = 0):
+class AspectRatio(BaseModel):
+    def __init__(self, sdf_version: str, aspect_ratio: float = 1):
         self.__version__ = sdf_version
-        self.near = near
+        self.aspect_ratio = aspect_ratio
 
-    def to_version(self, target_version: str) -> "Near":
+    def to_version(self, target_version: str) -> "AspectRatio":
         kwargs = {"sdf_version": target_version}
-        kwargs["near"] = self.near
+        kwargs["aspect_ratio"] = self.aspect_ratio
         new_obj = self.__class__(**kwargs)
         return new_obj
 
@@ -55,18 +55,18 @@ class Near(BaseModel):
         if version is not None and version != self.__version__:
             return self.to_version(version).to_sdf()
         version = version or self.__version__
-        el = ET.Element("near")
-        if self.near is not None:
-            el.text = str(self.near)
+        el = ET.Element("aspect_ratio")
+        if self.aspect_ratio is not None:
+            el.text = str(self.aspect_ratio)
         return el
 
     @classmethod
     def _from_sdf(cls, el: ET.Element, version: str):
-        _text = el.text or 0
-        _near = _parse_double(_text)
-        if isinstance(_near, SDFError):
-            return _near
-        return cls(sdf_version=version, near=_near)
+        _text = el.text or 1
+        _aspect_ratio = _parse_double(_text)
+        if isinstance(_aspect_ratio, SDFError):
+            return _aspect_ratio
+        return cls(sdf_version=version, aspect_ratio=_aspect_ratio)
 
 
 class Far(BaseModel):
@@ -96,35 +96,6 @@ class Far(BaseModel):
         if isinstance(_far, SDFError):
             return _far
         return cls(sdf_version=version, far=_far)
-
-
-class AspectRatio(BaseModel):
-    def __init__(self, sdf_version: str, aspect_ratio: float = 1):
-        self.__version__ = sdf_version
-        self.aspect_ratio = aspect_ratio
-
-    def to_version(self, target_version: str) -> "AspectRatio":
-        kwargs = {"sdf_version": target_version}
-        kwargs["aspect_ratio"] = self.aspect_ratio
-        new_obj = self.__class__(**kwargs)
-        return new_obj
-
-    def to_sdf(self, version: str = None) -> ET.Element:
-        if version is not None and version != self.__version__:
-            return self.to_version(version).to_sdf()
-        version = version or self.__version__
-        el = ET.Element("aspect_ratio")
-        if self.aspect_ratio is not None:
-            el.text = str(self.aspect_ratio)
-        return el
-
-    @classmethod
-    def _from_sdf(cls, el: ET.Element, version: str):
-        _text = el.text or 1
-        _aspect_ratio = _parse_double(_text)
-        if isinstance(_aspect_ratio, SDFError):
-            return _aspect_ratio
-        return cls(sdf_version=version, aspect_ratio=_aspect_ratio)
 
 
 class HorizontalFov(BaseModel):
@@ -230,3 +201,32 @@ class LogicalCamera(BaseModel):
         else:
             _near = None
         return cls(sdf_version=version, aspect_ratio=_aspect_ratio, far=_far, horizontal_fov=_horizontal_fov, near=_near)
+
+
+class Near(BaseModel):
+    def __init__(self, sdf_version: str, near: float = 0):
+        self.__version__ = sdf_version
+        self.near = near
+
+    def to_version(self, target_version: str) -> "Near":
+        kwargs = {"sdf_version": target_version}
+        kwargs["near"] = self.near
+        new_obj = self.__class__(**kwargs)
+        return new_obj
+
+    def to_sdf(self, version: str = None) -> ET.Element:
+        if version is not None and version != self.__version__:
+            return self.to_version(version).to_sdf()
+        version = version or self.__version__
+        el = ET.Element("near")
+        if self.near is not None:
+            el.text = str(self.near)
+        return el
+
+    @classmethod
+    def _from_sdf(cls, el: ET.Element, version: str):
+        _text = el.text or 0
+        _near = _parse_double(_text)
+        if isinstance(_near, SDFError):
+            return _near
+        return cls(sdf_version=version, near=_near)

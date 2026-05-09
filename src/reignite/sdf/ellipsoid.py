@@ -8,37 +8,6 @@ from ..utils.errors import SDFError
 from ..utils.vector3 import Vector3 as _SDFVector3
 
 
-class Radii(BaseModel):
-    def __init__(self, sdf_version: str, radii: _SDFVector3 = None):
-        self.__version__ = sdf_version
-        if radii is None:
-            radii = _SDFVector3.from_sdf("1 1 1")
-        self.radii = radii
-
-    def to_version(self, target_version: str) -> "Radii":
-        kwargs = {"sdf_version": target_version}
-        kwargs["radii"] = self.radii
-        new_obj = self.__class__(**kwargs)
-        return new_obj
-
-    def to_sdf(self, version: str = None) -> ET.Element:
-        if version is not None and version != self.__version__:
-            return self.to_version(version).to_sdf()
-        version = version or self.__version__
-        el = ET.Element("radii")
-        if self.radii is not None:
-            el.text = self.radii.to_sdf()
-        return el
-
-    @classmethod
-    def _from_sdf(cls, el: ET.Element, version: str):
-        _text = el.text or "1 1 1"
-        _radii = _SDFVector3._from_sdf(_text, version)
-        if isinstance(_radii, SDFError):
-            return _radii
-        return cls(sdf_version=version, radii=_radii)
-
-
 class Ellipsoid(BaseModel):
     def __init__(self, sdf_version: str, radii: "Radii" = None):
         self.__version__ = sdf_version
@@ -69,4 +38,35 @@ class Ellipsoid(BaseModel):
             _radii = _res
         else:
             _radii = None
+        return cls(sdf_version=version, radii=_radii)
+
+
+class Radii(BaseModel):
+    def __init__(self, sdf_version: str, radii: _SDFVector3 = None):
+        self.__version__ = sdf_version
+        if radii is None:
+            radii = _SDFVector3.from_sdf("1 1 1")
+        self.radii = radii
+
+    def to_version(self, target_version: str) -> "Radii":
+        kwargs = {"sdf_version": target_version}
+        kwargs["radii"] = self.radii
+        new_obj = self.__class__(**kwargs)
+        return new_obj
+
+    def to_sdf(self, version: str = None) -> ET.Element:
+        if version is not None and version != self.__version__:
+            return self.to_version(version).to_sdf()
+        version = version or self.__version__
+        el = ET.Element("radii")
+        if self.radii is not None:
+            el.text = self.radii.to_sdf()
+        return el
+
+    @classmethod
+    def _from_sdf(cls, el: ET.Element, version: str):
+        _text = el.text or "1 1 1"
+        _radii = _SDFVector3._from_sdf(_text, version)
+        if isinstance(_radii, SDFError):
+            return _radii
         return cls(sdf_version=version, radii=_radii)

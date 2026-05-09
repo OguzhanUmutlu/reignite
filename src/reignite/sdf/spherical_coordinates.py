@@ -41,93 +41,6 @@ def _parse_double(raw: str) -> float | SDFError:
 
 
 
-class SurfaceModel(BaseModel):
-    def __init__(self, sdf_version: str, surface_model: str = "EARTH_WGS84"):
-        self.__version__ = sdf_version
-        self.surface_model = surface_model
-
-    def to_version(self, target_version: str) -> "SurfaceModel":
-        kwargs = {"sdf_version": target_version}
-        kwargs["surface_model"] = self.surface_model
-        new_obj = self.__class__(**kwargs)
-        return new_obj
-
-    def to_sdf(self, version: str = None) -> ET.Element:
-        if version is not None and version != self.__version__:
-            return self.to_version(version).to_sdf()
-        version = version or self.__version__
-        el = ET.Element("surface_model")
-        if self.surface_model is not None:
-            el.text = self.surface_model
-        return el
-
-    @classmethod
-    def _from_sdf(cls, el: ET.Element, version: str):
-        _text = el.text or "EARTH_WGS84"
-        _surface_model = _text
-        if isinstance(_surface_model, SDFError):
-            return _surface_model
-        return cls(sdf_version=version, surface_model=_surface_model)
-
-
-class LatitudeDeg(BaseModel):
-    def __init__(self, sdf_version: str, latitude_deg: float = 0.0):
-        self.__version__ = sdf_version
-        self.latitude_deg = latitude_deg
-
-    def to_version(self, target_version: str) -> "LatitudeDeg":
-        kwargs = {"sdf_version": target_version}
-        kwargs["latitude_deg"] = self.latitude_deg
-        new_obj = self.__class__(**kwargs)
-        return new_obj
-
-    def to_sdf(self, version: str = None) -> ET.Element:
-        if version is not None and version != self.__version__:
-            return self.to_version(version).to_sdf()
-        version = version or self.__version__
-        el = ET.Element("latitude_deg")
-        if self.latitude_deg is not None:
-            el.text = str(self.latitude_deg)
-        return el
-
-    @classmethod
-    def _from_sdf(cls, el: ET.Element, version: str):
-        _text = el.text or 0.0
-        _latitude_deg = _parse_double(_text)
-        if isinstance(_latitude_deg, SDFError):
-            return _latitude_deg
-        return cls(sdf_version=version, latitude_deg=_latitude_deg)
-
-
-class LongitudeDeg(BaseModel):
-    def __init__(self, sdf_version: str, longitude_deg: float = 0.0):
-        self.__version__ = sdf_version
-        self.longitude_deg = longitude_deg
-
-    def to_version(self, target_version: str) -> "LongitudeDeg":
-        kwargs = {"sdf_version": target_version}
-        kwargs["longitude_deg"] = self.longitude_deg
-        new_obj = self.__class__(**kwargs)
-        return new_obj
-
-    def to_sdf(self, version: str = None) -> ET.Element:
-        if version is not None and version != self.__version__:
-            return self.to_version(version).to_sdf()
-        version = version or self.__version__
-        el = ET.Element("longitude_deg")
-        if self.longitude_deg is not None:
-            el.text = str(self.longitude_deg)
-        return el
-
-    @classmethod
-    def _from_sdf(cls, el: ET.Element, version: str):
-        _text = el.text or 0.0
-        _longitude_deg = _parse_double(_text)
-        if isinstance(_longitude_deg, SDFError):
-            return _longitude_deg
-        return cls(sdf_version=version, longitude_deg=_longitude_deg)
-
-
 class Elevation(BaseModel):
     def __init__(self, sdf_version: str, elevation: float = 0.0):
         self.__version__ = sdf_version
@@ -186,16 +99,14 @@ class HeadingDeg(BaseModel):
         return cls(sdf_version=version, heading_deg=_heading_deg)
 
 
-class WorldFrameOrientation(BaseModel):
-    def __init__(self, sdf_version: str, world_frame_orientation: str = "ENU"):
+class LatitudeDeg(BaseModel):
+    def __init__(self, sdf_version: str, latitude_deg: float = 0.0):
         self.__version__ = sdf_version
-        self.world_frame_orientation = world_frame_orientation
+        self.latitude_deg = latitude_deg
 
-    def to_version(self, target_version: str) -> "WorldFrameOrientation":
-        if self.world_frame_orientation is not None and cmp_version(target_version, "1.6") < 0:
-            raise ValueError(f"'world_frame_orientation' is not supported in SDF version {target_version} (added in 1.6)")
+    def to_version(self, target_version: str) -> "LatitudeDeg":
         kwargs = {"sdf_version": target_version}
-        kwargs["world_frame_orientation"] = self.world_frame_orientation
+        kwargs["latitude_deg"] = self.latitude_deg
         new_obj = self.__class__(**kwargs)
         return new_obj
 
@@ -203,67 +114,28 @@ class WorldFrameOrientation(BaseModel):
         if version is not None and version != self.__version__:
             return self.to_version(version).to_sdf()
         version = version or self.__version__
-        el = ET.Element("world_frame_orientation")
-        if self.world_frame_orientation is not None:
-            el.text = self.world_frame_orientation
-        return el
-
-    @classmethod
-    def _from_sdf(cls, el: ET.Element, version: str):
-        _text = el.text or "ENU"
-        _world_frame_orientation = _text
-        if isinstance(_world_frame_orientation, SDFError):
-            return _world_frame_orientation
-        if _world_frame_orientation is not None and cmp_version(version, "1.6") < 0:
-            if _world_frame_orientation != "ENU":
-                return SDFError(f"'world_frame_orientation' is not supported in SDF version {version} (added in 1.6)")
-        return cls(sdf_version=version, world_frame_orientation=_world_frame_orientation)
-
-
-class SurfaceAxisPolar(BaseModel):
-    def __init__(self, sdf_version: str, surface_axis_polar: float = 0.0):
-        self.__version__ = sdf_version
-        self.surface_axis_polar = surface_axis_polar
-
-    def to_version(self, target_version: str) -> "SurfaceAxisPolar":
-        if self.surface_axis_polar is not None and cmp_version(target_version, "1.10") < 0:
-            raise ValueError(f"'surface_axis_polar' is not supported in SDF version {target_version} (added in 1.10)")
-        kwargs = {"sdf_version": target_version}
-        kwargs["surface_axis_polar"] = self.surface_axis_polar
-        new_obj = self.__class__(**kwargs)
-        return new_obj
-
-    def to_sdf(self, version: str = None) -> ET.Element:
-        if version is not None and version != self.__version__:
-            return self.to_version(version).to_sdf()
-        version = version or self.__version__
-        el = ET.Element("surface_axis_polar")
-        if self.surface_axis_polar is not None:
-            el.text = str(self.surface_axis_polar)
+        el = ET.Element("latitude_deg")
+        if self.latitude_deg is not None:
+            el.text = str(self.latitude_deg)
         return el
 
     @classmethod
     def _from_sdf(cls, el: ET.Element, version: str):
         _text = el.text or 0.0
-        _surface_axis_polar = _parse_double(_text)
-        if isinstance(_surface_axis_polar, SDFError):
-            return _surface_axis_polar
-        if _surface_axis_polar is not None and cmp_version(version, "1.10") < 0:
-            if _surface_axis_polar != 0.0:
-                return SDFError(f"'surface_axis_polar' is not supported in SDF version {version} (added in 1.10)")
-        return cls(sdf_version=version, surface_axis_polar=_surface_axis_polar)
+        _latitude_deg = _parse_double(_text)
+        if isinstance(_latitude_deg, SDFError):
+            return _latitude_deg
+        return cls(sdf_version=version, latitude_deg=_latitude_deg)
 
 
-class SurfaceAxisEquatorial(BaseModel):
-    def __init__(self, sdf_version: str, surface_axis_equatorial: float = 0.0):
+class LongitudeDeg(BaseModel):
+    def __init__(self, sdf_version: str, longitude_deg: float = 0.0):
         self.__version__ = sdf_version
-        self.surface_axis_equatorial = surface_axis_equatorial
+        self.longitude_deg = longitude_deg
 
-    def to_version(self, target_version: str) -> "SurfaceAxisEquatorial":
-        if self.surface_axis_equatorial is not None and cmp_version(target_version, "1.10") < 0:
-            raise ValueError(f"'surface_axis_equatorial' is not supported in SDF version {target_version} (added in 1.10)")
+    def to_version(self, target_version: str) -> "LongitudeDeg":
         kwargs = {"sdf_version": target_version}
-        kwargs["surface_axis_equatorial"] = self.surface_axis_equatorial
+        kwargs["longitude_deg"] = self.longitude_deg
         new_obj = self.__class__(**kwargs)
         return new_obj
 
@@ -271,21 +143,18 @@ class SurfaceAxisEquatorial(BaseModel):
         if version is not None and version != self.__version__:
             return self.to_version(version).to_sdf()
         version = version or self.__version__
-        el = ET.Element("surface_axis_equatorial")
-        if self.surface_axis_equatorial is not None:
-            el.text = str(self.surface_axis_equatorial)
+        el = ET.Element("longitude_deg")
+        if self.longitude_deg is not None:
+            el.text = str(self.longitude_deg)
         return el
 
     @classmethod
     def _from_sdf(cls, el: ET.Element, version: str):
         _text = el.text or 0.0
-        _surface_axis_equatorial = _parse_double(_text)
-        if isinstance(_surface_axis_equatorial, SDFError):
-            return _surface_axis_equatorial
-        if _surface_axis_equatorial is not None and cmp_version(version, "1.10") < 0:
-            if _surface_axis_equatorial != 0.0:
-                return SDFError(f"'surface_axis_equatorial' is not supported in SDF version {version} (added in 1.10)")
-        return cls(sdf_version=version, surface_axis_equatorial=_surface_axis_equatorial)
+        _longitude_deg = _parse_double(_text)
+        if isinstance(_longitude_deg, SDFError):
+            return _longitude_deg
+        return cls(sdf_version=version, longitude_deg=_longitude_deg)
 
 
 class SphericalCoordinates(BaseModel):
@@ -426,3 +295,134 @@ class SphericalCoordinates(BaseModel):
         if _world_frame_orientation is not None and cmp_version(version, "1.6") < 0:
             return SDFError(f"'world_frame_orientation' is not supported in SDF version {version} (added in 1.6)")
         return cls(sdf_version=version, elevation=_elevation, heading_deg=_heading_deg, latitude_deg=_latitude_deg, longitude_deg=_longitude_deg, surface_axis_equatorial=_surface_axis_equatorial, surface_axis_polar=_surface_axis_polar, surface_model=_surface_model, world_frame_orientation=_world_frame_orientation)
+
+
+class SurfaceAxisEquatorial(BaseModel):
+    def __init__(self, sdf_version: str, surface_axis_equatorial: float = 0.0):
+        self.__version__ = sdf_version
+        self.surface_axis_equatorial = surface_axis_equatorial
+
+    def to_version(self, target_version: str) -> "SurfaceAxisEquatorial":
+        if self.surface_axis_equatorial is not None and cmp_version(target_version, "1.10") < 0:
+            raise ValueError(f"'surface_axis_equatorial' is not supported in SDF version {target_version} (added in 1.10)")
+        kwargs = {"sdf_version": target_version}
+        kwargs["surface_axis_equatorial"] = self.surface_axis_equatorial
+        new_obj = self.__class__(**kwargs)
+        return new_obj
+
+    def to_sdf(self, version: str = None) -> ET.Element:
+        if version is not None and version != self.__version__:
+            return self.to_version(version).to_sdf()
+        version = version or self.__version__
+        el = ET.Element("surface_axis_equatorial")
+        if self.surface_axis_equatorial is not None:
+            el.text = str(self.surface_axis_equatorial)
+        return el
+
+    @classmethod
+    def _from_sdf(cls, el: ET.Element, version: str):
+        _text = el.text or 0.0
+        _surface_axis_equatorial = _parse_double(_text)
+        if isinstance(_surface_axis_equatorial, SDFError):
+            return _surface_axis_equatorial
+        if _surface_axis_equatorial is not None and cmp_version(version, "1.10") < 0:
+            if _surface_axis_equatorial != 0.0:
+                return SDFError(f"'surface_axis_equatorial' is not supported in SDF version {version} (added in 1.10)")
+        return cls(sdf_version=version, surface_axis_equatorial=_surface_axis_equatorial)
+
+
+class SurfaceAxisPolar(BaseModel):
+    def __init__(self, sdf_version: str, surface_axis_polar: float = 0.0):
+        self.__version__ = sdf_version
+        self.surface_axis_polar = surface_axis_polar
+
+    def to_version(self, target_version: str) -> "SurfaceAxisPolar":
+        if self.surface_axis_polar is not None and cmp_version(target_version, "1.10") < 0:
+            raise ValueError(f"'surface_axis_polar' is not supported in SDF version {target_version} (added in 1.10)")
+        kwargs = {"sdf_version": target_version}
+        kwargs["surface_axis_polar"] = self.surface_axis_polar
+        new_obj = self.__class__(**kwargs)
+        return new_obj
+
+    def to_sdf(self, version: str = None) -> ET.Element:
+        if version is not None and version != self.__version__:
+            return self.to_version(version).to_sdf()
+        version = version or self.__version__
+        el = ET.Element("surface_axis_polar")
+        if self.surface_axis_polar is not None:
+            el.text = str(self.surface_axis_polar)
+        return el
+
+    @classmethod
+    def _from_sdf(cls, el: ET.Element, version: str):
+        _text = el.text or 0.0
+        _surface_axis_polar = _parse_double(_text)
+        if isinstance(_surface_axis_polar, SDFError):
+            return _surface_axis_polar
+        if _surface_axis_polar is not None and cmp_version(version, "1.10") < 0:
+            if _surface_axis_polar != 0.0:
+                return SDFError(f"'surface_axis_polar' is not supported in SDF version {version} (added in 1.10)")
+        return cls(sdf_version=version, surface_axis_polar=_surface_axis_polar)
+
+
+class SurfaceModel(BaseModel):
+    def __init__(self, sdf_version: str, surface_model: str = "EARTH_WGS84"):
+        self.__version__ = sdf_version
+        self.surface_model = surface_model
+
+    def to_version(self, target_version: str) -> "SurfaceModel":
+        kwargs = {"sdf_version": target_version}
+        kwargs["surface_model"] = self.surface_model
+        new_obj = self.__class__(**kwargs)
+        return new_obj
+
+    def to_sdf(self, version: str = None) -> ET.Element:
+        if version is not None and version != self.__version__:
+            return self.to_version(version).to_sdf()
+        version = version or self.__version__
+        el = ET.Element("surface_model")
+        if self.surface_model is not None:
+            el.text = self.surface_model
+        return el
+
+    @classmethod
+    def _from_sdf(cls, el: ET.Element, version: str):
+        _text = el.text or "EARTH_WGS84"
+        _surface_model = _text
+        if isinstance(_surface_model, SDFError):
+            return _surface_model
+        return cls(sdf_version=version, surface_model=_surface_model)
+
+
+class WorldFrameOrientation(BaseModel):
+    def __init__(self, sdf_version: str, world_frame_orientation: str = "ENU"):
+        self.__version__ = sdf_version
+        self.world_frame_orientation = world_frame_orientation
+
+    def to_version(self, target_version: str) -> "WorldFrameOrientation":
+        if self.world_frame_orientation is not None and cmp_version(target_version, "1.6") < 0:
+            raise ValueError(f"'world_frame_orientation' is not supported in SDF version {target_version} (added in 1.6)")
+        kwargs = {"sdf_version": target_version}
+        kwargs["world_frame_orientation"] = self.world_frame_orientation
+        new_obj = self.__class__(**kwargs)
+        return new_obj
+
+    def to_sdf(self, version: str = None) -> ET.Element:
+        if version is not None and version != self.__version__:
+            return self.to_version(version).to_sdf()
+        version = version or self.__version__
+        el = ET.Element("world_frame_orientation")
+        if self.world_frame_orientation is not None:
+            el.text = self.world_frame_orientation
+        return el
+
+    @classmethod
+    def _from_sdf(cls, el: ET.Element, version: str):
+        _text = el.text or "ENU"
+        _world_frame_orientation = _text
+        if isinstance(_world_frame_orientation, SDFError):
+            return _world_frame_orientation
+        if _world_frame_orientation is not None and cmp_version(version, "1.6") < 0:
+            if _world_frame_orientation != "ENU":
+                return SDFError(f"'world_frame_orientation' is not supported in SDF version {version} (added in 1.6)")
+        return cls(sdf_version=version, world_frame_orientation=_world_frame_orientation)

@@ -7,34 +7,6 @@ from ..utils.model import BaseModel
 from ..utils.errors import SDFError
 
 
-class Ode(BaseModel):
-    def __init__(self, sdf_version: str, type: str = "__default__"):
-        self.__version__ = sdf_version
-        self.type = type
-
-    def to_version(self, target_version: str) -> "Ode":
-        kwargs = {"sdf_version": target_version}
-        kwargs["type"] = self.type
-        new_obj = self.__class__(**kwargs)
-        return new_obj
-
-    def to_sdf(self, version: str = None) -> ET.Element:
-        if version is not None and version != self.__version__:
-            return self.to_version(version).to_sdf()
-        version = version or self.__version__
-        el = ET.Element("ode")
-        if self.type is not None:
-            el.set("type", self.type)
-        return el
-
-    @classmethod
-    def _from_sdf(cls, el: ET.Element, version: str):
-        _type = el.get("type", "__default__")
-        if isinstance(_type, SDFError):
-            return _type.extend("@type")
-        return cls(sdf_version=version, type=_type)
-
-
 class Bullet(BaseModel):
     def __init__(self, sdf_version: str, type: str = "__default__"):
         self.__version__ = sdf_version
@@ -106,3 +78,31 @@ class CollisionEngine(BaseModel):
         else:
             _ode = None
         return cls(sdf_version=version, bullet=_bullet, ode=_ode)
+
+
+class Ode(BaseModel):
+    def __init__(self, sdf_version: str, type: str = "__default__"):
+        self.__version__ = sdf_version
+        self.type = type
+
+    def to_version(self, target_version: str) -> "Ode":
+        kwargs = {"sdf_version": target_version}
+        kwargs["type"] = self.type
+        new_obj = self.__class__(**kwargs)
+        return new_obj
+
+    def to_sdf(self, version: str = None) -> ET.Element:
+        if version is not None and version != self.__version__:
+            return self.to_version(version).to_sdf()
+        version = version or self.__version__
+        el = ET.Element("ode")
+        if self.type is not None:
+            el.set("type", self.type)
+        return el
+
+    @classmethod
+    def _from_sdf(cls, el: ET.Element, version: str):
+        _type = el.get("type", "__default__")
+        if isinstance(_type, SDFError):
+            return _type.extend("@type")
+        return cls(sdf_version=version, type=_type)

@@ -42,64 +42,6 @@ def _parse_double(raw: str) -> float | SDFError:
 
 
 
-class Uri(BaseModel):
-    def __init__(self, sdf_version: str, uri: str = "__default__"):
-        self.__version__ = sdf_version
-        self.uri = uri
-
-    def to_version(self, target_version: str) -> "Uri":
-        kwargs = {"sdf_version": target_version}
-        kwargs["uri"] = self.uri
-        new_obj = self.__class__(**kwargs)
-        return new_obj
-
-    def to_sdf(self, version: str = None) -> ET.Element:
-        if version is not None and version != self.__version__:
-            return self.to_version(version).to_sdf()
-        version = version or self.__version__
-        el = ET.Element("uri")
-        if self.uri is not None:
-            el.text = self.uri
-        return el
-
-    @classmethod
-    def _from_sdf(cls, el: ET.Element, version: str):
-        _text = el.text or "__default__"
-        _uri = _text
-        if isinstance(_uri, SDFError):
-            return _uri
-        return cls(sdf_version=version, uri=_uri)
-
-
-class Name(BaseModel):
-    def __init__(self, sdf_version: str, name: str = "__default__"):
-        self.__version__ = sdf_version
-        self.name = name
-
-    def to_version(self, target_version: str) -> "Name":
-        kwargs = {"sdf_version": target_version}
-        kwargs["name"] = self.name
-        new_obj = self.__class__(**kwargs)
-        return new_obj
-
-    def to_sdf(self, version: str = None) -> ET.Element:
-        if version is not None and version != self.__version__:
-            return self.to_version(version).to_sdf()
-        version = version or self.__version__
-        el = ET.Element("name")
-        if self.name is not None:
-            el.text = self.name
-        return el
-
-    @classmethod
-    def _from_sdf(cls, el: ET.Element, version: str):
-        _text = el.text or "__default__"
-        _name = _text
-        if isinstance(_name, SDFError):
-            return _name
-        return cls(sdf_version=version, name=_name)
-
-
 class Center(BaseModel):
     def __init__(self, sdf_version: str, center: bool = False):
         self.__version__ = sdf_version
@@ -127,140 +69,6 @@ class Center(BaseModel):
         if isinstance(_center, SDFError):
             return _center
         return cls(sdf_version=version, center=_center)
-
-
-class Submesh(BaseModel):
-    def __init__(self, sdf_version: str, center: "Center" = None, name: "Name" = None):
-        self.__version__ = sdf_version
-        self.center = center
-        self.name = name
-
-    def to_version(self, target_version: str) -> "Submesh":
-        kwargs = {"sdf_version": target_version}
-        kwargs["center"] = self.center.to_version(target_version) if self.center is not None else None
-        kwargs["name"] = self.name.to_version(target_version) if self.name is not None else None
-        new_obj = self.__class__(**kwargs)
-        return new_obj
-
-    def to_sdf(self, version: str = None) -> ET.Element:
-        if version is not None and version != self.__version__:
-            return self.to_version(version).to_sdf()
-        version = version or self.__version__
-        el = ET.Element("submesh")
-        if self.center is not None:
-            el.append(self.center.to_sdf(version))
-        if self.name is not None:
-            el.append(self.name.to_sdf(version))
-        return el
-
-    @classmethod
-    def _from_sdf(cls, el: ET.Element, version: str):
-        _c_center = el.find("center")
-        if _c_center is not None:
-            _res = Center._from_sdf(_c_center, version)
-            if isinstance(_res, SDFError):
-                return _res.extend("center")
-            _center = _res
-        else:
-            _center = None
-        _c_name = el.find("name")
-        if _c_name is not None:
-            _res = Name._from_sdf(_c_name, version)
-            if isinstance(_res, SDFError):
-                return _res.extend("name")
-            _name = _res
-        else:
-            _name = None
-        return cls(sdf_version=version, center=_center, name=_name)
-
-
-class Scale(BaseModel):
-    def __init__(self, sdf_version: str, scale: _SDFVector3 = None):
-        self.__version__ = sdf_version
-        if scale is None:
-            scale = _SDFVector3.from_sdf("1 1 1")
-        self.scale = scale
-
-    def to_version(self, target_version: str) -> "Scale":
-        kwargs = {"sdf_version": target_version}
-        kwargs["scale"] = self.scale
-        new_obj = self.__class__(**kwargs)
-        return new_obj
-
-    def to_sdf(self, version: str = None) -> ET.Element:
-        if version is not None and version != self.__version__:
-            return self.to_version(version).to_sdf()
-        version = version or self.__version__
-        el = ET.Element("scale")
-        if self.scale is not None:
-            el.text = self.scale.to_sdf()
-        return el
-
-    @classmethod
-    def _from_sdf(cls, el: ET.Element, version: str):
-        _text = el.text or "1 1 1"
-        _scale = _SDFVector3._from_sdf(_text, version)
-        if isinstance(_scale, SDFError):
-            return _scale
-        return cls(sdf_version=version, scale=_scale)
-
-
-class MaxConvexHulls(BaseModel):
-    def __init__(self, sdf_version: str, max_convex_hulls: int = 16):
-        self.__version__ = sdf_version
-        self.max_convex_hulls = max_convex_hulls
-
-    def to_version(self, target_version: str) -> "MaxConvexHulls":
-        kwargs = {"sdf_version": target_version}
-        kwargs["max_convex_hulls"] = self.max_convex_hulls
-        new_obj = self.__class__(**kwargs)
-        return new_obj
-
-    def to_sdf(self, version: str = None) -> ET.Element:
-        if version is not None and version != self.__version__:
-            return self.to_version(version).to_sdf()
-        version = version or self.__version__
-        el = ET.Element("max_convex_hulls")
-        if self.max_convex_hulls is not None:
-            el.text = str(self.max_convex_hulls)
-        return el
-
-    @classmethod
-    def _from_sdf(cls, el: ET.Element, version: str):
-        _text = el.text or 16
-        _max_convex_hulls = _parse_uint32(_text)
-        if isinstance(_max_convex_hulls, SDFError):
-            return _max_convex_hulls
-        return cls(sdf_version=version, max_convex_hulls=_max_convex_hulls)
-
-
-class VoxelResolution(BaseModel):
-    def __init__(self, sdf_version: str, voxel_resolution: int = 200000):
-        self.__version__ = sdf_version
-        self.voxel_resolution = voxel_resolution
-
-    def to_version(self, target_version: str) -> "VoxelResolution":
-        kwargs = {"sdf_version": target_version}
-        kwargs["voxel_resolution"] = self.voxel_resolution
-        new_obj = self.__class__(**kwargs)
-        return new_obj
-
-    def to_sdf(self, version: str = None) -> ET.Element:
-        if version is not None and version != self.__version__:
-            return self.to_version(version).to_sdf()
-        version = version or self.__version__
-        el = ET.Element("voxel_resolution")
-        if self.voxel_resolution is not None:
-            el.text = str(self.voxel_resolution)
-        return el
-
-    @classmethod
-    def _from_sdf(cls, el: ET.Element, version: str):
-        _text = el.text or 200000
-        _voxel_resolution = _parse_uint32(_text)
-        if isinstance(_voxel_resolution, SDFError):
-            return _voxel_resolution
-        return cls(sdf_version=version, voxel_resolution=_voxel_resolution)
 
 
 class ConvexDecomposition(BaseModel):
@@ -311,6 +119,35 @@ class ConvexDecomposition(BaseModel):
         else:
             _voxel_resolution = None
         return cls(sdf_version=version, max_convex_hulls=_max_convex_hulls, voxel_resolution=_voxel_resolution)
+
+
+class MaxConvexHulls(BaseModel):
+    def __init__(self, sdf_version: str, max_convex_hulls: int = 16):
+        self.__version__ = sdf_version
+        self.max_convex_hulls = max_convex_hulls
+
+    def to_version(self, target_version: str) -> "MaxConvexHulls":
+        kwargs = {"sdf_version": target_version}
+        kwargs["max_convex_hulls"] = self.max_convex_hulls
+        new_obj = self.__class__(**kwargs)
+        return new_obj
+
+    def to_sdf(self, version: str = None) -> ET.Element:
+        if version is not None and version != self.__version__:
+            return self.to_version(version).to_sdf()
+        version = version or self.__version__
+        el = ET.Element("max_convex_hulls")
+        if self.max_convex_hulls is not None:
+            el.text = str(self.max_convex_hulls)
+        return el
+
+    @classmethod
+    def _from_sdf(cls, el: ET.Element, version: str):
+        _text = el.text or 16
+        _max_convex_hulls = _parse_uint32(_text)
+        if isinstance(_max_convex_hulls, SDFError):
+            return _max_convex_hulls
+        return cls(sdf_version=version, max_convex_hulls=_max_convex_hulls)
 
 
 class Mesh(BaseModel):
@@ -404,3 +241,166 @@ class Mesh(BaseModel):
         else:
             _uri = None
         return cls(sdf_version=version, convex_decomposition=_convex_decomposition, optimization=_optimization, scale=_scale, submesh=_submesh, uri=_uri)
+
+
+class Name(BaseModel):
+    def __init__(self, sdf_version: str, name: str = "__default__"):
+        self.__version__ = sdf_version
+        self.name = name
+
+    def to_version(self, target_version: str) -> "Name":
+        kwargs = {"sdf_version": target_version}
+        kwargs["name"] = self.name
+        new_obj = self.__class__(**kwargs)
+        return new_obj
+
+    def to_sdf(self, version: str = None) -> ET.Element:
+        if version is not None and version != self.__version__:
+            return self.to_version(version).to_sdf()
+        version = version or self.__version__
+        el = ET.Element("name")
+        if self.name is not None:
+            el.text = self.name
+        return el
+
+    @classmethod
+    def _from_sdf(cls, el: ET.Element, version: str):
+        _text = el.text or "__default__"
+        _name = _text
+        if isinstance(_name, SDFError):
+            return _name
+        return cls(sdf_version=version, name=_name)
+
+
+class Scale(BaseModel):
+    def __init__(self, sdf_version: str, scale: _SDFVector3 = None):
+        self.__version__ = sdf_version
+        if scale is None:
+            scale = _SDFVector3.from_sdf("1 1 1")
+        self.scale = scale
+
+    def to_version(self, target_version: str) -> "Scale":
+        kwargs = {"sdf_version": target_version}
+        kwargs["scale"] = self.scale
+        new_obj = self.__class__(**kwargs)
+        return new_obj
+
+    def to_sdf(self, version: str = None) -> ET.Element:
+        if version is not None and version != self.__version__:
+            return self.to_version(version).to_sdf()
+        version = version or self.__version__
+        el = ET.Element("scale")
+        if self.scale is not None:
+            el.text = self.scale.to_sdf()
+        return el
+
+    @classmethod
+    def _from_sdf(cls, el: ET.Element, version: str):
+        _text = el.text or "1 1 1"
+        _scale = _SDFVector3._from_sdf(_text, version)
+        if isinstance(_scale, SDFError):
+            return _scale
+        return cls(sdf_version=version, scale=_scale)
+
+
+class Submesh(BaseModel):
+    def __init__(self, sdf_version: str, center: "Center" = None, name: "Name" = None):
+        self.__version__ = sdf_version
+        self.center = center
+        self.name = name
+
+    def to_version(self, target_version: str) -> "Submesh":
+        kwargs = {"sdf_version": target_version}
+        kwargs["center"] = self.center.to_version(target_version) if self.center is not None else None
+        kwargs["name"] = self.name.to_version(target_version) if self.name is not None else None
+        new_obj = self.__class__(**kwargs)
+        return new_obj
+
+    def to_sdf(self, version: str = None) -> ET.Element:
+        if version is not None and version != self.__version__:
+            return self.to_version(version).to_sdf()
+        version = version or self.__version__
+        el = ET.Element("submesh")
+        if self.center is not None:
+            el.append(self.center.to_sdf(version))
+        if self.name is not None:
+            el.append(self.name.to_sdf(version))
+        return el
+
+    @classmethod
+    def _from_sdf(cls, el: ET.Element, version: str):
+        _c_center = el.find("center")
+        if _c_center is not None:
+            _res = Center._from_sdf(_c_center, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("center")
+            _center = _res
+        else:
+            _center = None
+        _c_name = el.find("name")
+        if _c_name is not None:
+            _res = Name._from_sdf(_c_name, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("name")
+            _name = _res
+        else:
+            _name = None
+        return cls(sdf_version=version, center=_center, name=_name)
+
+
+class Uri(BaseModel):
+    def __init__(self, sdf_version: str, uri: str = "__default__"):
+        self.__version__ = sdf_version
+        self.uri = uri
+
+    def to_version(self, target_version: str) -> "Uri":
+        kwargs = {"sdf_version": target_version}
+        kwargs["uri"] = self.uri
+        new_obj = self.__class__(**kwargs)
+        return new_obj
+
+    def to_sdf(self, version: str = None) -> ET.Element:
+        if version is not None and version != self.__version__:
+            return self.to_version(version).to_sdf()
+        version = version or self.__version__
+        el = ET.Element("uri")
+        if self.uri is not None:
+            el.text = self.uri
+        return el
+
+    @classmethod
+    def _from_sdf(cls, el: ET.Element, version: str):
+        _text = el.text or "__default__"
+        _uri = _text
+        if isinstance(_uri, SDFError):
+            return _uri
+        return cls(sdf_version=version, uri=_uri)
+
+
+class VoxelResolution(BaseModel):
+    def __init__(self, sdf_version: str, voxel_resolution: int = 200000):
+        self.__version__ = sdf_version
+        self.voxel_resolution = voxel_resolution
+
+    def to_version(self, target_version: str) -> "VoxelResolution":
+        kwargs = {"sdf_version": target_version}
+        kwargs["voxel_resolution"] = self.voxel_resolution
+        new_obj = self.__class__(**kwargs)
+        return new_obj
+
+    def to_sdf(self, version: str = None) -> ET.Element:
+        if version is not None and version != self.__version__:
+            return self.to_version(version).to_sdf()
+        version = version or self.__version__
+        el = ET.Element("voxel_resolution")
+        if self.voxel_resolution is not None:
+            el.text = str(self.voxel_resolution)
+        return el
+
+    @classmethod
+    def _from_sdf(cls, el: ET.Element, version: str):
+        _text = el.text or 200000
+        _voxel_resolution = _parse_uint32(_text)
+        if isinstance(_voxel_resolution, SDFError):
+            return _voxel_resolution
+        return cls(sdf_version=version, voxel_resolution=_voxel_resolution)

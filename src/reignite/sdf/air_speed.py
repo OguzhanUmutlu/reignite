@@ -40,14 +40,14 @@ def _parse_double(raw: str) -> float | SDFError:
 
 
 
-class Mean(BaseModel):
-    def __init__(self, sdf_version: str, mean: float = 0.0):
+class AirSpeed(BaseModel):
+    def __init__(self, sdf_version: str, pressure: "Pressure" = None):
         self.__version__ = sdf_version
-        self.mean = mean
+        self.pressure = pressure
 
-    def to_version(self, target_version: str) -> "Mean":
+    def to_version(self, target_version: str) -> "AirSpeed":
         kwargs = {"sdf_version": target_version}
-        kwargs["mean"] = self.mean
+        kwargs["pressure"] = self.pressure.to_version(target_version) if self.pressure is not None else None
         new_obj = self.__class__(**kwargs)
         return new_obj
 
@@ -55,47 +55,22 @@ class Mean(BaseModel):
         if version is not None and version != self.__version__:
             return self.to_version(version).to_sdf()
         version = version or self.__version__
-        el = ET.Element("mean")
-        if self.mean is not None:
-            el.text = str(self.mean)
+        el = ET.Element("air_speed")
+        if self.pressure is not None:
+            el.append(self.pressure.to_sdf(version))
         return el
 
     @classmethod
     def _from_sdf(cls, el: ET.Element, version: str):
-        _text = el.text or 0.0
-        _mean = _parse_double(_text)
-        if isinstance(_mean, SDFError):
-            return _mean
-        return cls(sdf_version=version, mean=_mean)
-
-
-class Stddev(BaseModel):
-    def __init__(self, sdf_version: str, stddev: float = 0.0):
-        self.__version__ = sdf_version
-        self.stddev = stddev
-
-    def to_version(self, target_version: str) -> "Stddev":
-        kwargs = {"sdf_version": target_version}
-        kwargs["stddev"] = self.stddev
-        new_obj = self.__class__(**kwargs)
-        return new_obj
-
-    def to_sdf(self, version: str = None) -> ET.Element:
-        if version is not None and version != self.__version__:
-            return self.to_version(version).to_sdf()
-        version = version or self.__version__
-        el = ET.Element("stddev")
-        if self.stddev is not None:
-            el.text = str(self.stddev)
-        return el
-
-    @classmethod
-    def _from_sdf(cls, el: ET.Element, version: str):
-        _text = el.text or 0.0
-        _stddev = _parse_double(_text)
-        if isinstance(_stddev, SDFError):
-            return _stddev
-        return cls(sdf_version=version, stddev=_stddev)
+        _c_pressure = el.find("pressure")
+        if _c_pressure is not None:
+            _res = Pressure._from_sdf(_c_pressure, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("pressure")
+            _pressure = _res
+        else:
+            _pressure = None
+        return cls(sdf_version=version, pressure=_pressure)
 
 
 class BiasMean(BaseModel):
@@ -156,35 +131,6 @@ class BiasStddev(BaseModel):
         return cls(sdf_version=version, bias_stddev=_bias_stddev)
 
 
-class DynamicBiasStddev(BaseModel):
-    def __init__(self, sdf_version: str, dynamic_bias_stddev: float = 0.0):
-        self.__version__ = sdf_version
-        self.dynamic_bias_stddev = dynamic_bias_stddev
-
-    def to_version(self, target_version: str) -> "DynamicBiasStddev":
-        kwargs = {"sdf_version": target_version}
-        kwargs["dynamic_bias_stddev"] = self.dynamic_bias_stddev
-        new_obj = self.__class__(**kwargs)
-        return new_obj
-
-    def to_sdf(self, version: str = None) -> ET.Element:
-        if version is not None and version != self.__version__:
-            return self.to_version(version).to_sdf()
-        version = version or self.__version__
-        el = ET.Element("dynamic_bias_stddev")
-        if self.dynamic_bias_stddev is not None:
-            el.text = str(self.dynamic_bias_stddev)
-        return el
-
-    @classmethod
-    def _from_sdf(cls, el: ET.Element, version: str):
-        _text = el.text or 0.0
-        _dynamic_bias_stddev = _parse_double(_text)
-        if isinstance(_dynamic_bias_stddev, SDFError):
-            return _dynamic_bias_stddev
-        return cls(sdf_version=version, dynamic_bias_stddev=_dynamic_bias_stddev)
-
-
 class DynamicBiasCorrelationTime(BaseModel):
     def __init__(self, sdf_version: str, dynamic_bias_correlation_time: float = 0.0):
         self.__version__ = sdf_version
@@ -214,14 +160,14 @@ class DynamicBiasCorrelationTime(BaseModel):
         return cls(sdf_version=version, dynamic_bias_correlation_time=_dynamic_bias_correlation_time)
 
 
-class Precision(BaseModel):
-    def __init__(self, sdf_version: str, precision: float = 0.0):
+class DynamicBiasStddev(BaseModel):
+    def __init__(self, sdf_version: str, dynamic_bias_stddev: float = 0.0):
         self.__version__ = sdf_version
-        self.precision = precision
+        self.dynamic_bias_stddev = dynamic_bias_stddev
 
-    def to_version(self, target_version: str) -> "Precision":
+    def to_version(self, target_version: str) -> "DynamicBiasStddev":
         kwargs = {"sdf_version": target_version}
-        kwargs["precision"] = self.precision
+        kwargs["dynamic_bias_stddev"] = self.dynamic_bias_stddev
         new_obj = self.__class__(**kwargs)
         return new_obj
 
@@ -229,18 +175,47 @@ class Precision(BaseModel):
         if version is not None and version != self.__version__:
             return self.to_version(version).to_sdf()
         version = version or self.__version__
-        el = ET.Element("precision")
-        if self.precision is not None:
-            el.text = str(self.precision)
+        el = ET.Element("dynamic_bias_stddev")
+        if self.dynamic_bias_stddev is not None:
+            el.text = str(self.dynamic_bias_stddev)
         return el
 
     @classmethod
     def _from_sdf(cls, el: ET.Element, version: str):
         _text = el.text or 0.0
-        _precision = _parse_double(_text)
-        if isinstance(_precision, SDFError):
-            return _precision
-        return cls(sdf_version=version, precision=_precision)
+        _dynamic_bias_stddev = _parse_double(_text)
+        if isinstance(_dynamic_bias_stddev, SDFError):
+            return _dynamic_bias_stddev
+        return cls(sdf_version=version, dynamic_bias_stddev=_dynamic_bias_stddev)
+
+
+class Mean(BaseModel):
+    def __init__(self, sdf_version: str, mean: float = 0.0):
+        self.__version__ = sdf_version
+        self.mean = mean
+
+    def to_version(self, target_version: str) -> "Mean":
+        kwargs = {"sdf_version": target_version}
+        kwargs["mean"] = self.mean
+        new_obj = self.__class__(**kwargs)
+        return new_obj
+
+    def to_sdf(self, version: str = None) -> ET.Element:
+        if version is not None and version != self.__version__:
+            return self.to_version(version).to_sdf()
+        version = version or self.__version__
+        el = ET.Element("mean")
+        if self.mean is not None:
+            el.text = str(self.mean)
+        return el
+
+    @classmethod
+    def _from_sdf(cls, el: ET.Element, version: str):
+        _text = el.text or 0.0
+        _mean = _parse_double(_text)
+        if isinstance(_mean, SDFError):
+            return _mean
+        return cls(sdf_version=version, mean=_mean)
 
 
 class Noise(BaseModel):
@@ -366,6 +341,35 @@ class Noise(BaseModel):
         return cls(sdf_version=version, bias_mean=_bias_mean, bias_stddev=_bias_stddev, dynamic_bias_correlation_time=_dynamic_bias_correlation_time, dynamic_bias_stddev=_dynamic_bias_stddev, mean=_mean, precision=_precision, stddev=_stddev, type=_type)
 
 
+class Precision(BaseModel):
+    def __init__(self, sdf_version: str, precision: float = 0.0):
+        self.__version__ = sdf_version
+        self.precision = precision
+
+    def to_version(self, target_version: str) -> "Precision":
+        kwargs = {"sdf_version": target_version}
+        kwargs["precision"] = self.precision
+        new_obj = self.__class__(**kwargs)
+        return new_obj
+
+    def to_sdf(self, version: str = None) -> ET.Element:
+        if version is not None and version != self.__version__:
+            return self.to_version(version).to_sdf()
+        version = version or self.__version__
+        el = ET.Element("precision")
+        if self.precision is not None:
+            el.text = str(self.precision)
+        return el
+
+    @classmethod
+    def _from_sdf(cls, el: ET.Element, version: str):
+        _text = el.text or 0.0
+        _precision = _parse_double(_text)
+        if isinstance(_precision, SDFError):
+            return _precision
+        return cls(sdf_version=version, precision=_precision)
+
+
 class Pressure(BaseModel):
     def __init__(self, sdf_version: str, noise: "Noise" = None):
         self.__version__ = sdf_version
@@ -399,14 +403,14 @@ class Pressure(BaseModel):
         return cls(sdf_version=version, noise=_noise)
 
 
-class AirSpeed(BaseModel):
-    def __init__(self, sdf_version: str, pressure: "Pressure" = None):
+class Stddev(BaseModel):
+    def __init__(self, sdf_version: str, stddev: float = 0.0):
         self.__version__ = sdf_version
-        self.pressure = pressure
+        self.stddev = stddev
 
-    def to_version(self, target_version: str) -> "AirSpeed":
+    def to_version(self, target_version: str) -> "Stddev":
         kwargs = {"sdf_version": target_version}
-        kwargs["pressure"] = self.pressure.to_version(target_version) if self.pressure is not None else None
+        kwargs["stddev"] = self.stddev
         new_obj = self.__class__(**kwargs)
         return new_obj
 
@@ -414,19 +418,15 @@ class AirSpeed(BaseModel):
         if version is not None and version != self.__version__:
             return self.to_version(version).to_sdf()
         version = version or self.__version__
-        el = ET.Element("air_speed")
-        if self.pressure is not None:
-            el.append(self.pressure.to_sdf(version))
+        el = ET.Element("stddev")
+        if self.stddev is not None:
+            el.text = str(self.stddev)
         return el
 
     @classmethod
     def _from_sdf(cls, el: ET.Element, version: str):
-        _c_pressure = el.find("pressure")
-        if _c_pressure is not None:
-            _res = Pressure._from_sdf(_c_pressure, version)
-            if isinstance(_res, SDFError):
-                return _res.extend("pressure")
-            _pressure = _res
-        else:
-            _pressure = None
-        return cls(sdf_version=version, pressure=_pressure)
+        _text = el.text or 0.0
+        _stddev = _parse_double(_text)
+        if isinstance(_stddev, SDFError):
+            return _stddev
+        return cls(sdf_version=version, stddev=_stddev)

@@ -98,14 +98,14 @@ class Frequency(BaseModel):
         return cls(sdf_version=version, frequency=_frequency)
 
 
-class MinFrequency(BaseModel):
-    def __init__(self, sdf_version: str, min_frequency: float = 2412):
+class Gain(BaseModel):
+    def __init__(self, sdf_version: str, gain: float = 2.5):
         self.__version__ = sdf_version
-        self.min_frequency = min_frequency
+        self.gain = gain
 
-    def to_version(self, target_version: str) -> "MinFrequency":
+    def to_version(self, target_version: str) -> "Gain":
         kwargs = {"sdf_version": target_version}
-        kwargs["min_frequency"] = self.min_frequency
+        kwargs["gain"] = self.gain
         new_obj = self.__class__(**kwargs)
         return new_obj
 
@@ -113,18 +113,18 @@ class MinFrequency(BaseModel):
         if version is not None and version != self.__version__:
             return self.to_version(version).to_sdf()
         version = version or self.__version__
-        el = ET.Element("min_frequency")
-        if self.min_frequency is not None:
-            el.text = str(self.min_frequency)
+        el = ET.Element("gain")
+        if self.gain is not None:
+            el.text = str(self.gain)
         return el
 
     @classmethod
     def _from_sdf(cls, el: ET.Element, version: str):
-        _text = el.text or 2412
-        _min_frequency = _parse_double(_text)
-        if isinstance(_min_frequency, SDFError):
-            return _min_frequency
-        return cls(sdf_version=version, min_frequency=_min_frequency)
+        _text = el.text or 2.5
+        _gain = _parse_double(_text)
+        if isinstance(_gain, SDFError):
+            return _gain
+        return cls(sdf_version=version, gain=_gain)
 
 
 class MaxFrequency(BaseModel):
@@ -156,14 +156,14 @@ class MaxFrequency(BaseModel):
         return cls(sdf_version=version, max_frequency=_max_frequency)
 
 
-class Gain(BaseModel):
-    def __init__(self, sdf_version: str, gain: float = 2.5):
+class MinFrequency(BaseModel):
+    def __init__(self, sdf_version: str, min_frequency: float = 2412):
         self.__version__ = sdf_version
-        self.gain = gain
+        self.min_frequency = min_frequency
 
-    def to_version(self, target_version: str) -> "Gain":
+    def to_version(self, target_version: str) -> "MinFrequency":
         kwargs = {"sdf_version": target_version}
-        kwargs["gain"] = self.gain
+        kwargs["min_frequency"] = self.min_frequency
         new_obj = self.__class__(**kwargs)
         return new_obj
 
@@ -171,18 +171,18 @@ class Gain(BaseModel):
         if version is not None and version != self.__version__:
             return self.to_version(version).to_sdf()
         version = version or self.__version__
-        el = ET.Element("gain")
-        if self.gain is not None:
-            el.text = str(self.gain)
+        el = ET.Element("min_frequency")
+        if self.min_frequency is not None:
+            el.text = str(self.min_frequency)
         return el
 
     @classmethod
     def _from_sdf(cls, el: ET.Element, version: str):
-        _text = el.text or 2.5
-        _gain = _parse_double(_text)
-        if isinstance(_gain, SDFError):
-            return _gain
-        return cls(sdf_version=version, gain=_gain)
+        _text = el.text or 2412
+        _min_frequency = _parse_double(_text)
+        if isinstance(_min_frequency, SDFError):
+            return _min_frequency
+        return cls(sdf_version=version, min_frequency=_min_frequency)
 
 
 class Power(BaseModel):

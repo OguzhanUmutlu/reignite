@@ -41,14 +41,21 @@ def _parse_double(raw: str) -> float | SDFError:
 
 
 
-class Mean(BaseModel):
-    def __init__(self, sdf_version: str, mean: float = 0.0):
+class Altimeter(BaseModel):
+    def __init__(
+        self,
+        sdf_version: str,
+        vertical_position: "VerticalPosition" = None,
+        vertical_velocity: "VerticalVelocity" = None
+    ):
         self.__version__ = sdf_version
-        self.mean = mean
+        self.vertical_position = vertical_position
+        self.vertical_velocity = vertical_velocity
 
-    def to_version(self, target_version: str) -> "Mean":
+    def to_version(self, target_version: str) -> "Altimeter":
         kwargs = {"sdf_version": target_version}
-        kwargs["mean"] = self.mean
+        kwargs["vertical_position"] = self.vertical_position.to_version(target_version) if self.vertical_position is not None else None
+        kwargs["vertical_velocity"] = self.vertical_velocity.to_version(target_version) if self.vertical_velocity is not None else None
         new_obj = self.__class__(**kwargs)
         return new_obj
 
@@ -56,47 +63,32 @@ class Mean(BaseModel):
         if version is not None and version != self.__version__:
             return self.to_version(version).to_sdf()
         version = version or self.__version__
-        el = ET.Element("mean")
-        if self.mean is not None:
-            el.text = str(self.mean)
+        el = ET.Element("altimeter")
+        if self.vertical_position is not None:
+            el.append(self.vertical_position.to_sdf(version))
+        if self.vertical_velocity is not None:
+            el.append(self.vertical_velocity.to_sdf(version))
         return el
 
     @classmethod
     def _from_sdf(cls, el: ET.Element, version: str):
-        _text = el.text or 0.0
-        _mean = _parse_double(_text)
-        if isinstance(_mean, SDFError):
-            return _mean
-        return cls(sdf_version=version, mean=_mean)
-
-
-class Stddev(BaseModel):
-    def __init__(self, sdf_version: str, stddev: float = 0.0):
-        self.__version__ = sdf_version
-        self.stddev = stddev
-
-    def to_version(self, target_version: str) -> "Stddev":
-        kwargs = {"sdf_version": target_version}
-        kwargs["stddev"] = self.stddev
-        new_obj = self.__class__(**kwargs)
-        return new_obj
-
-    def to_sdf(self, version: str = None) -> ET.Element:
-        if version is not None and version != self.__version__:
-            return self.to_version(version).to_sdf()
-        version = version or self.__version__
-        el = ET.Element("stddev")
-        if self.stddev is not None:
-            el.text = str(self.stddev)
-        return el
-
-    @classmethod
-    def _from_sdf(cls, el: ET.Element, version: str):
-        _text = el.text or 0.0
-        _stddev = _parse_double(_text)
-        if isinstance(_stddev, SDFError):
-            return _stddev
-        return cls(sdf_version=version, stddev=_stddev)
+        _c_vertical_position = el.find("vertical_position")
+        if _c_vertical_position is not None:
+            _res = VerticalPosition._from_sdf(_c_vertical_position, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("vertical_position")
+            _vertical_position = _res
+        else:
+            _vertical_position = None
+        _c_vertical_velocity = el.find("vertical_velocity")
+        if _c_vertical_velocity is not None:
+            _res = VerticalVelocity._from_sdf(_c_vertical_velocity, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("vertical_velocity")
+            _vertical_velocity = _res
+        else:
+            _vertical_velocity = None
+        return cls(sdf_version=version, vertical_position=_vertical_position, vertical_velocity=_vertical_velocity)
 
 
 class BiasMean(BaseModel):
@@ -157,14 +149,16 @@ class BiasStddev(BaseModel):
         return cls(sdf_version=version, bias_stddev=_bias_stddev)
 
 
-class Precision(BaseModel):
-    def __init__(self, sdf_version: str, precision: float = 0.0):
+class DynamicBiasCorrelationTime(BaseModel):
+    def __init__(self, sdf_version: str, dynamic_bias_correlation_time: float = 0.0):
         self.__version__ = sdf_version
-        self.precision = precision
+        self.dynamic_bias_correlation_time = dynamic_bias_correlation_time
 
-    def to_version(self, target_version: str) -> "Precision":
+    def to_version(self, target_version: str) -> "DynamicBiasCorrelationTime":
+        if self.dynamic_bias_correlation_time is not None and cmp_version(target_version, "1.6") < 0:
+            raise ValueError(f"'dynamic_bias_correlation_time' is not supported in SDF version {target_version} (added in 1.6)")
         kwargs = {"sdf_version": target_version}
-        kwargs["precision"] = self.precision
+        kwargs["dynamic_bias_correlation_time"] = self.dynamic_bias_correlation_time
         new_obj = self.__class__(**kwargs)
         return new_obj
 
@@ -172,18 +166,21 @@ class Precision(BaseModel):
         if version is not None and version != self.__version__:
             return self.to_version(version).to_sdf()
         version = version or self.__version__
-        el = ET.Element("precision")
-        if self.precision is not None:
-            el.text = str(self.precision)
+        el = ET.Element("dynamic_bias_correlation_time")
+        if self.dynamic_bias_correlation_time is not None:
+            el.text = str(self.dynamic_bias_correlation_time)
         return el
 
     @classmethod
     def _from_sdf(cls, el: ET.Element, version: str):
         _text = el.text or 0.0
-        _precision = _parse_double(_text)
-        if isinstance(_precision, SDFError):
-            return _precision
-        return cls(sdf_version=version, precision=_precision)
+        _dynamic_bias_correlation_time = _parse_double(_text)
+        if isinstance(_dynamic_bias_correlation_time, SDFError):
+            return _dynamic_bias_correlation_time
+        if _dynamic_bias_correlation_time is not None and cmp_version(version, "1.6") < 0:
+            if _dynamic_bias_correlation_time != 0.0:
+                return SDFError(f"'dynamic_bias_correlation_time' is not supported in SDF version {version} (added in 1.6)")
+        return cls(sdf_version=version, dynamic_bias_correlation_time=_dynamic_bias_correlation_time)
 
 
 class DynamicBiasStddev(BaseModel):
@@ -220,16 +217,14 @@ class DynamicBiasStddev(BaseModel):
         return cls(sdf_version=version, dynamic_bias_stddev=_dynamic_bias_stddev)
 
 
-class DynamicBiasCorrelationTime(BaseModel):
-    def __init__(self, sdf_version: str, dynamic_bias_correlation_time: float = 0.0):
+class Mean(BaseModel):
+    def __init__(self, sdf_version: str, mean: float = 0.0):
         self.__version__ = sdf_version
-        self.dynamic_bias_correlation_time = dynamic_bias_correlation_time
+        self.mean = mean
 
-    def to_version(self, target_version: str) -> "DynamicBiasCorrelationTime":
-        if self.dynamic_bias_correlation_time is not None and cmp_version(target_version, "1.6") < 0:
-            raise ValueError(f"'dynamic_bias_correlation_time' is not supported in SDF version {target_version} (added in 1.6)")
+    def to_version(self, target_version: str) -> "Mean":
         kwargs = {"sdf_version": target_version}
-        kwargs["dynamic_bias_correlation_time"] = self.dynamic_bias_correlation_time
+        kwargs["mean"] = self.mean
         new_obj = self.__class__(**kwargs)
         return new_obj
 
@@ -237,21 +232,18 @@ class DynamicBiasCorrelationTime(BaseModel):
         if version is not None and version != self.__version__:
             return self.to_version(version).to_sdf()
         version = version or self.__version__
-        el = ET.Element("dynamic_bias_correlation_time")
-        if self.dynamic_bias_correlation_time is not None:
-            el.text = str(self.dynamic_bias_correlation_time)
+        el = ET.Element("mean")
+        if self.mean is not None:
+            el.text = str(self.mean)
         return el
 
     @classmethod
     def _from_sdf(cls, el: ET.Element, version: str):
         _text = el.text or 0.0
-        _dynamic_bias_correlation_time = _parse_double(_text)
-        if isinstance(_dynamic_bias_correlation_time, SDFError):
-            return _dynamic_bias_correlation_time
-        if _dynamic_bias_correlation_time is not None and cmp_version(version, "1.6") < 0:
-            if _dynamic_bias_correlation_time != 0.0:
-                return SDFError(f"'dynamic_bias_correlation_time' is not supported in SDF version {version} (added in 1.6)")
-        return cls(sdf_version=version, dynamic_bias_correlation_time=_dynamic_bias_correlation_time)
+        _mean = _parse_double(_text)
+        if isinstance(_mean, SDFError):
+            return _mean
+        return cls(sdf_version=version, mean=_mean)
 
 
 class Noise(BaseModel):
@@ -385,6 +377,64 @@ class Noise(BaseModel):
         return cls(sdf_version=version, bias_mean=_bias_mean, bias_stddev=_bias_stddev, dynamic_bias_correlation_time=_dynamic_bias_correlation_time, dynamic_bias_stddev=_dynamic_bias_stddev, mean=_mean, precision=_precision, stddev=_stddev, type=_type)
 
 
+class Precision(BaseModel):
+    def __init__(self, sdf_version: str, precision: float = 0.0):
+        self.__version__ = sdf_version
+        self.precision = precision
+
+    def to_version(self, target_version: str) -> "Precision":
+        kwargs = {"sdf_version": target_version}
+        kwargs["precision"] = self.precision
+        new_obj = self.__class__(**kwargs)
+        return new_obj
+
+    def to_sdf(self, version: str = None) -> ET.Element:
+        if version is not None and version != self.__version__:
+            return self.to_version(version).to_sdf()
+        version = version or self.__version__
+        el = ET.Element("precision")
+        if self.precision is not None:
+            el.text = str(self.precision)
+        return el
+
+    @classmethod
+    def _from_sdf(cls, el: ET.Element, version: str):
+        _text = el.text or 0.0
+        _precision = _parse_double(_text)
+        if isinstance(_precision, SDFError):
+            return _precision
+        return cls(sdf_version=version, precision=_precision)
+
+
+class Stddev(BaseModel):
+    def __init__(self, sdf_version: str, stddev: float = 0.0):
+        self.__version__ = sdf_version
+        self.stddev = stddev
+
+    def to_version(self, target_version: str) -> "Stddev":
+        kwargs = {"sdf_version": target_version}
+        kwargs["stddev"] = self.stddev
+        new_obj = self.__class__(**kwargs)
+        return new_obj
+
+    def to_sdf(self, version: str = None) -> ET.Element:
+        if version is not None and version != self.__version__:
+            return self.to_version(version).to_sdf()
+        version = version or self.__version__
+        el = ET.Element("stddev")
+        if self.stddev is not None:
+            el.text = str(self.stddev)
+        return el
+
+    @classmethod
+    def _from_sdf(cls, el: ET.Element, version: str):
+        _text = el.text or 0.0
+        _stddev = _parse_double(_text)
+        if isinstance(_stddev, SDFError):
+            return _stddev
+        return cls(sdf_version=version, stddev=_stddev)
+
+
 class VerticalPosition(BaseModel):
     def __init__(self, sdf_version: str, noise: "Noise" = None):
         self.__version__ = sdf_version
@@ -449,53 +499,3 @@ class VerticalVelocity(BaseModel):
         else:
             _noise = None
         return cls(sdf_version=version, noise=_noise)
-
-
-class Altimeter(BaseModel):
-    def __init__(
-        self,
-        sdf_version: str,
-        vertical_position: "VerticalPosition" = None,
-        vertical_velocity: "VerticalVelocity" = None
-    ):
-        self.__version__ = sdf_version
-        self.vertical_position = vertical_position
-        self.vertical_velocity = vertical_velocity
-
-    def to_version(self, target_version: str) -> "Altimeter":
-        kwargs = {"sdf_version": target_version}
-        kwargs["vertical_position"] = self.vertical_position.to_version(target_version) if self.vertical_position is not None else None
-        kwargs["vertical_velocity"] = self.vertical_velocity.to_version(target_version) if self.vertical_velocity is not None else None
-        new_obj = self.__class__(**kwargs)
-        return new_obj
-
-    def to_sdf(self, version: str = None) -> ET.Element:
-        if version is not None and version != self.__version__:
-            return self.to_version(version).to_sdf()
-        version = version or self.__version__
-        el = ET.Element("altimeter")
-        if self.vertical_position is not None:
-            el.append(self.vertical_position.to_sdf(version))
-        if self.vertical_velocity is not None:
-            el.append(self.vertical_velocity.to_sdf(version))
-        return el
-
-    @classmethod
-    def _from_sdf(cls, el: ET.Element, version: str):
-        _c_vertical_position = el.find("vertical_position")
-        if _c_vertical_position is not None:
-            _res = VerticalPosition._from_sdf(_c_vertical_position, version)
-            if isinstance(_res, SDFError):
-                return _res.extend("vertical_position")
-            _vertical_position = _res
-        else:
-            _vertical_position = None
-        _c_vertical_velocity = el.find("vertical_velocity")
-        if _c_vertical_velocity is not None:
-            _res = VerticalVelocity._from_sdf(_c_vertical_velocity, version)
-            if isinstance(_res, SDFError):
-                return _res.extend("vertical_velocity")
-            _vertical_velocity = _res
-        else:
-            _vertical_velocity = None
-        return cls(sdf_version=version, vertical_position=_vertical_position, vertical_velocity=_vertical_velocity)
