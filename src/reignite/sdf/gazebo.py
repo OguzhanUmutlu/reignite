@@ -1,6 +1,7 @@
 ### THIS FILE WAS AUTO-GENERATED ###
 from __future__ import annotations
 
+import typing
 from xml.etree import ElementTree as ET
 
 from typing import List
@@ -8,10 +9,11 @@ from typing import List
 from ..utils.model import BaseModel
 from ..utils.errors import SDFError
 
-from .actor import Actor
-from .light import Light
-from .model import Model
-from .world import World
+if typing.TYPE_CHECKING:
+    from ..elements.actor import Actor
+    from ..elements.light import Light
+    from ..elements.model import Model
+    from ..elements.world import World
 
 
 class Gazebo(BaseModel):
@@ -32,6 +34,10 @@ class Gazebo(BaseModel):
         self.world = world or []
 
     def to_version(self, target_version: str) -> "Gazebo":
+        from ..elements.actor import Actor
+        from ..elements.light import Light
+        from ..elements.model import Model
+        from ..elements.world import World
         kwargs = {"sdf_version": target_version}
         kwargs["actor"] = [c.to_version(target_version) for c in (self.actor or [])]
         kwargs["light"] = [c.to_version(target_version) for c in (self.light or [])]
@@ -42,6 +48,10 @@ class Gazebo(BaseModel):
         return new_obj
 
     def to_sdf(self, version: str = None) -> ET.Element:
+        from ..elements.actor import Actor
+        from ..elements.light import Light
+        from ..elements.model import Model
+        from ..elements.world import World
         if version is not None and version != self.__version__:
             return self.to_version(version).to_sdf()
         version = version or self.__version__
@@ -60,6 +70,10 @@ class Gazebo(BaseModel):
 
     @classmethod
     def _from_sdf(cls, el: ET.Element, version: str):
+        from ..elements.actor import Actor
+        from ..elements.light import Light
+        from ..elements.model import Model
+        from ..elements.world import World
         _actor = []
         for c in el.findall("actor"):
             _res = Actor._from_sdf(c, version)

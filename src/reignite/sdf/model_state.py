@@ -1,6 +1,7 @@
 ### THIS FILE WAS AUTO-GENERATED ###
 from __future__ import annotations
 
+import typing
 from xml.etree import ElementTree as ET
 
 from typing import List
@@ -9,10 +10,11 @@ from ..utils.model import BaseModel
 from ..utils.errors import SDFError
 from ..utils.vector3 import Vector3 as _SDFVector3
 
-from .frame import Frame
-from .joint_state import JointState
-from .link_state import LinkState
-from .pose import Pose
+if typing.TYPE_CHECKING:
+    from ..elements.frame import Frame
+    from ..elements.joint_state import JointState
+    from ..elements.link_state import LinkState
+    from ..elements.pose import Pose
 
 
 class ModelState(BaseModel):
@@ -37,6 +39,10 @@ class ModelState(BaseModel):
         self.scale = scale
 
     def to_version(self, target_version: str) -> "ModelState":
+        from ..elements.frame import Frame
+        from ..elements.joint_state import JointState
+        from ..elements.link_state import LinkState
+        from ..elements.pose import Pose
         kwargs = {"sdf_version": target_version}
         kwargs["frame"] = [c.to_version(target_version) for c in (self.frame or [])]
         kwargs["joint_state"] = [c.to_version(target_version) for c in (self.joint_state or [])]
@@ -49,6 +55,10 @@ class ModelState(BaseModel):
         return new_obj
 
     def to_sdf(self, version: str = None) -> ET.Element:
+        from ..elements.frame import Frame
+        from ..elements.joint_state import JointState
+        from ..elements.link_state import LinkState
+        from ..elements.pose import Pose
         if version is not None and version != self.__version__:
             return self.to_version(version).to_sdf()
         version = version or self.__version__
@@ -71,6 +81,10 @@ class ModelState(BaseModel):
 
     @classmethod
     def _from_sdf(cls, el: ET.Element, version: str):
+        from ..elements.frame import Frame
+        from ..elements.joint_state import JointState
+        from ..elements.link_state import LinkState
+        from ..elements.pose import Pose
         _frame = []
         for c in el.findall("frame"):
             _res = Frame._from_sdf(c, version)

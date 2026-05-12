@@ -1,5 +1,1 @@
-from ..sdf.heightmap import Heightmap as _Base
-
-
-class Heightmap(_Base):
-    pass
+from ..sdf.heightmap import *  # noqa: F401

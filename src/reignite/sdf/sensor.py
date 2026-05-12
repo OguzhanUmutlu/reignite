@@ -1,6 +1,7 @@
 ### THIS FILE WAS AUTO-GENERATED ###
 from __future__ import annotations
 
+import typing
 from xml.etree import ElementTree as ET
 
 from typing import List
@@ -10,26 +11,27 @@ from ..utils.errors import SDFError
 from ..utils.pose import Pose as _SDFPose
 from ..utils.version import cmp_version
 
-from .air_pressure import AirPressure
-from .air_speed import AirSpeed
-from .altimeter import Altimeter
-from .camera import Camera
-from .contact import Contact
-from .force_torque import ForceTorque
-from .frame import Frame
-from .gps import Gps
-from .imu import Imu
-from .lidar import Lidar
-from .logical_camera import LogicalCamera
-from .magnetometer import Magnetometer
-from .navsat import Navsat
-from .plugin import Plugin
-from .pose import Pose
-from .ray import Ray
-from .rfid import Rfid
-from .rfidtag import Rfidtag
-from .sonar import Sonar
-from .transceiver import Transceiver
+if typing.TYPE_CHECKING:
+    from ..elements.air_pressure import AirPressure
+    from ..elements.air_speed import AirSpeed
+    from ..elements.altimeter import Altimeter
+    from ..elements.camera import Camera
+    from ..elements.contact import Contact
+    from ..elements.force_torque import ForceTorque
+    from ..elements.frame import Frame
+    from ..elements.gps import Gps
+    from ..elements.imu import Imu
+    from ..elements.lidar import Lidar
+    from ..elements.logical_camera import LogicalCamera
+    from ..elements.magnetometer import Magnetometer
+    from ..elements.navsat import Navsat
+    from ..elements.plugin import Plugin
+    from ..elements.pose import Pose
+    from ..elements.ray import Ray
+    from ..elements.rfid import Rfid
+    from ..elements.rfidtag import Rfidtag
+    from ..elements.sonar import Sonar
+    from ..elements.transceiver import Transceiver
 
 
 import math
@@ -263,6 +265,26 @@ class Sensor(BaseModel):
         self.visualize = visualize
 
     def to_version(self, target_version: str) -> "Sensor":
+        from ..elements.air_pressure import AirPressure
+        from ..elements.air_speed import AirSpeed
+        from ..elements.altimeter import Altimeter
+        from ..elements.camera import Camera
+        from ..elements.contact import Contact
+        from ..elements.force_torque import ForceTorque
+        from ..elements.frame import Frame
+        from ..elements.gps import Gps
+        from ..elements.imu import Imu
+        from ..elements.lidar import Lidar
+        from ..elements.logical_camera import LogicalCamera
+        from ..elements.magnetometer import Magnetometer
+        from ..elements.navsat import Navsat
+        from ..elements.plugin import Plugin
+        from ..elements.pose import Pose
+        from ..elements.ray import Ray
+        from ..elements.rfid import Rfid
+        from ..elements.rfidtag import Rfidtag
+        from ..elements.sonar import Sonar
+        from ..elements.transceiver import Transceiver
         if self.air_pressure is not None and cmp_version(target_version, "1.6") < 0:
             raise ValueError(f"'air_pressure' is not supported in SDF version {target_version} (added in 1.6)")
         if self.air_speed is not None and cmp_version(target_version, "1.10") < 0:
@@ -339,6 +361,26 @@ class Sensor(BaseModel):
         return new_obj
 
     def to_sdf(self, version: str = None) -> ET.Element:
+        from ..elements.air_pressure import AirPressure
+        from ..elements.air_speed import AirSpeed
+        from ..elements.altimeter import Altimeter
+        from ..elements.camera import Camera
+        from ..elements.contact import Contact
+        from ..elements.force_torque import ForceTorque
+        from ..elements.frame import Frame
+        from ..elements.gps import Gps
+        from ..elements.imu import Imu
+        from ..elements.lidar import Lidar
+        from ..elements.logical_camera import LogicalCamera
+        from ..elements.magnetometer import Magnetometer
+        from ..elements.navsat import Navsat
+        from ..elements.plugin import Plugin
+        from ..elements.pose import Pose
+        from ..elements.ray import Ray
+        from ..elements.rfid import Rfid
+        from ..elements.rfidtag import Rfidtag
+        from ..elements.sonar import Sonar
+        from ..elements.transceiver import Transceiver
         if version is not None and version != self.__version__:
             return self.to_version(version).to_sdf()
         version = version or self.__version__
@@ -405,6 +447,26 @@ class Sensor(BaseModel):
 
     @classmethod
     def _from_sdf(cls, el: ET.Element, version: str):
+        from ..elements.air_pressure import AirPressure
+        from ..elements.air_speed import AirSpeed
+        from ..elements.altimeter import Altimeter
+        from ..elements.camera import Camera
+        from ..elements.contact import Contact
+        from ..elements.force_torque import ForceTorque
+        from ..elements.frame import Frame
+        from ..elements.gps import Gps
+        from ..elements.imu import Imu
+        from ..elements.lidar import Lidar
+        from ..elements.logical_camera import LogicalCamera
+        from ..elements.magnetometer import Magnetometer
+        from ..elements.navsat import Navsat
+        from ..elements.plugin import Plugin
+        from ..elements.pose import Pose
+        from ..elements.ray import Ray
+        from ..elements.rfid import Rfid
+        from ..elements.rfidtag import Rfidtag
+        from ..elements.sonar import Sonar
+        from ..elements.transceiver import Transceiver
         _c_air_pressure = el.find("air_pressure")
         if _c_air_pressure is not None:
             _res = AirPressure._from_sdf(_c_air_pressure, version)

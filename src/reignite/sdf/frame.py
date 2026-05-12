@@ -1,13 +1,15 @@
 ### THIS FILE WAS AUTO-GENERATED ###
 from __future__ import annotations
 
+import typing
 from xml.etree import ElementTree as ET
 
 from ..utils.model import BaseModel
 from ..utils.errors import SDFError
 from ..utils.version import cmp_version
 
-from .pose import Pose
+if typing.TYPE_CHECKING:
+    from ..elements.pose import Pose
 
 
 class Frame(BaseModel):
@@ -24,6 +26,7 @@ class Frame(BaseModel):
         self.pose = pose
 
     def to_version(self, target_version: str) -> "Frame":
+        from ..elements.pose import Pose
         if self.attached_to is not None and cmp_version(target_version, "1.7") < 0:
             raise ValueError(f"'attached_to' is not supported in SDF version {target_version} (added in 1.7)")
         kwargs = {"sdf_version": target_version}
@@ -34,6 +37,7 @@ class Frame(BaseModel):
         return new_obj
 
     def to_sdf(self, version: str = None) -> ET.Element:
+        from ..elements.pose import Pose
         if version is not None and version != self.__version__:
             return self.to_version(version).to_sdf()
         version = version or self.__version__
@@ -50,6 +54,7 @@ class Frame(BaseModel):
 
     @classmethod
     def _from_sdf(cls, el: ET.Element, version: str):
+        from ..elements.pose import Pose
         _attached_to = el.get("attached_to", "")
         if isinstance(_attached_to, SDFError):
             return _attached_to.extend("@attached_to")

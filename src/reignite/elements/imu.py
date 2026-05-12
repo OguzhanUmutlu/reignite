@@ -1,5 +1,1 @@
-from ..sdf.imu import Imu as _Base
-
-
-class Imu(_Base):
-    pass
+from ..sdf.imu import *  # noqa: F401

@@ -1,5 +1,1 @@
-from ..sdf.battery import Battery as _Base
-
-
-class Battery(_Base):
-    pass
+from ..sdf.battery import *  # noqa: F401

@@ -1,5 +1,1 @@
-from ..sdf.polyline import Polyline as _Base
-
-
-class Polyline(_Base):
-    pass
+from ..sdf.polyline import *  # noqa: F401

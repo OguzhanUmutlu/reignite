@@ -1,6 +1,7 @@
 ### THIS FILE WAS AUTO-GENERATED ###
 from __future__ import annotations
 
+import typing
 from xml.etree import ElementTree as ET
 
 from ..utils.model import BaseModel
@@ -8,8 +9,9 @@ from ..utils.errors import SDFError
 from ..utils.color import Color as _SDFColor
 from ..utils.vector3 import Vector3 as _SDFVector3
 
-from .material import Material
-from .pose import Pose
+if typing.TYPE_CHECKING:
+    from ..elements.material import Material
+    from ..elements.pose import Pose
 
 
 import math
@@ -325,6 +327,8 @@ class ParticleEmitter(BaseModel):
         self.type = type
 
     def to_version(self, target_version: str) -> "ParticleEmitter":
+        from ..elements.material import Material
+        from ..elements.pose import Pose
         kwargs = {"sdf_version": target_version}
         kwargs["color_end"] = self.color_end.to_version(target_version) if self.color_end is not None else None
         kwargs["color_range_image"] = self.color_range_image.to_version(target_version) if self.color_range_image is not None else None
@@ -348,6 +352,8 @@ class ParticleEmitter(BaseModel):
         return new_obj
 
     def to_sdf(self, version: str = None) -> ET.Element:
+        from ..elements.material import Material
+        from ..elements.pose import Pose
         if version is not None and version != self.__version__:
             return self.to_version(version).to_sdf()
         version = version or self.__version__
@@ -392,6 +398,8 @@ class ParticleEmitter(BaseModel):
 
     @classmethod
     def _from_sdf(cls, el: ET.Element, version: str):
+        from ..elements.material import Material
+        from ..elements.pose import Pose
         _c_color_end = el.find("color_end")
         if _c_color_end is not None:
             _res = ColorEnd._from_sdf(_c_color_end, version)

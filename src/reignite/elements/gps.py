@@ -1,5 +1,1 @@
-from ..sdf.gps import Gps as _Base
-
-
-class Gps(_Base):
-    pass
+from ..sdf.gps import *  # noqa: F401

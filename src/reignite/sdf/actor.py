@@ -1,6 +1,7 @@
 ### THIS FILE WAS AUTO-GENERATED ###
 from __future__ import annotations
 
+import typing
 from xml.etree import ElementTree as ET
 
 from typing import List
@@ -11,11 +12,12 @@ from ..utils.pose import Pose as _SDFPose
 from ..utils.version import cmp_version
 from ..utils.migration import apply_migrations
 
-from .frame import Frame
-from .joint import Joint
-from .link import Link
-from .plugin import Plugin
-from .pose import Pose
+if typing.TYPE_CHECKING:
+    from ..elements.frame import Frame
+    from ..elements.joint import Joint
+    from ..elements.link import Link
+    from ..elements.plugin import Plugin
+    from ..elements.pose import Pose
 
 
 import math
@@ -81,6 +83,11 @@ class Actor(BaseModel):
         self.static = static
 
     def to_version(self, target_version: str) -> "Actor":
+        from ..elements.frame import Frame
+        from ..elements.joint import Joint
+        from ..elements.link import Link
+        from ..elements.plugin import Plugin
+        from ..elements.pose import Pose
         if self.frame is not None and cmp_version(target_version, "1.5") < 0:
             raise ValueError(f"'frame' is not supported in SDF version {target_version} (added in 1.5)")
         if self.frame is not None and cmp_version(target_version, "1.7") >= 0:
@@ -107,6 +114,11 @@ class Actor(BaseModel):
         return new_obj
 
     def to_sdf(self, version: str = None) -> ET.Element:
+        from ..elements.frame import Frame
+        from ..elements.joint import Joint
+        from ..elements.link import Link
+        from ..elements.plugin import Plugin
+        from ..elements.pose import Pose
         if version is not None and version != self.__version__:
             return self.to_version(version).to_sdf()
         version = version or self.__version__
@@ -139,6 +151,11 @@ class Actor(BaseModel):
 
     @classmethod
     def _from_sdf(cls, el: ET.Element, version: str):
+        from ..elements.frame import Frame
+        from ..elements.joint import Joint
+        from ..elements.link import Link
+        from ..elements.plugin import Plugin
+        from ..elements.pose import Pose
         _animation = []
         for c in el.findall("animation"):
             _res = Animation._from_sdf(c, version)

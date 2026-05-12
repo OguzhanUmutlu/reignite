@@ -1,6 +1,7 @@
 ### THIS FILE WAS AUTO-GENERATED ###
 from __future__ import annotations
 
+import typing
 from xml.etree import ElementTree as ET
 
 from typing import List
@@ -10,7 +11,8 @@ from ..utils.errors import SDFError
 from ..utils.vector3 import Vector3 as _SDFVector3
 from ..utils.version import cmp_version
 
-from .material import Material
+if typing.TYPE_CHECKING:
+    from ..elements.material import Material
 
 
 import math
@@ -93,6 +95,7 @@ class Road(BaseModel):
         self.width = width
 
     def to_version(self, target_version: str) -> "Road":
+        from ..elements.material import Material
         if self.material is not None and cmp_version(target_version, "1.5") < 0:
             raise ValueError(f"'material' is not supported in SDF version {target_version} (added in 1.5)")
         kwargs = {"sdf_version": target_version}
@@ -104,6 +107,7 @@ class Road(BaseModel):
         return new_obj
 
     def to_sdf(self, version: str = None) -> ET.Element:
+        from ..elements.material import Material
         if version is not None and version != self.__version__:
             return self.to_version(version).to_sdf()
         version = version or self.__version__
@@ -120,6 +124,7 @@ class Road(BaseModel):
 
     @classmethod
     def _from_sdf(cls, el: ET.Element, version: str):
+        from ..elements.material import Material
         _c_material = el.find("material")
         if _c_material is not None:
             _res = Material._from_sdf(_c_material, version)

@@ -1,5 +1,1 @@
-from ..sdf.ray import Ray as _Base
-
-
-class Ray(_Base):
-    pass
+from ..sdf.ray import *  # noqa: F401

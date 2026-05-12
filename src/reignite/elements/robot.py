@@ -1,5 +1,1 @@
-from ..sdf.robot import Robot as _Base
-
-
-class Robot(_Base):
-    pass
+from ..sdf.robot import *  # noqa: F401

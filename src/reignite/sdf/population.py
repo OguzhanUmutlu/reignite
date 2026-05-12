@@ -1,6 +1,7 @@
 ### THIS FILE WAS AUTO-GENERATED ###
 from __future__ import annotations
 
+import typing
 from xml.etree import ElementTree as ET
 
 from typing import List
@@ -9,11 +10,12 @@ from ..utils.model import BaseModel
 from ..utils.errors import SDFError
 from ..utils.vector3 import Vector3 as _SDFVector3
 
-from .box import Box
-from .cylinder import Cylinder
-from .frame import Frame
-from .model import Model
-from .pose import Pose
+if typing.TYPE_CHECKING:
+    from ..elements.box import Box
+    from ..elements.cylinder import Cylinder
+    from ..elements.frame import Frame
+    from ..elements.model import Model
+    from ..elements.pose import Pose
 
 
 import math
@@ -207,6 +209,11 @@ class Population(BaseModel):
         self.pose = pose
 
     def to_version(self, target_version: str) -> "Population":
+        from ..elements.box import Box
+        from ..elements.cylinder import Cylinder
+        from ..elements.frame import Frame
+        from ..elements.model import Model
+        from ..elements.pose import Pose
         if self.frame is not None and cmp_version(target_version, "1.7") >= 0:
             raise ValueError(f"'frame' is not supported in SDF version {target_version} (removed in 1.7)")
         kwargs = {"sdf_version": target_version}
@@ -222,6 +229,11 @@ class Population(BaseModel):
         return new_obj
 
     def to_sdf(self, version: str = None) -> ET.Element:
+        from ..elements.box import Box
+        from ..elements.cylinder import Cylinder
+        from ..elements.frame import Frame
+        from ..elements.model import Model
+        from ..elements.pose import Pose
         if version is not None and version != self.__version__:
             return self.to_version(version).to_sdf()
         version = version or self.__version__
@@ -248,6 +260,11 @@ class Population(BaseModel):
 
     @classmethod
     def _from_sdf(cls, el: ET.Element, version: str):
+        from ..elements.box import Box
+        from ..elements.cylinder import Cylinder
+        from ..elements.frame import Frame
+        from ..elements.model import Model
+        from ..elements.pose import Pose
         _c_box = el.find("box")
         if _c_box is not None:
             _res = Box._from_sdf(_c_box, version)

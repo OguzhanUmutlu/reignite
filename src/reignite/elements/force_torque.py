@@ -1,5 +1,1 @@
-from ..sdf.force_torque import ForceTorque as _Base
-
-
-class ForceTorque(_Base):
-    pass
+from ..sdf.force_torque import *  # noqa: F401

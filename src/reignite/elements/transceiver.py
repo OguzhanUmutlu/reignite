@@ -1,5 +1,1 @@
-from ..sdf.transceiver import Transceiver as _Base
-
-
-class Transceiver(_Base):
-    pass
+from ..sdf.transceiver import *  # noqa: F401

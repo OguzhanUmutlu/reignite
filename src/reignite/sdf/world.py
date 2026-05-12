@@ -1,6 +1,7 @@
 ### THIS FILE WAS AUTO-GENERATED ###
 from __future__ import annotations
 
+import typing
 from xml.etree import ElementTree as ET
 
 from typing import List
@@ -11,22 +12,23 @@ from ..utils.vector3 import Vector3 as _SDFVector3
 from ..utils.version import cmp_version
 from ..utils.migration import apply_migrations
 
-from .actor import Actor
-from .atmosphere import Atmosphere
-from .frame import Frame
-from .gui import Gui
-from .joint import Joint
-from .light import Light
-from .model import Model
-from .model_state import ModelState
-from .physics import Physics
-from .plugin import Plugin
-from .population import Population
-from .pose import Pose
-from .road import Road
-from .scene import Scene
-from .spherical_coordinates import SphericalCoordinates
-from .state import State
+if typing.TYPE_CHECKING:
+    from ..elements.actor import Actor
+    from ..elements.atmosphere import Atmosphere
+    from ..elements.frame import Frame
+    from ..elements.gui import Gui
+    from ..elements.joint import Joint
+    from ..elements.light import Light
+    from ..elements.model import Model
+    from ..elements.model_state import ModelState
+    from ..elements.physics import Physics
+    from ..elements.plugin import Plugin
+    from ..elements.population import Population
+    from ..elements.pose import Pose
+    from ..elements.road import Road
+    from ..elements.scene import Scene
+    from ..elements.spherical_coordinates import SphericalCoordinates
+    from ..elements.state import State
 
 
 class Audio(BaseModel):
@@ -151,6 +153,9 @@ class Include(BaseModel):
         self.uri = uri
 
     def to_version(self, target_version: str) -> "Include":
+        from ..elements.model_state import ModelState
+        from ..elements.plugin import Plugin
+        from ..elements.pose import Pose
         if self.merge is not None and cmp_version(target_version, "1.10") < 0:
             raise ValueError(f"'merge' is not supported in SDF version {target_version} (added in 1.10)")
         if self.model_state is not None and cmp_version(target_version, "1.12") < 0:
@@ -178,6 +183,9 @@ class Include(BaseModel):
         return new_obj
 
     def to_sdf(self, version: str = None) -> ET.Element:
+        from ..elements.model_state import ModelState
+        from ..elements.plugin import Plugin
+        from ..elements.pose import Pose
         if version is not None and version != self.__version__:
             return self.to_version(version).to_sdf()
         version = version or self.__version__
@@ -202,6 +210,9 @@ class Include(BaseModel):
 
     @classmethod
     def _from_sdf(cls, el: ET.Element, version: str):
+        from ..elements.model_state import ModelState
+        from ..elements.plugin import Plugin
+        from ..elements.pose import Pose
         _merge = str(el.get("merge", False)).strip().lower() == 'true'
         if isinstance(_merge, SDFError):
             return _merge.extend("@merge")
@@ -556,6 +567,20 @@ class World(BaseModel):
         self.wind = wind
 
     def to_version(self, target_version: str) -> "World":
+        from ..elements.actor import Actor
+        from ..elements.atmosphere import Atmosphere
+        from ..elements.frame import Frame
+        from ..elements.gui import Gui
+        from ..elements.joint import Joint
+        from ..elements.light import Light
+        from ..elements.model import Model
+        from ..elements.physics import Physics
+        from ..elements.plugin import Plugin
+        from ..elements.population import Population
+        from ..elements.road import Road
+        from ..elements.scene import Scene
+        from ..elements.spherical_coordinates import SphericalCoordinates
+        from ..elements.state import State
         if self.atmosphere is not None and cmp_version(target_version, "1.6") < 0:
             raise ValueError(f"'atmosphere' is not supported in SDF version {target_version} (added in 1.6)")
         if self.audio is not None and cmp_version(target_version, "1.4") < 0:
@@ -602,6 +627,20 @@ class World(BaseModel):
         return new_obj
 
     def to_sdf(self, version: str = None) -> ET.Element:
+        from ..elements.actor import Actor
+        from ..elements.atmosphere import Atmosphere
+        from ..elements.frame import Frame
+        from ..elements.gui import Gui
+        from ..elements.joint import Joint
+        from ..elements.light import Light
+        from ..elements.model import Model
+        from ..elements.physics import Physics
+        from ..elements.plugin import Plugin
+        from ..elements.population import Population
+        from ..elements.road import Road
+        from ..elements.scene import Scene
+        from ..elements.spherical_coordinates import SphericalCoordinates
+        from ..elements.state import State
         if version is not None and version != self.__version__:
             return self.to_version(version).to_sdf()
         version = version or self.__version__
@@ -657,6 +696,20 @@ class World(BaseModel):
 
     @classmethod
     def _from_sdf(cls, el: ET.Element, version: str):
+        from ..elements.actor import Actor
+        from ..elements.atmosphere import Atmosphere
+        from ..elements.frame import Frame
+        from ..elements.gui import Gui
+        from ..elements.joint import Joint
+        from ..elements.light import Light
+        from ..elements.model import Model
+        from ..elements.physics import Physics
+        from ..elements.plugin import Plugin
+        from ..elements.population import Population
+        from ..elements.road import Road
+        from ..elements.scene import Scene
+        from ..elements.spherical_coordinates import SphericalCoordinates
+        from ..elements.state import State
         _actor = []
         for c in el.findall("actor"):
             _res = Actor._from_sdf(c, version)

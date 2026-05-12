@@ -687,11 +687,22 @@ def _collect_classes(
     return class_name
 
 
-def _render_class(spec: dict) -> str:
+def _render_class(spec: dict, file_external_imports: set[str]) -> str:
     name = spec["element_name"]
     class_name = spec["class_name"]
     params = spec["params"]
     child_class_names = spec.get("child_class_names", {})
+
+    local_import_lines = []
+    for p in params:
+        xml_kind = p[8]
+        xml_name = p[9]
+        if xml_kind == "child" and xml_name in file_external_imports:
+            module = _module_name_for(xml_name)
+            cls = _to_classname(xml_name)
+            line = f"        from ..elements.{module} import {cls}"
+            if line not in local_import_lines:
+                local_import_lines.append(line)
 
     block: list[str] = [f"class {class_name}(BaseModel):"]
 
@@ -735,6 +746,8 @@ def _render_class(spec: dict) -> str:
 
     block.append("")
     block.append(f'    def to_version(self, target_version: str) -> "{class_name}":')
+    if local_import_lines:
+        block.extend(local_import_lines)
     for p in params:
         py_name, _, _, _, _, _, _, is_list, xml_kind, _, _, _, added_in, removed_in, _, _ = p
         if added_in:
@@ -766,6 +779,8 @@ def _render_class(spec: dict) -> str:
 
     block.append("")
     block.append("    def to_sdf(self, version: str = None) -> ET.Element:")
+    if local_import_lines:
+        block.extend(local_import_lines)
     block.append("        if version is not None and version != self.__version__:")
     block.append("            return self.to_version(version).to_sdf()")
     block.append("        version = version or self.__version__")
@@ -884,6 +899,8 @@ def _render_class(spec: dict) -> str:
     block.append(
         f'    def _from_sdf(cls, el: ET.Element, version: str):'
     )
+    if local_import_lines:
+        block.extend(local_import_lines)
     init_args: list[str] = ["sdf_version=version"]
     for p in params:
         py_name, _, _, raw_default, _, from_expr, _, is_list, xml_kind, xml_name, _, renames, added_in, removed_in, is_required, required_history = p
@@ -1142,6 +1159,7 @@ def generate_element_file(
         "### THIS FILE WAS AUTO-GENERATED ###",
         "from __future__ import annotations",
         "",
+        "import typing",
         "from xml.etree import ElementTree as ET",
         "",
     ]
@@ -1165,12 +1183,13 @@ def generate_element_file(
     lines.append("")
 
     if external_imports:
+        lines.append("if typing.TYPE_CHECKING:")
         for ext in sorted(external_imports):
             if ext == element_name:
                 continue
             module = _module_name_for(ext)
             cls = _to_classname(ext)
-            lines.append(f"from .{module} import {cls}")
+            lines.append(f"    from ..elements.{module} import {cls}")
         lines.append("")
 
     if needs_helpers:
@@ -1180,14 +1199,18 @@ def generate_element_file(
     lines.append("")
 
     for spec in sorted(class_specs, key=lambda s: s["class_name"]):
-        lines.append(_render_class(spec))
+        lines.append(_render_class(spec, external_imports))
         lines.append("")
 
     return "\n".join(lines).rstrip() + "\n"
 
 
 def generate_init(element_names: list[str]) -> str:
-    lines = ["from __future__ import annotations", ""]
+    lines = [
+        "### THIS FILE WAS AUTO-GENERATED ###",
+        "from __future__ import annotations",
+        ""
+    ]
     for element in sorted(element_names):
         root_cls = _to_classname(element)
         lines.append(f"from .{_module_name_for(element)} import {root_cls}")
@@ -1263,16 +1286,15 @@ def main():
         out_path.write_text(py_src, encoding="utf-8")
         out_el_path = ELEMENTS_SRC_DIR / f"{_module_name_for(element_name)}.py"
         if not out_el_path.exists():
-            out_el_path.write_text(f"""from ..sdf.{_module_name_for(element_name)} import {_to_classname(element_name)} as _Base
-
-class {_to_classname(element_name)}(_Base):
-    pass
-""", encoding="utf-8")
+            out_el_path.write_text(f"from ..sdf.{_module_name_for(element_name)} import *  # noqa: F401\n", encoding="utf-8")
         print(f"  Wrote {out_path}")
 
     init_path = SDF_SRC_DIR / "__init__.py"
     init_path.write_text(generate_init(element_names), encoding="utf-8")
     print(f"  Wrote {init_path}")
+    init_elements_path = ELEMENTS_SRC_DIR / "__init__.py"
+    init_elements_path.write_text(generate_init(element_names), encoding="utf-8")
+    print(f"  Wrote {init_elements_path}")
 
     print("\nDone.")
 

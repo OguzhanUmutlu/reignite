@@ -1,6 +1,7 @@
 ### THIS FILE WAS AUTO-GENERATED ###
 from __future__ import annotations
 
+import typing
 from xml.etree import ElementTree as ET
 
 from typing import List
@@ -11,13 +12,14 @@ from ..utils.pose import Pose as _SDFPose
 from ..utils.vector3 import Vector3 as _SDFVector3
 from ..utils.version import cmp_version
 
-from .frame import Frame
-from .gripper import Gripper
-from .joint import Joint
-from .link import Link
-from .model_state import ModelState
-from .plugin import Plugin
-from .pose import Pose
+if typing.TYPE_CHECKING:
+    from ..elements.frame import Frame
+    from ..elements.gripper import Gripper
+    from ..elements.joint import Joint
+    from ..elements.link import Link
+    from ..elements.model_state import ModelState
+    from ..elements.plugin import Plugin
+    from ..elements.pose import Pose
 
 
 class AllowAutoDisable(BaseModel):
@@ -116,6 +118,9 @@ class Include(BaseModel):
         self.uri = uri
 
     def to_version(self, target_version: str) -> "Include":
+        from ..elements.model_state import ModelState
+        from ..elements.plugin import Plugin
+        from ..elements.pose import Pose
         if self.merge is not None and cmp_version(target_version, "1.12") < 0:
             raise ValueError(f"'merge' is not supported in SDF version {target_version} (added in 1.12)")
         if self.model_state is not None and cmp_version(target_version, "1.12") < 0:
@@ -135,6 +140,9 @@ class Include(BaseModel):
         return new_obj
 
     def to_sdf(self, version: str = None) -> ET.Element:
+        from ..elements.model_state import ModelState
+        from ..elements.plugin import Plugin
+        from ..elements.pose import Pose
         if version is not None and version != self.__version__:
             return self.to_version(version).to_sdf()
         version = version or self.__version__
@@ -159,6 +167,9 @@ class Include(BaseModel):
 
     @classmethod
     def _from_sdf(cls, el: ET.Element, version: str):
+        from ..elements.model_state import ModelState
+        from ..elements.plugin import Plugin
+        from ..elements.pose import Pose
         _merge = str(el.get("merge", False)).strip().lower() == 'true'
         if isinstance(_merge, SDFError):
             return _merge.extend("@merge")
@@ -268,6 +279,13 @@ class Model(BaseModel):
         self.static = static
 
     def to_version(self, target_version: str) -> "Model":
+        from ..elements.frame import Frame
+        from ..elements.gripper import Gripper
+        from ..elements.joint import Joint
+        from ..elements.link import Link
+        from ..elements.model_state import ModelState
+        from ..elements.plugin import Plugin
+        from ..elements.pose import Pose
         if self.allow_auto_disable is not None and cmp_version(target_version, "1.2") < 0:
             raise ValueError(f"'allow_auto_disable' is not supported in SDF version {target_version} (added in 1.2)")
         if self.allow_auto_disable is not None and cmp_version(target_version, "1.5") >= 0:
@@ -333,6 +351,13 @@ class Model(BaseModel):
         return new_obj
 
     def to_sdf(self, version: str = None) -> ET.Element:
+        from ..elements.frame import Frame
+        from ..elements.gripper import Gripper
+        from ..elements.joint import Joint
+        from ..elements.link import Link
+        from ..elements.model_state import ModelState
+        from ..elements.plugin import Plugin
+        from ..elements.pose import Pose
         if version is not None and version != self.__version__:
             return self.to_version(version).to_sdf()
         version = version or self.__version__
@@ -377,6 +402,13 @@ class Model(BaseModel):
 
     @classmethod
     def _from_sdf(cls, el: ET.Element, version: str):
+        from ..elements.frame import Frame
+        from ..elements.gripper import Gripper
+        from ..elements.joint import Joint
+        from ..elements.link import Link
+        from ..elements.model_state import ModelState
+        from ..elements.plugin import Plugin
+        from ..elements.pose import Pose
         _c_allow_auto_disable = el.find("allow_auto_disable")
         if _c_allow_auto_disable is not None:
             _res = AllowAutoDisable._from_sdf(_c_allow_auto_disable, version)

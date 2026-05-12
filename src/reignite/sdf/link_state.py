@@ -1,6 +1,7 @@
 ### THIS FILE WAS AUTO-GENERATED ###
 from __future__ import annotations
 
+import typing
 from xml.etree import ElementTree as ET
 
 from typing import List
@@ -10,7 +11,8 @@ from ..utils.errors import SDFError
 from ..utils.pose import Pose as _SDFPose
 from ..utils.vector3 import Vector3 as _SDFVector3
 
-from .pose import Pose
+if typing.TYPE_CHECKING:
+    from ..elements.pose import Pose
 
 
 class Acceleration(BaseModel):
@@ -283,6 +285,7 @@ class LinkState(BaseModel):
         self.wrench = wrench
 
     def to_version(self, target_version: str) -> "LinkState":
+        from ..elements.pose import Pose
         kwargs = {"sdf_version": target_version}
         kwargs["acceleration"] = self.acceleration.to_version(target_version) if self.acceleration is not None else None
         kwargs["angular_acceleration"] = self.angular_acceleration.to_version(target_version) if self.angular_acceleration is not None else None
@@ -300,6 +303,7 @@ class LinkState(BaseModel):
         return new_obj
 
     def to_sdf(self, version: str = None) -> ET.Element:
+        from ..elements.pose import Pose
         if version is not None and version != self.__version__:
             return self.to_version(version).to_sdf()
         version = version or self.__version__
@@ -332,6 +336,7 @@ class LinkState(BaseModel):
 
     @classmethod
     def _from_sdf(cls, el: ET.Element, version: str):
+        from ..elements.pose import Pose
         _c_acceleration = el.find("acceleration")
         if _c_acceleration is not None:
             _res = Acceleration._from_sdf(_c_acceleration, version)

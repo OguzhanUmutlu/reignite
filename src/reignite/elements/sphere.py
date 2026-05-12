@@ -1,5 +1,1 @@
-from ..sdf.sphere import Sphere as _Base
-
-
-class Sphere(_Base):
-    pass
+from ..sdf.sphere import *  # noqa: F401

@@ -1,5 +1,1 @@
-from ..sdf.altimeter import Altimeter as _Base
-
-
-class Altimeter(_Base):
-    pass
+from ..sdf.altimeter import *  # noqa: F401

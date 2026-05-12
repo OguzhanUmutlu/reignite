@@ -1,6 +1,7 @@
 ### THIS FILE WAS AUTO-GENERATED ###
 from __future__ import annotations
 
+import typing
 from xml.etree import ElementTree as ET
 
 from typing import List
@@ -12,10 +13,11 @@ from ..utils.vector3 import Vector3 as _SDFVector3
 from ..utils.version import cmp_version
 from ..utils.migration import apply_migrations
 
-from .frame import Frame
-from .mimic import Mimic
-from .pose import Pose
-from .sensor import Sensor
+if typing.TYPE_CHECKING:
+    from ..elements.frame import Frame
+    from ..elements.mimic import Mimic
+    from ..elements.pose import Pose
+    from ..elements.sensor import Sensor
 
 
 import math
@@ -75,6 +77,7 @@ class Axis(BaseModel):
         self.xyz = xyz
 
     def to_version(self, target_version: str) -> "Axis":
+        from ..elements.mimic import Mimic
         if self.initial_position is not None and cmp_version(target_version, "1.6") < 0:
             raise ValueError(f"'initial_position' is not supported in SDF version {target_version} (added in 1.6)")
         if self.initial_position is not None and cmp_version(target_version, "1.9") >= 0:
@@ -99,6 +102,7 @@ class Axis(BaseModel):
         return new_obj
 
     def to_sdf(self, version: str = None) -> ET.Element:
+        from ..elements.mimic import Mimic
         if version is not None and version != self.__version__:
             return self.to_version(version).to_sdf()
         version = version or self.__version__
@@ -121,6 +125,7 @@ class Axis(BaseModel):
 
     @classmethod
     def _from_sdf(cls, el: ET.Element, version: str):
+        from ..elements.mimic import Mimic
         _c_dynamics = el.find("dynamics")
         if _c_dynamics is not None:
             _res = Dynamics._from_sdf(_c_dynamics, version)
@@ -200,6 +205,7 @@ class Axis2(BaseModel):
         self.xyz = xyz
 
     def to_version(self, target_version: str) -> "Axis2":
+        from ..elements.mimic import Mimic
         if self.initial_position is not None and cmp_version(target_version, "1.6") < 0:
             raise ValueError(f"'initial_position' is not supported in SDF version {target_version} (added in 1.6)")
         if self.initial_position is not None and cmp_version(target_version, "1.9") >= 0:
@@ -224,6 +230,7 @@ class Axis2(BaseModel):
         return new_obj
 
     def to_sdf(self, version: str = None) -> ET.Element:
+        from ..elements.mimic import Mimic
         if version is not None and version != self.__version__:
             return self.to_version(version).to_sdf()
         version = version or self.__version__
@@ -247,6 +254,7 @@ class Axis2(BaseModel):
 
     @classmethod
     def _from_sdf(cls, el: ET.Element, version: str):
+        from ..elements.mimic import Mimic
         _c_dynamics = el.find("dynamics")
         if _c_dynamics is not None:
             _res = Dynamics._from_sdf(_c_dynamics, version)
@@ -983,6 +991,9 @@ class Joint(BaseModel):
         self.type = type
 
     def to_version(self, target_version: str) -> "Joint":
+        from ..elements.frame import Frame
+        from ..elements.pose import Pose
+        from ..elements.sensor import Sensor
         if self.frame is not None and cmp_version(target_version, "1.5") < 0:
             raise ValueError(f"'frame' is not supported in SDF version {target_version} (added in 1.5)")
         if self.frame is not None and cmp_version(target_version, "1.7") >= 0:
@@ -1019,6 +1030,9 @@ class Joint(BaseModel):
         return new_obj
 
     def to_sdf(self, version: str = None) -> ET.Element:
+        from ..elements.frame import Frame
+        from ..elements.pose import Pose
+        from ..elements.sensor import Sensor
         if version is not None and version != self.__version__:
             return self.to_version(version).to_sdf()
         version = version or self.__version__
@@ -1057,6 +1071,9 @@ class Joint(BaseModel):
 
     @classmethod
     def _from_sdf(cls, el: ET.Element, version: str):
+        from ..elements.frame import Frame
+        from ..elements.pose import Pose
+        from ..elements.sensor import Sensor
         _c_axis = el.find("axis")
         if _c_axis is not None:
             _res = Axis._from_sdf(_c_axis, version)

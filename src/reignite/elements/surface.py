@@ -1,5 +1,1 @@
-from ..sdf.surface import Surface as _Base
-
-
-class Surface(_Base):
-    pass
+from ..sdf.surface import *  # noqa: F401

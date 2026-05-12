@@ -1,6 +1,7 @@
 ### THIS FILE WAS AUTO-GENERATED ###
 from __future__ import annotations
 
+import typing
 from xml.etree import ElementTree as ET
 
 from typing import List
@@ -9,8 +10,9 @@ from ..utils.model import BaseModel
 from ..utils.errors import SDFError
 from ..utils.version import cmp_version
 
-from .frame import Frame
-from .pose import Pose
+if typing.TYPE_CHECKING:
+    from ..elements.frame import Frame
+    from ..elements.pose import Pose
 
 
 import math
@@ -68,6 +70,8 @@ class AudioSource(BaseModel):
         self.uri = uri
 
     def to_version(self, target_version: str) -> "AudioSource":
+        from ..elements.frame import Frame
+        from ..elements.pose import Pose
         if self.frame is not None and cmp_version(target_version, "1.5") < 0:
             raise ValueError(f"'frame' is not supported in SDF version {target_version} (added in 1.5)")
         if self.frame is not None and cmp_version(target_version, "1.7") >= 0:
@@ -84,6 +88,8 @@ class AudioSource(BaseModel):
         return new_obj
 
     def to_sdf(self, version: str = None) -> ET.Element:
+        from ..elements.frame import Frame
+        from ..elements.pose import Pose
         if version is not None and version != self.__version__:
             return self.to_version(version).to_sdf()
         version = version or self.__version__
@@ -106,6 +112,8 @@ class AudioSource(BaseModel):
 
     @classmethod
     def _from_sdf(cls, el: ET.Element, version: str):
+        from ..elements.frame import Frame
+        from ..elements.pose import Pose
         _c_contact = el.find("contact")
         if _c_contact is not None:
             _res = Contact._from_sdf(_c_contact, version)

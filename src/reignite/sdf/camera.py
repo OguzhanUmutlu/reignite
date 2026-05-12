@@ -1,6 +1,7 @@
 ### THIS FILE WAS AUTO-GENERATED ###
 from __future__ import annotations
 
+import typing
 from xml.etree import ElementTree as ET
 
 from typing import List
@@ -10,8 +11,9 @@ from ..utils.errors import SDFError
 from ..utils.vector2d import Vector2d as _SDFVector2d
 from ..utils.version import cmp_version
 
-from .frame import Frame
-from .pose import Pose
+if typing.TYPE_CHECKING:
+    from ..elements.frame import Frame
+    from ..elements.pose import Pose
 
 
 import math
@@ -246,6 +248,8 @@ class Camera(BaseModel):
         self.visibility_mask = visibility_mask
 
     def to_version(self, target_version: str) -> "Camera":
+        from ..elements.frame import Frame
+        from ..elements.pose import Pose
         if self.box_type is not None and cmp_version(target_version, "1.9") < 0:
             raise ValueError(f"'box_type' is not supported in SDF version {target_version} (added in 1.9)")
         if self.camera_info_topic is not None and cmp_version(target_version, "1.7") < 0:
@@ -297,6 +301,8 @@ class Camera(BaseModel):
         return new_obj
 
     def to_sdf(self, version: str = None) -> ET.Element:
+        from ..elements.frame import Frame
+        from ..elements.pose import Pose
         if version is not None and version != self.__version__:
             return self.to_version(version).to_sdf()
         version = version or self.__version__
@@ -345,6 +351,8 @@ class Camera(BaseModel):
 
     @classmethod
     def _from_sdf(cls, el: ET.Element, version: str):
+        from ..elements.frame import Frame
+        from ..elements.pose import Pose
         _c_box_type = el.find("box_type")
         if _c_box_type is not None:
             _res = BoxType._from_sdf(_c_box_type, version)

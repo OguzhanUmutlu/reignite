@@ -1,6 +1,7 @@
 ### THIS FILE WAS AUTO-GENERATED ###
 from __future__ import annotations
 
+import typing
 from xml.etree import ElementTree as ET
 
 from typing import List
@@ -10,18 +11,19 @@ from ..utils.errors import SDFError
 from ..utils.pose import Pose as _SDFPose
 from ..utils.version import cmp_version
 
-from .audio_sink import AudioSink
-from .audio_source import AudioSource
-from .battery import Battery
-from .collision import Collision
-from .frame import Frame
-from .inertial import Inertial
-from .light import Light
-from .particle_emitter import ParticleEmitter
-from .pose import Pose
-from .projector import Projector
-from .sensor import Sensor
-from .visual import Visual
+if typing.TYPE_CHECKING:
+    from ..elements.audio_sink import AudioSink
+    from ..elements.audio_source import AudioSource
+    from ..elements.battery import Battery
+    from ..elements.collision import Collision
+    from ..elements.frame import Frame
+    from ..elements.inertial import Inertial
+    from ..elements.light import Light
+    from ..elements.particle_emitter import ParticleEmitter
+    from ..elements.pose import Pose
+    from ..elements.projector import Projector
+    from ..elements.sensor import Sensor
+    from ..elements.visual import Visual
 
 
 import math
@@ -360,6 +362,18 @@ class Link(BaseModel):
         self.wrench = wrench
 
     def to_version(self, target_version: str) -> "Link":
+        from ..elements.audio_sink import AudioSink
+        from ..elements.audio_source import AudioSource
+        from ..elements.battery import Battery
+        from ..elements.collision import Collision
+        from ..elements.frame import Frame
+        from ..elements.inertial import Inertial
+        from ..elements.light import Light
+        from ..elements.particle_emitter import ParticleEmitter
+        from ..elements.pose import Pose
+        from ..elements.projector import Projector
+        from ..elements.sensor import Sensor
+        from ..elements.visual import Visual
         if self.acceleration is not None and cmp_version(target_version, "1.5") < 0:
             raise ValueError(f"'acceleration' is not supported in SDF version {target_version} (added in 1.5)")
         if self.acceleration is not None and cmp_version(target_version, "1.12") >= 0:
@@ -449,6 +463,18 @@ class Link(BaseModel):
         return new_obj
 
     def to_sdf(self, version: str = None) -> ET.Element:
+        from ..elements.audio_sink import AudioSink
+        from ..elements.audio_source import AudioSource
+        from ..elements.battery import Battery
+        from ..elements.collision import Collision
+        from ..elements.frame import Frame
+        from ..elements.inertial import Inertial
+        from ..elements.light import Light
+        from ..elements.particle_emitter import ParticleEmitter
+        from ..elements.pose import Pose
+        from ..elements.projector import Projector
+        from ..elements.sensor import Sensor
+        from ..elements.visual import Visual
         if version is not None and version != self.__version__:
             return self.to_version(version).to_sdf()
         version = version or self.__version__
@@ -513,6 +539,18 @@ class Link(BaseModel):
 
     @classmethod
     def _from_sdf(cls, el: ET.Element, version: str):
+        from ..elements.audio_sink import AudioSink
+        from ..elements.audio_source import AudioSource
+        from ..elements.battery import Battery
+        from ..elements.collision import Collision
+        from ..elements.frame import Frame
+        from ..elements.inertial import Inertial
+        from ..elements.light import Light
+        from ..elements.particle_emitter import ParticleEmitter
+        from ..elements.pose import Pose
+        from ..elements.projector import Projector
+        from ..elements.sensor import Sensor
+        from ..elements.visual import Visual
         _c_acceleration = el.find("acceleration")
         if _c_acceleration is not None:
             _res = Acceleration._from_sdf(_c_acceleration, version)

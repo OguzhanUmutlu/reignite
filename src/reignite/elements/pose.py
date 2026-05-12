@@ -1,5 +1,1 @@
-from ..sdf.pose import Pose as _Base
-
-
-class Pose(_Base):
-    pass
+from ..sdf.pose import *  # noqa: F401

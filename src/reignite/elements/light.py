@@ -1,5 +1,1 @@
-from ..sdf.light import Light as _Base
-
-
-class Light(_Base):
-    pass
+from ..sdf.light import *  # noqa: F401

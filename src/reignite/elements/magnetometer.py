@@ -1,5 +1,1 @@
-from ..sdf.magnetometer import Magnetometer as _Base
-
-
-class Magnetometer(_Base):
-    pass
+from ..sdf.magnetometer import *  # noqa: F401

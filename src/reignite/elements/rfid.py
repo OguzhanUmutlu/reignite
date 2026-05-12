@@ -1,5 +1,1 @@
-from ..sdf.rfid import Rfid as _Base
-
-
-class Rfid(_Base):
-    pass
+from ..sdf.rfid import *  # noqa: F401

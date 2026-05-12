@@ -1,6 +1,7 @@
 ### THIS FILE WAS AUTO-GENERATED ###
 from __future__ import annotations
 
+import typing
 from xml.etree import ElementTree as ET
 
 from typing import List
@@ -9,12 +10,13 @@ from ..utils.model import BaseModel
 from ..utils.errors import SDFError
 from ..utils.version import cmp_version
 
-from .joint import Joint
-from .joint_state import JointState
-from .light import Light
-from .light_state import LightState
-from .model import Model
-from .model_state import ModelState
+if typing.TYPE_CHECKING:
+    from ..elements.joint import Joint
+    from ..elements.joint_state import JointState
+    from ..elements.light import Light
+    from ..elements.light_state import LightState
+    from ..elements.model import Model
+    from ..elements.model_state import ModelState
 
 
 import math
@@ -95,6 +97,9 @@ class Insertions(BaseModel):
         self.model = model or []
 
     def to_version(self, target_version: str) -> "Insertions":
+        from ..elements.joint import Joint
+        from ..elements.light import Light
+        from ..elements.model import Model
         if self.joint is not None and cmp_version(target_version, "1.12") < 0:
             raise ValueError(f"'joint' is not supported in SDF version {target_version} (added in 1.12)")
         if self.light is not None and cmp_version(target_version, "1.6") < 0:
@@ -107,6 +112,9 @@ class Insertions(BaseModel):
         return new_obj
 
     def to_sdf(self, version: str = None) -> ET.Element:
+        from ..elements.joint import Joint
+        from ..elements.light import Light
+        from ..elements.model import Model
         if version is not None and version != self.__version__:
             return self.to_version(version).to_sdf()
         version = version or self.__version__
@@ -121,6 +129,9 @@ class Insertions(BaseModel):
 
     @classmethod
     def _from_sdf(cls, el: ET.Element, version: str):
+        from ..elements.joint import Joint
+        from ..elements.light import Light
+        from ..elements.model import Model
         _joint = []
         for c in el.findall("joint"):
             _res = Joint._from_sdf(c, version)
@@ -311,6 +322,11 @@ class State(BaseModel):
         self.world_name = world_name
 
     def to_version(self, target_version: str) -> "State":
+        from ..elements.joint_state import JointState
+        from ..elements.light import Light
+        from ..elements.light_state import LightState
+        from ..elements.model import Model
+        from ..elements.model_state import ModelState
         if self.deletions is not None and cmp_version(target_version, "1.3") < 0:
             raise ValueError(f"'deletions' is not supported in SDF version {target_version} (added in 1.3)")
         if self.insertions is not None and cmp_version(target_version, "1.3") < 0:
@@ -355,6 +371,11 @@ class State(BaseModel):
         return new_obj
 
     def to_sdf(self, version: str = None) -> ET.Element:
+        from ..elements.joint_state import JointState
+        from ..elements.light import Light
+        from ..elements.light_state import LightState
+        from ..elements.model import Model
+        from ..elements.model_state import ModelState
         if version is not None and version != self.__version__:
             return self.to_version(version).to_sdf()
         version = version or self.__version__
@@ -389,6 +410,11 @@ class State(BaseModel):
 
     @classmethod
     def _from_sdf(cls, el: ET.Element, version: str):
+        from ..elements.joint_state import JointState
+        from ..elements.light import Light
+        from ..elements.light_state import LightState
+        from ..elements.model import Model
+        from ..elements.model_state import ModelState
         _c_deletions = el.find("deletions")
         if _c_deletions is not None:
             _res = Deletions._from_sdf(_c_deletions, version)

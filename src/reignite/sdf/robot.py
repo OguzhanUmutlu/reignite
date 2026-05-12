@@ -1,6 +1,7 @@
 ### THIS FILE WAS AUTO-GENERATED ###
 from __future__ import annotations
 
+import typing
 from xml.etree import ElementTree as ET
 
 from typing import List
@@ -10,10 +11,11 @@ from ..utils.errors import SDFError
 from ..utils.pose import Pose as _SDFPose
 from ..utils.migration import apply_migrations
 
-from .gripper import Gripper
-from .joint import Joint
-from .link import Link
-from .plugin import Plugin
+if typing.TYPE_CHECKING:
+    from ..elements.gripper import Gripper
+    from ..elements.joint import Joint
+    from ..elements.link import Link
+    from ..elements.plugin import Plugin
 
 
 class Pose(BaseModel):
@@ -70,6 +72,10 @@ class Robot(BaseModel):
         self.pose = pose
 
     def to_version(self, target_version: str) -> "Robot":
+        from ..elements.gripper import Gripper
+        from ..elements.joint import Joint
+        from ..elements.link import Link
+        from ..elements.plugin import Plugin
         kwargs = {"sdf_version": target_version}
         kwargs["gripper"] = [c.to_version(target_version) for c in (self.gripper or [])]
         kwargs["joint"] = [c.to_version(target_version) for c in (self.joint or [])]
@@ -81,6 +87,10 @@ class Robot(BaseModel):
         return new_obj
 
     def to_sdf(self, version: str = None) -> ET.Element:
+        from ..elements.gripper import Gripper
+        from ..elements.joint import Joint
+        from ..elements.link import Link
+        from ..elements.plugin import Plugin
         if version is not None and version != self.__version__:
             return self.to_version(version).to_sdf()
         version = version or self.__version__
@@ -101,6 +111,10 @@ class Robot(BaseModel):
 
     @classmethod
     def _from_sdf(cls, el: ET.Element, version: str):
+        from ..elements.gripper import Gripper
+        from ..elements.joint import Joint
+        from ..elements.link import Link
+        from ..elements.plugin import Plugin
         _gripper = []
         for c in el.findall("gripper"):
             _res = Gripper._from_sdf(c, version)

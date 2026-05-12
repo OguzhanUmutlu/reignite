@@ -1,5 +1,1 @@
-from ..sdf.atmosphere import Atmosphere as _Base
-
-
-class Atmosphere(_Base):
-    pass
+from ..sdf.atmosphere import *  # noqa: F401

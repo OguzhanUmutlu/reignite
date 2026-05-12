@@ -1,5 +1,1 @@
-from ..sdf.road import Road as _Base
-
-
-class Road(_Base):
-    pass
+from ..sdf.road import *  # noqa: F401

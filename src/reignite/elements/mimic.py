@@ -1,5 +1,1 @@
-from ..sdf.mimic import Mimic as _Base
-
-
-class Mimic(_Base):
-    pass
+from ..sdf.mimic import *  # noqa: F401

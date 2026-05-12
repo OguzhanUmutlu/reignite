@@ -1,6 +1,7 @@
 ### THIS FILE WAS AUTO-GENERATED ###
 from __future__ import annotations
 
+import typing
 from xml.etree import ElementTree as ET
 
 from typing import List
@@ -10,11 +11,12 @@ from ..utils.errors import SDFError
 from ..utils.pose import Pose as _SDFPose
 from ..utils.version import cmp_version
 
-from .frame import Frame
-from .geometry import Geometry
-from .material import Material
-from .plugin import Plugin
-from .pose import Pose
+if typing.TYPE_CHECKING:
+    from ..elements.frame import Frame
+    from ..elements.geometry import Geometry
+    from ..elements.material import Material
+    from ..elements.plugin import Plugin
+    from ..elements.pose import Pose
 
 
 import math
@@ -310,6 +312,11 @@ class Visual(BaseModel):
         self.visibility_flags = visibility_flags
 
     def to_version(self, target_version: str) -> "Visual":
+        from ..elements.frame import Frame
+        from ..elements.geometry import Geometry
+        from ..elements.material import Material
+        from ..elements.plugin import Plugin
+        from ..elements.pose import Pose
         if self.cast_shadows is not None and cmp_version(target_version, "1.2") >= 0:
             raise ValueError(f"'cast_shadows' is not supported in SDF version {target_version} (removed in 1.2)")
         if self.frame is not None and cmp_version(target_version, "1.5") < 0:
@@ -347,6 +354,11 @@ class Visual(BaseModel):
         return new_obj
 
     def to_sdf(self, version: str = None) -> ET.Element:
+        from ..elements.frame import Frame
+        from ..elements.geometry import Geometry
+        from ..elements.material import Material
+        from ..elements.plugin import Plugin
+        from ..elements.pose import Pose
         if version is not None and version != self.__version__:
             return self.to_version(version).to_sdf()
         version = version or self.__version__
@@ -381,6 +393,11 @@ class Visual(BaseModel):
 
     @classmethod
     def _from_sdf(cls, el: ET.Element, version: str):
+        from ..elements.frame import Frame
+        from ..elements.geometry import Geometry
+        from ..elements.material import Material
+        from ..elements.plugin import Plugin
+        from ..elements.pose import Pose
         _cast_shadows = str(el.get("cast_shadows", True)).strip().lower() == 'true'
         if isinstance(_cast_shadows, SDFError):
             return _cast_shadows.extend("@cast_shadows")

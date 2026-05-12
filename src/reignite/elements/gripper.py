@@ -1,5 +1,1 @@
-from ..sdf.gripper import Gripper as _Base
-
-
-class Gripper(_Base):
-    pass
+from ..sdf.gripper import *  # noqa: F401

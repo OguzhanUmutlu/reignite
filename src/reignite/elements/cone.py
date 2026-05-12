@@ -1,5 +1,1 @@
-from ..sdf.cone import Cone as _Base
-
-
-class Cone(_Base):
-    pass
+from ..sdf.cone import *  # noqa: F401

@@ -1,23 +1,25 @@
 ### THIS FILE WAS AUTO-GENERATED ###
 from __future__ import annotations
 
+import typing
 from xml.etree import ElementTree as ET
 
 from ..utils.model import BaseModel
 from ..utils.errors import SDFError
 from ..utils.version import cmp_version
 
-from .box import Box
-from .capsule import Capsule
-from .cone import Cone
-from .cylinder import Cylinder
-from .ellipsoid import Ellipsoid
-from .heightmap import Heightmap
-from .image import Image
-from .mesh import Mesh
-from .plane import Plane
-from .polyline import Polyline
-from .sphere import Sphere
+if typing.TYPE_CHECKING:
+    from ..elements.box import Box
+    from ..elements.capsule import Capsule
+    from ..elements.cone import Cone
+    from ..elements.cylinder import Cylinder
+    from ..elements.ellipsoid import Ellipsoid
+    from ..elements.heightmap import Heightmap
+    from ..elements.image import Image
+    from ..elements.mesh import Mesh
+    from ..elements.plane import Plane
+    from ..elements.polyline import Polyline
+    from ..elements.sphere import Sphere
 
 
 class Empty(BaseModel):
@@ -73,6 +75,17 @@ class Geometry(BaseModel):
         self.sphere = sphere
 
     def to_version(self, target_version: str) -> "Geometry":
+        from ..elements.box import Box
+        from ..elements.capsule import Capsule
+        from ..elements.cone import Cone
+        from ..elements.cylinder import Cylinder
+        from ..elements.ellipsoid import Ellipsoid
+        from ..elements.heightmap import Heightmap
+        from ..elements.image import Image
+        from ..elements.mesh import Mesh
+        from ..elements.plane import Plane
+        from ..elements.polyline import Polyline
+        from ..elements.sphere import Sphere
         if self.capsule is not None and cmp_version(target_version, "1.8") < 0:
             raise ValueError(f"'capsule' is not supported in SDF version {target_version} (added in 1.8)")
         if self.cone is not None and cmp_version(target_version, "1.11") < 0:
@@ -100,6 +113,17 @@ class Geometry(BaseModel):
         return new_obj
 
     def to_sdf(self, version: str = None) -> ET.Element:
+        from ..elements.box import Box
+        from ..elements.capsule import Capsule
+        from ..elements.cone import Cone
+        from ..elements.cylinder import Cylinder
+        from ..elements.ellipsoid import Ellipsoid
+        from ..elements.heightmap import Heightmap
+        from ..elements.image import Image
+        from ..elements.mesh import Mesh
+        from ..elements.plane import Plane
+        from ..elements.polyline import Polyline
+        from ..elements.sphere import Sphere
         if version is not None and version != self.__version__:
             return self.to_version(version).to_sdf()
         version = version or self.__version__
@@ -132,6 +156,17 @@ class Geometry(BaseModel):
 
     @classmethod
     def _from_sdf(cls, el: ET.Element, version: str):
+        from ..elements.box import Box
+        from ..elements.capsule import Capsule
+        from ..elements.cone import Cone
+        from ..elements.cylinder import Cylinder
+        from ..elements.ellipsoid import Ellipsoid
+        from ..elements.heightmap import Heightmap
+        from ..elements.image import Image
+        from ..elements.mesh import Mesh
+        from ..elements.plane import Plane
+        from ..elements.polyline import Polyline
+        from ..elements.sphere import Sphere
         _c_box = el.find("box")
         if _c_box is not None:
             _res = Box._from_sdf(_c_box, version)

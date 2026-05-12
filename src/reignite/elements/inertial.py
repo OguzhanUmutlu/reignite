@@ -1,5 +1,1 @@
-from ..sdf.inertial import Inertial as _Base
-
-
-class Inertial(_Base):
-    pass
+from ..sdf.inertial import *  # noqa: F401

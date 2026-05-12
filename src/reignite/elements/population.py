@@ -1,5 +1,1 @@
-from ..sdf.population import Population as _Base
-
-
-class Population(_Base):
-    pass
+from ..sdf.population import *  # noqa: F401

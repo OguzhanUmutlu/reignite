@@ -1,5 +1,1 @@
-from ..sdf.contact import Contact as _Base
-
-
-class Contact(_Base):
-    pass
+from ..sdf.contact import *  # noqa: F401

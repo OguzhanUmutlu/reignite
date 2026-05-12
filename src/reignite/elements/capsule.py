@@ -1,5 +1,1 @@
-from ..sdf.capsule import Capsule as _Base
-
-
-class Capsule(_Base):
-    pass
+from ..sdf.capsule import *  # noqa: F401

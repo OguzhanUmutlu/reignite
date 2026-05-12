@@ -1,5 +1,1 @@
-from ..sdf.cylinder import Cylinder as _Base
-
-
-class Cylinder(_Base):
-    pass
+from ..sdf.cylinder import *  # noqa: F401

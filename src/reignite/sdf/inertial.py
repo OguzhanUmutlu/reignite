@@ -1,6 +1,7 @@
 ### THIS FILE WAS AUTO-GENERATED ###
 from __future__ import annotations
 
+import typing
 from xml.etree import ElementTree as ET
 
 from typing import List
@@ -10,8 +11,9 @@ from ..utils.errors import SDFError
 from ..utils.pose import Pose as _SDFPose
 from ..utils.version import cmp_version
 
-from .frame import Frame
-from .pose import Pose
+if typing.TYPE_CHECKING:
+    from ..elements.frame import Frame
+    from ..elements.pose import Pose
 
 
 import math
@@ -509,6 +511,8 @@ class Inertial(BaseModel):
         self.pose = pose
 
     def to_version(self, target_version: str) -> "Inertial":
+        from ..elements.frame import Frame
+        from ..elements.pose import Pose
         if self.auto is not None and cmp_version(target_version, "1.11") < 0:
             raise ValueError(f"'auto' is not supported in SDF version {target_version} (added in 1.11)")
         if self.auto_inertia_params is not None and cmp_version(target_version, "1.11") < 0:
@@ -541,6 +545,8 @@ class Inertial(BaseModel):
         return new_obj
 
     def to_sdf(self, version: str = None) -> ET.Element:
+        from ..elements.frame import Frame
+        from ..elements.pose import Pose
         if version is not None and version != self.__version__:
             return self.to_version(version).to_sdf()
         version = version or self.__version__
@@ -567,6 +573,8 @@ class Inertial(BaseModel):
 
     @classmethod
     def _from_sdf(cls, el: ET.Element, version: str):
+        from ..elements.frame import Frame
+        from ..elements.pose import Pose
         _auto = str(el.get("auto", False)).strip().lower() == 'true'
         if isinstance(_auto, SDFError):
             return _auto.extend("@auto")

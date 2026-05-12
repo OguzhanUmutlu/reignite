@@ -1,12 +1,14 @@
 ### THIS FILE WAS AUTO-GENERATED ###
 from __future__ import annotations
 
+import typing
 from xml.etree import ElementTree as ET
 
 from ..utils.model import BaseModel
 from ..utils.errors import SDFError
 
-from .noise import Noise
+if typing.TYPE_CHECKING:
+    from ..elements.noise import Noise
 
 
 class Horizontal(BaseModel):
@@ -15,12 +17,14 @@ class Horizontal(BaseModel):
         self.noise = noise
 
     def to_version(self, target_version: str) -> "Horizontal":
+        from ..elements.noise import Noise
         kwargs = {"sdf_version": target_version}
         kwargs["noise"] = self.noise.to_version(target_version) if self.noise is not None else None
         new_obj = self.__class__(**kwargs)
         return new_obj
 
     def to_sdf(self, version: str = None) -> ET.Element:
+        from ..elements.noise import Noise
         if version is not None and version != self.__version__:
             return self.to_version(version).to_sdf()
         version = version or self.__version__
@@ -33,6 +37,7 @@ class Horizontal(BaseModel):
 
     @classmethod
     def _from_sdf(cls, el: ET.Element, version: str):
+        from ..elements.noise import Noise
         _c_noise = el.find("noise")
         if _c_noise is not None:
             _res = Noise._from_sdf(_c_noise, version)
@@ -203,12 +208,14 @@ class Vertical(BaseModel):
         self.noise = noise
 
     def to_version(self, target_version: str) -> "Vertical":
+        from ..elements.noise import Noise
         kwargs = {"sdf_version": target_version}
         kwargs["noise"] = self.noise.to_version(target_version) if self.noise is not None else None
         new_obj = self.__class__(**kwargs)
         return new_obj
 
     def to_sdf(self, version: str = None) -> ET.Element:
+        from ..elements.noise import Noise
         if version is not None and version != self.__version__:
             return self.to_version(version).to_sdf()
         version = version or self.__version__
@@ -221,6 +228,7 @@ class Vertical(BaseModel):
 
     @classmethod
     def _from_sdf(cls, el: ET.Element, version: str):
+        from ..elements.noise import Noise
         _c_noise = el.find("noise")
         if _c_noise is not None:
             _res = Noise._from_sdf(_c_noise, version)

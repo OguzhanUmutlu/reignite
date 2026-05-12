@@ -1,6 +1,7 @@
 ### THIS FILE WAS AUTO-GENERATED ###
 from __future__ import annotations
 
+import typing
 from xml.etree import ElementTree as ET
 
 from typing import List
@@ -10,10 +11,11 @@ from ..utils.errors import SDFError
 from ..utils.pose import Pose as _SDFPose
 from ..utils.version import cmp_version
 
-from .frame import Frame
-from .geometry import Geometry
-from .pose import Pose
-from .surface import Surface
+if typing.TYPE_CHECKING:
+    from ..elements.frame import Frame
+    from ..elements.geometry import Geometry
+    from ..elements.pose import Pose
+    from ..elements.surface import Surface
 
 
 import math
@@ -100,6 +102,10 @@ class Collision(BaseModel):
         self.surface = surface
 
     def to_version(self, target_version: str) -> "Collision":
+        from ..elements.frame import Frame
+        from ..elements.geometry import Geometry
+        from ..elements.pose import Pose
+        from ..elements.surface import Surface
         if self.auto_inertia_params is not None and cmp_version(target_version, "1.11") < 0:
             raise ValueError(f"'auto_inertia_params' is not supported in SDF version {target_version} (added in 1.11)")
         if self.density is not None and cmp_version(target_version, "1.11") < 0:
@@ -132,6 +138,10 @@ class Collision(BaseModel):
         return new_obj
 
     def to_sdf(self, version: str = None) -> ET.Element:
+        from ..elements.frame import Frame
+        from ..elements.geometry import Geometry
+        from ..elements.pose import Pose
+        from ..elements.surface import Surface
         if version is not None and version != self.__version__:
             return self.to_version(version).to_sdf()
         version = version or self.__version__
@@ -164,6 +174,10 @@ class Collision(BaseModel):
 
     @classmethod
     def _from_sdf(cls, el: ET.Element, version: str):
+        from ..elements.frame import Frame
+        from ..elements.geometry import Geometry
+        from ..elements.pose import Pose
+        from ..elements.surface import Surface
         _c_auto_inertia_params = el.find("auto_inertia_params")
         if _c_auto_inertia_params is not None:
             _res = AutoInertiaParams._from_sdf(_c_auto_inertia_params, version)

@@ -1,5 +1,1 @@
-from ..sdf.box import Box as _Base
-
-
-class Box(_Base):
-    pass
+from ..sdf.box import *  # noqa: F401

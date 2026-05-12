@@ -1,5 +1,1 @@
-from ..sdf.ellipsoid import Ellipsoid as _Base
-
-
-class Ellipsoid(_Base):
-    pass
+from ..sdf.ellipsoid import *  # noqa: F401

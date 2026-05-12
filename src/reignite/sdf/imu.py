@@ -1,6 +1,7 @@
 ### THIS FILE WAS AUTO-GENERATED ###
 from __future__ import annotations
 
+import typing
 from xml.etree import ElementTree as ET
 
 from ..utils.model import BaseModel
@@ -9,7 +10,8 @@ from ..utils.vector3 import Vector3 as _SDFVector3
 from ..utils.version import cmp_version
 from ..utils.migration import apply_migrations
 
-from .noise import Noise
+if typing.TYPE_CHECKING:
+    from ..elements.noise import Noise
 
 
 import math
@@ -368,6 +370,7 @@ class Imu(BaseModel):
         self.topic = topic
 
     def to_version(self, target_version: str) -> "Imu":
+        from ..elements.noise import Noise
         if self.angular_velocity is not None and cmp_version(target_version, "1.5") < 0:
             raise ValueError(f"'angular_velocity' is not supported in SDF version {target_version} (added in 1.5)")
         if self.enable_orientation is not None and cmp_version(target_version, "1.6") < 0:
@@ -394,6 +397,7 @@ class Imu(BaseModel):
         return new_obj
 
     def to_sdf(self, version: str = None) -> ET.Element:
+        from ..elements.noise import Noise
         if version is not None and version != self.__version__:
             return self.to_version(version).to_sdf()
         version = version or self.__version__
@@ -414,6 +418,7 @@ class Imu(BaseModel):
 
     @classmethod
     def _from_sdf(cls, el: ET.Element, version: str):
+        from ..elements.noise import Noise
         _c_angular_velocity = el.find("angular_velocity")
         if _c_angular_velocity is not None:
             _res = AngularVelocity._from_sdf(_c_angular_velocity, version)
@@ -897,12 +902,14 @@ class X(BaseModel):
         self.noise = noise
 
     def to_version(self, target_version: str) -> "X":
+        from ..elements.noise import Noise
         kwargs = {"sdf_version": target_version}
         kwargs["noise"] = self.noise.to_version(target_version) if self.noise is not None else None
         new_obj = self.__class__(**kwargs)
         return new_obj
 
     def to_sdf(self, version: str = None) -> ET.Element:
+        from ..elements.noise import Noise
         if version is not None and version != self.__version__:
             return self.to_version(version).to_sdf()
         version = version or self.__version__
@@ -915,6 +922,7 @@ class X(BaseModel):
 
     @classmethod
     def _from_sdf(cls, el: ET.Element, version: str):
+        from ..elements.noise import Noise
         _c_noise = el.find("noise")
         if _c_noise is not None:
             _res = Noise._from_sdf(_c_noise, version)
@@ -935,12 +943,14 @@ class Y(BaseModel):
         self.noise = noise
 
     def to_version(self, target_version: str) -> "Y":
+        from ..elements.noise import Noise
         kwargs = {"sdf_version": target_version}
         kwargs["noise"] = self.noise.to_version(target_version) if self.noise is not None else None
         new_obj = self.__class__(**kwargs)
         return new_obj
 
     def to_sdf(self, version: str = None) -> ET.Element:
+        from ..elements.noise import Noise
         if version is not None and version != self.__version__:
             return self.to_version(version).to_sdf()
         version = version or self.__version__
@@ -953,6 +963,7 @@ class Y(BaseModel):
 
     @classmethod
     def _from_sdf(cls, el: ET.Element, version: str):
+        from ..elements.noise import Noise
         _c_noise = el.find("noise")
         if _c_noise is not None:
             _res = Noise._from_sdf(_c_noise, version)
@@ -973,12 +984,14 @@ class Z(BaseModel):
         self.noise = noise
 
     def to_version(self, target_version: str) -> "Z":
+        from ..elements.noise import Noise
         kwargs = {"sdf_version": target_version}
         kwargs["noise"] = self.noise.to_version(target_version) if self.noise is not None else None
         new_obj = self.__class__(**kwargs)
         return new_obj
 
     def to_sdf(self, version: str = None) -> ET.Element:
+        from ..elements.noise import Noise
         if version is not None and version != self.__version__:
             return self.to_version(version).to_sdf()
         version = version or self.__version__
@@ -991,6 +1004,7 @@ class Z(BaseModel):
 
     @classmethod
     def _from_sdf(cls, el: ET.Element, version: str):
+        from ..elements.noise import Noise
         _c_noise = el.find("noise")
         if _c_noise is not None:
             _res = Noise._from_sdf(_c_noise, version)

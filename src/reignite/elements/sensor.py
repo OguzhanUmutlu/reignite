@@ -1,5 +1,1 @@
-from ..sdf.sensor import Sensor as _Base
-
-
-class Sensor(_Base):
-    pass
+from ..sdf.sensor import *  # noqa: F401

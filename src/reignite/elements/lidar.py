@@ -1,5 +1,1 @@
-from ..sdf.lidar import Lidar as _Base
-
-
-class Lidar(_Base):
-    pass
+from ..sdf.lidar import *  # noqa: F401

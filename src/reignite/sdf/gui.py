@@ -1,6 +1,7 @@
 ### THIS FILE WAS AUTO-GENERATED ###
 from __future__ import annotations
 
+import typing
 from xml.etree import ElementTree as ET
 
 from typing import List
@@ -11,9 +12,10 @@ from ..utils.pose import Pose as _SDFPose
 from ..utils.vector3 import Vector3 as _SDFVector3
 from ..utils.version import cmp_version
 
-from .frame import Frame
-from .plugin import Plugin
-from .pose import Pose
+if typing.TYPE_CHECKING:
+    from ..elements.frame import Frame
+    from ..elements.plugin import Plugin
+    from ..elements.pose import Pose
 
 
 import math
@@ -71,6 +73,8 @@ class Camera(BaseModel):
         self.view_controller = view_controller
 
     def to_version(self, target_version: str) -> "Camera":
+        from ..elements.frame import Frame
+        from ..elements.pose import Pose
         if self.frame is not None and cmp_version(target_version, "1.5") < 0:
             raise ValueError(f"'frame' is not supported in SDF version {target_version} (added in 1.5)")
         if self.frame is not None and cmp_version(target_version, "1.7") >= 0:
@@ -93,6 +97,8 @@ class Camera(BaseModel):
         return new_obj
 
     def to_sdf(self, version: str = None) -> ET.Element:
+        from ..elements.frame import Frame
+        from ..elements.pose import Pose
         if version is not None and version != self.__version__:
             return self.to_version(version).to_sdf()
         version = version or self.__version__
@@ -115,6 +121,8 @@ class Camera(BaseModel):
 
     @classmethod
     def _from_sdf(cls, el: ET.Element, version: str):
+        from ..elements.frame import Frame
+        from ..elements.pose import Pose
         _frame = []
         for c in el.findall("frame"):
             _res = Frame._from_sdf(c, version)
@@ -187,6 +195,7 @@ class Gui(BaseModel):
         self.plugin = plugin or []
 
     def to_version(self, target_version: str) -> "Gui":
+        from ..elements.plugin import Plugin
         if self.plugin is not None and cmp_version(target_version, "1.5") < 0:
             raise ValueError(f"'plugin' is not supported in SDF version {target_version} (added in 1.5)")
         kwargs = {"sdf_version": target_version}
@@ -197,6 +206,7 @@ class Gui(BaseModel):
         return new_obj
 
     def to_sdf(self, version: str = None) -> ET.Element:
+        from ..elements.plugin import Plugin
         if version is not None and version != self.__version__:
             return self.to_version(version).to_sdf()
         version = version or self.__version__
@@ -211,6 +221,7 @@ class Gui(BaseModel):
 
     @classmethod
     def _from_sdf(cls, el: ET.Element, version: str):
+        from ..elements.plugin import Plugin
         _c_camera = el.find("camera")
         if _c_camera is not None:
             _res = Camera._from_sdf(_c_camera, version)

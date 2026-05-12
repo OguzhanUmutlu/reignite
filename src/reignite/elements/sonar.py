@@ -1,5 +1,1 @@
-from ..sdf.sonar import Sonar as _Base
-
-
-class Sonar(_Base):
-    pass
+from ..sdf.sonar import *  # noqa: F401
