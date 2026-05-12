@@ -148,10 +148,10 @@ class Projector(BaseModel):
         sdf_version: str | None = None,
         far_clip: "FarClip" = None,
         fov: "Fov" = None,
-        frame: List["Frame"] = None,
+        frames: List["Frame"] = None,
         name: str = "__default__",
         near_clip: "NearClip" = None,
-        plugin: List["Plugin"] = None,
+        plugins: List["Plugin"] = None,
         pose: "Pose" = None,
         texture: "Texture" = None,
         visibility_flags: "VisibilityFlags" = None
@@ -159,10 +159,10 @@ class Projector(BaseModel):
         self.__version__ = sdf_version
         self.far_clip = far_clip
         self.fov = fov
-        self.frame = frame or []
+        self.frames = frames or []
         self.name = name
         self.near_clip = near_clip
-        self.plugin = plugin or []
+        self.plugins = plugins or []
         self.pose = pose
         self.texture = texture
         self.visibility_flags = visibility_flags
@@ -176,21 +176,21 @@ class Projector(BaseModel):
                 self.fov.__version__ = self.__version__
             elif getattr(self.fov, '__version__', None) != self.__version__ and self.__version__ is not None:
                 self.fov = self.fov.to_version(self.__version__)
-        for _i, _c in enumerate(self.frame):
+        for _i, _c in enumerate(self.frames):
             if getattr(_c, '__version__', None) is None:
                 _c.__version__ = self.__version__
             elif getattr(_c, '__version__', None) != self.__version__ and self.__version__ is not None:
-                self.frame[_i] = _c.to_version(self.__version__)
+                self.frames[_i] = _c.to_version(self.__version__)
         if self.near_clip is not None:
             if getattr(self.near_clip, '__version__', None) is None:
                 self.near_clip.__version__ = self.__version__
             elif getattr(self.near_clip, '__version__', None) != self.__version__ and self.__version__ is not None:
                 self.near_clip = self.near_clip.to_version(self.__version__)
-        for _i, _c in enumerate(self.plugin):
+        for _i, _c in enumerate(self.plugins):
             if getattr(_c, '__version__', None) is None:
                 _c.__version__ = self.__version__
             elif getattr(_c, '__version__', None) != self.__version__ and self.__version__ is not None:
-                self.plugin[_i] = _c.to_version(self.__version__)
+                self.plugins[_i] = _c.to_version(self.__version__)
         if self.pose is not None:
             if getattr(self.pose, '__version__', None) is None:
                 self.pose.__version__ = self.__version__
@@ -211,19 +211,19 @@ class Projector(BaseModel):
         from ..elements.frame import Frame
         from ..elements.plugin import Plugin
         from ..elements.pose import Pose
-        if self.frame is not None and cmp_version(target_version, "1.5") < 0:
-            raise ValueError(f"'frame' is not supported in SDF version {target_version} (added in 1.5)")
-        if self.frame is not None and cmp_version(target_version, "1.7") >= 0:
-            raise ValueError(f"'frame' is not supported in SDF version {target_version} (removed in 1.7)")
+        if self.frames is not None and cmp_version(target_version, "1.5") < 0:
+            raise ValueError(f"'frames' is not supported in SDF version {target_version} (added in 1.5)")
+        if self.frames is not None and cmp_version(target_version, "1.7") >= 0:
+            raise ValueError(f"'frames' is not supported in SDF version {target_version} (removed in 1.7)")
         if self.visibility_flags is not None and cmp_version(target_version, "1.7") < 0:
             raise ValueError(f"'visibility_flags' is not supported in SDF version {target_version} (added in 1.7)")
         kwargs = {"sdf_version": target_version}
         kwargs["far_clip"] = self.far_clip.to_version(target_version) if self.far_clip is not None else None
         kwargs["fov"] = self.fov.to_version(target_version) if self.fov is not None else None
-        kwargs["frame"] = [c.to_version(target_version) for c in (self.frame or [])]
+        kwargs["frames"] = [c.to_version(target_version) for c in (self.frames or [])]
         kwargs["name"] = self.name
         kwargs["near_clip"] = self.near_clip.to_version(target_version) if self.near_clip is not None else None
-        kwargs["plugin"] = [c.to_version(target_version) for c in (self.plugin or [])]
+        kwargs["plugins"] = [c.to_version(target_version) for c in (self.plugins or [])]
         kwargs["pose"] = self.pose.to_version(target_version) if self.pose is not None else None
         kwargs["texture"] = self.texture.to_version(target_version) if self.texture is not None else None
         kwargs["visibility_flags"] = self.visibility_flags.to_version(target_version) if self.visibility_flags is not None else None
@@ -244,13 +244,13 @@ class Projector(BaseModel):
             el.append(self.far_clip.to_sdf(version))
         if self.fov is not None:
             el.append(self.fov.to_sdf(version))
-        for item in (self.frame or []):
+        for item in (self.frames or []):
             el.append(item.to_sdf(version))
         if self.name is not None:
             el.set("name", self.name)
         if self.near_clip is not None:
             el.append(self.near_clip.to_sdf(version))
-        for item in (self.plugin or []):
+        for item in (self.plugins or []):
             el.append(item.to_sdf(version))
         if self.pose is not None:
             el.append(self.pose.to_sdf(version))
@@ -281,14 +281,14 @@ class Projector(BaseModel):
             _fov = _res
         else:
             _fov = None
-        _frame = []
+        _frames = []
         for c in el.findall("frame"):
             _res = Frame._from_sdf(c, version)
             if isinstance(_res, SDFError):
                 return _res.extend("frame")
-            _frame.append(_res)
-        if _frame and cmp_version(version, "1.5") < 0:
-            return SDFError(f"'frame' is not supported in SDF version {version} (added in 1.5)")
+            _frames.append(_res)
+        if _frames and cmp_version(version, "1.5") < 0:
+            return SDFError(f"'frames' is not supported in SDF version {version} (added in 1.5)")
         _name = el.get("name", "__default__")
         if isinstance(_name, SDFError):
             return _name.extend("@name")
@@ -300,12 +300,12 @@ class Projector(BaseModel):
             _near_clip = _res
         else:
             _near_clip = None
-        _plugin = []
+        _plugins = []
         for c in el.findall("plugin"):
             _res = Plugin._from_sdf(c, version)
             if isinstance(_res, SDFError):
                 return _res.extend("plugin")
-            _plugin.append(_res)
+            _plugins.append(_res)
         _c_pose = el.find("pose")
         if _c_pose is not None:
             _res = Pose._from_sdf(_c_pose, version)
@@ -332,7 +332,7 @@ class Projector(BaseModel):
             _visibility_flags = None
         if _visibility_flags is not None and cmp_version(version, "1.7") < 0:
             return SDFError(f"'visibility_flags' is not supported in SDF version {version} (added in 1.7)")
-        return cls(sdf_version=version, far_clip=_far_clip, fov=_fov, frame=_frame, name=_name, near_clip=_near_clip, plugin=_plugin, pose=_pose, texture=_texture, visibility_flags=_visibility_flags)
+        return cls(sdf_version=version, far_clip=_far_clip, fov=_fov, frames=_frames, name=_name, near_clip=_near_clip, plugins=_plugins, pose=_pose, texture=_texture, visibility_flags=_visibility_flags)
 
 
 class Texture(BaseModel):

@@ -218,9 +218,9 @@ class Population(BaseModel):
         box: "Box" = None,
         cylinder: "Cylinder" = None,
         distribution: "Distribution" = None,
-        frame: List["Frame"] = None,
-        model: List["Model"] = None,
+        frames: List["Frame"] = None,
         model_count: "ModelCount" = None,
+        models: List["Model"] = None,
         name: str = "__default__",
         pose: "Pose" = None
     ):
@@ -228,9 +228,9 @@ class Population(BaseModel):
         self.box = box
         self.cylinder = cylinder
         self.distribution = distribution
-        self.frame = frame or []
-        self.model = model or []
+        self.frames = frames or []
         self.model_count = model_count
+        self.models = models or []
         self.name = name
         self.pose = pose
         if self.box is not None:
@@ -248,21 +248,21 @@ class Population(BaseModel):
                 self.distribution.__version__ = self.__version__
             elif getattr(self.distribution, '__version__', None) != self.__version__ and self.__version__ is not None:
                 self.distribution = self.distribution.to_version(self.__version__)
-        for _i, _c in enumerate(self.frame):
+        for _i, _c in enumerate(self.frames):
             if getattr(_c, '__version__', None) is None:
                 _c.__version__ = self.__version__
             elif getattr(_c, '__version__', None) != self.__version__ and self.__version__ is not None:
-                self.frame[_i] = _c.to_version(self.__version__)
-        for _i, _c in enumerate(self.model):
-            if getattr(_c, '__version__', None) is None:
-                _c.__version__ = self.__version__
-            elif getattr(_c, '__version__', None) != self.__version__ and self.__version__ is not None:
-                self.model[_i] = _c.to_version(self.__version__)
+                self.frames[_i] = _c.to_version(self.__version__)
         if self.model_count is not None:
             if getattr(self.model_count, '__version__', None) is None:
                 self.model_count.__version__ = self.__version__
             elif getattr(self.model_count, '__version__', None) != self.__version__ and self.__version__ is not None:
                 self.model_count = self.model_count.to_version(self.__version__)
+        for _i, _c in enumerate(self.models):
+            if getattr(_c, '__version__', None) is None:
+                _c.__version__ = self.__version__
+            elif getattr(_c, '__version__', None) != self.__version__ and self.__version__ is not None:
+                self.models[_i] = _c.to_version(self.__version__)
         if self.pose is not None:
             if getattr(self.pose, '__version__', None) is None:
                 self.pose.__version__ = self.__version__
@@ -275,15 +275,15 @@ class Population(BaseModel):
         from ..elements.frame import Frame
         from ..elements.model import Model
         from ..elements.pose import Pose
-        if self.frame is not None and cmp_version(target_version, "1.7") >= 0:
-            raise ValueError(f"'frame' is not supported in SDF version {target_version} (removed in 1.7)")
+        if self.frames is not None and cmp_version(target_version, "1.7") >= 0:
+            raise ValueError(f"'frames' is not supported in SDF version {target_version} (removed in 1.7)")
         kwargs = {"sdf_version": target_version}
         kwargs["box"] = self.box.to_version(target_version) if self.box is not None else None
         kwargs["cylinder"] = self.cylinder.to_version(target_version) if self.cylinder is not None else None
         kwargs["distribution"] = self.distribution.to_version(target_version) if self.distribution is not None else None
-        kwargs["frame"] = [c.to_version(target_version) for c in (self.frame or [])]
-        kwargs["model"] = [c.to_version(target_version) for c in (self.model or [])]
+        kwargs["frames"] = [c.to_version(target_version) for c in (self.frames or [])]
         kwargs["model_count"] = self.model_count.to_version(target_version) if self.model_count is not None else None
+        kwargs["models"] = [c.to_version(target_version) for c in (self.models or [])]
         kwargs["name"] = self.name
         kwargs["pose"] = self.pose.to_version(target_version) if self.pose is not None else None
         new_obj = self.__class__(**kwargs)
@@ -309,12 +309,12 @@ class Population(BaseModel):
             self.distribution = Distribution(sdf_version=version)
         if self.distribution is not None:
             el.append(self.distribution.to_sdf(version))
-        for item in (self.frame or []):
-            el.append(item.to_sdf(version))
-        for item in (self.model or []):
+        for item in (self.frames or []):
             el.append(item.to_sdf(version))
         if self.model_count is not None:
             el.append(self.model_count.to_sdf(version))
+        for item in (self.models or []):
+            el.append(item.to_sdf(version))
         if self.name is not None:
             el.set("name", self.name)
         if self.pose is not None:
@@ -355,18 +355,12 @@ class Population(BaseModel):
             if isinstance(_res, SDFError):
                 return _res.extend("distribution")
             _distribution = _res
-        _frame = []
+        _frames = []
         for c in el.findall("frame"):
             _res = Frame._from_sdf(c, version)
             if isinstance(_res, SDFError):
                 return _res.extend("frame")
-            _frame.append(_res)
-        _model = []
-        for c in el.findall("model"):
-            _res = Model._from_sdf(c, version)
-            if isinstance(_res, SDFError):
-                return _res.extend("model")
-            _model.append(_res)
+            _frames.append(_res)
         _c_model_count = el.find("model_count")
         if _c_model_count is not None:
             _res = ModelCount._from_sdf(_c_model_count, version)
@@ -375,6 +369,12 @@ class Population(BaseModel):
             _model_count = _res
         else:
             _model_count = None
+        _models = []
+        for c in el.findall("model"):
+            _res = Model._from_sdf(c, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("model")
+            _models.append(_res)
         _name = el.get("name", "__default__")
         if isinstance(_name, SDFError):
             return _name.extend("@name")
@@ -386,7 +386,7 @@ class Population(BaseModel):
             _pose = _res
         else:
             _pose = None
-        return cls(sdf_version=version, box=_box, cylinder=_cylinder, distribution=_distribution, frame=_frame, model=_model, model_count=_model_count, name=_name, pose=_pose)
+        return cls(sdf_version=version, box=_box, cylinder=_cylinder, distribution=_distribution, frames=_frames, model_count=_model_count, models=_models, name=_name, pose=_pose)
 
 
 class Rows(BaseModel):

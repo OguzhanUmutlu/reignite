@@ -1409,26 +1409,26 @@ class Script(BaseModel):
         self,
         sdf_version: str | None = None,
         name: "Name" = None,
-        uri: List["Uri"] = None
+        uris: List["Uri"] = None
     ):
         self.__version__ = sdf_version
         self.name = name
-        self.uri = uri or []
+        self.uris = uris or []
         if self.name is not None:
             if getattr(self.name, '__version__', None) is None:
                 self.name.__version__ = self.__version__
             elif getattr(self.name, '__version__', None) != self.__version__ and self.__version__ is not None:
                 self.name = self.name.to_version(self.__version__)
-        for _i, _c in enumerate(self.uri):
+        for _i, _c in enumerate(self.uris):
             if getattr(_c, '__version__', None) is None:
                 _c.__version__ = self.__version__
             elif getattr(_c, '__version__', None) != self.__version__ and self.__version__ is not None:
-                self.uri[_i] = _c.to_version(self.__version__)
+                self.uris[_i] = _c.to_version(self.__version__)
 
     def to_version(self, target_version: str) -> "Script":
         kwargs = {"sdf_version": target_version}
         kwargs["name"] = self.name.to_version(target_version) if self.name is not None else None
-        kwargs["uri"] = [c.to_version(target_version) for c in (self.uri or [])]
+        kwargs["uris"] = [c.to_version(target_version) for c in (self.uris or [])]
         new_obj = self.__class__(**kwargs)
         return new_obj
 
@@ -1441,7 +1441,7 @@ class Script(BaseModel):
         el = ET.Element("script")
         if self.name is not None:
             el.append(self.name.to_sdf(version))
-        for item in (self.uri or []):
+        for item in (self.uris or []):
             el.append(item.to_sdf(version))
         return el
 
@@ -1455,13 +1455,13 @@ class Script(BaseModel):
             _name = _res
         else:
             _name = None
-        _uri = []
+        _uris = []
         for c in el.findall("uri"):
             _res = Uri._from_sdf(c, version)
             if isinstance(_res, SDFError):
                 return _res.extend("uri")
-            _uri.append(_res)
-        return cls(sdf_version=version, name=_name, uri=_uri)
+            _uris.append(_res)
+        return cls(sdf_version=version, name=_name, uris=_uris)
 
 
 class Shader(BaseModel):

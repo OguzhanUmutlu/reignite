@@ -53,18 +53,18 @@ def _parse_double(raw: str) -> float | SDFError:
 
 
 class Deletions(BaseModel):
-    def __init__(self, sdf_version: str | None = None, name: List["Name"] = None):
+    def __init__(self, sdf_version: str | None = None, names: List["Name"] = None):
         self.__version__ = sdf_version
-        self.name = name or []
-        for _i, _c in enumerate(self.name):
+        self.names = names or []
+        for _i, _c in enumerate(self.names):
             if getattr(_c, '__version__', None) is None:
                 _c.__version__ = self.__version__
             elif getattr(_c, '__version__', None) != self.__version__ and self.__version__ is not None:
-                self.name[_i] = _c.to_version(self.__version__)
+                self.names[_i] = _c.to_version(self.__version__)
 
     def to_version(self, target_version: str) -> "Deletions":
         kwargs = {"sdf_version": target_version}
-        kwargs["name"] = [c.to_version(target_version) for c in (self.name or [])]
+        kwargs["names"] = [c.to_version(target_version) for c in (self.names or [])]
         new_obj = self.__class__(**kwargs)
         return new_obj
 
@@ -75,61 +75,61 @@ class Deletions(BaseModel):
             return self.to_version(version).to_sdf()
         version = self.__version__ or version
         el = ET.Element("deletions")
-        for item in (self.name or []):
+        for item in (self.names or []):
             el.append(item.to_sdf(version))
         return el
 
     @classmethod
     def _from_sdf(cls, el: ET.Element, version: str):
-        _name = []
+        _names = []
         for c in el.findall("name"):
             _res = Name._from_sdf(c, version)
             if isinstance(_res, SDFError):
                 return _res.extend("name")
-            _name.append(_res)
-        return cls(sdf_version=version, name=_name)
+            _names.append(_res)
+        return cls(sdf_version=version, names=_names)
 
 
 class Insertions(BaseModel):
     def __init__(
         self,
         sdf_version: str | None = None,
-        joint: List["Joint"] = None,
-        light: List["Light"] = None,
-        model: List["Model"] = None
+        joints: List["Joint"] = None,
+        lights: List["Light"] = None,
+        models: List["Model"] = None
     ):
         self.__version__ = sdf_version
-        self.joint = joint or []
-        self.light = light or []
-        self.model = model or []
-        for _i, _c in enumerate(self.joint):
+        self.joints = joints or []
+        self.lights = lights or []
+        self.models = models or []
+        for _i, _c in enumerate(self.joints):
             if getattr(_c, '__version__', None) is None:
                 _c.__version__ = self.__version__
             elif getattr(_c, '__version__', None) != self.__version__ and self.__version__ is not None:
-                self.joint[_i] = _c.to_version(self.__version__)
-        for _i, _c in enumerate(self.light):
+                self.joints[_i] = _c.to_version(self.__version__)
+        for _i, _c in enumerate(self.lights):
             if getattr(_c, '__version__', None) is None:
                 _c.__version__ = self.__version__
             elif getattr(_c, '__version__', None) != self.__version__ and self.__version__ is not None:
-                self.light[_i] = _c.to_version(self.__version__)
-        for _i, _c in enumerate(self.model):
+                self.lights[_i] = _c.to_version(self.__version__)
+        for _i, _c in enumerate(self.models):
             if getattr(_c, '__version__', None) is None:
                 _c.__version__ = self.__version__
             elif getattr(_c, '__version__', None) != self.__version__ and self.__version__ is not None:
-                self.model[_i] = _c.to_version(self.__version__)
+                self.models[_i] = _c.to_version(self.__version__)
 
     def to_version(self, target_version: str) -> "Insertions":
         from ..elements.joint import Joint
         from ..elements.light import Light
         from ..elements.model import Model
-        if self.joint is not None and cmp_version(target_version, "1.12") < 0:
-            raise ValueError(f"'joint' is not supported in SDF version {target_version} (added in 1.12)")
-        if self.light is not None and cmp_version(target_version, "1.6") < 0:
-            raise ValueError(f"'light' is not supported in SDF version {target_version} (added in 1.6)")
+        if self.joints is not None and cmp_version(target_version, "1.12") < 0:
+            raise ValueError(f"'joints' is not supported in SDF version {target_version} (added in 1.12)")
+        if self.lights is not None and cmp_version(target_version, "1.6") < 0:
+            raise ValueError(f"'lights' is not supported in SDF version {target_version} (added in 1.6)")
         kwargs = {"sdf_version": target_version}
-        kwargs["joint"] = [c.to_version(target_version) for c in (self.joint or [])]
-        kwargs["light"] = [c.to_version(target_version) for c in (self.light or [])]
-        kwargs["model"] = [c.to_version(target_version) for c in (self.model or [])]
+        kwargs["joints"] = [c.to_version(target_version) for c in (self.joints or [])]
+        kwargs["lights"] = [c.to_version(target_version) for c in (self.lights or [])]
+        kwargs["models"] = [c.to_version(target_version) for c in (self.models or [])]
         new_obj = self.__class__(**kwargs)
         return new_obj
 
@@ -143,11 +143,11 @@ class Insertions(BaseModel):
             return self.to_version(version).to_sdf()
         version = self.__version__ or version
         el = ET.Element("insertions")
-        for item in (self.joint or []):
+        for item in (self.joints or []):
             el.append(item.to_sdf(version))
-        for item in (self.light or []):
+        for item in (self.lights or []):
             el.append(item.to_sdf(version))
-        for item in (self.model or []):
+        for item in (self.models or []):
             el.append(item.to_sdf(version))
         return el
 
@@ -156,29 +156,29 @@ class Insertions(BaseModel):
         from ..elements.joint import Joint
         from ..elements.light import Light
         from ..elements.model import Model
-        _joint = []
+        _joints = []
         for c in el.findall("joint"):
             _res = Joint._from_sdf(c, version)
             if isinstance(_res, SDFError):
                 return _res.extend("joint")
-            _joint.append(_res)
-        if _joint and cmp_version(version, "1.12") < 0:
-            return SDFError(f"'joint' is not supported in SDF version {version} (added in 1.12)")
-        _light = []
+            _joints.append(_res)
+        if _joints and cmp_version(version, "1.12") < 0:
+            return SDFError(f"'joints' is not supported in SDF version {version} (added in 1.12)")
+        _lights = []
         for c in el.findall("light"):
             _res = Light._from_sdf(c, version)
             if isinstance(_res, SDFError):
                 return _res.extend("light")
-            _light.append(_res)
-        if _light and cmp_version(version, "1.6") < 0:
-            return SDFError(f"'light' is not supported in SDF version {version} (added in 1.6)")
-        _model = []
+            _lights.append(_res)
+        if _lights and cmp_version(version, "1.6") < 0:
+            return SDFError(f"'lights' is not supported in SDF version {version} (added in 1.6)")
+        _models = []
         for c in el.findall("model"):
             _res = Model._from_sdf(c, version)
             if isinstance(_res, SDFError):
                 return _res.extend("model")
-            _model.append(_res)
-        return cls(sdf_version=version, joint=_joint, light=_light, model=_model)
+            _models.append(_res)
+        return cls(sdf_version=version, joints=_joints, lights=_lights, models=_models)
 
 
 class Iterations(BaseModel):
@@ -327,11 +327,11 @@ class State(BaseModel):
         deletions: "Deletions" = None,
         insertions: "Insertions" = None,
         iterations: "Iterations" = None,
-        joint_state: List["JointState"] = None,
-        light: List["Light"] = None,
-        light_state: List["LightState"] = None,
-        model: List["Model"] = None,
-        model_state: List["ModelState"] = None,
+        joint_states: List["JointState"] = None,
+        light_states: List["LightState"] = None,
+        lights: List["Light"] = None,
+        model_states: List["ModelState"] = None,
+        models: List["Model"] = None,
         real_time: "RealTime" = None,
         sim_time: "SimTime" = None,
         time: float = "0 0",
@@ -342,11 +342,11 @@ class State(BaseModel):
         self.deletions = deletions
         self.insertions = insertions
         self.iterations = iterations
-        self.joint_state = joint_state or []
-        self.light = light or []
-        self.light_state = light_state or []
-        self.model = model or []
-        self.model_state = model_state or []
+        self.joint_states = joint_states or []
+        self.light_states = light_states or []
+        self.lights = lights or []
+        self.model_states = model_states or []
+        self.models = models or []
         self.real_time = real_time
         self.sim_time = sim_time
         self.time = time
@@ -367,31 +367,31 @@ class State(BaseModel):
                 self.iterations.__version__ = self.__version__
             elif getattr(self.iterations, '__version__', None) != self.__version__ and self.__version__ is not None:
                 self.iterations = self.iterations.to_version(self.__version__)
-        for _i, _c in enumerate(self.joint_state):
+        for _i, _c in enumerate(self.joint_states):
             if getattr(_c, '__version__', None) is None:
                 _c.__version__ = self.__version__
             elif getattr(_c, '__version__', None) != self.__version__ and self.__version__ is not None:
-                self.joint_state[_i] = _c.to_version(self.__version__)
-        for _i, _c in enumerate(self.light):
+                self.joint_states[_i] = _c.to_version(self.__version__)
+        for _i, _c in enumerate(self.light_states):
             if getattr(_c, '__version__', None) is None:
                 _c.__version__ = self.__version__
             elif getattr(_c, '__version__', None) != self.__version__ and self.__version__ is not None:
-                self.light[_i] = _c.to_version(self.__version__)
-        for _i, _c in enumerate(self.light_state):
+                self.light_states[_i] = _c.to_version(self.__version__)
+        for _i, _c in enumerate(self.lights):
             if getattr(_c, '__version__', None) is None:
                 _c.__version__ = self.__version__
             elif getattr(_c, '__version__', None) != self.__version__ and self.__version__ is not None:
-                self.light_state[_i] = _c.to_version(self.__version__)
-        for _i, _c in enumerate(self.model):
+                self.lights[_i] = _c.to_version(self.__version__)
+        for _i, _c in enumerate(self.model_states):
             if getattr(_c, '__version__', None) is None:
                 _c.__version__ = self.__version__
             elif getattr(_c, '__version__', None) != self.__version__ and self.__version__ is not None:
-                self.model[_i] = _c.to_version(self.__version__)
-        for _i, _c in enumerate(self.model_state):
+                self.model_states[_i] = _c.to_version(self.__version__)
+        for _i, _c in enumerate(self.models):
             if getattr(_c, '__version__', None) is None:
                 _c.__version__ = self.__version__
             elif getattr(_c, '__version__', None) != self.__version__ and self.__version__ is not None:
-                self.model_state[_i] = _c.to_version(self.__version__)
+                self.models[_i] = _c.to_version(self.__version__)
         if self.real_time is not None:
             if getattr(self.real_time, '__version__', None) is None:
                 self.real_time.__version__ = self.__version__
@@ -410,28 +410,28 @@ class State(BaseModel):
 
     def to_version(self, target_version: str) -> "State":
         from ..elements.joint_state import JointState
-        from ..elements.light import Light
         from ..elements.light_state import LightState
-        from ..elements.model import Model
+        from ..elements.light import Light
         from ..elements.model_state import ModelState
+        from ..elements.model import Model
         if self.deletions is not None and cmp_version(target_version, "1.3") < 0:
             raise ValueError(f"'deletions' is not supported in SDF version {target_version} (added in 1.3)")
         if self.insertions is not None and cmp_version(target_version, "1.3") < 0:
             raise ValueError(f"'insertions' is not supported in SDF version {target_version} (added in 1.3)")
         if self.iterations is not None and cmp_version(target_version, "1.5") < 0:
             raise ValueError(f"'iterations' is not supported in SDF version {target_version} (added in 1.5)")
-        if self.joint_state is not None and cmp_version(target_version, "1.12") < 0:
-            raise ValueError(f"'joint_state' is not supported in SDF version {target_version} (added in 1.12)")
-        if self.light is not None and cmp_version(target_version, "1.5") < 0:
-            raise ValueError(f"'light' is not supported in SDF version {target_version} (added in 1.5)")
-        if self.light is not None and cmp_version(target_version, "1.12") >= 0:
-            raise ValueError(f"'light' is not supported in SDF version {target_version} (removed in 1.12)")
-        if self.light_state is not None and cmp_version(target_version, "1.12") < 0:
-            raise ValueError(f"'light_state' is not supported in SDF version {target_version} (added in 1.12)")
-        if self.model is not None and cmp_version(target_version, "1.12") >= 0:
-            raise ValueError(f"'model' is not supported in SDF version {target_version} (removed in 1.12)")
-        if self.model_state is not None and cmp_version(target_version, "1.12") < 0:
-            raise ValueError(f"'model_state' is not supported in SDF version {target_version} (added in 1.12)")
+        if self.joint_states is not None and cmp_version(target_version, "1.12") < 0:
+            raise ValueError(f"'joint_states' is not supported in SDF version {target_version} (added in 1.12)")
+        if self.light_states is not None and cmp_version(target_version, "1.12") < 0:
+            raise ValueError(f"'light_states' is not supported in SDF version {target_version} (added in 1.12)")
+        if self.lights is not None and cmp_version(target_version, "1.5") < 0:
+            raise ValueError(f"'lights' is not supported in SDF version {target_version} (added in 1.5)")
+        if self.lights is not None and cmp_version(target_version, "1.12") >= 0:
+            raise ValueError(f"'lights' is not supported in SDF version {target_version} (removed in 1.12)")
+        if self.model_states is not None and cmp_version(target_version, "1.12") < 0:
+            raise ValueError(f"'model_states' is not supported in SDF version {target_version} (added in 1.12)")
+        if self.models is not None and cmp_version(target_version, "1.12") >= 0:
+            raise ValueError(f"'models' is not supported in SDF version {target_version} (removed in 1.12)")
         if self.real_time is not None and cmp_version(target_version, "1.3") < 0:
             raise ValueError(f"'real_time' is not supported in SDF version {target_version} (added in 1.3)")
         if self.sim_time is not None and cmp_version(target_version, "1.3") < 0:
@@ -444,11 +444,11 @@ class State(BaseModel):
         kwargs["deletions"] = self.deletions.to_version(target_version) if self.deletions is not None else None
         kwargs["insertions"] = self.insertions.to_version(target_version) if self.insertions is not None else None
         kwargs["iterations"] = self.iterations.to_version(target_version) if self.iterations is not None else None
-        kwargs["joint_state"] = [c.to_version(target_version) for c in (self.joint_state or [])]
-        kwargs["light"] = [c.to_version(target_version) for c in (self.light or [])]
-        kwargs["light_state"] = [c.to_version(target_version) for c in (self.light_state or [])]
-        kwargs["model"] = [c.to_version(target_version) for c in (self.model or [])]
-        kwargs["model_state"] = [c.to_version(target_version) for c in (self.model_state or [])]
+        kwargs["joint_states"] = [c.to_version(target_version) for c in (self.joint_states or [])]
+        kwargs["light_states"] = [c.to_version(target_version) for c in (self.light_states or [])]
+        kwargs["lights"] = [c.to_version(target_version) for c in (self.lights or [])]
+        kwargs["model_states"] = [c.to_version(target_version) for c in (self.model_states or [])]
+        kwargs["models"] = [c.to_version(target_version) for c in (self.models or [])]
         kwargs["real_time"] = self.real_time.to_version(target_version) if self.real_time is not None else None
         kwargs["sim_time"] = self.sim_time.to_version(target_version) if self.sim_time is not None else None
         kwargs["time"] = self.time
@@ -459,10 +459,10 @@ class State(BaseModel):
 
     def to_sdf(self, version: str | None = None) -> ET.Element:
         from ..elements.joint_state import JointState
-        from ..elements.light import Light
         from ..elements.light_state import LightState
-        from ..elements.model import Model
+        from ..elements.light import Light
         from ..elements.model_state import ModelState
+        from ..elements.model import Model
         if self.__version__ is None and version is not None:
             self.__version__ = version
         elif version is not None and version != self.__version__:
@@ -475,15 +475,15 @@ class State(BaseModel):
             el.append(self.insertions.to_sdf(version))
         if self.iterations is not None:
             el.append(self.iterations.to_sdf(version))
-        for item in (self.joint_state or []):
+        for item in (self.joint_states or []):
             el.append(item.to_sdf(version))
-        for item in (self.light or []):
+        for item in (self.light_states or []):
             el.append(item.to_sdf(version))
-        for item in (self.light_state or []):
+        for item in (self.lights or []):
             el.append(item.to_sdf(version))
-        for item in (self.model or []):
+        for item in (self.model_states or []):
             el.append(item.to_sdf(version))
-        for item in (self.model_state or []):
+        for item in (self.models or []):
             el.append(item.to_sdf(version))
         if self.real_time is not None:
             el.append(self.real_time.to_sdf(version))
@@ -500,10 +500,10 @@ class State(BaseModel):
     @classmethod
     def _from_sdf(cls, el: ET.Element, version: str):
         from ..elements.joint_state import JointState
-        from ..elements.light import Light
         from ..elements.light_state import LightState
-        from ..elements.model import Model
+        from ..elements.light import Light
         from ..elements.model_state import ModelState
+        from ..elements.model import Model
         _c_deletions = el.find("deletions")
         if _c_deletions is not None:
             _res = Deletions._from_sdf(_c_deletions, version)
@@ -534,44 +534,44 @@ class State(BaseModel):
             _iterations = None
         if _iterations is not None and cmp_version(version, "1.5") < 0:
             return SDFError(f"'iterations' is not supported in SDF version {version} (added in 1.5)")
-        _joint_state = []
+        _joint_states = []
         for c in el.findall("joint_state"):
             _res = JointState._from_sdf(c, version)
             if isinstance(_res, SDFError):
                 return _res.extend("joint_state")
-            _joint_state.append(_res)
-        if _joint_state and cmp_version(version, "1.12") < 0:
-            return SDFError(f"'joint_state' is not supported in SDF version {version} (added in 1.12)")
-        _light = []
-        for c in el.findall("light"):
-            _res = Light._from_sdf(c, version)
-            if isinstance(_res, SDFError):
-                return _res.extend("light")
-            _light.append(_res)
-        if _light and cmp_version(version, "1.5") < 0:
-            return SDFError(f"'light' is not supported in SDF version {version} (added in 1.5)")
-        _light_state = []
+            _joint_states.append(_res)
+        if _joint_states and cmp_version(version, "1.12") < 0:
+            return SDFError(f"'joint_states' is not supported in SDF version {version} (added in 1.12)")
+        _light_states = []
         for c in el.findall("light_state"):
             _res = LightState._from_sdf(c, version)
             if isinstance(_res, SDFError):
                 return _res.extend("light_state")
-            _light_state.append(_res)
-        if _light_state and cmp_version(version, "1.12") < 0:
-            return SDFError(f"'light_state' is not supported in SDF version {version} (added in 1.12)")
-        _model = []
-        for c in el.findall("model"):
-            _res = Model._from_sdf(c, version)
+            _light_states.append(_res)
+        if _light_states and cmp_version(version, "1.12") < 0:
+            return SDFError(f"'light_states' is not supported in SDF version {version} (added in 1.12)")
+        _lights = []
+        for c in el.findall("light"):
+            _res = Light._from_sdf(c, version)
             if isinstance(_res, SDFError):
-                return _res.extend("model")
-            _model.append(_res)
-        _model_state = []
+                return _res.extend("light")
+            _lights.append(_res)
+        if _lights and cmp_version(version, "1.5") < 0:
+            return SDFError(f"'lights' is not supported in SDF version {version} (added in 1.5)")
+        _model_states = []
         for c in el.findall("model_state"):
             _res = ModelState._from_sdf(c, version)
             if isinstance(_res, SDFError):
                 return _res.extend("model_state")
-            _model_state.append(_res)
-        if _model_state and cmp_version(version, "1.12") < 0:
-            return SDFError(f"'model_state' is not supported in SDF version {version} (added in 1.12)")
+            _model_states.append(_res)
+        if _model_states and cmp_version(version, "1.12") < 0:
+            return SDFError(f"'model_states' is not supported in SDF version {version} (added in 1.12)")
+        _models = []
+        for c in el.findall("model"):
+            _res = Model._from_sdf(c, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("model")
+            _models.append(_res)
         _c_real_time = el.find("real_time")
         if _c_real_time is not None:
             _res = RealTime._from_sdf(_c_real_time, version)
@@ -608,7 +608,7 @@ class State(BaseModel):
         _world_name = el.get("world_name", "__default__")
         if isinstance(_world_name, SDFError):
             return _world_name.extend("@world_name")
-        return cls(sdf_version=version, deletions=_deletions, insertions=_insertions, iterations=_iterations, joint_state=_joint_state, light=_light, light_state=_light_state, model=_model, model_state=_model_state, real_time=_real_time, sim_time=_sim_time, time=_time, wall_time=_wall_time, world_name=_world_name)
+        return cls(sdf_version=version, deletions=_deletions, insertions=_insertions, iterations=_iterations, joint_states=_joint_states, light_states=_light_states, lights=_lights, model_states=_model_states, models=_models, real_time=_real_time, sim_time=_sim_time, time=_time, wall_time=_wall_time, world_name=_world_name)
 
 
 class Time(BaseModel):

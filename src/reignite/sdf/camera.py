@@ -223,7 +223,7 @@ class Camera(BaseModel):
         clip: "Clip" = None,
         depth_camera: "DepthCamera" = None,
         distortion: "Distortion" = None,
-        frame: List["Frame"] = None,
+        frames: List["Frame"] = None,
         horizontal_fov: "HorizontalFov" = None,
         image: "Image" = None,
         lens: "Lens" = None,
@@ -243,7 +243,7 @@ class Camera(BaseModel):
         self.clip = clip
         self.depth_camera = depth_camera
         self.distortion = distortion
-        self.frame = frame or []
+        self.frames = frames or []
         self.horizontal_fov = horizontal_fov
         self.image = image
         self.lens = lens
@@ -281,11 +281,11 @@ class Camera(BaseModel):
                 self.distortion.__version__ = self.__version__
             elif getattr(self.distortion, '__version__', None) != self.__version__ and self.__version__ is not None:
                 self.distortion = self.distortion.to_version(self.__version__)
-        for _i, _c in enumerate(self.frame):
+        for _i, _c in enumerate(self.frames):
             if getattr(_c, '__version__', None) is None:
                 _c.__version__ = self.__version__
             elif getattr(_c, '__version__', None) != self.__version__ and self.__version__ is not None:
-                self.frame[_i] = _c.to_version(self.__version__)
+                self.frames[_i] = _c.to_version(self.__version__)
         if self.horizontal_fov is not None:
             if getattr(self.horizontal_fov, '__version__', None) is None:
                 self.horizontal_fov.__version__ = self.__version__
@@ -351,10 +351,10 @@ class Camera(BaseModel):
             raise ValueError(f"'camera_info_topic' is not supported in SDF version {target_version} (added in 1.7)")
         if self.distortion is not None and cmp_version(target_version, "1.5") < 0:
             raise ValueError(f"'distortion' is not supported in SDF version {target_version} (added in 1.5)")
-        if self.frame is not None and cmp_version(target_version, "1.5") < 0:
-            raise ValueError(f"'frame' is not supported in SDF version {target_version} (added in 1.5)")
-        if self.frame is not None and cmp_version(target_version, "1.7") >= 0:
-            raise ValueError(f"'frame' is not supported in SDF version {target_version} (removed in 1.7)")
+        if self.frames is not None and cmp_version(target_version, "1.5") < 0:
+            raise ValueError(f"'frames' is not supported in SDF version {target_version} (added in 1.5)")
+        if self.frames is not None and cmp_version(target_version, "1.7") >= 0:
+            raise ValueError(f"'frames' is not supported in SDF version {target_version} (removed in 1.7)")
         if self.lens is not None and cmp_version(target_version, "1.5") < 0:
             raise ValueError(f"'lens' is not supported in SDF version {target_version} (added in 1.5)")
         if self.name is not None and cmp_version(target_version, "1.3") < 0:
@@ -379,7 +379,7 @@ class Camera(BaseModel):
         kwargs["clip"] = self.clip.to_version(target_version) if self.clip is not None else None
         kwargs["depth_camera"] = self.depth_camera.to_version(target_version) if self.depth_camera is not None else None
         kwargs["distortion"] = self.distortion.to_version(target_version) if self.distortion is not None else None
-        kwargs["frame"] = [c.to_version(target_version) for c in (self.frame or [])]
+        kwargs["frames"] = [c.to_version(target_version) for c in (self.frames or [])]
         kwargs["horizontal_fov"] = self.horizontal_fov.to_version(target_version) if self.horizontal_fov is not None else None
         kwargs["image"] = self.image.to_version(target_version) if self.image is not None else None
         kwargs["lens"] = self.lens.to_version(target_version) if self.lens is not None else None
@@ -416,7 +416,7 @@ class Camera(BaseModel):
             el.append(self.depth_camera.to_sdf(version))
         if self.distortion is not None:
             el.append(self.distortion.to_sdf(version))
-        for item in (self.frame or []):
+        for item in (self.frames or []):
             el.append(item.to_sdf(version))
         if self.horizontal_fov is not None:
             el.append(self.horizontal_fov.to_sdf(version))
@@ -499,14 +499,14 @@ class Camera(BaseModel):
             _distortion = None
         if _distortion is not None and cmp_version(version, "1.5") < 0:
             return SDFError(f"'distortion' is not supported in SDF version {version} (added in 1.5)")
-        _frame = []
+        _frames = []
         for c in el.findall("frame"):
             _res = Frame._from_sdf(c, version)
             if isinstance(_res, SDFError):
                 return _res.extend("frame")
-            _frame.append(_res)
-        if _frame and cmp_version(version, "1.5") < 0:
-            return SDFError(f"'frame' is not supported in SDF version {version} (added in 1.5)")
+            _frames.append(_res)
+        if _frames and cmp_version(version, "1.5") < 0:
+            return SDFError(f"'frames' is not supported in SDF version {version} (added in 1.5)")
         _c_horizontal_fov = el.find("horizontal_fov")
         if _c_horizontal_fov is not None:
             _res = HorizontalFov._from_sdf(_c_horizontal_fov, version)
@@ -620,7 +620,7 @@ class Camera(BaseModel):
             _visibility_mask = None
         if _visibility_mask is not None and cmp_version(version, "1.7") < 0:
             return SDFError(f"'visibility_mask' is not supported in SDF version {version} (added in 1.7)")
-        return cls(sdf_version=version, box_type=_box_type, camera_info_topic=_camera_info_topic, clip=_clip, depth_camera=_depth_camera, distortion=_distortion, frame=_frame, horizontal_fov=_horizontal_fov, image=_image, lens=_lens, name=_name, noise=_noise, optical_frame_id=_optical_frame_id, pose=_pose, save=_save, segmentation_type=_segmentation_type, trigger_topic=_trigger_topic, triggered=_triggered, visibility_mask=_visibility_mask)
+        return cls(sdf_version=version, box_type=_box_type, camera_info_topic=_camera_info_topic, clip=_clip, depth_camera=_depth_camera, distortion=_distortion, frames=_frames, horizontal_fov=_horizontal_fov, image=_image, lens=_lens, name=_name, noise=_noise, optical_frame_id=_optical_frame_id, pose=_pose, save=_save, segmentation_type=_segmentation_type, trigger_topic=_trigger_topic, triggered=_triggered, visibility_mask=_visibility_mask)
 
 
 class CameraInfoTopic(BaseModel):

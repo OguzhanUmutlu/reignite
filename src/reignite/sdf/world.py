@@ -145,28 +145,28 @@ class Include(BaseModel):
         self,
         sdf_version: str | None = None,
         merge: bool = False,
-        model_state: List["ModelState"] = None,
+        model_states: List["ModelState"] = None,
         name: "Name" = None,
         placement_frame: "PlacementFrame" = None,
-        plugin: List["Plugin"] = None,
+        plugins: List["Plugin"] = None,
         pose: "Pose" = None,
         static: "Static" = None,
         uri: "Uri" = None
     ):
         self.__version__ = sdf_version
         self.merge = merge
-        self.model_state = model_state or []
+        self.model_states = model_states or []
         self.name = name
         self.placement_frame = placement_frame
-        self.plugin = plugin or []
+        self.plugins = plugins or []
         self.pose = pose
         self.static = static
         self.uri = uri
-        for _i, _c in enumerate(self.model_state):
+        for _i, _c in enumerate(self.model_states):
             if getattr(_c, '__version__', None) is None:
                 _c.__version__ = self.__version__
             elif getattr(_c, '__version__', None) != self.__version__ and self.__version__ is not None:
-                self.model_state[_i] = _c.to_version(self.__version__)
+                self.model_states[_i] = _c.to_version(self.__version__)
         if self.name is not None:
             if getattr(self.name, '__version__', None) is None:
                 self.name.__version__ = self.__version__
@@ -177,11 +177,11 @@ class Include(BaseModel):
                 self.placement_frame.__version__ = self.__version__
             elif getattr(self.placement_frame, '__version__', None) != self.__version__ and self.__version__ is not None:
                 self.placement_frame = self.placement_frame.to_version(self.__version__)
-        for _i, _c in enumerate(self.plugin):
+        for _i, _c in enumerate(self.plugins):
             if getattr(_c, '__version__', None) is None:
                 _c.__version__ = self.__version__
             elif getattr(_c, '__version__', None) != self.__version__ and self.__version__ is not None:
-                self.plugin[_i] = _c.to_version(self.__version__)
+                self.plugins[_i] = _c.to_version(self.__version__)
         if self.pose is not None:
             if getattr(self.pose, '__version__', None) is None:
                 self.pose.__version__ = self.__version__
@@ -204,24 +204,24 @@ class Include(BaseModel):
         from ..elements.pose import Pose
         if self.merge is not None and cmp_version(target_version, "1.10") < 0:
             raise ValueError(f"'merge' is not supported in SDF version {target_version} (added in 1.10)")
-        if self.model_state is not None and cmp_version(target_version, "1.12") < 0:
-            raise ValueError(f"'model_state' is not supported in SDF version {target_version} (added in 1.12)")
+        if self.model_states is not None and cmp_version(target_version, "1.12") < 0:
+            raise ValueError(f"'model_states' is not supported in SDF version {target_version} (added in 1.12)")
         if self.name is not None and cmp_version(target_version, "1.5") < 0:
             raise ValueError(f"'name' is not supported in SDF version {target_version} (added in 1.5)")
         if self.placement_frame is not None and cmp_version(target_version, "1.8") < 0:
             raise ValueError(f"'placement_frame' is not supported in SDF version {target_version} (added in 1.8)")
-        if self.plugin is not None and cmp_version(target_version, "1.5") < 0:
-            raise ValueError(f"'plugin' is not supported in SDF version {target_version} (added in 1.5)")
+        if self.plugins is not None and cmp_version(target_version, "1.5") < 0:
+            raise ValueError(f"'plugins' is not supported in SDF version {target_version} (added in 1.5)")
         if self.pose is not None and cmp_version(target_version, "1.5") < 0:
             raise ValueError(f"'pose' is not supported in SDF version {target_version} (added in 1.5)")
         if self.static is not None and cmp_version(target_version, "1.5") < 0:
             raise ValueError(f"'static' is not supported in SDF version {target_version} (added in 1.5)")
         kwargs = {"sdf_version": target_version}
         kwargs["merge"] = self.merge
-        kwargs["model_state"] = [c.to_version(target_version) for c in (self.model_state or [])]
+        kwargs["model_states"] = [c.to_version(target_version) for c in (self.model_states or [])]
         kwargs["name"] = self.name.to_version(target_version) if self.name is not None else None
         kwargs["placement_frame"] = self.placement_frame.to_version(target_version) if self.placement_frame is not None else None
-        kwargs["plugin"] = [c.to_version(target_version) for c in (self.plugin or [])]
+        kwargs["plugins"] = [c.to_version(target_version) for c in (self.plugins or [])]
         kwargs["pose"] = self.pose.to_version(target_version) if self.pose is not None else None
         kwargs["static"] = self.static.to_version(target_version) if self.static is not None else None
         kwargs["uri"] = self.uri.to_version(target_version) if self.uri is not None else None
@@ -240,13 +240,13 @@ class Include(BaseModel):
         el = ET.Element("include")
         if self.merge is not None:
             el.set("merge", str(self.merge).lower())
-        for item in (self.model_state or []):
+        for item in (self.model_states or []):
             el.append(item.to_sdf(version))
         if self.name is not None:
             el.append(self.name.to_sdf(version))
         if self.placement_frame is not None:
             el.append(self.placement_frame.to_sdf(version))
-        for item in (self.plugin or []):
+        for item in (self.plugins or []):
             el.append(item.to_sdf(version))
         if self.pose is not None:
             el.append(self.pose.to_sdf(version))
@@ -267,14 +267,14 @@ class Include(BaseModel):
         if _merge is not None and cmp_version(version, "1.10") < 0:
             if _merge != False:
                 return SDFError(f"'merge' is not supported in SDF version {version} (added in 1.10)")
-        _model_state = []
+        _model_states = []
         for c in el.findall("model_state"):
             _res = ModelState._from_sdf(c, version)
             if isinstance(_res, SDFError):
                 return _res.extend("model_state")
-            _model_state.append(_res)
-        if _model_state and cmp_version(version, "1.12") < 0:
-            return SDFError(f"'model_state' is not supported in SDF version {version} (added in 1.12)")
+            _model_states.append(_res)
+        if _model_states and cmp_version(version, "1.12") < 0:
+            return SDFError(f"'model_states' is not supported in SDF version {version} (added in 1.12)")
         _c_name = el.find("name")
         if _c_name is not None:
             _res = Name._from_sdf(_c_name, version)
@@ -295,14 +295,14 @@ class Include(BaseModel):
             _placement_frame = None
         if _placement_frame is not None and cmp_version(version, "1.8") < 0:
             return SDFError(f"'placement_frame' is not supported in SDF version {version} (added in 1.8)")
-        _plugin = []
+        _plugins = []
         for c in el.findall("plugin"):
             _res = Plugin._from_sdf(c, version)
             if isinstance(_res, SDFError):
                 return _res.extend("plugin")
-            _plugin.append(_res)
-        if _plugin and cmp_version(version, "1.5") < 0:
-            return SDFError(f"'plugin' is not supported in SDF version {version} (added in 1.5)")
+            _plugins.append(_res)
+        if _plugins and cmp_version(version, "1.5") < 0:
+            return SDFError(f"'plugins' is not supported in SDF version {version} (added in 1.5)")
         _c_pose = el.find("pose")
         if _c_pose is not None:
             _res = Pose._from_sdf(_c_pose, version)
@@ -331,7 +331,7 @@ class Include(BaseModel):
             _uri = _res
         else:
             _uri = None
-        return cls(sdf_version=version, merge=_merge, model_state=_model_state, name=_name, placement_frame=_placement_frame, plugin=_plugin, pose=_pose, static=_static, uri=_uri)
+        return cls(sdf_version=version, merge=_merge, model_states=_model_states, name=_name, placement_frame=_placement_frame, plugins=_plugins, pose=_pose, static=_static, uri=_uri)
 
 
 class LinearVelocity(BaseModel):
@@ -590,53 +590,53 @@ class World(BaseModel):
     def __init__(
         self,
         sdf_version: str | None = None,
-        actor: List["Actor"] = None,
+        actors: List["Actor"] = None,
         atmosphere: "Atmosphere" = None,
         audio: "Audio" = None,
-        frame: List["Frame"] = None,
+        frames: List["Frame"] = None,
         gravity: "Gravity" = None,
         gui: "Gui" = None,
-        include: List["Include"] = None,
-        joint: List["Joint"] = None,
-        light: List["Light"] = None,
+        includes: List["Include"] = None,
+        joints: List["Joint"] = None,
+        lights: List["Light"] = None,
         magnetic_field: "MagneticField" = None,
-        model: List["Model"] = None,
+        models: List["Model"] = None,
         name: str = "__default__",
         physics: "Physics" = None,
-        plugin: List["Plugin"] = None,
-        population: List["Population"] = None,
-        road: List["Road"] = None,
+        plugins: List["Plugin"] = None,
+        populations: List["Population"] = None,
+        roads: List["Road"] = None,
         scene: "Scene" = None,
         spherical_coordinates: "SphericalCoordinates" = None,
-        state: List["State"] = None,
+        states: List["State"] = None,
         wind: "Wind" = None
     ):
         self.__version__ = sdf_version
-        self.actor = actor or []
+        self.actors = actors or []
         self.atmosphere = atmosphere
         self.audio = audio
-        self.frame = frame or []
+        self.frames = frames or []
         self.gravity = gravity
         self.gui = gui
-        self.include = include or []
-        self.joint = joint or []
-        self.light = light or []
+        self.includes = includes or []
+        self.joints = joints or []
+        self.lights = lights or []
         self.magnetic_field = magnetic_field
-        self.model = model or []
+        self.models = models or []
         self.name = name
         self.physics = physics
-        self.plugin = plugin or []
-        self.population = population or []
-        self.road = road or []
+        self.plugins = plugins or []
+        self.populations = populations or []
+        self.roads = roads or []
         self.scene = scene
         self.spherical_coordinates = spherical_coordinates
-        self.state = state or []
+        self.states = states or []
         self.wind = wind
-        for _i, _c in enumerate(self.actor):
+        for _i, _c in enumerate(self.actors):
             if getattr(_c, '__version__', None) is None:
                 _c.__version__ = self.__version__
             elif getattr(_c, '__version__', None) != self.__version__ and self.__version__ is not None:
-                self.actor[_i] = _c.to_version(self.__version__)
+                self.actors[_i] = _c.to_version(self.__version__)
         if self.atmosphere is not None:
             if getattr(self.atmosphere, '__version__', None) is None:
                 self.atmosphere.__version__ = self.__version__
@@ -647,11 +647,11 @@ class World(BaseModel):
                 self.audio.__version__ = self.__version__
             elif getattr(self.audio, '__version__', None) != self.__version__ and self.__version__ is not None:
                 self.audio = self.audio.to_version(self.__version__)
-        for _i, _c in enumerate(self.frame):
+        for _i, _c in enumerate(self.frames):
             if getattr(_c, '__version__', None) is None:
                 _c.__version__ = self.__version__
             elif getattr(_c, '__version__', None) != self.__version__ and self.__version__ is not None:
-                self.frame[_i] = _c.to_version(self.__version__)
+                self.frames[_i] = _c.to_version(self.__version__)
         if self.gravity is not None:
             if getattr(self.gravity, '__version__', None) is None:
                 self.gravity.__version__ = self.__version__
@@ -662,51 +662,51 @@ class World(BaseModel):
                 self.gui.__version__ = self.__version__
             elif getattr(self.gui, '__version__', None) != self.__version__ and self.__version__ is not None:
                 self.gui = self.gui.to_version(self.__version__)
-        for _i, _c in enumerate(self.include):
+        for _i, _c in enumerate(self.includes):
             if getattr(_c, '__version__', None) is None:
                 _c.__version__ = self.__version__
             elif getattr(_c, '__version__', None) != self.__version__ and self.__version__ is not None:
-                self.include[_i] = _c.to_version(self.__version__)
-        for _i, _c in enumerate(self.joint):
+                self.includes[_i] = _c.to_version(self.__version__)
+        for _i, _c in enumerate(self.joints):
             if getattr(_c, '__version__', None) is None:
                 _c.__version__ = self.__version__
             elif getattr(_c, '__version__', None) != self.__version__ and self.__version__ is not None:
-                self.joint[_i] = _c.to_version(self.__version__)
-        for _i, _c in enumerate(self.light):
+                self.joints[_i] = _c.to_version(self.__version__)
+        for _i, _c in enumerate(self.lights):
             if getattr(_c, '__version__', None) is None:
                 _c.__version__ = self.__version__
             elif getattr(_c, '__version__', None) != self.__version__ and self.__version__ is not None:
-                self.light[_i] = _c.to_version(self.__version__)
+                self.lights[_i] = _c.to_version(self.__version__)
         if self.magnetic_field is not None:
             if getattr(self.magnetic_field, '__version__', None) is None:
                 self.magnetic_field.__version__ = self.__version__
             elif getattr(self.magnetic_field, '__version__', None) != self.__version__ and self.__version__ is not None:
                 self.magnetic_field = self.magnetic_field.to_version(self.__version__)
-        for _i, _c in enumerate(self.model):
+        for _i, _c in enumerate(self.models):
             if getattr(_c, '__version__', None) is None:
                 _c.__version__ = self.__version__
             elif getattr(_c, '__version__', None) != self.__version__ and self.__version__ is not None:
-                self.model[_i] = _c.to_version(self.__version__)
+                self.models[_i] = _c.to_version(self.__version__)
         if self.physics is not None:
             if getattr(self.physics, '__version__', None) is None:
                 self.physics.__version__ = self.__version__
             elif getattr(self.physics, '__version__', None) != self.__version__ and self.__version__ is not None:
                 self.physics = self.physics.to_version(self.__version__)
-        for _i, _c in enumerate(self.plugin):
+        for _i, _c in enumerate(self.plugins):
             if getattr(_c, '__version__', None) is None:
                 _c.__version__ = self.__version__
             elif getattr(_c, '__version__', None) != self.__version__ and self.__version__ is not None:
-                self.plugin[_i] = _c.to_version(self.__version__)
-        for _i, _c in enumerate(self.population):
+                self.plugins[_i] = _c.to_version(self.__version__)
+        for _i, _c in enumerate(self.populations):
             if getattr(_c, '__version__', None) is None:
                 _c.__version__ = self.__version__
             elif getattr(_c, '__version__', None) != self.__version__ and self.__version__ is not None:
-                self.population[_i] = _c.to_version(self.__version__)
-        for _i, _c in enumerate(self.road):
+                self.populations[_i] = _c.to_version(self.__version__)
+        for _i, _c in enumerate(self.roads):
             if getattr(_c, '__version__', None) is None:
                 _c.__version__ = self.__version__
             elif getattr(_c, '__version__', None) != self.__version__ and self.__version__ is not None:
-                self.road[_i] = _c.to_version(self.__version__)
+                self.roads[_i] = _c.to_version(self.__version__)
         if self.scene is not None:
             if getattr(self.scene, '__version__', None) is None:
                 self.scene.__version__ = self.__version__
@@ -717,11 +717,11 @@ class World(BaseModel):
                 self.spherical_coordinates.__version__ = self.__version__
             elif getattr(self.spherical_coordinates, '__version__', None) != self.__version__ and self.__version__ is not None:
                 self.spherical_coordinates = self.spherical_coordinates.to_version(self.__version__)
-        for _i, _c in enumerate(self.state):
+        for _i, _c in enumerate(self.states):
             if getattr(_c, '__version__', None) is None:
                 _c.__version__ = self.__version__
             elif getattr(_c, '__version__', None) != self.__version__ and self.__version__ is not None:
-                self.state[_i] = _c.to_version(self.__version__)
+                self.states[_i] = _c.to_version(self.__version__)
         if self.wind is not None:
             if getattr(self.wind, '__version__', None) is None:
                 self.wind.__version__ = self.__version__
@@ -747,42 +747,42 @@ class World(BaseModel):
             raise ValueError(f"'atmosphere' is not supported in SDF version {target_version} (added in 1.6)")
         if self.audio is not None and cmp_version(target_version, "1.4") < 0:
             raise ValueError(f"'audio' is not supported in SDF version {target_version} (added in 1.4)")
-        if self.frame is not None and cmp_version(target_version, "1.7") < 0:
-            raise ValueError(f"'frame' is not supported in SDF version {target_version} (added in 1.7)")
+        if self.frames is not None and cmp_version(target_version, "1.7") < 0:
+            raise ValueError(f"'frames' is not supported in SDF version {target_version} (added in 1.7)")
         if self.gravity is not None and cmp_version(target_version, "1.6") < 0:
             raise ValueError(f"'gravity' is not supported in SDF version {target_version} (added in 1.6)")
-        if self.include is not None and cmp_version(target_version, "1.4") < 0:
-            raise ValueError(f"'include' is not supported in SDF version {target_version} (added in 1.4)")
-        if self.joint is not None and cmp_version(target_version, "1.7") >= 0:
-            raise ValueError(f"'joint' is not supported in SDF version {target_version} (removed in 1.7)")
+        if self.includes is not None and cmp_version(target_version, "1.4") < 0:
+            raise ValueError(f"'includes' is not supported in SDF version {target_version} (added in 1.4)")
+        if self.joints is not None and cmp_version(target_version, "1.7") >= 0:
+            raise ValueError(f"'joints' is not supported in SDF version {target_version} (removed in 1.7)")
         if self.magnetic_field is not None and cmp_version(target_version, "1.6") < 0:
             raise ValueError(f"'magnetic_field' is not supported in SDF version {target_version} (added in 1.6)")
-        if self.population is not None and cmp_version(target_version, "1.5") < 0:
-            raise ValueError(f"'population' is not supported in SDF version {target_version} (added in 1.5)")
+        if self.populations is not None and cmp_version(target_version, "1.5") < 0:
+            raise ValueError(f"'populations' is not supported in SDF version {target_version} (added in 1.5)")
         if self.spherical_coordinates is not None and cmp_version(target_version, "1.4") < 0:
             raise ValueError(f"'spherical_coordinates' is not supported in SDF version {target_version} (added in 1.4)")
         if self.wind is not None and cmp_version(target_version, "1.6") < 0:
             raise ValueError(f"'wind' is not supported in SDF version {target_version} (added in 1.6)")
         kwargs = {"sdf_version": target_version}
-        kwargs["actor"] = [c.to_version(target_version) for c in (self.actor or [])]
+        kwargs["actors"] = [c.to_version(target_version) for c in (self.actors or [])]
         kwargs["atmosphere"] = self.atmosphere.to_version(target_version) if self.atmosphere is not None else None
         kwargs["audio"] = self.audio.to_version(target_version) if self.audio is not None else None
-        kwargs["frame"] = [c.to_version(target_version) for c in (self.frame or [])]
+        kwargs["frames"] = [c.to_version(target_version) for c in (self.frames or [])]
         kwargs["gravity"] = self.gravity.to_version(target_version) if self.gravity is not None else None
         kwargs["gui"] = self.gui.to_version(target_version) if self.gui is not None else None
-        kwargs["include"] = [c.to_version(target_version) for c in (self.include or [])]
-        kwargs["joint"] = [c.to_version(target_version) for c in (self.joint or [])]
-        kwargs["light"] = [c.to_version(target_version) for c in (self.light or [])]
+        kwargs["includes"] = [c.to_version(target_version) for c in (self.includes or [])]
+        kwargs["joints"] = [c.to_version(target_version) for c in (self.joints or [])]
+        kwargs["lights"] = [c.to_version(target_version) for c in (self.lights or [])]
         kwargs["magnetic_field"] = self.magnetic_field.to_version(target_version) if self.magnetic_field is not None else None
-        kwargs["model"] = [c.to_version(target_version) for c in (self.model or [])]
+        kwargs["models"] = [c.to_version(target_version) for c in (self.models or [])]
         kwargs["name"] = self.name
         kwargs["physics"] = self.physics.to_version(target_version) if self.physics is not None else None
-        kwargs["plugin"] = [c.to_version(target_version) for c in (self.plugin or [])]
-        kwargs["population"] = [c.to_version(target_version) for c in (self.population or [])]
-        kwargs["road"] = [c.to_version(target_version) for c in (self.road or [])]
+        kwargs["plugins"] = [c.to_version(target_version) for c in (self.plugins or [])]
+        kwargs["populations"] = [c.to_version(target_version) for c in (self.populations or [])]
+        kwargs["roads"] = [c.to_version(target_version) for c in (self.roads or [])]
         kwargs["scene"] = self.scene.to_version(target_version) if self.scene is not None else None
         kwargs["spherical_coordinates"] = self.spherical_coordinates.to_version(target_version) if self.spherical_coordinates is not None else None
-        kwargs["state"] = [c.to_version(target_version) for c in (self.state or [])]
+        kwargs["states"] = [c.to_version(target_version) for c in (self.states or [])]
         kwargs["wind"] = self.wind.to_version(target_version) if self.wind is not None else None
         new_obj = self.__class__(**kwargs)
         apply_migrations(new_obj, target_version)
@@ -809,7 +809,7 @@ class World(BaseModel):
             return self.to_version(version).to_sdf()
         version = self.__version__ or version
         el = ET.Element("world")
-        for item in (self.actor or []):
+        for item in (self.actors or []):
             el.append(item.to_sdf(version))
         if cmp_version(version, "1.6") >= 0:
             if self.atmosphere is None:
@@ -818,21 +818,21 @@ class World(BaseModel):
             el.append(self.atmosphere.to_sdf(version))
         if self.audio is not None:
             el.append(self.audio.to_sdf(version))
-        for item in (self.frame or []):
+        for item in (self.frames or []):
             el.append(item.to_sdf(version))
         if self.gravity is not None:
             el.append(self.gravity.to_sdf(version))
         if self.gui is not None:
             el.append(self.gui.to_sdf(version))
-        for item in (self.include or []):
+        for item in (self.includes or []):
             el.append(item.to_sdf(version))
-        for item in (self.joint or []):
+        for item in (self.joints or []):
             el.append(item.to_sdf(version))
-        for item in (self.light or []):
+        for item in (self.lights or []):
             el.append(item.to_sdf(version))
         if self.magnetic_field is not None:
             el.append(self.magnetic_field.to_sdf(version))
-        for item in (self.model or []):
+        for item in (self.models or []):
             el.append(item.to_sdf(version))
         if self.name is not None:
             el.set("name", self.name)
@@ -840,11 +840,11 @@ class World(BaseModel):
             self.physics = Physics(sdf_version=version)
         if self.physics is not None:
             el.append(self.physics.to_sdf(version))
-        for item in (self.plugin or []):
+        for item in (self.plugins or []):
             el.append(item.to_sdf(version))
-        for item in (self.population or []):
+        for item in (self.populations or []):
             el.append(item.to_sdf(version))
-        for item in (self.road or []):
+        for item in (self.roads or []):
             el.append(item.to_sdf(version))
         if self.scene is None:
             self.scene = Scene(sdf_version=version)
@@ -852,7 +852,7 @@ class World(BaseModel):
             el.append(self.scene.to_sdf(version))
         if self.spherical_coordinates is not None:
             el.append(self.spherical_coordinates.to_sdf(version))
-        for item in (self.state or []):
+        for item in (self.states or []):
             el.append(item.to_sdf(version))
         if self.wind is not None:
             el.append(self.wind.to_sdf(version))
@@ -874,12 +874,12 @@ class World(BaseModel):
         from ..elements.scene import Scene
         from ..elements.spherical_coordinates import SphericalCoordinates
         from ..elements.state import State
-        _actor = []
+        _actors = []
         for c in el.findall("actor"):
             _res = Actor._from_sdf(c, version)
             if isinstance(_res, SDFError):
                 return _res.extend("actor")
-            _actor.append(_res)
+            _actors.append(_res)
         _c_atmosphere = el.find("atmosphere")
         if _c_atmosphere is not None:
             _res = Atmosphere._from_sdf(_c_atmosphere, version)
@@ -903,14 +903,14 @@ class World(BaseModel):
             _audio = None
         if _audio is not None and cmp_version(version, "1.4") < 0:
             return SDFError(f"'audio' is not supported in SDF version {version} (added in 1.4)")
-        _frame = []
+        _frames = []
         for c in el.findall("frame"):
             _res = Frame._from_sdf(c, version)
             if isinstance(_res, SDFError):
                 return _res.extend("frame")
-            _frame.append(_res)
-        if _frame and cmp_version(version, "1.7") < 0:
-            return SDFError(f"'frame' is not supported in SDF version {version} (added in 1.7)")
+            _frames.append(_res)
+        if _frames and cmp_version(version, "1.7") < 0:
+            return SDFError(f"'frames' is not supported in SDF version {version} (added in 1.7)")
         _c_gravity = el.find("gravity")
         if _c_gravity is not None:
             _res = Gravity._from_sdf(_c_gravity, version)
@@ -929,26 +929,26 @@ class World(BaseModel):
             _gui = _res
         else:
             _gui = None
-        _include = []
+        _includes = []
         for c in el.findall("include"):
             _res = Include._from_sdf(c, version)
             if isinstance(_res, SDFError):
                 return _res.extend("include")
-            _include.append(_res)
-        if _include and cmp_version(version, "1.4") < 0:
-            return SDFError(f"'include' is not supported in SDF version {version} (added in 1.4)")
-        _joint = []
+            _includes.append(_res)
+        if _includes and cmp_version(version, "1.4") < 0:
+            return SDFError(f"'includes' is not supported in SDF version {version} (added in 1.4)")
+        _joints = []
         for c in el.findall("joint"):
             _res = Joint._from_sdf(c, version)
             if isinstance(_res, SDFError):
                 return _res.extend("joint")
-            _joint.append(_res)
-        _light = []
+            _joints.append(_res)
+        _lights = []
         for c in el.findall("light"):
             _res = Light._from_sdf(c, version)
             if isinstance(_res, SDFError):
                 return _res.extend("light")
-            _light.append(_res)
+            _lights.append(_res)
         _c_magnetic_field = el.find("magnetic_field")
         if _c_magnetic_field is not None:
             _res = MagneticField._from_sdf(_c_magnetic_field, version)
@@ -959,12 +959,12 @@ class World(BaseModel):
             _magnetic_field = None
         if _magnetic_field is not None and cmp_version(version, "1.6") < 0:
             return SDFError(f"'magnetic_field' is not supported in SDF version {version} (added in 1.6)")
-        _model = []
+        _models = []
         for c in el.findall("model"):
             _res = Model._from_sdf(c, version)
             if isinstance(_res, SDFError):
                 return _res.extend("model")
-            _model.append(_res)
+            _models.append(_res)
         _name = el.get("name", "__default__")
         if isinstance(_name, SDFError):
             return _name.extend("@name")
@@ -979,26 +979,26 @@ class World(BaseModel):
             if isinstance(_res, SDFError):
                 return _res.extend("physics")
             _physics = _res
-        _plugin = []
+        _plugins = []
         for c in el.findall("plugin"):
             _res = Plugin._from_sdf(c, version)
             if isinstance(_res, SDFError):
                 return _res.extend("plugin")
-            _plugin.append(_res)
-        _population = []
+            _plugins.append(_res)
+        _populations = []
         for c in el.findall("population"):
             _res = Population._from_sdf(c, version)
             if isinstance(_res, SDFError):
                 return _res.extend("population")
-            _population.append(_res)
-        if _population and cmp_version(version, "1.5") < 0:
-            return SDFError(f"'population' is not supported in SDF version {version} (added in 1.5)")
-        _road = []
+            _populations.append(_res)
+        if _populations and cmp_version(version, "1.5") < 0:
+            return SDFError(f"'populations' is not supported in SDF version {version} (added in 1.5)")
+        _roads = []
         for c in el.findall("road"):
             _res = Road._from_sdf(c, version)
             if isinstance(_res, SDFError):
                 return _res.extend("road")
-            _road.append(_res)
+            _roads.append(_res)
         _c_scene = el.find("scene")
         if _c_scene is not None:
             _res = Scene._from_sdf(_c_scene, version)
@@ -1020,12 +1020,12 @@ class World(BaseModel):
             _spherical_coordinates = None
         if _spherical_coordinates is not None and cmp_version(version, "1.4") < 0:
             return SDFError(f"'spherical_coordinates' is not supported in SDF version {version} (added in 1.4)")
-        _state = []
+        _states = []
         for c in el.findall("state"):
             _res = State._from_sdf(c, version)
             if isinstance(_res, SDFError):
                 return _res.extend("state")
-            _state.append(_res)
+            _states.append(_res)
         _c_wind = el.find("wind")
         if _c_wind is not None:
             _res = Wind._from_sdf(_c_wind, version)
@@ -1036,4 +1036,4 @@ class World(BaseModel):
             _wind = None
         if _wind is not None and cmp_version(version, "1.6") < 0:
             return SDFError(f"'wind' is not supported in SDF version {version} (added in 1.6)")
-        return cls(sdf_version=version, actor=_actor, atmosphere=_atmosphere, audio=_audio, frame=_frame, gravity=_gravity, gui=_gui, include=_include, joint=_joint, light=_light, magnetic_field=_magnetic_field, model=_model, name=_name, physics=_physics, plugin=_plugin, population=_population, road=_road, scene=_scene, spherical_coordinates=_spherical_coordinates, state=_state, wind=_wind)
+        return cls(sdf_version=version, actors=_actors, atmosphere=_atmosphere, audio=_audio, frames=_frames, gravity=_gravity, gui=_gui, includes=_includes, joints=_joints, lights=_lights, magnetic_field=_magnetic_field, models=_models, name=_name, physics=_physics, plugins=_plugins, populations=_populations, roads=_roads, scene=_scene, spherical_coordinates=_spherical_coordinates, states=_states, wind=_wind)

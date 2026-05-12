@@ -58,40 +58,40 @@ class Robot(BaseModel):
     def __init__(
         self,
         sdf_version: str | None = None,
-        gripper: List["Gripper"] = None,
-        joint: List["Joint"] = None,
-        link: List["Link"] = None,
+        grippers: List["Gripper"] = None,
+        joints: List["Joint"] = None,
+        links: List["Link"] = None,
         name: str = "__default__",
-        plugin: List["Plugin"] = None,
+        plugins: List["Plugin"] = None,
         pose: "Pose" = None
     ):
         self.__version__ = sdf_version
-        self.gripper = gripper or []
-        self.joint = joint or []
-        self.link = link or []
+        self.grippers = grippers or []
+        self.joints = joints or []
+        self.links = links or []
         self.name = name
-        self.plugin = plugin or []
+        self.plugins = plugins or []
         self.pose = pose
-        for _i, _c in enumerate(self.gripper):
+        for _i, _c in enumerate(self.grippers):
             if getattr(_c, '__version__', None) is None:
                 _c.__version__ = self.__version__
             elif getattr(_c, '__version__', None) != self.__version__ and self.__version__ is not None:
-                self.gripper[_i] = _c.to_version(self.__version__)
-        for _i, _c in enumerate(self.joint):
+                self.grippers[_i] = _c.to_version(self.__version__)
+        for _i, _c in enumerate(self.joints):
             if getattr(_c, '__version__', None) is None:
                 _c.__version__ = self.__version__
             elif getattr(_c, '__version__', None) != self.__version__ and self.__version__ is not None:
-                self.joint[_i] = _c.to_version(self.__version__)
-        for _i, _c in enumerate(self.link):
+                self.joints[_i] = _c.to_version(self.__version__)
+        for _i, _c in enumerate(self.links):
             if getattr(_c, '__version__', None) is None:
                 _c.__version__ = self.__version__
             elif getattr(_c, '__version__', None) != self.__version__ and self.__version__ is not None:
-                self.link[_i] = _c.to_version(self.__version__)
-        for _i, _c in enumerate(self.plugin):
+                self.links[_i] = _c.to_version(self.__version__)
+        for _i, _c in enumerate(self.plugins):
             if getattr(_c, '__version__', None) is None:
                 _c.__version__ = self.__version__
             elif getattr(_c, '__version__', None) != self.__version__ and self.__version__ is not None:
-                self.plugin[_i] = _c.to_version(self.__version__)
+                self.plugins[_i] = _c.to_version(self.__version__)
         if self.pose is not None:
             if getattr(self.pose, '__version__', None) is None:
                 self.pose.__version__ = self.__version__
@@ -104,11 +104,11 @@ class Robot(BaseModel):
         from ..elements.link import Link
         from ..elements.plugin import Plugin
         kwargs = {"sdf_version": target_version}
-        kwargs["gripper"] = [c.to_version(target_version) for c in (self.gripper or [])]
-        kwargs["joint"] = [c.to_version(target_version) for c in (self.joint or [])]
-        kwargs["link"] = [c.to_version(target_version) for c in (self.link or [])]
+        kwargs["grippers"] = [c.to_version(target_version) for c in (self.grippers or [])]
+        kwargs["joints"] = [c.to_version(target_version) for c in (self.joints or [])]
+        kwargs["links"] = [c.to_version(target_version) for c in (self.links or [])]
         kwargs["name"] = self.name
-        kwargs["plugin"] = [c.to_version(target_version) for c in (self.plugin or [])]
+        kwargs["plugins"] = [c.to_version(target_version) for c in (self.plugins or [])]
         kwargs["pose"] = self.pose.to_version(target_version) if self.pose is not None else None
         new_obj = self.__class__(**kwargs)
         return new_obj
@@ -124,15 +124,15 @@ class Robot(BaseModel):
             return self.to_version(version).to_sdf()
         version = self.__version__ or version
         el = ET.Element("robot")
-        for item in (self.gripper or []):
+        for item in (self.grippers or []):
             el.append(item.to_sdf(version))
-        for item in (self.joint or []):
+        for item in (self.joints or []):
             el.append(item.to_sdf(version))
-        for item in (self.link or []):
+        for item in (self.links or []):
             el.append(item.to_sdf(version))
         if self.name is not None:
             el.set("name", self.name)
-        for item in (self.plugin or []):
+        for item in (self.plugins or []):
             el.append(item.to_sdf(version))
         if self.pose is not None:
             el.append(self.pose.to_sdf(version))
@@ -144,33 +144,33 @@ class Robot(BaseModel):
         from ..elements.joint import Joint
         from ..elements.link import Link
         from ..elements.plugin import Plugin
-        _gripper = []
+        _grippers = []
         for c in el.findall("gripper"):
             _res = Gripper._from_sdf(c, version)
             if isinstance(_res, SDFError):
                 return _res.extend("gripper")
-            _gripper.append(_res)
-        _joint = []
+            _grippers.append(_res)
+        _joints = []
         for c in el.findall("joint"):
             _res = Joint._from_sdf(c, version)
             if isinstance(_res, SDFError):
                 return _res.extend("joint")
-            _joint.append(_res)
-        _link = []
+            _joints.append(_res)
+        _links = []
         for c in el.findall("link"):
             _res = Link._from_sdf(c, version)
             if isinstance(_res, SDFError):
                 return _res.extend("link")
-            _link.append(_res)
+            _links.append(_res)
         _name = el.get("name", "__default__")
         if isinstance(_name, SDFError):
             return _name.extend("@name")
-        _plugin = []
+        _plugins = []
         for c in el.findall("plugin"):
             _res = Plugin._from_sdf(c, version)
             if isinstance(_res, SDFError):
                 return _res.extend("plugin")
-            _plugin.append(_res)
+            _plugins.append(_res)
         _c_pose = el.find("pose")
         if _c_pose is not None:
             _res = Pose._from_sdf(_c_pose, version)
@@ -179,4 +179,4 @@ class Robot(BaseModel):
             _pose = _res
         else:
             _pose = None
-        return cls(sdf_version=version, gripper=_gripper, joint=_joint, link=_link, name=_name, plugin=_plugin, pose=_pose)
+        return cls(sdf_version=version, grippers=_grippers, joints=_joints, links=_links, name=_name, plugins=_plugins, pose=_pose)

@@ -103,28 +103,28 @@ class Include(BaseModel):
         self,
         sdf_version: str | None = None,
         merge: bool = False,
-        model_state: List["ModelState"] = None,
+        model_states: List["ModelState"] = None,
         name: "Name" = None,
         placement_frame: "PlacementFrame" = None,
-        plugin: List["Plugin"] = None,
+        plugins: List["Plugin"] = None,
         pose: "Pose" = None,
         static: "Static" = None,
         uri: "Uri" = None
     ):
         self.__version__ = sdf_version
         self.merge = merge
-        self.model_state = model_state or []
+        self.model_states = model_states or []
         self.name = name
         self.placement_frame = placement_frame
-        self.plugin = plugin or []
+        self.plugins = plugins or []
         self.pose = pose
         self.static = static
         self.uri = uri
-        for _i, _c in enumerate(self.model_state):
+        for _i, _c in enumerate(self.model_states):
             if getattr(_c, '__version__', None) is None:
                 _c.__version__ = self.__version__
             elif getattr(_c, '__version__', None) != self.__version__ and self.__version__ is not None:
-                self.model_state[_i] = _c.to_version(self.__version__)
+                self.model_states[_i] = _c.to_version(self.__version__)
         if self.name is not None:
             if getattr(self.name, '__version__', None) is None:
                 self.name.__version__ = self.__version__
@@ -135,11 +135,11 @@ class Include(BaseModel):
                 self.placement_frame.__version__ = self.__version__
             elif getattr(self.placement_frame, '__version__', None) != self.__version__ and self.__version__ is not None:
                 self.placement_frame = self.placement_frame.to_version(self.__version__)
-        for _i, _c in enumerate(self.plugin):
+        for _i, _c in enumerate(self.plugins):
             if getattr(_c, '__version__', None) is None:
                 _c.__version__ = self.__version__
             elif getattr(_c, '__version__', None) != self.__version__ and self.__version__ is not None:
-                self.plugin[_i] = _c.to_version(self.__version__)
+                self.plugins[_i] = _c.to_version(self.__version__)
         if self.pose is not None:
             if getattr(self.pose, '__version__', None) is None:
                 self.pose.__version__ = self.__version__
@@ -162,16 +162,16 @@ class Include(BaseModel):
         from ..elements.pose import Pose
         if self.merge is not None and cmp_version(target_version, "1.12") < 0:
             raise ValueError(f"'merge' is not supported in SDF version {target_version} (added in 1.12)")
-        if self.model_state is not None and cmp_version(target_version, "1.12") < 0:
-            raise ValueError(f"'model_state' is not supported in SDF version {target_version} (added in 1.12)")
+        if self.model_states is not None and cmp_version(target_version, "1.12") < 0:
+            raise ValueError(f"'model_states' is not supported in SDF version {target_version} (added in 1.12)")
         if self.placement_frame is not None and cmp_version(target_version, "1.12") < 0:
             raise ValueError(f"'placement_frame' is not supported in SDF version {target_version} (added in 1.12)")
         kwargs = {"sdf_version": target_version}
         kwargs["merge"] = self.merge
-        kwargs["model_state"] = [c.to_version(target_version) for c in (self.model_state or [])]
+        kwargs["model_states"] = [c.to_version(target_version) for c in (self.model_states or [])]
         kwargs["name"] = self.name.to_version(target_version) if self.name is not None else None
         kwargs["placement_frame"] = self.placement_frame.to_version(target_version) if self.placement_frame is not None else None
-        kwargs["plugin"] = [c.to_version(target_version) for c in (self.plugin or [])]
+        kwargs["plugins"] = [c.to_version(target_version) for c in (self.plugins or [])]
         kwargs["pose"] = self.pose.to_version(target_version) if self.pose is not None else None
         kwargs["static"] = self.static.to_version(target_version) if self.static is not None else None
         kwargs["uri"] = self.uri.to_version(target_version) if self.uri is not None else None
@@ -190,13 +190,13 @@ class Include(BaseModel):
         el = ET.Element("include")
         if self.merge is not None:
             el.set("merge", str(self.merge).lower())
-        for item in (self.model_state or []):
+        for item in (self.model_states or []):
             el.append(item.to_sdf(version))
         if self.name is not None:
             el.append(self.name.to_sdf(version))
         if self.placement_frame is not None:
             el.append(self.placement_frame.to_sdf(version))
-        for item in (self.plugin or []):
+        for item in (self.plugins or []):
             el.append(item.to_sdf(version))
         if self.pose is not None:
             el.append(self.pose.to_sdf(version))
@@ -217,14 +217,14 @@ class Include(BaseModel):
         if _merge is not None and cmp_version(version, "1.12") < 0:
             if _merge != False:
                 return SDFError(f"'merge' is not supported in SDF version {version} (added in 1.12)")
-        _model_state = []
+        _model_states = []
         for c in el.findall("model_state"):
             _res = ModelState._from_sdf(c, version)
             if isinstance(_res, SDFError):
                 return _res.extend("model_state")
-            _model_state.append(_res)
-        if _model_state and cmp_version(version, "1.12") < 0:
-            return SDFError(f"'model_state' is not supported in SDF version {version} (added in 1.12)")
+            _model_states.append(_res)
+        if _model_states and cmp_version(version, "1.12") < 0:
+            return SDFError(f"'model_states' is not supported in SDF version {version} (added in 1.12)")
         _c_name = el.find("name")
         if _c_name is not None:
             _res = Name._from_sdf(_c_name, version)
@@ -243,12 +243,12 @@ class Include(BaseModel):
             _placement_frame = None
         if _placement_frame is not None and cmp_version(version, "1.12") < 0:
             return SDFError(f"'placement_frame' is not supported in SDF version {version} (added in 1.12)")
-        _plugin = []
+        _plugins = []
         for c in el.findall("plugin"):
             _res = Plugin._from_sdf(c, version)
             if isinstance(_res, SDFError):
                 return _res.extend("plugin")
-            _plugin.append(_res)
+            _plugins.append(_res)
         _c_pose = el.find("pose")
         if _c_pose is not None:
             _res = Pose._from_sdf(_c_pose, version)
@@ -273,7 +273,7 @@ class Include(BaseModel):
             _uri = _res
         else:
             _uri = None
-        return cls(sdf_version=version, merge=_merge, model_state=_model_state, name=_name, placement_frame=_placement_frame, plugin=_plugin, pose=_pose, static=_static, uri=_uri)
+        return cls(sdf_version=version, merge=_merge, model_states=_model_states, name=_name, placement_frame=_placement_frame, plugins=_plugins, pose=_pose, static=_static, uri=_uri)
 
 
 class Model(BaseModel):
@@ -283,17 +283,17 @@ class Model(BaseModel):
         allow_auto_disable: "AllowAutoDisable" = None,
         canonical_link: str = "",
         enable_wind: "EnableWind" = None,
-        frame: List["Frame"] = None,
-        gripper: List["Gripper"] = None,
-        include: List["Include"] = None,
-        joint: List["Joint"] = None,
-        link: List["Link"] = None,
-        model: List["ModelModel"] = None,
-        model_state: List["ModelState"] = None,
+        frames: List["Frame"] = None,
+        grippers: List["Gripper"] = None,
+        includes: List["Include"] = None,
+        joints: List["Joint"] = None,
+        links: List["Link"] = None,
+        model_states: List["ModelState"] = None,
+        models: List["ModelModel"] = None,
         name: str = "__default__",
         origin: "Origin" = None,
         placement_frame: str = "",
-        plugin: List["Plugin"] = None,
+        plugins: List["Plugin"] = None,
         pose: "Pose" = None,
         scale: "Scale" = None,
         self_collide: "SelfCollide" = None,
@@ -303,17 +303,17 @@ class Model(BaseModel):
         self.allow_auto_disable = allow_auto_disable
         self.canonical_link = canonical_link
         self.enable_wind = enable_wind
-        self.frame = frame or []
-        self.gripper = gripper or []
-        self.include = include or []
-        self.joint = joint or []
-        self.link = link or []
-        self.model = model or []
-        self.model_state = model_state or []
+        self.frames = frames or []
+        self.grippers = grippers or []
+        self.includes = includes or []
+        self.joints = joints or []
+        self.links = links or []
+        self.model_states = model_states or []
+        self.models = models or []
         self.name = name
         self.origin = origin
         self.placement_frame = placement_frame
-        self.plugin = plugin or []
+        self.plugins = plugins or []
         self.pose = pose
         self.scale = scale
         self.self_collide = self_collide
@@ -328,51 +328,51 @@ class Model(BaseModel):
                 self.enable_wind.__version__ = self.__version__
             elif getattr(self.enable_wind, '__version__', None) != self.__version__ and self.__version__ is not None:
                 self.enable_wind = self.enable_wind.to_version(self.__version__)
-        for _i, _c in enumerate(self.frame):
+        for _i, _c in enumerate(self.frames):
             if getattr(_c, '__version__', None) is None:
                 _c.__version__ = self.__version__
             elif getattr(_c, '__version__', None) != self.__version__ and self.__version__ is not None:
-                self.frame[_i] = _c.to_version(self.__version__)
-        for _i, _c in enumerate(self.gripper):
+                self.frames[_i] = _c.to_version(self.__version__)
+        for _i, _c in enumerate(self.grippers):
             if getattr(_c, '__version__', None) is None:
                 _c.__version__ = self.__version__
             elif getattr(_c, '__version__', None) != self.__version__ and self.__version__ is not None:
-                self.gripper[_i] = _c.to_version(self.__version__)
-        for _i, _c in enumerate(self.include):
+                self.grippers[_i] = _c.to_version(self.__version__)
+        for _i, _c in enumerate(self.includes):
             if getattr(_c, '__version__', None) is None:
                 _c.__version__ = self.__version__
             elif getattr(_c, '__version__', None) != self.__version__ and self.__version__ is not None:
-                self.include[_i] = _c.to_version(self.__version__)
-        for _i, _c in enumerate(self.joint):
+                self.includes[_i] = _c.to_version(self.__version__)
+        for _i, _c in enumerate(self.joints):
             if getattr(_c, '__version__', None) is None:
                 _c.__version__ = self.__version__
             elif getattr(_c, '__version__', None) != self.__version__ and self.__version__ is not None:
-                self.joint[_i] = _c.to_version(self.__version__)
-        for _i, _c in enumerate(self.link):
+                self.joints[_i] = _c.to_version(self.__version__)
+        for _i, _c in enumerate(self.links):
             if getattr(_c, '__version__', None) is None:
                 _c.__version__ = self.__version__
             elif getattr(_c, '__version__', None) != self.__version__ and self.__version__ is not None:
-                self.link[_i] = _c.to_version(self.__version__)
-        for _i, _c in enumerate(self.model):
+                self.links[_i] = _c.to_version(self.__version__)
+        for _i, _c in enumerate(self.model_states):
             if getattr(_c, '__version__', None) is None:
                 _c.__version__ = self.__version__
             elif getattr(_c, '__version__', None) != self.__version__ and self.__version__ is not None:
-                self.model[_i] = _c.to_version(self.__version__)
-        for _i, _c in enumerate(self.model_state):
+                self.model_states[_i] = _c.to_version(self.__version__)
+        for _i, _c in enumerate(self.models):
             if getattr(_c, '__version__', None) is None:
                 _c.__version__ = self.__version__
             elif getattr(_c, '__version__', None) != self.__version__ and self.__version__ is not None:
-                self.model_state[_i] = _c.to_version(self.__version__)
+                self.models[_i] = _c.to_version(self.__version__)
         if self.origin is not None:
             if getattr(self.origin, '__version__', None) is None:
                 self.origin.__version__ = self.__version__
             elif getattr(self.origin, '__version__', None) != self.__version__ and self.__version__ is not None:
                 self.origin = self.origin.to_version(self.__version__)
-        for _i, _c in enumerate(self.plugin):
+        for _i, _c in enumerate(self.plugins):
             if getattr(_c, '__version__', None) is None:
                 _c.__version__ = self.__version__
             elif getattr(_c, '__version__', None) != self.__version__ and self.__version__ is not None:
-                self.plugin[_i] = _c.to_version(self.__version__)
+                self.plugins[_i] = _c.to_version(self.__version__)
         if self.pose is not None:
             if getattr(self.pose, '__version__', None) is None:
                 self.pose.__version__ = self.__version__
@@ -409,24 +409,24 @@ class Model(BaseModel):
             raise ValueError(f"'enable_wind' is not supported in SDF version {target_version} (added in 1.7)")
         if self.enable_wind is not None and cmp_version(target_version, "1.8") >= 0:
             raise ValueError(f"'enable_wind' is not supported in SDF version {target_version} (removed in 1.8)")
-        if self.frame is not None and cmp_version(target_version, "1.5") < 0:
-            raise ValueError(f"'frame' is not supported in SDF version {target_version} (added in 1.5)")
-        if self.gripper is not None and cmp_version(target_version, "1.5") >= 0:
-            raise ValueError(f"'gripper' is not supported in SDF version {target_version} (removed in 1.5)")
-        if self.include is not None and cmp_version(target_version, "1.7") < 0:
-            raise ValueError(f"'include' is not supported in SDF version {target_version} (added in 1.7)")
-        if self.include is not None and cmp_version(target_version, "1.8") >= 0:
-            raise ValueError(f"'include' is not supported in SDF version {target_version} (removed in 1.8)")
-        if self.model is not None and cmp_version(target_version, "1.5") < 0:
-            raise ValueError(f"'model' is not supported in SDF version {target_version} (added in 1.5)")
-        if self.model_state is not None and cmp_version(target_version, "1.12") < 0:
-            raise ValueError(f"'model_state' is not supported in SDF version {target_version} (added in 1.12)")
+        if self.frames is not None and cmp_version(target_version, "1.5") < 0:
+            raise ValueError(f"'frames' is not supported in SDF version {target_version} (added in 1.5)")
+        if self.grippers is not None and cmp_version(target_version, "1.5") >= 0:
+            raise ValueError(f"'grippers' is not supported in SDF version {target_version} (removed in 1.5)")
+        if self.includes is not None and cmp_version(target_version, "1.7") < 0:
+            raise ValueError(f"'includes' is not supported in SDF version {target_version} (added in 1.7)")
+        if self.includes is not None and cmp_version(target_version, "1.8") >= 0:
+            raise ValueError(f"'includes' is not supported in SDF version {target_version} (removed in 1.8)")
+        if self.model_states is not None and cmp_version(target_version, "1.12") < 0:
+            raise ValueError(f"'model_states' is not supported in SDF version {target_version} (added in 1.12)")
+        if self.models is not None and cmp_version(target_version, "1.5") < 0:
+            raise ValueError(f"'models' is not supported in SDF version {target_version} (added in 1.5)")
         if self.origin is not None and cmp_version(target_version, "1.2") >= 0:
             raise ValueError(f"'origin' is not supported in SDF version {target_version} (removed in 1.2)")
         if self.placement_frame is not None and cmp_version(target_version, "1.12") < 0:
             raise ValueError(f"'placement_frame' is not supported in SDF version {target_version} (added in 1.12)")
-        if self.plugin is not None and cmp_version(target_version, "1.5") >= 0:
-            raise ValueError(f"'plugin' is not supported in SDF version {target_version} (removed in 1.5)")
+        if self.plugins is not None and cmp_version(target_version, "1.5") >= 0:
+            raise ValueError(f"'plugins' is not supported in SDF version {target_version} (removed in 1.5)")
         if self.pose is not None and cmp_version(target_version, "1.2") < 0:
             raise ValueError(f"'pose' is not supported in SDF version {target_version} (added in 1.2)")
         if self.scale is not None and cmp_version(target_version, "1.6") < 0:
@@ -443,17 +443,17 @@ class Model(BaseModel):
         kwargs["allow_auto_disable"] = self.allow_auto_disable.to_version(target_version) if self.allow_auto_disable is not None else None
         kwargs["canonical_link"] = self.canonical_link
         kwargs["enable_wind"] = self.enable_wind.to_version(target_version) if self.enable_wind is not None else None
-        kwargs["frame"] = [c.to_version(target_version) for c in (self.frame or [])]
-        kwargs["gripper"] = [c.to_version(target_version) for c in (self.gripper or [])]
-        kwargs["include"] = [c.to_version(target_version) for c in (self.include or [])]
-        kwargs["joint"] = [c.to_version(target_version) for c in (self.joint or [])]
-        kwargs["link"] = [c.to_version(target_version) for c in (self.link or [])]
-        kwargs["model"] = [c.to_version(target_version) for c in (self.model or [])]
-        kwargs["model_state"] = [c.to_version(target_version) for c in (self.model_state or [])]
+        kwargs["frames"] = [c.to_version(target_version) for c in (self.frames or [])]
+        kwargs["grippers"] = [c.to_version(target_version) for c in (self.grippers or [])]
+        kwargs["includes"] = [c.to_version(target_version) for c in (self.includes or [])]
+        kwargs["joints"] = [c.to_version(target_version) for c in (self.joints or [])]
+        kwargs["links"] = [c.to_version(target_version) for c in (self.links or [])]
+        kwargs["model_states"] = [c.to_version(target_version) for c in (self.model_states or [])]
+        kwargs["models"] = [c.to_version(target_version) for c in (self.models or [])]
         kwargs["name"] = self.name
         kwargs["origin"] = self.origin.to_version(target_version) if self.origin is not None else None
         kwargs["placement_frame"] = self.placement_frame
-        kwargs["plugin"] = [c.to_version(target_version) for c in (self.plugin or [])]
+        kwargs["plugins"] = [c.to_version(target_version) for c in (self.plugins or [])]
         kwargs["pose"] = self.pose.to_version(target_version) if self.pose is not None else None
         kwargs["scale"] = self.scale.to_version(target_version) if self.scale is not None else None
         kwargs["self_collide"] = self.self_collide.to_version(target_version) if self.self_collide is not None else None
@@ -481,19 +481,19 @@ class Model(BaseModel):
             el.set("canonical_link", self.canonical_link)
         if self.enable_wind is not None:
             el.append(self.enable_wind.to_sdf(version))
-        for item in (self.frame or []):
+        for item in (self.frames or []):
             el.append(item.to_sdf(version))
-        for item in (self.gripper or []):
+        for item in (self.grippers or []):
             el.append(item.to_sdf(version))
-        for item in (self.include or []):
+        for item in (self.includes or []):
             el.append(item.to_sdf(version))
-        for item in (self.joint or []):
+        for item in (self.joints or []):
             el.append(item.to_sdf(version))
-        for item in (self.link or []):
+        for item in (self.links or []):
             el.append(item.to_sdf(version))
-        for item in (self.model or []):
+        for item in (self.model_states or []):
             el.append(item.to_sdf(version))
-        for item in (self.model_state or []):
+        for item in (self.models or []):
             el.append(item.to_sdf(version))
         if self.name is not None:
             el.set("name", self.name)
@@ -501,7 +501,7 @@ class Model(BaseModel):
             el.append(self.origin.to_sdf(version))
         if self.placement_frame is not None:
             el.set("placement_frame", self.placement_frame)
-        for item in (self.plugin or []):
+        for item in (self.plugins or []):
             el.append(item.to_sdf(version))
         if self.pose is not None:
             el.append(self.pose.to_sdf(version))
@@ -548,56 +548,56 @@ class Model(BaseModel):
             _enable_wind = None
         if _enable_wind is not None and cmp_version(version, "1.7") < 0:
             return SDFError(f"'enable_wind' is not supported in SDF version {version} (added in 1.7)")
-        _frame = []
+        _frames = []
         for c in el.findall("frame"):
             _res = Frame._from_sdf(c, version)
             if isinstance(_res, SDFError):
                 return _res.extend("frame")
-            _frame.append(_res)
-        if _frame and cmp_version(version, "1.5") < 0:
-            return SDFError(f"'frame' is not supported in SDF version {version} (added in 1.5)")
-        _gripper = []
+            _frames.append(_res)
+        if _frames and cmp_version(version, "1.5") < 0:
+            return SDFError(f"'frames' is not supported in SDF version {version} (added in 1.5)")
+        _grippers = []
         for c in el.findall("gripper"):
             _res = Gripper._from_sdf(c, version)
             if isinstance(_res, SDFError):
                 return _res.extend("gripper")
-            _gripper.append(_res)
-        _include = []
+            _grippers.append(_res)
+        _includes = []
         for c in el.findall("include"):
             _res = Include._from_sdf(c, version)
             if isinstance(_res, SDFError):
                 return _res.extend("include")
-            _include.append(_res)
-        if _include and cmp_version(version, "1.7") < 0:
-            return SDFError(f"'include' is not supported in SDF version {version} (added in 1.7)")
-        _joint = []
+            _includes.append(_res)
+        if _includes and cmp_version(version, "1.7") < 0:
+            return SDFError(f"'includes' is not supported in SDF version {version} (added in 1.7)")
+        _joints = []
         for c in el.findall("joint"):
             _res = Joint._from_sdf(c, version)
             if isinstance(_res, SDFError):
                 return _res.extend("joint")
-            _joint.append(_res)
-        _link = []
+            _joints.append(_res)
+        _links = []
         for c in el.findall("link"):
             _res = Link._from_sdf(c, version)
             if isinstance(_res, SDFError):
                 return _res.extend("link")
-            _link.append(_res)
-        _model = []
-        for c in el.findall("model"):
-            _res = ModelModel._from_sdf(c, version)
-            if isinstance(_res, SDFError):
-                return _res.extend("model")
-            _model.append(_res)
-        if _model and cmp_version(version, "1.5") < 0:
-            return SDFError(f"'model' is not supported in SDF version {version} (added in 1.5)")
-        _model_state = []
+            _links.append(_res)
+        _model_states = []
         for c in el.findall("model_state"):
             _res = ModelState._from_sdf(c, version)
             if isinstance(_res, SDFError):
                 return _res.extend("model_state")
-            _model_state.append(_res)
-        if _model_state and cmp_version(version, "1.12") < 0:
-            return SDFError(f"'model_state' is not supported in SDF version {version} (added in 1.12)")
+            _model_states.append(_res)
+        if _model_states and cmp_version(version, "1.12") < 0:
+            return SDFError(f"'model_states' is not supported in SDF version {version} (added in 1.12)")
+        _models = []
+        for c in el.findall("model"):
+            _res = ModelModel._from_sdf(c, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("model")
+            _models.append(_res)
+        if _models and cmp_version(version, "1.5") < 0:
+            return SDFError(f"'models' is not supported in SDF version {version} (added in 1.5)")
         _name = el.get("name", "__default__")
         if isinstance(_name, SDFError):
             return _name.extend("@name")
@@ -615,12 +615,12 @@ class Model(BaseModel):
         if _placement_frame is not None and cmp_version(version, "1.12") < 0:
             if _placement_frame != "":
                 return SDFError(f"'placement_frame' is not supported in SDF version {version} (added in 1.12)")
-        _plugin = []
+        _plugins = []
         for c in el.findall("plugin"):
             _res = Plugin._from_sdf(c, version)
             if isinstance(_res, SDFError):
                 return _res.extend("plugin")
-            _plugin.append(_res)
+            _plugins.append(_res)
         _c_pose = el.find("pose")
         if _c_pose is not None:
             _res = Pose._from_sdf(_c_pose, version)
@@ -654,7 +654,7 @@ class Model(BaseModel):
         _static = str(el.get("static", False)).strip().lower() == 'true'
         if isinstance(_static, SDFError):
             return _static.extend("@static")
-        return cls(sdf_version=version, allow_auto_disable=_allow_auto_disable, canonical_link=_canonical_link, enable_wind=_enable_wind, frame=_frame, gripper=_gripper, include=_include, joint=_joint, link=_link, model=_model, model_state=_model_state, name=_name, origin=_origin, placement_frame=_placement_frame, plugin=_plugin, pose=_pose, scale=_scale, self_collide=_self_collide, static=_static)
+        return cls(sdf_version=version, allow_auto_disable=_allow_auto_disable, canonical_link=_canonical_link, enable_wind=_enable_wind, frames=_frames, grippers=_grippers, includes=_includes, joints=_joints, links=_links, model_states=_model_states, models=_models, name=_name, origin=_origin, placement_frame=_placement_frame, plugins=_plugins, pose=_pose, scale=_scale, self_collide=_self_collide, static=_static)
 
 
 class ModelModel(BaseModel):

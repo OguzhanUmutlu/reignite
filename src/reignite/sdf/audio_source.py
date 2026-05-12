@@ -53,7 +53,7 @@ class AudioSource(BaseModel):
         self,
         sdf_version: str | None = None,
         contact: "Contact" = None,
-        frame: List["Frame"] = None,
+        frames: List["Frame"] = None,
         gain: "Gain" = None,
         loop: "Loop" = None,
         pitch: "Pitch" = None,
@@ -62,7 +62,7 @@ class AudioSource(BaseModel):
     ):
         self.__version__ = sdf_version
         self.contact = contact
-        self.frame = frame or []
+        self.frames = frames or []
         self.gain = gain
         self.loop = loop
         self.pitch = pitch
@@ -73,11 +73,11 @@ class AudioSource(BaseModel):
                 self.contact.__version__ = self.__version__
             elif getattr(self.contact, '__version__', None) != self.__version__ and self.__version__ is not None:
                 self.contact = self.contact.to_version(self.__version__)
-        for _i, _c in enumerate(self.frame):
+        for _i, _c in enumerate(self.frames):
             if getattr(_c, '__version__', None) is None:
                 _c.__version__ = self.__version__
             elif getattr(_c, '__version__', None) != self.__version__ and self.__version__ is not None:
-                self.frame[_i] = _c.to_version(self.__version__)
+                self.frames[_i] = _c.to_version(self.__version__)
         if self.gain is not None:
             if getattr(self.gain, '__version__', None) is None:
                 self.gain.__version__ = self.__version__
@@ -107,13 +107,13 @@ class AudioSource(BaseModel):
     def to_version(self, target_version: str) -> "AudioSource":
         from ..elements.frame import Frame
         from ..elements.pose import Pose
-        if self.frame is not None and cmp_version(target_version, "1.5") < 0:
-            raise ValueError(f"'frame' is not supported in SDF version {target_version} (added in 1.5)")
-        if self.frame is not None and cmp_version(target_version, "1.7") >= 0:
-            raise ValueError(f"'frame' is not supported in SDF version {target_version} (removed in 1.7)")
+        if self.frames is not None and cmp_version(target_version, "1.5") < 0:
+            raise ValueError(f"'frames' is not supported in SDF version {target_version} (added in 1.5)")
+        if self.frames is not None and cmp_version(target_version, "1.7") >= 0:
+            raise ValueError(f"'frames' is not supported in SDF version {target_version} (removed in 1.7)")
         kwargs = {"sdf_version": target_version}
         kwargs["contact"] = self.contact.to_version(target_version) if self.contact is not None else None
-        kwargs["frame"] = [c.to_version(target_version) for c in (self.frame or [])]
+        kwargs["frames"] = [c.to_version(target_version) for c in (self.frames or [])]
         kwargs["gain"] = self.gain.to_version(target_version) if self.gain is not None else None
         kwargs["loop"] = self.loop.to_version(target_version) if self.loop is not None else None
         kwargs["pitch"] = self.pitch.to_version(target_version) if self.pitch is not None else None
@@ -133,7 +133,7 @@ class AudioSource(BaseModel):
         el = ET.Element("audio_source")
         if self.contact is not None:
             el.append(self.contact.to_sdf(version))
-        for item in (self.frame or []):
+        for item in (self.frames or []):
             el.append(item.to_sdf(version))
         if self.gain is not None:
             el.append(self.gain.to_sdf(version))
@@ -159,14 +159,14 @@ class AudioSource(BaseModel):
             _contact = _res
         else:
             _contact = None
-        _frame = []
+        _frames = []
         for c in el.findall("frame"):
             _res = Frame._from_sdf(c, version)
             if isinstance(_res, SDFError):
                 return _res.extend("frame")
-            _frame.append(_res)
-        if _frame and cmp_version(version, "1.5") < 0:
-            return SDFError(f"'frame' is not supported in SDF version {version} (added in 1.5)")
+            _frames.append(_res)
+        if _frames and cmp_version(version, "1.5") < 0:
+            return SDFError(f"'frames' is not supported in SDF version {version} (added in 1.5)")
         _c_gain = el.find("gain")
         if _c_gain is not None:
             _res = Gain._from_sdf(_c_gain, version)
@@ -207,7 +207,7 @@ class AudioSource(BaseModel):
             _uri = _res
         else:
             _uri = None
-        return cls(sdf_version=version, contact=_contact, frame=_frame, gain=_gain, loop=_loop, pitch=_pitch, pose=_pose, uri=_uri)
+        return cls(sdf_version=version, contact=_contact, frames=_frames, gain=_gain, loop=_loop, pitch=_pitch, pose=_pose, uri=_uri)
 
 
 class Collision(BaseModel):
@@ -242,18 +242,18 @@ class Collision(BaseModel):
 
 
 class Contact(BaseModel):
-    def __init__(self, sdf_version: str | None = None, collision: List["Collision"] = None):
+    def __init__(self, sdf_version: str | None = None, collisions: List["Collision"] = None):
         self.__version__ = sdf_version
-        self.collision = collision or []
-        for _i, _c in enumerate(self.collision):
+        self.collisions = collisions or []
+        for _i, _c in enumerate(self.collisions):
             if getattr(_c, '__version__', None) is None:
                 _c.__version__ = self.__version__
             elif getattr(_c, '__version__', None) != self.__version__ and self.__version__ is not None:
-                self.collision[_i] = _c.to_version(self.__version__)
+                self.collisions[_i] = _c.to_version(self.__version__)
 
     def to_version(self, target_version: str) -> "Contact":
         kwargs = {"sdf_version": target_version}
-        kwargs["collision"] = [c.to_version(target_version) for c in (self.collision or [])]
+        kwargs["collisions"] = [c.to_version(target_version) for c in (self.collisions or [])]
         new_obj = self.__class__(**kwargs)
         return new_obj
 
@@ -264,19 +264,19 @@ class Contact(BaseModel):
             return self.to_version(version).to_sdf()
         version = self.__version__ or version
         el = ET.Element("contact")
-        for item in (self.collision or []):
+        for item in (self.collisions or []):
             el.append(item.to_sdf(version))
         return el
 
     @classmethod
     def _from_sdf(cls, el: ET.Element, version: str):
-        _collision = []
+        _collisions = []
         for c in el.findall("collision"):
             _res = Collision._from_sdf(c, version)
             if isinstance(_res, SDFError):
                 return _res.extend("collision")
-            _collision.append(_res)
-        return cls(sdf_version=version, collision=_collision)
+            _collisions.append(_res)
+        return cls(sdf_version=version, collisions=_collisions)
 
 
 class Gain(BaseModel):

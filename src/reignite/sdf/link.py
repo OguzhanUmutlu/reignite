@@ -340,80 +340,80 @@ class Link(BaseModel):
         self,
         sdf_version: str | None = None,
         acceleration: "Acceleration" = None,
-        audio_sink: List["AudioSink"] = None,
-        audio_source: List["AudioSource"] = None,
-        battery: List["Battery"] = None,
-        collision: List["Collision"] = None,
+        audio_sinks: List["AudioSink"] = None,
+        audio_sources: List["AudioSource"] = None,
+        batterys: List["Battery"] = None,
+        collisions: List["Collision"] = None,
         damping: "Damping" = None,
         enable_wind: "EnableWind" = None,
-        frame: List["Frame"] = None,
+        frames: List["Frame"] = None,
         gravity: bool = True,
         inertial: "Inertial" = None,
         kinematic: bool = False,
-        light: List["Light"] = None,
+        lights: List["Light"] = None,
         must_be_base_link: "MustBeBaseLink" = None,
         name: str = "__default__",
         origin: "Origin" = None,
-        particle_emitter: List["ParticleEmitter"] = None,
+        particle_emitters: List["ParticleEmitter"] = None,
         pose: "Pose" = None,
         projector: "Projector" = None,
         self_collide: bool = False,
         sensor: "Sensor" = None,
         velocity: "Velocity" = None,
         velocity_decay: "VelocityDecay" = None,
-        visual: List["Visual"] = None,
+        visuals: List["Visual"] = None,
         wrench: "Wrench" = None
     ):
         self.__version__ = sdf_version
         self.acceleration = acceleration
-        self.audio_sink = audio_sink or []
-        self.audio_source = audio_source or []
-        self.battery = battery or []
-        self.collision = collision or []
+        self.audio_sinks = audio_sinks or []
+        self.audio_sources = audio_sources or []
+        self.batterys = batterys or []
+        self.collisions = collisions or []
         self.damping = damping
         self.enable_wind = enable_wind
-        self.frame = frame or []
+        self.frames = frames or []
         self.gravity = gravity
         self.inertial = inertial
         self.kinematic = kinematic
-        self.light = light or []
+        self.lights = lights or []
         self.must_be_base_link = must_be_base_link
         self.name = name
         self.origin = origin
-        self.particle_emitter = particle_emitter or []
+        self.particle_emitters = particle_emitters or []
         self.pose = pose
         self.projector = projector
         self.self_collide = self_collide
         self.sensor = sensor
         self.velocity = velocity
         self.velocity_decay = velocity_decay
-        self.visual = visual or []
+        self.visuals = visuals or []
         self.wrench = wrench
         if self.acceleration is not None:
             if getattr(self.acceleration, '__version__', None) is None:
                 self.acceleration.__version__ = self.__version__
             elif getattr(self.acceleration, '__version__', None) != self.__version__ and self.__version__ is not None:
                 self.acceleration = self.acceleration.to_version(self.__version__)
-        for _i, _c in enumerate(self.audio_sink):
+        for _i, _c in enumerate(self.audio_sinks):
             if getattr(_c, '__version__', None) is None:
                 _c.__version__ = self.__version__
             elif getattr(_c, '__version__', None) != self.__version__ and self.__version__ is not None:
-                self.audio_sink[_i] = _c.to_version(self.__version__)
-        for _i, _c in enumerate(self.audio_source):
+                self.audio_sinks[_i] = _c.to_version(self.__version__)
+        for _i, _c in enumerate(self.audio_sources):
             if getattr(_c, '__version__', None) is None:
                 _c.__version__ = self.__version__
             elif getattr(_c, '__version__', None) != self.__version__ and self.__version__ is not None:
-                self.audio_source[_i] = _c.to_version(self.__version__)
-        for _i, _c in enumerate(self.battery):
+                self.audio_sources[_i] = _c.to_version(self.__version__)
+        for _i, _c in enumerate(self.batterys):
             if getattr(_c, '__version__', None) is None:
                 _c.__version__ = self.__version__
             elif getattr(_c, '__version__', None) != self.__version__ and self.__version__ is not None:
-                self.battery[_i] = _c.to_version(self.__version__)
-        for _i, _c in enumerate(self.collision):
+                self.batterys[_i] = _c.to_version(self.__version__)
+        for _i, _c in enumerate(self.collisions):
             if getattr(_c, '__version__', None) is None:
                 _c.__version__ = self.__version__
             elif getattr(_c, '__version__', None) != self.__version__ and self.__version__ is not None:
-                self.collision[_i] = _c.to_version(self.__version__)
+                self.collisions[_i] = _c.to_version(self.__version__)
         if self.damping is not None:
             if getattr(self.damping, '__version__', None) is None:
                 self.damping.__version__ = self.__version__
@@ -424,21 +424,21 @@ class Link(BaseModel):
                 self.enable_wind.__version__ = self.__version__
             elif getattr(self.enable_wind, '__version__', None) != self.__version__ and self.__version__ is not None:
                 self.enable_wind = self.enable_wind.to_version(self.__version__)
-        for _i, _c in enumerate(self.frame):
+        for _i, _c in enumerate(self.frames):
             if getattr(_c, '__version__', None) is None:
                 _c.__version__ = self.__version__
             elif getattr(_c, '__version__', None) != self.__version__ and self.__version__ is not None:
-                self.frame[_i] = _c.to_version(self.__version__)
+                self.frames[_i] = _c.to_version(self.__version__)
         if self.inertial is not None:
             if getattr(self.inertial, '__version__', None) is None:
                 self.inertial.__version__ = self.__version__
             elif getattr(self.inertial, '__version__', None) != self.__version__ and self.__version__ is not None:
                 self.inertial = self.inertial.to_version(self.__version__)
-        for _i, _c in enumerate(self.light):
+        for _i, _c in enumerate(self.lights):
             if getattr(_c, '__version__', None) is None:
                 _c.__version__ = self.__version__
             elif getattr(_c, '__version__', None) != self.__version__ and self.__version__ is not None:
-                self.light[_i] = _c.to_version(self.__version__)
+                self.lights[_i] = _c.to_version(self.__version__)
         if self.must_be_base_link is not None:
             if getattr(self.must_be_base_link, '__version__', None) is None:
                 self.must_be_base_link.__version__ = self.__version__
@@ -449,11 +449,11 @@ class Link(BaseModel):
                 self.origin.__version__ = self.__version__
             elif getattr(self.origin, '__version__', None) != self.__version__ and self.__version__ is not None:
                 self.origin = self.origin.to_version(self.__version__)
-        for _i, _c in enumerate(self.particle_emitter):
+        for _i, _c in enumerate(self.particle_emitters):
             if getattr(_c, '__version__', None) is None:
                 _c.__version__ = self.__version__
             elif getattr(_c, '__version__', None) != self.__version__ and self.__version__ is not None:
-                self.particle_emitter[_i] = _c.to_version(self.__version__)
+                self.particle_emitters[_i] = _c.to_version(self.__version__)
         if self.pose is not None:
             if getattr(self.pose, '__version__', None) is None:
                 self.pose.__version__ = self.__version__
@@ -479,11 +479,11 @@ class Link(BaseModel):
                 self.velocity_decay.__version__ = self.__version__
             elif getattr(self.velocity_decay, '__version__', None) != self.__version__ and self.__version__ is not None:
                 self.velocity_decay = self.velocity_decay.to_version(self.__version__)
-        for _i, _c in enumerate(self.visual):
+        for _i, _c in enumerate(self.visuals):
             if getattr(_c, '__version__', None) is None:
                 _c.__version__ = self.__version__
             elif getattr(_c, '__version__', None) != self.__version__ and self.__version__ is not None:
-                self.visual[_i] = _c.to_version(self.__version__)
+                self.visuals[_i] = _c.to_version(self.__version__)
         if self.wrench is not None:
             if getattr(self.wrench, '__version__', None) is None:
                 self.wrench.__version__ = self.__version__
@@ -507,40 +507,40 @@ class Link(BaseModel):
             raise ValueError(f"'acceleration' is not supported in SDF version {target_version} (added in 1.5)")
         if self.acceleration is not None and cmp_version(target_version, "1.12") >= 0:
             raise ValueError(f"'acceleration' is not supported in SDF version {target_version} (removed in 1.12)")
-        if self.audio_sink is not None and cmp_version(target_version, "1.4") < 0:
-            raise ValueError(f"'audio_sink' is not supported in SDF version {target_version} (added in 1.4)")
-        if self.audio_sink is not None and cmp_version(target_version, "1.5") >= 0:
-            raise ValueError(f"'audio_sink' is not supported in SDF version {target_version} (removed in 1.5)")
-        if self.audio_source is not None and cmp_version(target_version, "1.4") < 0:
-            raise ValueError(f"'audio_source' is not supported in SDF version {target_version} (added in 1.4)")
-        if self.audio_source is not None and cmp_version(target_version, "1.5") >= 0:
-            raise ValueError(f"'audio_source' is not supported in SDF version {target_version} (removed in 1.5)")
-        if self.battery is not None and cmp_version(target_version, "1.12") < 0:
-            raise ValueError(f"'battery' is not supported in SDF version {target_version} (added in 1.12)")
+        if self.audio_sinks is not None and cmp_version(target_version, "1.4") < 0:
+            raise ValueError(f"'audio_sinks' is not supported in SDF version {target_version} (added in 1.4)")
+        if self.audio_sinks is not None and cmp_version(target_version, "1.5") >= 0:
+            raise ValueError(f"'audio_sinks' is not supported in SDF version {target_version} (removed in 1.5)")
+        if self.audio_sources is not None and cmp_version(target_version, "1.4") < 0:
+            raise ValueError(f"'audio_sources' is not supported in SDF version {target_version} (added in 1.4)")
+        if self.audio_sources is not None and cmp_version(target_version, "1.5") >= 0:
+            raise ValueError(f"'audio_sources' is not supported in SDF version {target_version} (removed in 1.5)")
+        if self.batterys is not None and cmp_version(target_version, "1.12") < 0:
+            raise ValueError(f"'batterys' is not supported in SDF version {target_version} (added in 1.12)")
         if self.damping is not None and cmp_version(target_version, "1.2") >= 0:
             raise ValueError(f"'damping' is not supported in SDF version {target_version} (removed in 1.2)")
         if self.enable_wind is not None and cmp_version(target_version, "1.12") < 0:
             raise ValueError(f"'enable_wind' is not supported in SDF version {target_version} (added in 1.12)")
-        if self.frame is not None and cmp_version(target_version, "1.5") < 0:
-            raise ValueError(f"'frame' is not supported in SDF version {target_version} (added in 1.5)")
-        if self.frame is not None and cmp_version(target_version, "1.7") >= 0:
-            raise ValueError(f"'frame' is not supported in SDF version {target_version} (removed in 1.7)")
+        if self.frames is not None and cmp_version(target_version, "1.5") < 0:
+            raise ValueError(f"'frames' is not supported in SDF version {target_version} (added in 1.5)")
+        if self.frames is not None and cmp_version(target_version, "1.7") >= 0:
+            raise ValueError(f"'frames' is not supported in SDF version {target_version} (removed in 1.7)")
         if self.gravity is not None and cmp_version(target_version, "1.2") >= 0:
             raise ValueError(f"'gravity' is not supported in SDF version {target_version} (removed in 1.2)")
         if self.inertial is not None and cmp_version(target_version, "1.5") >= 0:
             raise ValueError(f"'inertial' is not supported in SDF version {target_version} (removed in 1.5)")
         if self.kinematic is not None and cmp_version(target_version, "1.2") >= 0:
             raise ValueError(f"'kinematic' is not supported in SDF version {target_version} (removed in 1.2)")
-        if self.light is not None and cmp_version(target_version, "1.12") < 0:
-            raise ValueError(f"'light' is not supported in SDF version {target_version} (added in 1.12)")
+        if self.lights is not None and cmp_version(target_version, "1.12") < 0:
+            raise ValueError(f"'lights' is not supported in SDF version {target_version} (added in 1.12)")
         if self.must_be_base_link is not None and cmp_version(target_version, "1.4") < 0:
             raise ValueError(f"'must_be_base_link' is not supported in SDF version {target_version} (added in 1.4)")
         if self.must_be_base_link is not None and cmp_version(target_version, "1.5") >= 0:
             raise ValueError(f"'must_be_base_link' is not supported in SDF version {target_version} (removed in 1.5)")
         if self.origin is not None and cmp_version(target_version, "1.2") >= 0:
             raise ValueError(f"'origin' is not supported in SDF version {target_version} (removed in 1.2)")
-        if self.particle_emitter is not None and cmp_version(target_version, "1.12") < 0:
-            raise ValueError(f"'particle_emitter' is not supported in SDF version {target_version} (added in 1.12)")
+        if self.particle_emitters is not None and cmp_version(target_version, "1.12") < 0:
+            raise ValueError(f"'particle_emitters' is not supported in SDF version {target_version} (added in 1.12)")
         if self.pose is not None and cmp_version(target_version, "1.2") < 0:
             raise ValueError(f"'pose' is not supported in SDF version {target_version} (added in 1.2)")
         if self.projector is not None and cmp_version(target_version, "1.5") >= 0:
@@ -557,36 +557,36 @@ class Link(BaseModel):
             raise ValueError(f"'velocity_decay' is not supported in SDF version {target_version} (added in 1.2)")
         if self.velocity_decay is not None and cmp_version(target_version, "1.5") >= 0:
             raise ValueError(f"'velocity_decay' is not supported in SDF version {target_version} (removed in 1.5)")
-        if self.visual is not None and cmp_version(target_version, "1.5") >= 0:
-            raise ValueError(f"'visual' is not supported in SDF version {target_version} (removed in 1.5)")
+        if self.visuals is not None and cmp_version(target_version, "1.5") >= 0:
+            raise ValueError(f"'visuals' is not supported in SDF version {target_version} (removed in 1.5)")
         if self.wrench is not None and cmp_version(target_version, "1.5") < 0:
             raise ValueError(f"'wrench' is not supported in SDF version {target_version} (added in 1.5)")
         if self.wrench is not None and cmp_version(target_version, "1.12") >= 0:
             raise ValueError(f"'wrench' is not supported in SDF version {target_version} (removed in 1.12)")
         kwargs = {"sdf_version": target_version}
         kwargs["acceleration"] = self.acceleration.to_version(target_version) if self.acceleration is not None else None
-        kwargs["audio_sink"] = [c.to_version(target_version) for c in (self.audio_sink or [])]
-        kwargs["audio_source"] = [c.to_version(target_version) for c in (self.audio_source or [])]
-        kwargs["battery"] = [c.to_version(target_version) for c in (self.battery or [])]
-        kwargs["collision"] = [c.to_version(target_version) for c in (self.collision or [])]
+        kwargs["audio_sinks"] = [c.to_version(target_version) for c in (self.audio_sinks or [])]
+        kwargs["audio_sources"] = [c.to_version(target_version) for c in (self.audio_sources or [])]
+        kwargs["batterys"] = [c.to_version(target_version) for c in (self.batterys or [])]
+        kwargs["collisions"] = [c.to_version(target_version) for c in (self.collisions or [])]
         kwargs["damping"] = self.damping.to_version(target_version) if self.damping is not None else None
         kwargs["enable_wind"] = self.enable_wind.to_version(target_version) if self.enable_wind is not None else None
-        kwargs["frame"] = [c.to_version(target_version) for c in (self.frame or [])]
+        kwargs["frames"] = [c.to_version(target_version) for c in (self.frames or [])]
         kwargs["gravity"] = self.gravity
         kwargs["inertial"] = self.inertial.to_version(target_version) if self.inertial is not None else None
         kwargs["kinematic"] = self.kinematic
-        kwargs["light"] = [c.to_version(target_version) for c in (self.light or [])]
+        kwargs["lights"] = [c.to_version(target_version) for c in (self.lights or [])]
         kwargs["must_be_base_link"] = self.must_be_base_link.to_version(target_version) if self.must_be_base_link is not None else None
         kwargs["name"] = self.name
         kwargs["origin"] = self.origin.to_version(target_version) if self.origin is not None else None
-        kwargs["particle_emitter"] = [c.to_version(target_version) for c in (self.particle_emitter or [])]
+        kwargs["particle_emitters"] = [c.to_version(target_version) for c in (self.particle_emitters or [])]
         kwargs["pose"] = self.pose.to_version(target_version) if self.pose is not None else None
         kwargs["projector"] = self.projector.to_version(target_version) if self.projector is not None else None
         kwargs["self_collide"] = self.self_collide
         kwargs["sensor"] = self.sensor.to_version(target_version) if self.sensor is not None else None
         kwargs["velocity"] = self.velocity.to_version(target_version) if self.velocity is not None else None
         kwargs["velocity_decay"] = self.velocity_decay.to_version(target_version) if self.velocity_decay is not None else None
-        kwargs["visual"] = [c.to_version(target_version) for c in (self.visual or [])]
+        kwargs["visuals"] = [c.to_version(target_version) for c in (self.visuals or [])]
         kwargs["wrench"] = self.wrench.to_version(target_version) if self.wrench is not None else None
         new_obj = self.__class__(**kwargs)
         return new_obj
@@ -612,13 +612,13 @@ class Link(BaseModel):
         el = ET.Element("link")
         if self.acceleration is not None:
             el.append(self.acceleration.to_sdf(version))
-        for item in (self.audio_sink or []):
+        for item in (self.audio_sinks or []):
             el.append(item.to_sdf(version))
-        for item in (self.audio_source or []):
+        for item in (self.audio_sources or []):
             el.append(item.to_sdf(version))
-        for item in (self.battery or []):
+        for item in (self.batterys or []):
             el.append(item.to_sdf(version))
-        for item in (self.collision or []):
+        for item in (self.collisions or []):
             el.append(item.to_sdf(version))
         if cmp_version(version, "1.2") < 0:
             if self.damping is None:
@@ -632,7 +632,7 @@ class Link(BaseModel):
             el.append(_item_el)
         if self.enable_wind is not None:
             el.append(self.enable_wind.to_sdf(version))
-        for item in (self.frame or []):
+        for item in (self.frames or []):
             el.append(item.to_sdf(version))
         if self.gravity is not None:
             el.set("gravity", str(self.gravity).lower())
@@ -640,7 +640,7 @@ class Link(BaseModel):
             el.append(self.inertial.to_sdf(version))
         if self.kinematic is not None:
             el.set("kinematic", str(self.kinematic).lower())
-        for item in (self.light or []):
+        for item in (self.lights or []):
             el.append(item.to_sdf(version))
         if self.must_be_base_link is not None:
             el.append(self.must_be_base_link.to_sdf(version))
@@ -648,7 +648,7 @@ class Link(BaseModel):
             el.set("name", self.name)
         if self.origin is not None:
             el.append(self.origin.to_sdf(version))
-        for item in (self.particle_emitter or []):
+        for item in (self.particle_emitters or []):
             el.append(item.to_sdf(version))
         if self.pose is not None:
             el.append(self.pose.to_sdf(version))
@@ -662,7 +662,7 @@ class Link(BaseModel):
             el.append(self.velocity.to_sdf(version))
         if self.velocity_decay is not None:
             el.append(self.velocity_decay.to_sdf(version))
-        for item in (self.visual or []):
+        for item in (self.visuals or []):
             el.append(item.to_sdf(version))
         if self.wrench is not None:
             el.append(self.wrench.to_sdf(version))
@@ -692,36 +692,36 @@ class Link(BaseModel):
             _acceleration = None
         if _acceleration is not None and cmp_version(version, "1.5") < 0:
             return SDFError(f"'acceleration' is not supported in SDF version {version} (added in 1.5)")
-        _audio_sink = []
+        _audio_sinks = []
         for c in el.findall("audio_sink"):
             _res = AudioSink._from_sdf(c, version)
             if isinstance(_res, SDFError):
                 return _res.extend("audio_sink")
-            _audio_sink.append(_res)
-        if _audio_sink and cmp_version(version, "1.4") < 0:
-            return SDFError(f"'audio_sink' is not supported in SDF version {version} (added in 1.4)")
-        _audio_source = []
+            _audio_sinks.append(_res)
+        if _audio_sinks and cmp_version(version, "1.4") < 0:
+            return SDFError(f"'audio_sinks' is not supported in SDF version {version} (added in 1.4)")
+        _audio_sources = []
         for c in el.findall("audio_source"):
             _res = AudioSource._from_sdf(c, version)
             if isinstance(_res, SDFError):
                 return _res.extend("audio_source")
-            _audio_source.append(_res)
-        if _audio_source and cmp_version(version, "1.4") < 0:
-            return SDFError(f"'audio_source' is not supported in SDF version {version} (added in 1.4)")
-        _battery = []
+            _audio_sources.append(_res)
+        if _audio_sources and cmp_version(version, "1.4") < 0:
+            return SDFError(f"'audio_sources' is not supported in SDF version {version} (added in 1.4)")
+        _batterys = []
         for c in el.findall("battery"):
             _res = Battery._from_sdf(c, version)
             if isinstance(_res, SDFError):
                 return _res.extend("battery")
-            _battery.append(_res)
-        if _battery and cmp_version(version, "1.12") < 0:
-            return SDFError(f"'battery' is not supported in SDF version {version} (added in 1.12)")
-        _collision = []
+            _batterys.append(_res)
+        if _batterys and cmp_version(version, "1.12") < 0:
+            return SDFError(f"'batterys' is not supported in SDF version {version} (added in 1.12)")
+        _collisions = []
         for c in el.findall("collision"):
             _res = Collision._from_sdf(c, version)
             if isinstance(_res, SDFError):
                 return _res.extend("collision")
-            _collision.append(_res)
+            _collisions.append(_res)
         _c_damping = None
         if cmp_version(version, "1.2") >= 0:
             _c_damping = el.find("velocity_decay")
@@ -747,14 +747,14 @@ class Link(BaseModel):
             _enable_wind = None
         if _enable_wind is not None and cmp_version(version, "1.12") < 0:
             return SDFError(f"'enable_wind' is not supported in SDF version {version} (added in 1.12)")
-        _frame = []
+        _frames = []
         for c in el.findall("frame"):
             _res = Frame._from_sdf(c, version)
             if isinstance(_res, SDFError):
                 return _res.extend("frame")
-            _frame.append(_res)
-        if _frame and cmp_version(version, "1.5") < 0:
-            return SDFError(f"'frame' is not supported in SDF version {version} (added in 1.5)")
+            _frames.append(_res)
+        if _frames and cmp_version(version, "1.5") < 0:
+            return SDFError(f"'frames' is not supported in SDF version {version} (added in 1.5)")
         _gravity = str(el.get("gravity", True)).strip().lower() == 'true'
         if isinstance(_gravity, SDFError):
             return _gravity.extend("@gravity")
@@ -769,14 +769,14 @@ class Link(BaseModel):
         _kinematic = str(el.get("kinematic", False)).strip().lower() == 'true'
         if isinstance(_kinematic, SDFError):
             return _kinematic.extend("@kinematic")
-        _light = []
+        _lights = []
         for c in el.findall("light"):
             _res = Light._from_sdf(c, version)
             if isinstance(_res, SDFError):
                 return _res.extend("light")
-            _light.append(_res)
-        if _light and cmp_version(version, "1.12") < 0:
-            return SDFError(f"'light' is not supported in SDF version {version} (added in 1.12)")
+            _lights.append(_res)
+        if _lights and cmp_version(version, "1.12") < 0:
+            return SDFError(f"'lights' is not supported in SDF version {version} (added in 1.12)")
         _c_must_be_base_link = el.find("must_be_base_link")
         if _c_must_be_base_link is not None:
             _res = MustBeBaseLink._from_sdf(_c_must_be_base_link, version)
@@ -798,14 +798,14 @@ class Link(BaseModel):
             _origin = _res
         else:
             _origin = None
-        _particle_emitter = []
+        _particle_emitters = []
         for c in el.findall("particle_emitter"):
             _res = ParticleEmitter._from_sdf(c, version)
             if isinstance(_res, SDFError):
                 return _res.extend("particle_emitter")
-            _particle_emitter.append(_res)
-        if _particle_emitter and cmp_version(version, "1.12") < 0:
-            return SDFError(f"'particle_emitter' is not supported in SDF version {version} (added in 1.12)")
+            _particle_emitters.append(_res)
+        if _particle_emitters and cmp_version(version, "1.12") < 0:
+            return SDFError(f"'particle_emitters' is not supported in SDF version {version} (added in 1.12)")
         _c_pose = el.find("pose")
         if _c_pose is not None:
             _res = Pose._from_sdf(_c_pose, version)
@@ -855,12 +855,12 @@ class Link(BaseModel):
             _velocity_decay = None
         if _velocity_decay is not None and cmp_version(version, "1.2") < 0:
             return SDFError(f"'velocity_decay' is not supported in SDF version {version} (added in 1.2)")
-        _visual = []
+        _visuals = []
         for c in el.findall("visual"):
             _res = Visual._from_sdf(c, version)
             if isinstance(_res, SDFError):
                 return _res.extend("visual")
-            _visual.append(_res)
+            _visuals.append(_res)
         _c_wrench = el.find("wrench")
         if _c_wrench is not None:
             _res = Wrench._from_sdf(_c_wrench, version)
@@ -871,7 +871,7 @@ class Link(BaseModel):
             _wrench = None
         if _wrench is not None and cmp_version(version, "1.5") < 0:
             return SDFError(f"'wrench' is not supported in SDF version {version} (added in 1.5)")
-        return cls(sdf_version=version, acceleration=_acceleration, audio_sink=_audio_sink, audio_source=_audio_source, battery=_battery, collision=_collision, damping=_damping, enable_wind=_enable_wind, frame=_frame, gravity=_gravity, inertial=_inertial, kinematic=_kinematic, light=_light, must_be_base_link=_must_be_base_link, name=_name, origin=_origin, particle_emitter=_particle_emitter, pose=_pose, projector=_projector, self_collide=_self_collide, sensor=_sensor, velocity=_velocity, velocity_decay=_velocity_decay, visual=_visual, wrench=_wrench)
+        return cls(sdf_version=version, acceleration=_acceleration, audio_sinks=_audio_sinks, audio_sources=_audio_sources, batterys=_batterys, collisions=_collisions, damping=_damping, enable_wind=_enable_wind, frames=_frames, gravity=_gravity, inertial=_inertial, kinematic=_kinematic, lights=_lights, must_be_base_link=_must_be_base_link, name=_name, origin=_origin, particle_emitters=_particle_emitters, pose=_pose, projector=_projector, self_collide=_self_collide, sensor=_sensor, velocity=_velocity, velocity_decay=_velocity_decay, visuals=_visuals, wrench=_wrench)
 
 
 class MustBeBaseLink(BaseModel):

@@ -219,8 +219,8 @@ class Sensor(BaseModel):
         contact: "Contact" = None,
         enable_metrics: "EnableMetrics" = None,
         force_torque: "ForceTorque" = None,
-        frame: List["Frame"] = None,
         frame_id: "FrameId" = None,
+        frames: List["Frame"] = None,
         gps: "Gps" = None,
         imu: "Imu" = None,
         lidar: "Lidar" = None,
@@ -229,7 +229,7 @@ class Sensor(BaseModel):
         name: str = "__default__",
         navsat: "Navsat" = None,
         origin: "Origin" = None,
-        plugin: List["Plugin"] = None,
+        plugins: List["Plugin"] = None,
         pose: "Pose" = None,
         ray: "Ray" = None,
         rfid: "Rfid" = None,
@@ -250,8 +250,8 @@ class Sensor(BaseModel):
         self.contact = contact
         self.enable_metrics = enable_metrics
         self.force_torque = force_torque
-        self.frame = frame or []
         self.frame_id = frame_id
+        self.frames = frames or []
         self.gps = gps
         self.imu = imu
         self.lidar = lidar
@@ -260,7 +260,7 @@ class Sensor(BaseModel):
         self.name = name
         self.navsat = navsat
         self.origin = origin
-        self.plugin = plugin or []
+        self.plugins = plugins or []
         self.pose = pose
         self.ray = ray
         self.rfid = rfid
@@ -306,16 +306,16 @@ class Sensor(BaseModel):
                 self.force_torque.__version__ = self.__version__
             elif getattr(self.force_torque, '__version__', None) != self.__version__ and self.__version__ is not None:
                 self.force_torque = self.force_torque.to_version(self.__version__)
-        for _i, _c in enumerate(self.frame):
-            if getattr(_c, '__version__', None) is None:
-                _c.__version__ = self.__version__
-            elif getattr(_c, '__version__', None) != self.__version__ and self.__version__ is not None:
-                self.frame[_i] = _c.to_version(self.__version__)
         if self.frame_id is not None:
             if getattr(self.frame_id, '__version__', None) is None:
                 self.frame_id.__version__ = self.__version__
             elif getattr(self.frame_id, '__version__', None) != self.__version__ and self.__version__ is not None:
                 self.frame_id = self.frame_id.to_version(self.__version__)
+        for _i, _c in enumerate(self.frames):
+            if getattr(_c, '__version__', None) is None:
+                _c.__version__ = self.__version__
+            elif getattr(_c, '__version__', None) != self.__version__ and self.__version__ is not None:
+                self.frames[_i] = _c.to_version(self.__version__)
         if self.gps is not None:
             if getattr(self.gps, '__version__', None) is None:
                 self.gps.__version__ = self.__version__
@@ -351,11 +351,11 @@ class Sensor(BaseModel):
                 self.origin.__version__ = self.__version__
             elif getattr(self.origin, '__version__', None) != self.__version__ and self.__version__ is not None:
                 self.origin = self.origin.to_version(self.__version__)
-        for _i, _c in enumerate(self.plugin):
+        for _i, _c in enumerate(self.plugins):
             if getattr(_c, '__version__', None) is None:
                 _c.__version__ = self.__version__
             elif getattr(_c, '__version__', None) != self.__version__ and self.__version__ is not None:
-                self.plugin[_i] = _c.to_version(self.__version__)
+                self.plugins[_i] = _c.to_version(self.__version__)
         if self.pose is not None:
             if getattr(self.pose, '__version__', None) is None:
                 self.pose.__version__ = self.__version__
@@ -425,12 +425,12 @@ class Sensor(BaseModel):
             raise ValueError(f"'enable_metrics' is not supported in SDF version {target_version} (added in 1.7)")
         if self.force_torque is not None and cmp_version(target_version, "1.4") < 0:
             raise ValueError(f"'force_torque' is not supported in SDF version {target_version} (added in 1.4)")
-        if self.frame is not None and cmp_version(target_version, "1.5") < 0:
-            raise ValueError(f"'frame' is not supported in SDF version {target_version} (added in 1.5)")
-        if self.frame is not None and cmp_version(target_version, "1.7") >= 0:
-            raise ValueError(f"'frame' is not supported in SDF version {target_version} (removed in 1.7)")
         if self.frame_id is not None and cmp_version(target_version, "1.12") < 0:
             raise ValueError(f"'frame_id' is not supported in SDF version {target_version} (added in 1.12)")
+        if self.frames is not None and cmp_version(target_version, "1.5") < 0:
+            raise ValueError(f"'frames' is not supported in SDF version {target_version} (added in 1.5)")
+        if self.frames is not None and cmp_version(target_version, "1.7") >= 0:
+            raise ValueError(f"'frames' is not supported in SDF version {target_version} (removed in 1.7)")
         if self.gps is not None and cmp_version(target_version, "1.4") < 0:
             raise ValueError(f"'gps' is not supported in SDF version {target_version} (added in 1.4)")
         if self.imu is not None and cmp_version(target_version, "1.3") < 0:
@@ -464,8 +464,8 @@ class Sensor(BaseModel):
         kwargs["contact"] = self.contact.to_version(target_version) if self.contact is not None else None
         kwargs["enable_metrics"] = self.enable_metrics.to_version(target_version) if self.enable_metrics is not None else None
         kwargs["force_torque"] = self.force_torque.to_version(target_version) if self.force_torque is not None else None
-        kwargs["frame"] = [c.to_version(target_version) for c in (self.frame or [])]
         kwargs["frame_id"] = self.frame_id.to_version(target_version) if self.frame_id is not None else None
+        kwargs["frames"] = [c.to_version(target_version) for c in (self.frames or [])]
         kwargs["gps"] = self.gps.to_version(target_version) if self.gps is not None else None
         kwargs["imu"] = self.imu.to_version(target_version) if self.imu is not None else None
         kwargs["lidar"] = self.lidar.to_version(target_version) if self.lidar is not None else None
@@ -474,7 +474,7 @@ class Sensor(BaseModel):
         kwargs["name"] = self.name
         kwargs["navsat"] = self.navsat.to_version(target_version) if self.navsat is not None else None
         kwargs["origin"] = self.origin.to_version(target_version) if self.origin is not None else None
-        kwargs["plugin"] = [c.to_version(target_version) for c in (self.plugin or [])]
+        kwargs["plugins"] = [c.to_version(target_version) for c in (self.plugins or [])]
         kwargs["pose"] = self.pose.to_version(target_version) if self.pose is not None else None
         kwargs["ray"] = self.ray.to_version(target_version) if self.ray is not None else None
         kwargs["rfid"] = self.rfid.to_version(target_version) if self.rfid is not None else None
@@ -531,10 +531,10 @@ class Sensor(BaseModel):
             el.append(self.enable_metrics.to_sdf(version))
         if self.force_torque is not None:
             el.append(self.force_torque.to_sdf(version))
-        for item in (self.frame or []):
-            el.append(item.to_sdf(version))
         if self.frame_id is not None:
             el.append(self.frame_id.to_sdf(version))
+        for item in (self.frames or []):
+            el.append(item.to_sdf(version))
         if self.gps is not None:
             el.append(self.gps.to_sdf(version))
         if self.imu is not None:
@@ -551,7 +551,7 @@ class Sensor(BaseModel):
             el.append(self.navsat.to_sdf(version))
         if self.origin is not None:
             el.append(self.origin.to_sdf(version))
-        for item in (self.plugin or []):
+        for item in (self.plugins or []):
             el.append(item.to_sdf(version))
         if self.pose is not None:
             el.append(self.pose.to_sdf(version))
@@ -666,14 +666,6 @@ class Sensor(BaseModel):
             _force_torque = None
         if _force_torque is not None and cmp_version(version, "1.4") < 0:
             return SDFError(f"'force_torque' is not supported in SDF version {version} (added in 1.4)")
-        _frame = []
-        for c in el.findall("frame"):
-            _res = Frame._from_sdf(c, version)
-            if isinstance(_res, SDFError):
-                return _res.extend("frame")
-            _frame.append(_res)
-        if _frame and cmp_version(version, "1.5") < 0:
-            return SDFError(f"'frame' is not supported in SDF version {version} (added in 1.5)")
         _c_frame_id = el.find("frame_id")
         if _c_frame_id is not None:
             _res = FrameId._from_sdf(_c_frame_id, version)
@@ -684,6 +676,14 @@ class Sensor(BaseModel):
             _frame_id = None
         if _frame_id is not None and cmp_version(version, "1.12") < 0:
             return SDFError(f"'frame_id' is not supported in SDF version {version} (added in 1.12)")
+        _frames = []
+        for c in el.findall("frame"):
+            _res = Frame._from_sdf(c, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("frame")
+            _frames.append(_res)
+        if _frames and cmp_version(version, "1.5") < 0:
+            return SDFError(f"'frames' is not supported in SDF version {version} (added in 1.5)")
         _c_gps = el.find("gps")
         if _c_gps is not None:
             _res = Gps._from_sdf(_c_gps, version)
@@ -755,12 +755,12 @@ class Sensor(BaseModel):
             _origin = _res
         else:
             _origin = None
-        _plugin = []
+        _plugins = []
         for c in el.findall("plugin"):
             _res = Plugin._from_sdf(c, version)
             if isinstance(_res, SDFError):
                 return _res.extend("plugin")
-            _plugin.append(_res)
+            _plugins.append(_res)
         _c_pose = el.find("pose")
         if _c_pose is not None:
             _res = Pose._from_sdf(_c_pose, version)
@@ -832,7 +832,7 @@ class Sensor(BaseModel):
         _visualize = str(el.get("visualize", False)).strip().lower() == 'true'
         if isinstance(_visualize, SDFError):
             return _visualize.extend("@visualize")
-        return cls(sdf_version=version, air_pressure=_air_pressure, air_speed=_air_speed, altimeter=_altimeter, always_on=_always_on, camera=_camera, contact=_contact, enable_metrics=_enable_metrics, force_torque=_force_torque, frame=_frame, frame_id=_frame_id, gps=_gps, imu=_imu, lidar=_lidar, logical_camera=_logical_camera, magnetometer=_magnetometer, name=_name, navsat=_navsat, origin=_origin, plugin=_plugin, pose=_pose, ray=_ray, rfid=_rfid, rfidtag=_rfidtag, sonar=_sonar, topic=_topic, transceiver=_transceiver, type=_type, update_rate=_update_rate, visualize=_visualize)
+        return cls(sdf_version=version, air_pressure=_air_pressure, air_speed=_air_speed, altimeter=_altimeter, always_on=_always_on, camera=_camera, contact=_contact, enable_metrics=_enable_metrics, force_torque=_force_torque, frame_id=_frame_id, frames=_frames, gps=_gps, imu=_imu, lidar=_lidar, logical_camera=_logical_camera, magnetometer=_magnetometer, name=_name, navsat=_navsat, origin=_origin, plugins=_plugins, pose=_pose, ray=_ray, rfid=_rfid, rfidtag=_rfidtag, sonar=_sonar, topic=_topic, transceiver=_transceiver, type=_type, update_rate=_update_rate, visualize=_visualize)
 
 
 class Topic(BaseModel):

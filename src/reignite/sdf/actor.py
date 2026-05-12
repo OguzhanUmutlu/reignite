@@ -57,60 +57,60 @@ class Actor(BaseModel):
     def __init__(
         self,
         sdf_version: str | None = None,
-        animation: List["Animation"] = None,
-        frame: List["Frame"] = None,
-        joint: List["Joint"] = None,
-        link: List["Link"] = None,
+        animations: List["Animation"] = None,
+        frames: List["Frame"] = None,
+        joints: List["Joint"] = None,
+        links: List["Link"] = None,
         name: str = "__default__",
         origin: "Origin" = None,
-        plugin: List["Plugin"] = None,
+        plugins: List["Plugin"] = None,
         pose: "Pose" = None,
         script: "Script" = None,
         skin: "Skin" = None,
         static: bool = False
     ):
         self.__version__ = sdf_version
-        self.animation = animation or []
-        self.frame = frame or []
-        self.joint = joint or []
-        self.link = link or []
+        self.animations = animations or []
+        self.frames = frames or []
+        self.joints = joints or []
+        self.links = links or []
         self.name = name
         self.origin = origin
-        self.plugin = plugin or []
+        self.plugins = plugins or []
         self.pose = pose
         self.script = script
         self.skin = skin
         self.static = static
-        for _i, _c in enumerate(self.animation):
+        for _i, _c in enumerate(self.animations):
             if getattr(_c, '__version__', None) is None:
                 _c.__version__ = self.__version__
             elif getattr(_c, '__version__', None) != self.__version__ and self.__version__ is not None:
-                self.animation[_i] = _c.to_version(self.__version__)
-        for _i, _c in enumerate(self.frame):
+                self.animations[_i] = _c.to_version(self.__version__)
+        for _i, _c in enumerate(self.frames):
             if getattr(_c, '__version__', None) is None:
                 _c.__version__ = self.__version__
             elif getattr(_c, '__version__', None) != self.__version__ and self.__version__ is not None:
-                self.frame[_i] = _c.to_version(self.__version__)
-        for _i, _c in enumerate(self.joint):
+                self.frames[_i] = _c.to_version(self.__version__)
+        for _i, _c in enumerate(self.joints):
             if getattr(_c, '__version__', None) is None:
                 _c.__version__ = self.__version__
             elif getattr(_c, '__version__', None) != self.__version__ and self.__version__ is not None:
-                self.joint[_i] = _c.to_version(self.__version__)
-        for _i, _c in enumerate(self.link):
+                self.joints[_i] = _c.to_version(self.__version__)
+        for _i, _c in enumerate(self.links):
             if getattr(_c, '__version__', None) is None:
                 _c.__version__ = self.__version__
             elif getattr(_c, '__version__', None) != self.__version__ and self.__version__ is not None:
-                self.link[_i] = _c.to_version(self.__version__)
+                self.links[_i] = _c.to_version(self.__version__)
         if self.origin is not None:
             if getattr(self.origin, '__version__', None) is None:
                 self.origin.__version__ = self.__version__
             elif getattr(self.origin, '__version__', None) != self.__version__ and self.__version__ is not None:
                 self.origin = self.origin.to_version(self.__version__)
-        for _i, _c in enumerate(self.plugin):
+        for _i, _c in enumerate(self.plugins):
             if getattr(_c, '__version__', None) is None:
                 _c.__version__ = self.__version__
             elif getattr(_c, '__version__', None) != self.__version__ and self.__version__ is not None:
-                self.plugin[_i] = _c.to_version(self.__version__)
+                self.plugins[_i] = _c.to_version(self.__version__)
         if self.pose is not None:
             if getattr(self.pose, '__version__', None) is None:
                 self.pose.__version__ = self.__version__
@@ -133,10 +133,10 @@ class Actor(BaseModel):
         from ..elements.link import Link
         from ..elements.plugin import Plugin
         from ..elements.pose import Pose
-        if self.frame is not None and cmp_version(target_version, "1.5") < 0:
-            raise ValueError(f"'frame' is not supported in SDF version {target_version} (added in 1.5)")
-        if self.frame is not None and cmp_version(target_version, "1.7") >= 0:
-            raise ValueError(f"'frame' is not supported in SDF version {target_version} (removed in 1.7)")
+        if self.frames is not None and cmp_version(target_version, "1.5") < 0:
+            raise ValueError(f"'frames' is not supported in SDF version {target_version} (added in 1.5)")
+        if self.frames is not None and cmp_version(target_version, "1.7") >= 0:
+            raise ValueError(f"'frames' is not supported in SDF version {target_version} (removed in 1.7)")
         if self.origin is not None and cmp_version(target_version, "1.2") >= 0:
             raise ValueError(f"'origin' is not supported in SDF version {target_version} (removed in 1.2)")
         if self.pose is not None and cmp_version(target_version, "1.2") < 0:
@@ -144,13 +144,13 @@ class Actor(BaseModel):
         if self.static is not None and cmp_version(target_version, "1.5") >= 0:
             raise ValueError(f"'static' is not supported in SDF version {target_version} (removed in 1.5)")
         kwargs = {"sdf_version": target_version}
-        kwargs["animation"] = [c.to_version(target_version) for c in (self.animation or [])]
-        kwargs["frame"] = [c.to_version(target_version) for c in (self.frame or [])]
-        kwargs["joint"] = [c.to_version(target_version) for c in (self.joint or [])]
-        kwargs["link"] = [c.to_version(target_version) for c in (self.link or [])]
+        kwargs["animations"] = [c.to_version(target_version) for c in (self.animations or [])]
+        kwargs["frames"] = [c.to_version(target_version) for c in (self.frames or [])]
+        kwargs["joints"] = [c.to_version(target_version) for c in (self.joints or [])]
+        kwargs["links"] = [c.to_version(target_version) for c in (self.links or [])]
         kwargs["name"] = self.name
         kwargs["origin"] = self.origin.to_version(target_version) if self.origin is not None else None
-        kwargs["plugin"] = [c.to_version(target_version) for c in (self.plugin or [])]
+        kwargs["plugins"] = [c.to_version(target_version) for c in (self.plugins or [])]
         kwargs["pose"] = self.pose.to_version(target_version) if self.pose is not None else None
         kwargs["script"] = self.script.to_version(target_version) if self.script is not None else None
         kwargs["skin"] = self.skin.to_version(target_version) if self.skin is not None else None
@@ -170,19 +170,19 @@ class Actor(BaseModel):
             return self.to_version(version).to_sdf()
         version = self.__version__ or version
         el = ET.Element("actor")
-        for item in (self.animation or []):
+        for item in (self.animations or []):
             el.append(item.to_sdf(version))
-        for item in (self.frame or []):
+        for item in (self.frames or []):
             el.append(item.to_sdf(version))
-        for item in (self.joint or []):
+        for item in (self.joints or []):
             el.append(item.to_sdf(version))
-        for item in (self.link or []):
+        for item in (self.links or []):
             el.append(item.to_sdf(version))
         if self.name is not None:
             el.set("name", self.name)
         if self.origin is not None:
             el.append(self.origin.to_sdf(version))
-        for item in (self.plugin or []):
+        for item in (self.plugins or []):
             el.append(item.to_sdf(version))
         if self.pose is not None:
             el.append(self.pose.to_sdf(version))
@@ -203,32 +203,32 @@ class Actor(BaseModel):
         from ..elements.link import Link
         from ..elements.plugin import Plugin
         from ..elements.pose import Pose
-        _animation = []
+        _animations = []
         for c in el.findall("animation"):
             _res = Animation._from_sdf(c, version)
             if isinstance(_res, SDFError):
                 return _res.extend("animation")
-            _animation.append(_res)
-        _frame = []
+            _animations.append(_res)
+        _frames = []
         for c in el.findall("frame"):
             _res = Frame._from_sdf(c, version)
             if isinstance(_res, SDFError):
                 return _res.extend("frame")
-            _frame.append(_res)
-        if _frame and cmp_version(version, "1.5") < 0:
-            return SDFError(f"'frame' is not supported in SDF version {version} (added in 1.5)")
-        _joint = []
+            _frames.append(_res)
+        if _frames and cmp_version(version, "1.5") < 0:
+            return SDFError(f"'frames' is not supported in SDF version {version} (added in 1.5)")
+        _joints = []
         for c in el.findall("joint"):
             _res = Joint._from_sdf(c, version)
             if isinstance(_res, SDFError):
                 return _res.extend("joint")
-            _joint.append(_res)
-        _link = []
+            _joints.append(_res)
+        _links = []
         for c in el.findall("link"):
             _res = Link._from_sdf(c, version)
             if isinstance(_res, SDFError):
                 return _res.extend("link")
-            _link.append(_res)
+            _links.append(_res)
         _name = el.get("name", "__default__")
         if isinstance(_name, SDFError):
             return _name.extend("@name")
@@ -240,12 +240,12 @@ class Actor(BaseModel):
             _origin = _res
         else:
             _origin = None
-        _plugin = []
+        _plugins = []
         for c in el.findall("plugin"):
             _res = Plugin._from_sdf(c, version)
             if isinstance(_res, SDFError):
                 return _res.extend("plugin")
-            _plugin.append(_res)
+            _plugins.append(_res)
         _c_pose = el.find("pose")
         if _c_pose is not None:
             _res = Pose._from_sdf(_c_pose, version)
@@ -278,7 +278,7 @@ class Actor(BaseModel):
         _static = str(el.get("static", False)).strip().lower() == 'true'
         if isinstance(_static, SDFError):
             return _static.extend("@static")
-        return cls(sdf_version=version, animation=_animation, frame=_frame, joint=_joint, link=_link, name=_name, origin=_origin, plugin=_plugin, pose=_pose, script=_script, skin=_skin, static=_static)
+        return cls(sdf_version=version, animations=_animations, frames=_frames, joints=_joints, links=_links, name=_name, origin=_origin, plugins=_plugins, pose=_pose, script=_script, skin=_skin, static=_static)
 
 
 class Animation(BaseModel):
@@ -641,18 +641,18 @@ class Script(BaseModel):
         auto_start: bool = True,
         delay_start: float = 0.0,
         loop: bool = True,
-        trajectory: List["Trajectory"] = None
+        trajectorys: List["Trajectory"] = None
     ):
         self.__version__ = sdf_version
         self.auto_start = auto_start
         self.delay_start = delay_start
         self.loop = loop
-        self.trajectory = trajectory or []
-        for _i, _c in enumerate(self.trajectory):
+        self.trajectorys = trajectorys or []
+        for _i, _c in enumerate(self.trajectorys):
             if getattr(_c, '__version__', None) is None:
                 _c.__version__ = self.__version__
             elif getattr(_c, '__version__', None) != self.__version__ and self.__version__ is not None:
-                self.trajectory[_i] = _c.to_version(self.__version__)
+                self.trajectorys[_i] = _c.to_version(self.__version__)
 
     def to_version(self, target_version: str) -> "Script":
         if self.auto_start is not None and cmp_version(target_version, "1.2") >= 0:
@@ -665,7 +665,7 @@ class Script(BaseModel):
         kwargs["auto_start"] = self.auto_start
         kwargs["delay_start"] = self.delay_start
         kwargs["loop"] = self.loop
-        kwargs["trajectory"] = [c.to_version(target_version) for c in (self.trajectory or [])]
+        kwargs["trajectorys"] = [c.to_version(target_version) for c in (self.trajectorys or [])]
         new_obj = self.__class__(**kwargs)
         return new_obj
 
@@ -682,7 +682,7 @@ class Script(BaseModel):
             el.set("delay_start", str(self.delay_start))
         if self.loop is not None:
             el.set("loop", str(self.loop).lower())
-        for item in (self.trajectory or []):
+        for item in (self.trajectorys or []):
             el.append(item.to_sdf(version))
         return el
 
@@ -697,13 +697,13 @@ class Script(BaseModel):
         _loop = str(el.get("loop", True)).strip().lower() == 'true'
         if isinstance(_loop, SDFError):
             return _loop.extend("@loop")
-        _trajectory = []
+        _trajectorys = []
         for c in el.findall("trajectory"):
             _res = Trajectory._from_sdf(c, version)
             if isinstance(_res, SDFError):
                 return _res.extend("trajectory")
-            _trajectory.append(_res)
-        return cls(sdf_version=version, auto_start=_auto_start, delay_start=_delay_start, loop=_loop, trajectory=_trajectory)
+            _trajectorys.append(_res)
+        return cls(sdf_version=version, auto_start=_auto_start, delay_start=_delay_start, loop=_loop, trajectorys=_trajectorys)
 
 
 class Skin(BaseModel):
@@ -833,18 +833,18 @@ class Trajectory(BaseModel):
         id: int = 0,
         tension: float = 0.0,
         type: str = "__default__",
-        waypoint: List["Waypoint"] = None
+        waypoints: List["Waypoint"] = None
     ):
         self.__version__ = sdf_version
         self.id = id
         self.tension = tension
         self.type = type
-        self.waypoint = waypoint or []
-        for _i, _c in enumerate(self.waypoint):
+        self.waypoints = waypoints or []
+        for _i, _c in enumerate(self.waypoints):
             if getattr(_c, '__version__', None) is None:
                 _c.__version__ = self.__version__
             elif getattr(_c, '__version__', None) != self.__version__ and self.__version__ is not None:
-                self.waypoint[_i] = _c.to_version(self.__version__)
+                self.waypoints[_i] = _c.to_version(self.__version__)
 
     def to_version(self, target_version: str) -> "Trajectory":
         if self.tension is not None and cmp_version(target_version, "1.6") < 0:
@@ -853,7 +853,7 @@ class Trajectory(BaseModel):
         kwargs["id"] = self.id
         kwargs["tension"] = self.tension
         kwargs["type"] = self.type
-        kwargs["waypoint"] = [c.to_version(target_version) for c in (self.waypoint or [])]
+        kwargs["waypoints"] = [c.to_version(target_version) for c in (self.waypoints or [])]
         new_obj = self.__class__(**kwargs)
         return new_obj
 
@@ -870,7 +870,7 @@ class Trajectory(BaseModel):
             el.set("tension", str(self.tension))
         if self.type is not None:
             el.set("type", self.type)
-        for item in (self.waypoint or []):
+        for item in (self.waypoints or []):
             el.append(item.to_sdf(version))
         return el
 
@@ -888,13 +888,13 @@ class Trajectory(BaseModel):
         _type = el.get("type", "__default__")
         if isinstance(_type, SDFError):
             return _type.extend("@type")
-        _waypoint = []
+        _waypoints = []
         for c in el.findall("waypoint"):
             _res = Waypoint._from_sdf(c, version)
             if isinstance(_res, SDFError):
                 return _res.extend("waypoint")
-            _waypoint.append(_res)
-        return cls(sdf_version=version, id=_id, tension=_tension, type=_type, waypoint=_waypoint)
+            _waypoints.append(_res)
+        return cls(sdf_version=version, id=_id, tension=_tension, type=_type, waypoints=_waypoints)
 
 
 class Waypoint(BaseModel):

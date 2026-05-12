@@ -409,7 +409,7 @@ class Light(BaseModel):
         cast_shadows: bool = False,
         diffuse: "Diffuse" = None,
         direction: "Direction" = None,
-        frame: List["Frame"] = None,
+        frames: List["Frame"] = None,
         intensity: "Intensity" = None,
         light_on: "LightOn" = None,
         name: str = "__default__",
@@ -425,7 +425,7 @@ class Light(BaseModel):
         self.cast_shadows = cast_shadows
         self.diffuse = diffuse
         self.direction = direction
-        self.frame = frame or []
+        self.frames = frames or []
         self.intensity = intensity
         self.light_on = light_on
         self.name = name
@@ -450,11 +450,11 @@ class Light(BaseModel):
                 self.direction.__version__ = self.__version__
             elif getattr(self.direction, '__version__', None) != self.__version__ and self.__version__ is not None:
                 self.direction = self.direction.to_version(self.__version__)
-        for _i, _c in enumerate(self.frame):
+        for _i, _c in enumerate(self.frames):
             if getattr(_c, '__version__', None) is None:
                 _c.__version__ = self.__version__
             elif getattr(_c, '__version__', None) != self.__version__ and self.__version__ is not None:
-                self.frame[_i] = _c.to_version(self.__version__)
+                self.frames[_i] = _c.to_version(self.__version__)
         if self.intensity is not None:
             if getattr(self.intensity, '__version__', None) is None:
                 self.intensity.__version__ = self.__version__
@@ -502,10 +502,10 @@ class Light(BaseModel):
             raise ValueError(f"'diffuse' is not supported in SDF version {target_version} (removed in 1.5)")
         if self.direction is not None and cmp_version(target_version, "1.5") >= 0:
             raise ValueError(f"'direction' is not supported in SDF version {target_version} (removed in 1.5)")
-        if self.frame is not None and cmp_version(target_version, "1.5") < 0:
-            raise ValueError(f"'frame' is not supported in SDF version {target_version} (added in 1.5)")
-        if self.frame is not None and cmp_version(target_version, "1.7") >= 0:
-            raise ValueError(f"'frame' is not supported in SDF version {target_version} (removed in 1.7)")
+        if self.frames is not None and cmp_version(target_version, "1.5") < 0:
+            raise ValueError(f"'frames' is not supported in SDF version {target_version} (added in 1.5)")
+        if self.frames is not None and cmp_version(target_version, "1.7") >= 0:
+            raise ValueError(f"'frames' is not supported in SDF version {target_version} (removed in 1.7)")
         if self.intensity is not None and cmp_version(target_version, "1.12") < 0:
             raise ValueError(f"'intensity' is not supported in SDF version {target_version} (added in 1.12)")
         if self.light_on is not None and cmp_version(target_version, "1.12") < 0:
@@ -527,7 +527,7 @@ class Light(BaseModel):
         kwargs["cast_shadows"] = self.cast_shadows
         kwargs["diffuse"] = self.diffuse.to_version(target_version) if self.diffuse is not None else None
         kwargs["direction"] = self.direction.to_version(target_version) if self.direction is not None else None
-        kwargs["frame"] = [c.to_version(target_version) for c in (self.frame or [])]
+        kwargs["frames"] = [c.to_version(target_version) for c in (self.frames or [])]
         kwargs["intensity"] = self.intensity.to_version(target_version) if self.intensity is not None else None
         kwargs["light_on"] = self.light_on.to_version(target_version) if self.light_on is not None else None
         kwargs["name"] = self.name
@@ -557,7 +557,7 @@ class Light(BaseModel):
             el.append(self.diffuse.to_sdf(version))
         if self.direction is not None:
             el.append(self.direction.to_sdf(version))
-        for item in (self.frame or []):
+        for item in (self.frames or []):
             el.append(item.to_sdf(version))
         if self.intensity is not None:
             el.append(self.intensity.to_sdf(version))
@@ -610,14 +610,14 @@ class Light(BaseModel):
             _direction = _res
         else:
             _direction = None
-        _frame = []
+        _frames = []
         for c in el.findall("frame"):
             _res = Frame._from_sdf(c, version)
             if isinstance(_res, SDFError):
                 return _res.extend("frame")
-            _frame.append(_res)
-        if _frame and cmp_version(version, "1.5") < 0:
-            return SDFError(f"'frame' is not supported in SDF version {version} (added in 1.5)")
+            _frames.append(_res)
+        if _frames and cmp_version(version, "1.5") < 0:
+            return SDFError(f"'frames' is not supported in SDF version {version} (added in 1.5)")
         _c_intensity = el.find("intensity")
         if _c_intensity is not None:
             _res = Intensity._from_sdf(_c_intensity, version)
@@ -688,7 +688,7 @@ class Light(BaseModel):
             _visualize = None
         if _visualize is not None and cmp_version(version, "1.12") < 0:
             return SDFError(f"'visualize' is not supported in SDF version {version} (added in 1.12)")
-        return cls(sdf_version=version, attenuation=_attenuation, cast_shadows=_cast_shadows, diffuse=_diffuse, direction=_direction, frame=_frame, intensity=_intensity, light_on=_light_on, name=_name, origin=_origin, pose=_pose, specular=_specular, spot=_spot, type=_type, visualize=_visualize)
+        return cls(sdf_version=version, attenuation=_attenuation, cast_shadows=_cast_shadows, diffuse=_diffuse, direction=_direction, frames=_frames, intensity=_intensity, light_on=_light_on, name=_name, origin=_origin, pose=_pose, specular=_specular, spot=_spot, type=_type, visualize=_visualize)
 
 
 class LightOn(BaseModel):

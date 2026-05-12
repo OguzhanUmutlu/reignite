@@ -568,6 +568,13 @@ def _collect_classes(
 
     for cname, cnode in child_items.items():
         py_name = cname.replace("-", "_")
+
+        required = cnode.get("_required", "0")
+        is_list = required in ("*", "+")
+
+        if is_list and not py_name.endswith("s"):
+            py_name += "s"
+
         if py_name in seen_py_names: continue
         seen_py_names.add(py_name)
         added_in = cnode.get("_added_in")
@@ -582,8 +589,6 @@ def _collect_classes(
 
         child_cls = child_class_names.get(cname, _to_classname(cname))
 
-        required = cnode.get("_required", "0")
-        is_list = required in ("*", "+")
         hint = f'List["{child_cls}"]' if is_list else f'"{child_cls}"'
         default = "None"
         desc = cnode.get("_description", "")
@@ -1301,7 +1306,8 @@ def main():
         out_path.write_text(py_src, encoding="utf-8")
         out_el_path = ELEMENTS_SRC_DIR / f"{_module_name_for(element_name)}.py"
         if not out_el_path.exists():
-            out_el_path.write_text(f"from ..sdf.{_module_name_for(element_name)} import *  # noqa: F401\n", encoding="utf-8")
+            out_el_path.write_text(f"from ..sdf.{_module_name_for(element_name)} import *  # noqa: F401\n",
+                                   encoding="utf-8")
         print(f"  Wrote {out_path}")
 
     init_path = SDF_SRC_DIR / "__init__.py"

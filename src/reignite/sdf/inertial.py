@@ -606,7 +606,7 @@ class Inertial(BaseModel):
         auto_inertia_params: "AutoInertiaParams" = None,
         density: float = 1.0,
         fluid_added_mass: "FluidAddedMass" = None,
-        frame: List["Frame"] = None,
+        frames: List["Frame"] = None,
         inertia: "Inertia" = None,
         mass: float = 1.0,
         origin: "Origin" = None,
@@ -617,7 +617,7 @@ class Inertial(BaseModel):
         self.auto_inertia_params = auto_inertia_params
         self.density = density
         self.fluid_added_mass = fluid_added_mass
-        self.frame = frame or []
+        self.frames = frames or []
         self.inertia = inertia
         self.mass = mass
         self.origin = origin
@@ -632,11 +632,11 @@ class Inertial(BaseModel):
                 self.fluid_added_mass.__version__ = self.__version__
             elif getattr(self.fluid_added_mass, '__version__', None) != self.__version__ and self.__version__ is not None:
                 self.fluid_added_mass = self.fluid_added_mass.to_version(self.__version__)
-        for _i, _c in enumerate(self.frame):
+        for _i, _c in enumerate(self.frames):
             if getattr(_c, '__version__', None) is None:
                 _c.__version__ = self.__version__
             elif getattr(_c, '__version__', None) != self.__version__ and self.__version__ is not None:
-                self.frame[_i] = _c.to_version(self.__version__)
+                self.frames[_i] = _c.to_version(self.__version__)
         if self.inertia is not None:
             if getattr(self.inertia, '__version__', None) is None:
                 self.inertia.__version__ = self.__version__
@@ -664,10 +664,10 @@ class Inertial(BaseModel):
             raise ValueError(f"'density' is not supported in SDF version {target_version} (removed in 1.2)")
         if self.fluid_added_mass is not None and cmp_version(target_version, "1.10") < 0:
             raise ValueError(f"'fluid_added_mass' is not supported in SDF version {target_version} (added in 1.10)")
-        if self.frame is not None and cmp_version(target_version, "1.5") < 0:
-            raise ValueError(f"'frame' is not supported in SDF version {target_version} (added in 1.5)")
-        if self.frame is not None and cmp_version(target_version, "1.7") >= 0:
-            raise ValueError(f"'frame' is not supported in SDF version {target_version} (removed in 1.7)")
+        if self.frames is not None and cmp_version(target_version, "1.5") < 0:
+            raise ValueError(f"'frames' is not supported in SDF version {target_version} (added in 1.5)")
+        if self.frames is not None and cmp_version(target_version, "1.7") >= 0:
+            raise ValueError(f"'frames' is not supported in SDF version {target_version} (removed in 1.7)")
         if self.mass is not None and cmp_version(target_version, "1.2") >= 0:
             raise ValueError(f"'mass' is not supported in SDF version {target_version} (removed in 1.2)")
         if self.origin is not None and cmp_version(target_version, "1.2") >= 0:
@@ -679,7 +679,7 @@ class Inertial(BaseModel):
         kwargs["auto_inertia_params"] = self.auto_inertia_params.to_version(target_version) if self.auto_inertia_params is not None else None
         kwargs["density"] = self.density
         kwargs["fluid_added_mass"] = self.fluid_added_mass.to_version(target_version) if self.fluid_added_mass is not None else None
-        kwargs["frame"] = [c.to_version(target_version) for c in (self.frame or [])]
+        kwargs["frames"] = [c.to_version(target_version) for c in (self.frames or [])]
         kwargs["inertia"] = self.inertia.to_version(target_version) if self.inertia is not None else None
         kwargs["mass"] = self.mass
         kwargs["origin"] = self.origin.to_version(target_version) if self.origin is not None else None
@@ -704,7 +704,7 @@ class Inertial(BaseModel):
             el.set("density", str(self.density))
         if self.fluid_added_mass is not None:
             el.append(self.fluid_added_mass.to_sdf(version))
-        for item in (self.frame or []):
+        for item in (self.frames or []):
             el.append(item.to_sdf(version))
         if self.inertia is not None:
             el.append(self.inertia.to_sdf(version))
@@ -749,14 +749,14 @@ class Inertial(BaseModel):
             _fluid_added_mass = None
         if _fluid_added_mass is not None and cmp_version(version, "1.10") < 0:
             return SDFError(f"'fluid_added_mass' is not supported in SDF version {version} (added in 1.10)")
-        _frame = []
+        _frames = []
         for c in el.findall("frame"):
             _res = Frame._from_sdf(c, version)
             if isinstance(_res, SDFError):
                 return _res.extend("frame")
-            _frame.append(_res)
-        if _frame and cmp_version(version, "1.5") < 0:
-            return SDFError(f"'frame' is not supported in SDF version {version} (added in 1.5)")
+            _frames.append(_res)
+        if _frames and cmp_version(version, "1.5") < 0:
+            return SDFError(f"'frames' is not supported in SDF version {version} (added in 1.5)")
         _c_inertia = el.find("inertia")
         if _c_inertia is not None:
             _res = Inertia._from_sdf(_c_inertia, version)
@@ -786,7 +786,7 @@ class Inertial(BaseModel):
             _pose = None
         if _pose is not None and cmp_version(version, "1.2") < 0:
             return SDFError(f"'pose' is not supported in SDF version {version} (added in 1.2)")
-        return cls(sdf_version=version, auto=_auto, auto_inertia_params=_auto_inertia_params, density=_density, fluid_added_mass=_fluid_added_mass, frame=_frame, inertia=_inertia, mass=_mass, origin=_origin, pose=_pose)
+        return cls(sdf_version=version, auto=_auto, auto_inertia_params=_auto_inertia_params, density=_density, fluid_added_mass=_fluid_added_mass, frames=_frames, inertia=_inertia, mass=_mass, origin=_origin, pose=_pose)
 
 
 class Ixx(BaseModel):

@@ -1071,7 +1071,7 @@ class Joint(BaseModel):
         axis: "Axis" = None,
         axis2: "Axis2" = None,
         child: "Child" = None,
-        frame: List["Frame"] = None,
+        frames: List["Frame"] = None,
         gearbox_ratio: "GearboxRatio" = None,
         gearbox_reference_body: "GearboxReferenceBody" = None,
         name: str = "__default__",
@@ -1088,7 +1088,7 @@ class Joint(BaseModel):
         self.axis = axis
         self.axis2 = axis2
         self.child = child
-        self.frame = frame or []
+        self.frames = frames or []
         self.gearbox_ratio = gearbox_ratio
         self.gearbox_reference_body = gearbox_reference_body
         self.name = name
@@ -1115,11 +1115,11 @@ class Joint(BaseModel):
                 self.child.__version__ = self.__version__
             elif getattr(self.child, '__version__', None) != self.__version__ and self.__version__ is not None:
                 self.child = self.child.to_version(self.__version__)
-        for _i, _c in enumerate(self.frame):
+        for _i, _c in enumerate(self.frames):
             if getattr(_c, '__version__', None) is None:
                 _c.__version__ = self.__version__
             elif getattr(_c, '__version__', None) != self.__version__ and self.__version__ is not None:
-                self.frame[_i] = _c.to_version(self.__version__)
+                self.frames[_i] = _c.to_version(self.__version__)
         if self.gearbox_ratio is not None:
             if getattr(self.gearbox_ratio, '__version__', None) is None:
                 self.gearbox_ratio.__version__ = self.__version__
@@ -1170,10 +1170,10 @@ class Joint(BaseModel):
         from ..elements.frame import Frame
         from ..elements.pose import Pose
         from ..elements.sensor import Sensor
-        if self.frame is not None and cmp_version(target_version, "1.5") < 0:
-            raise ValueError(f"'frame' is not supported in SDF version {target_version} (added in 1.5)")
-        if self.frame is not None and cmp_version(target_version, "1.7") >= 0:
-            raise ValueError(f"'frame' is not supported in SDF version {target_version} (removed in 1.7)")
+        if self.frames is not None and cmp_version(target_version, "1.5") < 0:
+            raise ValueError(f"'frames' is not supported in SDF version {target_version} (added in 1.5)")
+        if self.frames is not None and cmp_version(target_version, "1.7") >= 0:
+            raise ValueError(f"'frames' is not supported in SDF version {target_version} (removed in 1.7)")
         if self.gearbox_ratio is not None and cmp_version(target_version, "1.4") < 0:
             raise ValueError(f"'gearbox_ratio' is not supported in SDF version {target_version} (added in 1.4)")
         if self.gearbox_reference_body is not None and cmp_version(target_version, "1.4") < 0:
@@ -1190,7 +1190,7 @@ class Joint(BaseModel):
         kwargs["axis"] = self.axis.to_version(target_version) if self.axis is not None else None
         kwargs["axis2"] = self.axis2.to_version(target_version) if self.axis2 is not None else None
         kwargs["child"] = self.child.to_version(target_version) if self.child is not None else None
-        kwargs["frame"] = [c.to_version(target_version) for c in (self.frame or [])]
+        kwargs["frames"] = [c.to_version(target_version) for c in (self.frames or [])]
         kwargs["gearbox_ratio"] = self.gearbox_ratio.to_version(target_version) if self.gearbox_ratio is not None else None
         kwargs["gearbox_reference_body"] = self.gearbox_reference_body.to_version(target_version) if self.gearbox_reference_body is not None else None
         kwargs["name"] = self.name
@@ -1221,7 +1221,7 @@ class Joint(BaseModel):
             el.append(self.axis2.to_sdf(version))
         if self.child is not None:
             el.append(self.child.to_sdf(version))
-        for item in (self.frame or []):
+        for item in (self.frames or []):
             el.append(item.to_sdf(version))
         if self.gearbox_ratio is not None:
             el.append(self.gearbox_ratio.to_sdf(version))
@@ -1276,14 +1276,14 @@ class Joint(BaseModel):
             _child = _res
         else:
             _child = None
-        _frame = []
+        _frames = []
         for c in el.findall("frame"):
             _res = Frame._from_sdf(c, version)
             if isinstance(_res, SDFError):
                 return _res.extend("frame")
-            _frame.append(_res)
-        if _frame and cmp_version(version, "1.5") < 0:
-            return SDFError(f"'frame' is not supported in SDF version {version} (added in 1.5)")
+            _frames.append(_res)
+        if _frames and cmp_version(version, "1.5") < 0:
+            return SDFError(f"'frames' is not supported in SDF version {version} (added in 1.5)")
         _c_gearbox_ratio = el.find("gearbox_ratio")
         if _c_gearbox_ratio is not None:
             _res = GearboxRatio._from_sdf(_c_gearbox_ratio, version)
@@ -1372,7 +1372,7 @@ class Joint(BaseModel):
         _type = el.get("type", "__default__")
         if isinstance(_type, SDFError):
             return _type.extend("@type")
-        return cls(sdf_version=version, axis=_axis, axis2=_axis2, child=_child, frame=_frame, gearbox_ratio=_gearbox_ratio, gearbox_reference_body=_gearbox_reference_body, name=_name, origin=_origin, parent=_parent, physics=_physics, pose=_pose, screw_thread_pitch=_screw_thread_pitch, sensor=_sensor, thread_pitch=_thread_pitch, type=_type)
+        return cls(sdf_version=version, axis=_axis, axis2=_axis2, child=_child, frames=_frames, gearbox_ratio=_gearbox_ratio, gearbox_reference_body=_gearbox_reference_body, name=_name, origin=_origin, parent=_parent, physics=_physics, pose=_pose, screw_thread_pitch=_screw_thread_pitch, sensor=_sensor, thread_pitch=_thread_pitch, type=_type)
 
 
 class Limit(BaseModel):

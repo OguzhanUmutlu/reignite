@@ -87,24 +87,24 @@ class Road(BaseModel):
         sdf_version: str | None = None,
         material: "Material" = None,
         name: str = "__default__",
-        point: List["Point"] = None,
+        points: List["Point"] = None,
         width: "Width" = None
     ):
         self.__version__ = sdf_version
         self.material = material
         self.name = name
-        self.point = point or []
+        self.points = points or []
         self.width = width
         if self.material is not None:
             if getattr(self.material, '__version__', None) is None:
                 self.material.__version__ = self.__version__
             elif getattr(self.material, '__version__', None) != self.__version__ and self.__version__ is not None:
                 self.material = self.material.to_version(self.__version__)
-        for _i, _c in enumerate(self.point):
+        for _i, _c in enumerate(self.points):
             if getattr(_c, '__version__', None) is None:
                 _c.__version__ = self.__version__
             elif getattr(_c, '__version__', None) != self.__version__ and self.__version__ is not None:
-                self.point[_i] = _c.to_version(self.__version__)
+                self.points[_i] = _c.to_version(self.__version__)
         if self.width is not None:
             if getattr(self.width, '__version__', None) is None:
                 self.width.__version__ = self.__version__
@@ -118,7 +118,7 @@ class Road(BaseModel):
         kwargs = {"sdf_version": target_version}
         kwargs["material"] = self.material.to_version(target_version) if self.material is not None else None
         kwargs["name"] = self.name
-        kwargs["point"] = [c.to_version(target_version) for c in (self.point or [])]
+        kwargs["points"] = [c.to_version(target_version) for c in (self.points or [])]
         kwargs["width"] = self.width.to_version(target_version) if self.width is not None else None
         new_obj = self.__class__(**kwargs)
         return new_obj
@@ -135,7 +135,7 @@ class Road(BaseModel):
             el.append(self.material.to_sdf(version))
         if self.name is not None:
             el.set("name", self.name)
-        for item in (self.point or []):
+        for item in (self.points or []):
             el.append(item.to_sdf(version))
         if self.width is not None:
             el.append(self.width.to_sdf(version))
@@ -157,12 +157,12 @@ class Road(BaseModel):
         _name = el.get("name", "__default__")
         if isinstance(_name, SDFError):
             return _name.extend("@name")
-        _point = []
+        _points = []
         for c in el.findall("point"):
             _res = Point._from_sdf(c, version)
             if isinstance(_res, SDFError):
                 return _res.extend("point")
-            _point.append(_res)
+            _points.append(_res)
         _c_width = el.find("width")
         if _c_width is not None:
             _res = Width._from_sdf(_c_width, version)
@@ -171,7 +171,7 @@ class Road(BaseModel):
             _width = _res
         else:
             _width = None
-        return cls(sdf_version=version, material=_material, name=_name, point=_point, width=_width)
+        return cls(sdf_version=version, material=_material, name=_name, points=_points, width=_width)
 
 
 class Width(BaseModel):

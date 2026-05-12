@@ -304,36 +304,36 @@ class Visual(BaseModel):
         self,
         sdf_version: str | None = None,
         cast_shadows: bool = True,
-        frame: List["Frame"] = None,
+        frames: List["Frame"] = None,
         geometry: "Geometry" = None,
         laser_retro: float = 0.0,
         material: "Material" = None,
         meta: "Meta" = None,
         name: str = "__default__",
         origin: "Origin" = None,
-        plugin: List["Plugin"] = None,
+        plugins: List["Plugin"] = None,
         pose: "Pose" = None,
         transparency: float = 0.0,
         visibility_flags: "VisibilityFlags" = None
     ):
         self.__version__ = sdf_version
         self.cast_shadows = cast_shadows
-        self.frame = frame or []
+        self.frames = frames or []
         self.geometry = geometry
         self.laser_retro = laser_retro
         self.material = material
         self.meta = meta
         self.name = name
         self.origin = origin
-        self.plugin = plugin or []
+        self.plugins = plugins or []
         self.pose = pose
         self.transparency = transparency
         self.visibility_flags = visibility_flags
-        for _i, _c in enumerate(self.frame):
+        for _i, _c in enumerate(self.frames):
             if getattr(_c, '__version__', None) is None:
                 _c.__version__ = self.__version__
             elif getattr(_c, '__version__', None) != self.__version__ and self.__version__ is not None:
-                self.frame[_i] = _c.to_version(self.__version__)
+                self.frames[_i] = _c.to_version(self.__version__)
         if self.geometry is not None:
             if getattr(self.geometry, '__version__', None) is None:
                 self.geometry.__version__ = self.__version__
@@ -354,11 +354,11 @@ class Visual(BaseModel):
                 self.origin.__version__ = self.__version__
             elif getattr(self.origin, '__version__', None) != self.__version__ and self.__version__ is not None:
                 self.origin = self.origin.to_version(self.__version__)
-        for _i, _c in enumerate(self.plugin):
+        for _i, _c in enumerate(self.plugins):
             if getattr(_c, '__version__', None) is None:
                 _c.__version__ = self.__version__
             elif getattr(_c, '__version__', None) != self.__version__ and self.__version__ is not None:
-                self.plugin[_i] = _c.to_version(self.__version__)
+                self.plugins[_i] = _c.to_version(self.__version__)
         if self.pose is not None:
             if getattr(self.pose, '__version__', None) is None:
                 self.pose.__version__ = self.__version__
@@ -378,18 +378,18 @@ class Visual(BaseModel):
         from ..elements.pose import Pose
         if self.cast_shadows is not None and cmp_version(target_version, "1.2") >= 0:
             raise ValueError(f"'cast_shadows' is not supported in SDF version {target_version} (removed in 1.2)")
-        if self.frame is not None and cmp_version(target_version, "1.5") < 0:
-            raise ValueError(f"'frame' is not supported in SDF version {target_version} (added in 1.5)")
-        if self.frame is not None and cmp_version(target_version, "1.7") >= 0:
-            raise ValueError(f"'frame' is not supported in SDF version {target_version} (removed in 1.7)")
+        if self.frames is not None and cmp_version(target_version, "1.5") < 0:
+            raise ValueError(f"'frames' is not supported in SDF version {target_version} (added in 1.5)")
+        if self.frames is not None and cmp_version(target_version, "1.7") >= 0:
+            raise ValueError(f"'frames' is not supported in SDF version {target_version} (removed in 1.7)")
         if self.laser_retro is not None and cmp_version(target_version, "1.2") >= 0:
             raise ValueError(f"'laser_retro' is not supported in SDF version {target_version} (removed in 1.2)")
         if self.meta is not None and cmp_version(target_version, "1.5") < 0:
             raise ValueError(f"'meta' is not supported in SDF version {target_version} (added in 1.5)")
         if self.origin is not None and cmp_version(target_version, "1.2") >= 0:
             raise ValueError(f"'origin' is not supported in SDF version {target_version} (removed in 1.2)")
-        if self.plugin is not None and cmp_version(target_version, "1.3") < 0:
-            raise ValueError(f"'plugin' is not supported in SDF version {target_version} (added in 1.3)")
+        if self.plugins is not None and cmp_version(target_version, "1.3") < 0:
+            raise ValueError(f"'plugins' is not supported in SDF version {target_version} (added in 1.3)")
         if self.pose is not None and cmp_version(target_version, "1.2") < 0:
             raise ValueError(f"'pose' is not supported in SDF version {target_version} (added in 1.2)")
         if self.transparency is not None and cmp_version(target_version, "1.2") >= 0:
@@ -398,14 +398,14 @@ class Visual(BaseModel):
             raise ValueError(f"'visibility_flags' is not supported in SDF version {target_version} (added in 1.7)")
         kwargs = {"sdf_version": target_version}
         kwargs["cast_shadows"] = self.cast_shadows
-        kwargs["frame"] = [c.to_version(target_version) for c in (self.frame or [])]
+        kwargs["frames"] = [c.to_version(target_version) for c in (self.frames or [])]
         kwargs["geometry"] = self.geometry.to_version(target_version) if self.geometry is not None else None
         kwargs["laser_retro"] = self.laser_retro
         kwargs["material"] = self.material.to_version(target_version) if self.material is not None else None
         kwargs["meta"] = self.meta.to_version(target_version) if self.meta is not None else None
         kwargs["name"] = self.name
         kwargs["origin"] = self.origin.to_version(target_version) if self.origin is not None else None
-        kwargs["plugin"] = [c.to_version(target_version) for c in (self.plugin or [])]
+        kwargs["plugins"] = [c.to_version(target_version) for c in (self.plugins or [])]
         kwargs["pose"] = self.pose.to_version(target_version) if self.pose is not None else None
         kwargs["transparency"] = self.transparency
         kwargs["visibility_flags"] = self.visibility_flags.to_version(target_version) if self.visibility_flags is not None else None
@@ -426,7 +426,7 @@ class Visual(BaseModel):
         el = ET.Element("visual")
         if self.cast_shadows is not None:
             el.set("cast_shadows", str(self.cast_shadows).lower())
-        for item in (self.frame or []):
+        for item in (self.frames or []):
             el.append(item.to_sdf(version))
         if self.geometry is None:
             self.geometry = Geometry(sdf_version=version)
@@ -442,7 +442,7 @@ class Visual(BaseModel):
             el.set("name", self.name)
         if self.origin is not None:
             el.append(self.origin.to_sdf(version))
-        for item in (self.plugin or []):
+        for item in (self.plugins or []):
             el.append(item.to_sdf(version))
         if self.pose is not None:
             el.append(self.pose.to_sdf(version))
@@ -462,14 +462,14 @@ class Visual(BaseModel):
         _cast_shadows = str(el.get("cast_shadows", True)).strip().lower() == 'true'
         if isinstance(_cast_shadows, SDFError):
             return _cast_shadows.extend("@cast_shadows")
-        _frame = []
+        _frames = []
         for c in el.findall("frame"):
             _res = Frame._from_sdf(c, version)
             if isinstance(_res, SDFError):
                 return _res.extend("frame")
-            _frame.append(_res)
-        if _frame and cmp_version(version, "1.5") < 0:
-            return SDFError(f"'frame' is not supported in SDF version {version} (added in 1.5)")
+            _frames.append(_res)
+        if _frames and cmp_version(version, "1.5") < 0:
+            return SDFError(f"'frames' is not supported in SDF version {version} (added in 1.5)")
         _c_geometry = el.find("geometry")
         if _c_geometry is not None:
             _res = Geometry._from_sdf(_c_geometry, version)
@@ -513,14 +513,14 @@ class Visual(BaseModel):
             _origin = _res
         else:
             _origin = None
-        _plugin = []
+        _plugins = []
         for c in el.findall("plugin"):
             _res = Plugin._from_sdf(c, version)
             if isinstance(_res, SDFError):
                 return _res.extend("plugin")
-            _plugin.append(_res)
-        if _plugin and cmp_version(version, "1.3") < 0:
-            return SDFError(f"'plugin' is not supported in SDF version {version} (added in 1.3)")
+            _plugins.append(_res)
+        if _plugins and cmp_version(version, "1.3") < 0:
+            return SDFError(f"'plugins' is not supported in SDF version {version} (added in 1.3)")
         _c_pose = el.find("pose")
         if _c_pose is not None:
             _res = Pose._from_sdf(_c_pose, version)
@@ -544,4 +544,4 @@ class Visual(BaseModel):
             _visibility_flags = None
         if _visibility_flags is not None and cmp_version(version, "1.7") < 0:
             return SDFError(f"'visibility_flags' is not supported in SDF version {version} (added in 1.7)")
-        return cls(sdf_version=version, cast_shadows=_cast_shadows, frame=_frame, geometry=_geometry, laser_retro=_laser_retro, material=_material, meta=_meta, name=_name, origin=_origin, plugin=_plugin, pose=_pose, transparency=_transparency, visibility_flags=_visibility_flags)
+        return cls(sdf_version=version, cast_shadows=_cast_shadows, frames=_frames, geometry=_geometry, laser_retro=_laser_retro, material=_material, meta=_meta, name=_name, origin=_origin, plugins=_plugins, pose=_pose, transparency=_transparency, visibility_flags=_visibility_flags)

@@ -274,7 +274,7 @@ class LinkState(BaseModel):
         acceleration: "Acceleration" = None,
         angular_acceleration: "AngularAcceleration" = None,
         angular_velocity: "AngularVelocity" = None,
-        collision_state: List["CollisionState"] = None,
+        collision_states: List["CollisionState"] = None,
         force: "Force" = None,
         linear_acceleration: "LinearAcceleration" = None,
         linear_velocity: "LinearVelocity" = None,
@@ -288,7 +288,7 @@ class LinkState(BaseModel):
         self.acceleration = acceleration
         self.angular_acceleration = angular_acceleration
         self.angular_velocity = angular_velocity
-        self.collision_state = collision_state or []
+        self.collision_states = collision_states or []
         self.force = force
         self.linear_acceleration = linear_acceleration
         self.linear_velocity = linear_velocity
@@ -312,11 +312,11 @@ class LinkState(BaseModel):
                 self.angular_velocity.__version__ = self.__version__
             elif getattr(self.angular_velocity, '__version__', None) != self.__version__ and self.__version__ is not None:
                 self.angular_velocity = self.angular_velocity.to_version(self.__version__)
-        for _i, _c in enumerate(self.collision_state):
+        for _i, _c in enumerate(self.collision_states):
             if getattr(_c, '__version__', None) is None:
                 _c.__version__ = self.__version__
             elif getattr(_c, '__version__', None) != self.__version__ and self.__version__ is not None:
-                self.collision_state[_i] = _c.to_version(self.__version__)
+                self.collision_states[_i] = _c.to_version(self.__version__)
         if self.force is not None:
             if getattr(self.force, '__version__', None) is None:
                 self.force.__version__ = self.__version__
@@ -359,7 +359,7 @@ class LinkState(BaseModel):
         kwargs["acceleration"] = self.acceleration.to_version(target_version) if self.acceleration is not None else None
         kwargs["angular_acceleration"] = self.angular_acceleration.to_version(target_version) if self.angular_acceleration is not None else None
         kwargs["angular_velocity"] = self.angular_velocity.to_version(target_version) if self.angular_velocity is not None else None
-        kwargs["collision_state"] = [c.to_version(target_version) for c in (self.collision_state or [])]
+        kwargs["collision_states"] = [c.to_version(target_version) for c in (self.collision_states or [])]
         kwargs["force"] = self.force.to_version(target_version) if self.force is not None else None
         kwargs["linear_acceleration"] = self.linear_acceleration.to_version(target_version) if self.linear_acceleration is not None else None
         kwargs["linear_velocity"] = self.linear_velocity.to_version(target_version) if self.linear_velocity is not None else None
@@ -385,7 +385,7 @@ class LinkState(BaseModel):
             el.append(self.angular_acceleration.to_sdf(version))
         if self.angular_velocity is not None:
             el.append(self.angular_velocity.to_sdf(version))
-        for item in (self.collision_state or []):
+        for item in (self.collision_states or []):
             el.append(item.to_sdf(version))
         if self.force is not None:
             el.append(self.force.to_sdf(version))
@@ -432,12 +432,12 @@ class LinkState(BaseModel):
             _angular_velocity = _res
         else:
             _angular_velocity = None
-        _collision_state = []
+        _collision_states = []
         for c in el.findall("collision_state"):
             _res = CollisionState._from_sdf(c, version)
             if isinstance(_res, SDFError):
                 return _res.extend("collision_state")
-            _collision_state.append(_res)
+            _collision_states.append(_res)
         _c_force = el.find("force")
         if _c_force is not None:
             _res = Force._from_sdf(_c_force, version)
@@ -497,7 +497,7 @@ class LinkState(BaseModel):
             _wrench = _res
         else:
             _wrench = None
-        return cls(sdf_version=version, acceleration=_acceleration, angular_acceleration=_angular_acceleration, angular_velocity=_angular_velocity, collision_state=_collision_state, force=_force, linear_acceleration=_linear_acceleration, linear_velocity=_linear_velocity, name=_name, pose=_pose, torque=_torque, velocity=_velocity, wrench=_wrench)
+        return cls(sdf_version=version, acceleration=_acceleration, angular_acceleration=_angular_acceleration, angular_velocity=_angular_velocity, collision_states=_collision_states, force=_force, linear_acceleration=_linear_acceleration, linear_velocity=_linear_velocity, name=_name, pose=_pose, torque=_torque, velocity=_velocity, wrench=_wrench)
 
 
 class Torque(BaseModel):

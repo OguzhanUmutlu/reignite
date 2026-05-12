@@ -80,7 +80,7 @@ class Collision(BaseModel):
         sdf_version: str | None = None,
         auto_inertia_params: "AutoInertiaParams" = None,
         density: "Density" = None,
-        frame: List["Frame"] = None,
+        frames: List["Frame"] = None,
         geometry: "Geometry" = None,
         laser_retro: float = 0,
         mass: "Mass" = None,
@@ -93,7 +93,7 @@ class Collision(BaseModel):
         self.__version__ = sdf_version
         self.auto_inertia_params = auto_inertia_params
         self.density = density
-        self.frame = frame or []
+        self.frames = frames or []
         self.geometry = geometry
         self.laser_retro = laser_retro
         self.mass = mass
@@ -112,11 +112,11 @@ class Collision(BaseModel):
                 self.density.__version__ = self.__version__
             elif getattr(self.density, '__version__', None) != self.__version__ and self.__version__ is not None:
                 self.density = self.density.to_version(self.__version__)
-        for _i, _c in enumerate(self.frame):
+        for _i, _c in enumerate(self.frames):
             if getattr(_c, '__version__', None) is None:
                 _c.__version__ = self.__version__
             elif getattr(_c, '__version__', None) != self.__version__ and self.__version__ is not None:
-                self.frame[_i] = _c.to_version(self.__version__)
+                self.frames[_i] = _c.to_version(self.__version__)
         if self.geometry is not None:
             if getattr(self.geometry, '__version__', None) is None:
                 self.geometry.__version__ = self.__version__
@@ -157,10 +157,10 @@ class Collision(BaseModel):
             raise ValueError(f"'auto_inertia_params' is not supported in SDF version {target_version} (added in 1.11)")
         if self.density is not None and cmp_version(target_version, "1.11") < 0:
             raise ValueError(f"'density' is not supported in SDF version {target_version} (added in 1.11)")
-        if self.frame is not None and cmp_version(target_version, "1.5") < 0:
-            raise ValueError(f"'frame' is not supported in SDF version {target_version} (added in 1.5)")
-        if self.frame is not None and cmp_version(target_version, "1.7") >= 0:
-            raise ValueError(f"'frame' is not supported in SDF version {target_version} (removed in 1.7)")
+        if self.frames is not None and cmp_version(target_version, "1.5") < 0:
+            raise ValueError(f"'frames' is not supported in SDF version {target_version} (added in 1.5)")
+        if self.frames is not None and cmp_version(target_version, "1.7") >= 0:
+            raise ValueError(f"'frames' is not supported in SDF version {target_version} (removed in 1.7)")
         if self.laser_retro is not None and cmp_version(target_version, "1.2") >= 0:
             raise ValueError(f"'laser_retro' is not supported in SDF version {target_version} (removed in 1.2)")
         if self.mass is not None and cmp_version(target_version, "1.2") >= 0:
@@ -172,7 +172,7 @@ class Collision(BaseModel):
         kwargs = {"sdf_version": target_version}
         kwargs["auto_inertia_params"] = self.auto_inertia_params.to_version(target_version) if self.auto_inertia_params is not None else None
         kwargs["density"] = self.density.to_version(target_version) if self.density is not None else None
-        kwargs["frame"] = [c.to_version(target_version) for c in (self.frame or [])]
+        kwargs["frames"] = [c.to_version(target_version) for c in (self.frames or [])]
         kwargs["geometry"] = self.geometry.to_version(target_version) if self.geometry is not None else None
         kwargs["laser_retro"] = self.laser_retro
         kwargs["mass"] = self.mass.to_version(target_version) if self.mass is not None else None
@@ -199,7 +199,7 @@ class Collision(BaseModel):
             el.append(self.auto_inertia_params.to_sdf(version))
         if self.density is not None:
             el.append(self.density.to_sdf(version))
-        for item in (self.frame or []):
+        for item in (self.frames or []):
             el.append(item.to_sdf(version))
         if self.geometry is None:
             self.geometry = Geometry(sdf_version=version)
@@ -247,14 +247,14 @@ class Collision(BaseModel):
             _density = None
         if _density is not None and cmp_version(version, "1.11") < 0:
             return SDFError(f"'density' is not supported in SDF version {version} (added in 1.11)")
-        _frame = []
+        _frames = []
         for c in el.findall("frame"):
             _res = Frame._from_sdf(c, version)
             if isinstance(_res, SDFError):
                 return _res.extend("frame")
-            _frame.append(_res)
-        if _frame and cmp_version(version, "1.5") < 0:
-            return SDFError(f"'frame' is not supported in SDF version {version} (added in 1.5)")
+            _frames.append(_res)
+        if _frames and cmp_version(version, "1.5") < 0:
+            return SDFError(f"'frames' is not supported in SDF version {version} (added in 1.5)")
         _c_geometry = el.find("geometry")
         if _c_geometry is not None:
             _res = Geometry._from_sdf(_c_geometry, version)
@@ -314,7 +314,7 @@ class Collision(BaseModel):
             _surface = _res
         else:
             _surface = None
-        return cls(sdf_version=version, auto_inertia_params=_auto_inertia_params, density=_density, frame=_frame, geometry=_geometry, laser_retro=_laser_retro, mass=_mass, max_contacts=_max_contacts, name=_name, origin=_origin, pose=_pose, surface=_surface)
+        return cls(sdf_version=version, auto_inertia_params=_auto_inertia_params, density=_density, frames=_frames, geometry=_geometry, laser_retro=_laser_retro, mass=_mass, max_contacts=_max_contacts, name=_name, origin=_origin, pose=_pose, surface=_surface)
 
 
 class Density(BaseModel):

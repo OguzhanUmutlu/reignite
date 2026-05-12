@@ -113,26 +113,26 @@ class Polyline(BaseModel):
         self,
         sdf_version: str | None = None,
         height: "Height" = None,
-        point: List["Point"] = None
+        points: List["Point"] = None
     ):
         self.__version__ = sdf_version
         self.height = height
-        self.point = point or []
+        self.points = points or []
         if self.height is not None:
             if getattr(self.height, '__version__', None) is None:
                 self.height.__version__ = self.__version__
             elif getattr(self.height, '__version__', None) != self.__version__ and self.__version__ is not None:
                 self.height = self.height.to_version(self.__version__)
-        for _i, _c in enumerate(self.point):
+        for _i, _c in enumerate(self.points):
             if getattr(_c, '__version__', None) is None:
                 _c.__version__ = self.__version__
             elif getattr(_c, '__version__', None) != self.__version__ and self.__version__ is not None:
-                self.point[_i] = _c.to_version(self.__version__)
+                self.points[_i] = _c.to_version(self.__version__)
 
     def to_version(self, target_version: str) -> "Polyline":
         kwargs = {"sdf_version": target_version}
         kwargs["height"] = self.height.to_version(target_version) if self.height is not None else None
-        kwargs["point"] = [c.to_version(target_version) for c in (self.point or [])]
+        kwargs["points"] = [c.to_version(target_version) for c in (self.points or [])]
         new_obj = self.__class__(**kwargs)
         return new_obj
 
@@ -145,7 +145,7 @@ class Polyline(BaseModel):
         el = ET.Element("polyline")
         if self.height is not None:
             el.append(self.height.to_sdf(version))
-        for item in (self.point or []):
+        for item in (self.points or []):
             el.append(item.to_sdf(version))
         return el
 
@@ -159,10 +159,10 @@ class Polyline(BaseModel):
             _height = _res
         else:
             _height = None
-        _point = []
+        _points = []
         for c in el.findall("point"):
             _res = Point._from_sdf(c, version)
             if isinstance(_res, SDFError):
                 return _res.extend("point")
-            _point.append(_res)
-        return cls(sdf_version=version, height=_height, point=_point)
+            _points.append(_res)
+        return cls(sdf_version=version, height=_height, points=_points)

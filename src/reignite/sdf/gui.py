@@ -55,7 +55,7 @@ class Camera(BaseModel):
     def __init__(
         self,
         sdf_version: str | None = None,
-        frame: List["Frame"] = None,
+        frames: List["Frame"] = None,
         name: str = "user_camera",
         origin: "Origin" = None,
         pose: "Pose" = None,
@@ -64,18 +64,18 @@ class Camera(BaseModel):
         view_controller: "ViewController" = None
     ):
         self.__version__ = sdf_version
-        self.frame = frame or []
+        self.frames = frames or []
         self.name = name
         self.origin = origin
         self.pose = pose
         self.projection_type = projection_type
         self.track_visual = track_visual
         self.view_controller = view_controller
-        for _i, _c in enumerate(self.frame):
+        for _i, _c in enumerate(self.frames):
             if getattr(_c, '__version__', None) is None:
                 _c.__version__ = self.__version__
             elif getattr(_c, '__version__', None) != self.__version__ and self.__version__ is not None:
-                self.frame[_i] = _c.to_version(self.__version__)
+                self.frames[_i] = _c.to_version(self.__version__)
         if self.origin is not None:
             if getattr(self.origin, '__version__', None) is None:
                 self.origin.__version__ = self.__version__
@@ -105,10 +105,10 @@ class Camera(BaseModel):
     def to_version(self, target_version: str) -> "Camera":
         from ..elements.frame import Frame
         from ..elements.pose import Pose
-        if self.frame is not None and cmp_version(target_version, "1.5") < 0:
-            raise ValueError(f"'frame' is not supported in SDF version {target_version} (added in 1.5)")
-        if self.frame is not None and cmp_version(target_version, "1.7") >= 0:
-            raise ValueError(f"'frame' is not supported in SDF version {target_version} (removed in 1.7)")
+        if self.frames is not None and cmp_version(target_version, "1.5") < 0:
+            raise ValueError(f"'frames' is not supported in SDF version {target_version} (added in 1.5)")
+        if self.frames is not None and cmp_version(target_version, "1.7") >= 0:
+            raise ValueError(f"'frames' is not supported in SDF version {target_version} (removed in 1.7)")
         if self.origin is not None and cmp_version(target_version, "1.2") >= 0:
             raise ValueError(f"'origin' is not supported in SDF version {target_version} (removed in 1.2)")
         if self.pose is not None and cmp_version(target_version, "1.2") < 0:
@@ -116,7 +116,7 @@ class Camera(BaseModel):
         if self.projection_type is not None and cmp_version(target_version, "1.5") < 0:
             raise ValueError(f"'projection_type' is not supported in SDF version {target_version} (added in 1.5)")
         kwargs = {"sdf_version": target_version}
-        kwargs["frame"] = [c.to_version(target_version) for c in (self.frame or [])]
+        kwargs["frames"] = [c.to_version(target_version) for c in (self.frames or [])]
         kwargs["name"] = self.name
         kwargs["origin"] = self.origin.to_version(target_version) if self.origin is not None else None
         kwargs["pose"] = self.pose.to_version(target_version) if self.pose is not None else None
@@ -135,7 +135,7 @@ class Camera(BaseModel):
             return self.to_version(version).to_sdf()
         version = self.__version__ or version
         el = ET.Element("camera")
-        for item in (self.frame or []):
+        for item in (self.frames or []):
             el.append(item.to_sdf(version))
         if self.name is not None:
             el.set("name", self.name)
@@ -155,14 +155,14 @@ class Camera(BaseModel):
     def _from_sdf(cls, el: ET.Element, version: str):
         from ..elements.frame import Frame
         from ..elements.pose import Pose
-        _frame = []
+        _frames = []
         for c in el.findall("frame"):
             _res = Frame._from_sdf(c, version)
             if isinstance(_res, SDFError):
                 return _res.extend("frame")
-            _frame.append(_res)
-        if _frame and cmp_version(version, "1.5") < 0:
-            return SDFError(f"'frame' is not supported in SDF version {version} (added in 1.5)")
+            _frames.append(_res)
+        if _frames and cmp_version(version, "1.5") < 0:
+            return SDFError(f"'frames' is not supported in SDF version {version} (added in 1.5)")
         _name = el.get("name", "user_camera")
         if isinstance(_name, SDFError):
             return _name.extend("@name")
@@ -210,7 +210,7 @@ class Camera(BaseModel):
             _view_controller = _res
         else:
             _view_controller = None
-        return cls(sdf_version=version, frame=_frame, name=_name, origin=_origin, pose=_pose, projection_type=_projection_type, track_visual=_track_visual, view_controller=_view_controller)
+        return cls(sdf_version=version, frames=_frames, name=_name, origin=_origin, pose=_pose, projection_type=_projection_type, track_visual=_track_visual, view_controller=_view_controller)
 
 
 class Gui(BaseModel):
@@ -219,31 +219,31 @@ class Gui(BaseModel):
         sdf_version: str | None = None,
         camera: "Camera" = None,
         fullscreen: bool = False,
-        plugin: List["Plugin"] = None
+        plugins: List["Plugin"] = None
     ):
         self.__version__ = sdf_version
         self.camera = camera
         self.fullscreen = fullscreen
-        self.plugin = plugin or []
+        self.plugins = plugins or []
         if self.camera is not None:
             if getattr(self.camera, '__version__', None) is None:
                 self.camera.__version__ = self.__version__
             elif getattr(self.camera, '__version__', None) != self.__version__ and self.__version__ is not None:
                 self.camera = self.camera.to_version(self.__version__)
-        for _i, _c in enumerate(self.plugin):
+        for _i, _c in enumerate(self.plugins):
             if getattr(_c, '__version__', None) is None:
                 _c.__version__ = self.__version__
             elif getattr(_c, '__version__', None) != self.__version__ and self.__version__ is not None:
-                self.plugin[_i] = _c.to_version(self.__version__)
+                self.plugins[_i] = _c.to_version(self.__version__)
 
     def to_version(self, target_version: str) -> "Gui":
         from ..elements.plugin import Plugin
-        if self.plugin is not None and cmp_version(target_version, "1.5") < 0:
-            raise ValueError(f"'plugin' is not supported in SDF version {target_version} (added in 1.5)")
+        if self.plugins is not None and cmp_version(target_version, "1.5") < 0:
+            raise ValueError(f"'plugins' is not supported in SDF version {target_version} (added in 1.5)")
         kwargs = {"sdf_version": target_version}
         kwargs["camera"] = self.camera.to_version(target_version) if self.camera is not None else None
         kwargs["fullscreen"] = self.fullscreen
-        kwargs["plugin"] = [c.to_version(target_version) for c in (self.plugin or [])]
+        kwargs["plugins"] = [c.to_version(target_version) for c in (self.plugins or [])]
         new_obj = self.__class__(**kwargs)
         return new_obj
 
@@ -259,7 +259,7 @@ class Gui(BaseModel):
             el.append(self.camera.to_sdf(version))
         if self.fullscreen is not None:
             el.set("fullscreen", str(self.fullscreen).lower())
-        for item in (self.plugin or []):
+        for item in (self.plugins or []):
             el.append(item.to_sdf(version))
         return el
 
@@ -277,15 +277,15 @@ class Gui(BaseModel):
         _fullscreen = str(el.get("fullscreen", False)).strip().lower() == 'true'
         if isinstance(_fullscreen, SDFError):
             return _fullscreen.extend("@fullscreen")
-        _plugin = []
+        _plugins = []
         for c in el.findall("plugin"):
             _res = Plugin._from_sdf(c, version)
             if isinstance(_res, SDFError):
                 return _res.extend("plugin")
-            _plugin.append(_res)
-        if _plugin and cmp_version(version, "1.5") < 0:
-            return SDFError(f"'plugin' is not supported in SDF version {version} (added in 1.5)")
-        return cls(sdf_version=version, camera=_camera, fullscreen=_fullscreen, plugin=_plugin)
+            _plugins.append(_res)
+        if _plugins and cmp_version(version, "1.5") < 0:
+            return SDFError(f"'plugins' is not supported in SDF version {version} (added in 1.5)")
+        return cls(sdf_version=version, camera=_camera, fullscreen=_fullscreen, plugins=_plugins)
 
 
 class InheritYaw(BaseModel):

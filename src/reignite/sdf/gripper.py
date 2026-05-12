@@ -177,13 +177,13 @@ class Gripper(BaseModel):
         self,
         sdf_version: str | None = None,
         grasp_check: "GraspCheck" = None,
-        gripper_link: List["GripperLink"] = None,
+        gripper_links: List["GripperLink"] = None,
         name: str = "__default__",
         palm_link: "PalmLink" = None
     ):
         self.__version__ = sdf_version
         self.grasp_check = grasp_check
-        self.gripper_link = gripper_link or []
+        self.gripper_links = gripper_links or []
         self.name = name
         self.palm_link = palm_link
         if self.grasp_check is not None:
@@ -191,11 +191,11 @@ class Gripper(BaseModel):
                 self.grasp_check.__version__ = self.__version__
             elif getattr(self.grasp_check, '__version__', None) != self.__version__ and self.__version__ is not None:
                 self.grasp_check = self.grasp_check.to_version(self.__version__)
-        for _i, _c in enumerate(self.gripper_link):
+        for _i, _c in enumerate(self.gripper_links):
             if getattr(_c, '__version__', None) is None:
                 _c.__version__ = self.__version__
             elif getattr(_c, '__version__', None) != self.__version__ and self.__version__ is not None:
-                self.gripper_link[_i] = _c.to_version(self.__version__)
+                self.gripper_links[_i] = _c.to_version(self.__version__)
         if self.palm_link is not None:
             if getattr(self.palm_link, '__version__', None) is None:
                 self.palm_link.__version__ = self.__version__
@@ -205,7 +205,7 @@ class Gripper(BaseModel):
     def to_version(self, target_version: str) -> "Gripper":
         kwargs = {"sdf_version": target_version}
         kwargs["grasp_check"] = self.grasp_check.to_version(target_version) if self.grasp_check is not None else None
-        kwargs["gripper_link"] = [c.to_version(target_version) for c in (self.gripper_link or [])]
+        kwargs["gripper_links"] = [c.to_version(target_version) for c in (self.gripper_links or [])]
         kwargs["name"] = self.name
         kwargs["palm_link"] = self.palm_link.to_version(target_version) if self.palm_link is not None else None
         new_obj = self.__class__(**kwargs)
@@ -220,7 +220,7 @@ class Gripper(BaseModel):
         el = ET.Element("gripper")
         if self.grasp_check is not None:
             el.append(self.grasp_check.to_sdf(version))
-        for item in (self.gripper_link or []):
+        for item in (self.gripper_links or []):
             el.append(item.to_sdf(version))
         if self.name is not None:
             el.set("name", self.name)
@@ -238,12 +238,12 @@ class Gripper(BaseModel):
             _grasp_check = _res
         else:
             _grasp_check = None
-        _gripper_link = []
+        _gripper_links = []
         for c in el.findall("gripper_link"):
             _res = GripperLink._from_sdf(c, version)
             if isinstance(_res, SDFError):
                 return _res.extend("gripper_link")
-            _gripper_link.append(_res)
+            _gripper_links.append(_res)
         _name = el.get("name", "__default__")
         if isinstance(_name, SDFError):
             return _name.extend("@name")
@@ -255,7 +255,7 @@ class Gripper(BaseModel):
             _palm_link = _res
         else:
             _palm_link = None
-        return cls(sdf_version=version, grasp_check=_grasp_check, gripper_link=_gripper_link, name=_name, palm_link=_palm_link)
+        return cls(sdf_version=version, grasp_check=_grasp_check, gripper_links=_gripper_links, name=_name, palm_link=_palm_link)
 
 
 class GripperLink(BaseModel):
