@@ -20,7 +20,7 @@ if typing.TYPE_CHECKING:
 class ModelState(BaseModel):
     def __init__(
         self,
-        sdf_version: str,
+        sdf_version: str | None = None,
         frame: List["Frame"] = None,
         joint_state: List["JointState"] = None,
         link_state: List["LinkState"] = None,
@@ -37,6 +37,36 @@ class ModelState(BaseModel):
         self.name = name
         self.pose = pose
         self.scale = scale
+        for _i, _c in enumerate(self.frame):
+            if getattr(_c, '__version__', None) is None:
+                _c.__version__ = self.__version__
+            elif getattr(_c, '__version__', None) != self.__version__ and self.__version__ is not None:
+                self.frame[_i] = _c.to_version(self.__version__)
+        for _i, _c in enumerate(self.joint_state):
+            if getattr(_c, '__version__', None) is None:
+                _c.__version__ = self.__version__
+            elif getattr(_c, '__version__', None) != self.__version__ and self.__version__ is not None:
+                self.joint_state[_i] = _c.to_version(self.__version__)
+        for _i, _c in enumerate(self.link_state):
+            if getattr(_c, '__version__', None) is None:
+                _c.__version__ = self.__version__
+            elif getattr(_c, '__version__', None) != self.__version__ and self.__version__ is not None:
+                self.link_state[_i] = _c.to_version(self.__version__)
+        for _i, _c in enumerate(self.model_state):
+            if getattr(_c, '__version__', None) is None:
+                _c.__version__ = self.__version__
+            elif getattr(_c, '__version__', None) != self.__version__ and self.__version__ is not None:
+                self.model_state[_i] = _c.to_version(self.__version__)
+        if self.pose is not None:
+            if getattr(self.pose, '__version__', None) is None:
+                self.pose.__version__ = self.__version__
+            elif getattr(self.pose, '__version__', None) != self.__version__ and self.__version__ is not None:
+                self.pose = self.pose.to_version(self.__version__)
+        if self.scale is not None:
+            if getattr(self.scale, '__version__', None) is None:
+                self.scale.__version__ = self.__version__
+            elif getattr(self.scale, '__version__', None) != self.__version__ and self.__version__ is not None:
+                self.scale = self.scale.to_version(self.__version__)
 
     def to_version(self, target_version: str) -> "ModelState":
         from ..elements.frame import Frame
@@ -54,14 +84,16 @@ class ModelState(BaseModel):
         new_obj = self.__class__(**kwargs)
         return new_obj
 
-    def to_sdf(self, version: str = None) -> ET.Element:
+    def to_sdf(self, version: str | None = None) -> ET.Element:
         from ..elements.frame import Frame
         from ..elements.joint_state import JointState
         from ..elements.link_state import LinkState
         from ..elements.pose import Pose
-        if version is not None and version != self.__version__:
+        if self.__version__ is None and version is not None:
+            self.__version__ = version
+        elif version is not None and version != self.__version__:
             return self.to_version(version).to_sdf()
-        version = version or self.__version__
+        version = self.__version__ or version
         el = ET.Element("model_state")
         for item in (self.frame or []):
             el.append(item.to_sdf(version))
@@ -132,7 +164,7 @@ class ModelState(BaseModel):
 
 
 class ModelStateModelState(BaseModel):
-    def __init__(self, sdf_version: str, name: str = "__default__"):
+    def __init__(self, sdf_version: str | None = None, name: str = "__default__"):
         self.__version__ = sdf_version
         self.name = name
 
@@ -142,10 +174,12 @@ class ModelStateModelState(BaseModel):
         new_obj = self.__class__(**kwargs)
         return new_obj
 
-    def to_sdf(self, version: str = None) -> ET.Element:
-        if version is not None and version != self.__version__:
+    def to_sdf(self, version: str | None = None) -> ET.Element:
+        if self.__version__ is None and version is not None:
+            self.__version__ = version
+        elif version is not None and version != self.__version__:
             return self.to_version(version).to_sdf()
-        version = version or self.__version__
+        version = self.__version__ or version
         el = ET.Element("model_state")
         if self.name is not None:
             el.set("name", self.name)
@@ -160,10 +194,10 @@ class ModelStateModelState(BaseModel):
 
 
 class Scale(BaseModel):
-    def __init__(self, sdf_version: str, scale: _SDFVector3 = None):
+    def __init__(self, sdf_version: str | None = None, scale: _SDFVector3 = None):
         self.__version__ = sdf_version
         if scale is None:
-            scale = _SDFVector3.from_sdf("1 1 1")
+            scale = _SDFVector3.from_sdf("1 1 1", version=sdf_version)
         self.scale = scale
 
     def to_version(self, target_version: str) -> "Scale":
@@ -172,13 +206,15 @@ class Scale(BaseModel):
         new_obj = self.__class__(**kwargs)
         return new_obj
 
-    def to_sdf(self, version: str = None) -> ET.Element:
-        if version is not None and version != self.__version__:
+    def to_sdf(self, version: str | None = None) -> ET.Element:
+        if self.__version__ is None and version is not None:
+            self.__version__ = version
+        elif version is not None and version != self.__version__:
             return self.to_version(version).to_sdf()
-        version = version or self.__version__
+        version = self.__version__ or version
         el = ET.Element("scale")
         if self.scale is not None:
-            el.text = self.scale.to_sdf()
+            el.text = self.scale.to_sdf(version)
         return el
 
     @classmethod

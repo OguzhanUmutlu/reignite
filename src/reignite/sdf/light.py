@@ -54,7 +54,7 @@ def _parse_double(raw: str) -> float | SDFError:
 class Attenuation(BaseModel):
     def __init__(
         self,
-        sdf_version: str,
+        sdf_version: str | None = None,
         constant: float = 1,
         linear: float = 1,
         quadratic: float = 0,
@@ -83,10 +83,12 @@ class Attenuation(BaseModel):
         new_obj = self.__class__(**kwargs)
         return new_obj
 
-    def to_sdf(self, version: str = None) -> ET.Element:
-        if version is not None and version != self.__version__:
+    def to_sdf(self, version: str | None = None) -> ET.Element:
+        if self.__version__ is None and version is not None:
+            self.__version__ = version
+        elif version is not None and version != self.__version__:
             return self.to_version(version).to_sdf()
-        version = version or self.__version__
+        version = self.__version__ or version
         el = ET.Element("attenuation")
         if self.constant is not None:
             el.set("constant", str(self.constant))
@@ -116,7 +118,7 @@ class Attenuation(BaseModel):
 
 
 class CastShadows(BaseModel):
-    def __init__(self, sdf_version: str, cast_shadows: bool = False):
+    def __init__(self, sdf_version: str | None = None, cast_shadows: bool = False):
         self.__version__ = sdf_version
         self.cast_shadows = cast_shadows
 
@@ -130,10 +132,12 @@ class CastShadows(BaseModel):
         new_obj = self.__class__(**kwargs)
         return new_obj
 
-    def to_sdf(self, version: str = None) -> ET.Element:
-        if version is not None and version != self.__version__:
+    def to_sdf(self, version: str | None = None) -> ET.Element:
+        if self.__version__ is None and version is not None:
+            self.__version__ = version
+        elif version is not None and version != self.__version__:
             return self.to_version(version).to_sdf()
-        version = version or self.__version__
+        version = self.__version__ or version
         el = ET.Element("cast_shadows")
         if self.cast_shadows is not None:
             el.text = str(self.cast_shadows).lower()
@@ -152,7 +156,7 @@ class CastShadows(BaseModel):
 
 
 class Constant(BaseModel):
-    def __init__(self, sdf_version: str, constant: float = 1):
+    def __init__(self, sdf_version: str | None = None, constant: float = 1):
         self.__version__ = sdf_version
         self.constant = constant
 
@@ -164,10 +168,12 @@ class Constant(BaseModel):
         new_obj = self.__class__(**kwargs)
         return new_obj
 
-    def to_sdf(self, version: str = None) -> ET.Element:
-        if version is not None and version != self.__version__:
+    def to_sdf(self, version: str | None = None) -> ET.Element:
+        if self.__version__ is None and version is not None:
+            self.__version__ = version
+        elif version is not None and version != self.__version__:
             return self.to_version(version).to_sdf()
-        version = version or self.__version__
+        version = self.__version__ or version
         el = ET.Element("constant")
         if self.constant is not None:
             el.text = str(self.constant)
@@ -186,12 +192,17 @@ class Constant(BaseModel):
 
 
 class Diffuse(BaseModel):
-    def __init__(self, sdf_version: str, diffuse: _SDFColor = None, rgba: _SDFColor = None):
+    def __init__(
+        self,
+        sdf_version: str | None = None,
+        diffuse: _SDFColor = None,
+        rgba: _SDFColor = None
+    ):
         self.__version__ = sdf_version
         if diffuse is None:
-            diffuse = _SDFColor.from_sdf("1 1 1 1")
+            diffuse = _SDFColor.from_sdf("1 1 1 1", version=sdf_version)
         if rgba is None:
-            rgba = _SDFColor.from_sdf("1 1 1 1")
+            rgba = _SDFColor.from_sdf("1 1 1 1", version=sdf_version)
         self.diffuse = diffuse
         self.rgba = rgba
 
@@ -206,15 +217,17 @@ class Diffuse(BaseModel):
         new_obj = self.__class__(**kwargs)
         return new_obj
 
-    def to_sdf(self, version: str = None) -> ET.Element:
-        if version is not None and version != self.__version__:
+    def to_sdf(self, version: str | None = None) -> ET.Element:
+        if self.__version__ is None and version is not None:
+            self.__version__ = version
+        elif version is not None and version != self.__version__:
             return self.to_version(version).to_sdf()
-        version = version or self.__version__
+        version = self.__version__ or version
         el = ET.Element("diffuse")
         if self.diffuse is not None:
-            el.text = self.diffuse.to_sdf()
+            el.text = self.diffuse.to_sdf(version)
         if self.rgba is not None:
-            el.set("rgba", self.rgba.to_sdf())
+            el.set("rgba", self.rgba.to_sdf(version))
         return el
 
     @classmethod
@@ -230,12 +243,17 @@ class Diffuse(BaseModel):
 
 
 class Direction(BaseModel):
-    def __init__(self, sdf_version: str, direction: _SDFVector3 = None, xyz: _SDFVector3 = None):
+    def __init__(
+        self,
+        sdf_version: str | None = None,
+        direction: _SDFVector3 = None,
+        xyz: _SDFVector3 = None
+    ):
         self.__version__ = sdf_version
         if direction is None:
-            direction = _SDFVector3.from_sdf("0 0 -1")
+            direction = _SDFVector3.from_sdf("0 0 -1", version=sdf_version)
         if xyz is None:
-            xyz = _SDFVector3.from_sdf("0 0 -1")
+            xyz = _SDFVector3.from_sdf("0 0 -1", version=sdf_version)
         self.direction = direction
         self.xyz = xyz
 
@@ -250,15 +268,17 @@ class Direction(BaseModel):
         new_obj = self.__class__(**kwargs)
         return new_obj
 
-    def to_sdf(self, version: str = None) -> ET.Element:
-        if version is not None and version != self.__version__:
+    def to_sdf(self, version: str | None = None) -> ET.Element:
+        if self.__version__ is None and version is not None:
+            self.__version__ = version
+        elif version is not None and version != self.__version__:
             return self.to_version(version).to_sdf()
-        version = version or self.__version__
+        version = self.__version__ or version
         el = ET.Element("direction")
         if self.direction is not None:
-            el.text = self.direction.to_sdf()
+            el.text = self.direction.to_sdf(version)
         if self.xyz is not None:
-            el.set("xyz", self.xyz.to_sdf())
+            el.set("xyz", self.xyz.to_sdf(version))
         return el
 
     @classmethod
@@ -274,7 +294,7 @@ class Direction(BaseModel):
 
 
 class Falloff(BaseModel):
-    def __init__(self, sdf_version: str, falloff: float = 0):
+    def __init__(self, sdf_version: str | None = None, falloff: float = 0):
         self.__version__ = sdf_version
         self.falloff = falloff
 
@@ -286,10 +306,12 @@ class Falloff(BaseModel):
         new_obj = self.__class__(**kwargs)
         return new_obj
 
-    def to_sdf(self, version: str = None) -> ET.Element:
-        if version is not None and version != self.__version__:
+    def to_sdf(self, version: str | None = None) -> ET.Element:
+        if self.__version__ is None and version is not None:
+            self.__version__ = version
+        elif version is not None and version != self.__version__:
             return self.to_version(version).to_sdf()
-        version = version or self.__version__
+        version = self.__version__ or version
         el = ET.Element("falloff")
         if self.falloff is not None:
             el.text = str(self.falloff)
@@ -308,7 +330,7 @@ class Falloff(BaseModel):
 
 
 class InnerAngle(BaseModel):
-    def __init__(self, sdf_version: str, inner_angle: float = 0):
+    def __init__(self, sdf_version: str | None = None, inner_angle: float = 0):
         self.__version__ = sdf_version
         self.inner_angle = inner_angle
 
@@ -320,10 +342,12 @@ class InnerAngle(BaseModel):
         new_obj = self.__class__(**kwargs)
         return new_obj
 
-    def to_sdf(self, version: str = None) -> ET.Element:
-        if version is not None and version != self.__version__:
+    def to_sdf(self, version: str | None = None) -> ET.Element:
+        if self.__version__ is None and version is not None:
+            self.__version__ = version
+        elif version is not None and version != self.__version__:
             return self.to_version(version).to_sdf()
-        version = version or self.__version__
+        version = self.__version__ or version
         el = ET.Element("inner_angle")
         if self.inner_angle is not None:
             el.text = str(self.inner_angle)
@@ -342,7 +366,7 @@ class InnerAngle(BaseModel):
 
 
 class Intensity(BaseModel):
-    def __init__(self, sdf_version: str, intensity: float = 1):
+    def __init__(self, sdf_version: str | None = None, intensity: float = 1):
         self.__version__ = sdf_version
         self.intensity = intensity
 
@@ -354,10 +378,12 @@ class Intensity(BaseModel):
         new_obj = self.__class__(**kwargs)
         return new_obj
 
-    def to_sdf(self, version: str = None) -> ET.Element:
-        if version is not None and version != self.__version__:
+    def to_sdf(self, version: str | None = None) -> ET.Element:
+        if self.__version__ is None and version is not None:
+            self.__version__ = version
+        elif version is not None and version != self.__version__:
             return self.to_version(version).to_sdf()
-        version = version or self.__version__
+        version = self.__version__ or version
         el = ET.Element("intensity")
         if self.intensity is not None:
             el.text = str(self.intensity)
@@ -378,7 +404,7 @@ class Intensity(BaseModel):
 class Light(BaseModel):
     def __init__(
         self,
-        sdf_version: str,
+        sdf_version: str | None = None,
         attenuation: "Attenuation" = None,
         cast_shadows: bool = False,
         diffuse: "Diffuse" = None,
@@ -409,6 +435,61 @@ class Light(BaseModel):
         self.spot = spot
         self.type = type
         self.visualize = visualize
+        if self.attenuation is not None:
+            if getattr(self.attenuation, '__version__', None) is None:
+                self.attenuation.__version__ = self.__version__
+            elif getattr(self.attenuation, '__version__', None) != self.__version__ and self.__version__ is not None:
+                self.attenuation = self.attenuation.to_version(self.__version__)
+        if self.diffuse is not None:
+            if getattr(self.diffuse, '__version__', None) is None:
+                self.diffuse.__version__ = self.__version__
+            elif getattr(self.diffuse, '__version__', None) != self.__version__ and self.__version__ is not None:
+                self.diffuse = self.diffuse.to_version(self.__version__)
+        if self.direction is not None:
+            if getattr(self.direction, '__version__', None) is None:
+                self.direction.__version__ = self.__version__
+            elif getattr(self.direction, '__version__', None) != self.__version__ and self.__version__ is not None:
+                self.direction = self.direction.to_version(self.__version__)
+        for _i, _c in enumerate(self.frame):
+            if getattr(_c, '__version__', None) is None:
+                _c.__version__ = self.__version__
+            elif getattr(_c, '__version__', None) != self.__version__ and self.__version__ is not None:
+                self.frame[_i] = _c.to_version(self.__version__)
+        if self.intensity is not None:
+            if getattr(self.intensity, '__version__', None) is None:
+                self.intensity.__version__ = self.__version__
+            elif getattr(self.intensity, '__version__', None) != self.__version__ and self.__version__ is not None:
+                self.intensity = self.intensity.to_version(self.__version__)
+        if self.light_on is not None:
+            if getattr(self.light_on, '__version__', None) is None:
+                self.light_on.__version__ = self.__version__
+            elif getattr(self.light_on, '__version__', None) != self.__version__ and self.__version__ is not None:
+                self.light_on = self.light_on.to_version(self.__version__)
+        if self.origin is not None:
+            if getattr(self.origin, '__version__', None) is None:
+                self.origin.__version__ = self.__version__
+            elif getattr(self.origin, '__version__', None) != self.__version__ and self.__version__ is not None:
+                self.origin = self.origin.to_version(self.__version__)
+        if self.pose is not None:
+            if getattr(self.pose, '__version__', None) is None:
+                self.pose.__version__ = self.__version__
+            elif getattr(self.pose, '__version__', None) != self.__version__ and self.__version__ is not None:
+                self.pose = self.pose.to_version(self.__version__)
+        if self.specular is not None:
+            if getattr(self.specular, '__version__', None) is None:
+                self.specular.__version__ = self.__version__
+            elif getattr(self.specular, '__version__', None) != self.__version__ and self.__version__ is not None:
+                self.specular = self.specular.to_version(self.__version__)
+        if self.spot is not None:
+            if getattr(self.spot, '__version__', None) is None:
+                self.spot.__version__ = self.__version__
+            elif getattr(self.spot, '__version__', None) != self.__version__ and self.__version__ is not None:
+                self.spot = self.spot.to_version(self.__version__)
+        if self.visualize is not None:
+            if getattr(self.visualize, '__version__', None) is None:
+                self.visualize.__version__ = self.__version__
+            elif getattr(self.visualize, '__version__', None) != self.__version__ and self.__version__ is not None:
+                self.visualize = self.visualize.to_version(self.__version__)
 
     def to_version(self, target_version: str) -> "Light":
         from ..elements.frame import Frame
@@ -459,12 +540,14 @@ class Light(BaseModel):
         new_obj = self.__class__(**kwargs)
         return new_obj
 
-    def to_sdf(self, version: str = None) -> ET.Element:
+    def to_sdf(self, version: str | None = None) -> ET.Element:
         from ..elements.frame import Frame
         from ..elements.pose import Pose
-        if version is not None and version != self.__version__:
+        if self.__version__ is None and version is not None:
+            self.__version__ = version
+        elif version is not None and version != self.__version__:
             return self.to_version(version).to_sdf()
-        version = version or self.__version__
+        version = self.__version__ or version
         el = ET.Element("light")
         if self.attenuation is not None:
             el.append(self.attenuation.to_sdf(version))
@@ -609,7 +692,7 @@ class Light(BaseModel):
 
 
 class LightOn(BaseModel):
-    def __init__(self, sdf_version: str, light_on: bool = True):
+    def __init__(self, sdf_version: str | None = None, light_on: bool = True):
         self.__version__ = sdf_version
         self.light_on = light_on
 
@@ -621,10 +704,12 @@ class LightOn(BaseModel):
         new_obj = self.__class__(**kwargs)
         return new_obj
 
-    def to_sdf(self, version: str = None) -> ET.Element:
-        if version is not None and version != self.__version__:
+    def to_sdf(self, version: str | None = None) -> ET.Element:
+        if self.__version__ is None and version is not None:
+            self.__version__ = version
+        elif version is not None and version != self.__version__:
             return self.to_version(version).to_sdf()
-        version = version or self.__version__
+        version = self.__version__ or version
         el = ET.Element("light_on")
         if self.light_on is not None:
             el.text = str(self.light_on).lower()
@@ -643,7 +728,7 @@ class LightOn(BaseModel):
 
 
 class Linear(BaseModel):
-    def __init__(self, sdf_version: str, linear: float = 1):
+    def __init__(self, sdf_version: str | None = None, linear: float = 1):
         self.__version__ = sdf_version
         self.linear = linear
 
@@ -655,10 +740,12 @@ class Linear(BaseModel):
         new_obj = self.__class__(**kwargs)
         return new_obj
 
-    def to_sdf(self, version: str = None) -> ET.Element:
-        if version is not None and version != self.__version__:
+    def to_sdf(self, version: str | None = None) -> ET.Element:
+        if self.__version__ is None and version is not None:
+            self.__version__ = version
+        elif version is not None and version != self.__version__:
             return self.to_version(version).to_sdf()
-        version = version or self.__version__
+        version = self.__version__ or version
         el = ET.Element("linear")
         if self.linear is not None:
             el.text = str(self.linear)
@@ -677,10 +764,10 @@ class Linear(BaseModel):
 
 
 class Origin(BaseModel):
-    def __init__(self, sdf_version: str, pose: _SDFPose = None):
+    def __init__(self, sdf_version: str | None = None, pose: _SDFPose = None):
         self.__version__ = sdf_version
         if pose is None:
-            pose = _SDFPose.from_sdf("0 0 0 0 0 0")
+            pose = _SDFPose.from_sdf("0 0 0 0 0 0", version=sdf_version)
         self.pose = pose
 
     def to_version(self, target_version: str) -> "Origin":
@@ -689,13 +776,15 @@ class Origin(BaseModel):
         new_obj = self.__class__(**kwargs)
         return new_obj
 
-    def to_sdf(self, version: str = None) -> ET.Element:
-        if version is not None and version != self.__version__:
+    def to_sdf(self, version: str | None = None) -> ET.Element:
+        if self.__version__ is None and version is not None:
+            self.__version__ = version
+        elif version is not None and version != self.__version__:
             return self.to_version(version).to_sdf()
-        version = version or self.__version__
+        version = self.__version__ or version
         el = ET.Element("origin")
         if self.pose is not None:
-            el.set("pose", self.pose.to_sdf())
+            el.set("pose", self.pose.to_sdf(version))
         return el
 
     @classmethod
@@ -707,7 +796,7 @@ class Origin(BaseModel):
 
 
 class OuterAngle(BaseModel):
-    def __init__(self, sdf_version: str, outer_angle: float = 0):
+    def __init__(self, sdf_version: str | None = None, outer_angle: float = 0):
         self.__version__ = sdf_version
         self.outer_angle = outer_angle
 
@@ -719,10 +808,12 @@ class OuterAngle(BaseModel):
         new_obj = self.__class__(**kwargs)
         return new_obj
 
-    def to_sdf(self, version: str = None) -> ET.Element:
-        if version is not None and version != self.__version__:
+    def to_sdf(self, version: str | None = None) -> ET.Element:
+        if self.__version__ is None and version is not None:
+            self.__version__ = version
+        elif version is not None and version != self.__version__:
             return self.to_version(version).to_sdf()
-        version = version or self.__version__
+        version = self.__version__ or version
         el = ET.Element("outer_angle")
         if self.outer_angle is not None:
             el.text = str(self.outer_angle)
@@ -741,7 +832,7 @@ class OuterAngle(BaseModel):
 
 
 class Quadratic(BaseModel):
-    def __init__(self, sdf_version: str, quadratic: float = 0):
+    def __init__(self, sdf_version: str | None = None, quadratic: float = 0):
         self.__version__ = sdf_version
         self.quadratic = quadratic
 
@@ -753,10 +844,12 @@ class Quadratic(BaseModel):
         new_obj = self.__class__(**kwargs)
         return new_obj
 
-    def to_sdf(self, version: str = None) -> ET.Element:
-        if version is not None and version != self.__version__:
+    def to_sdf(self, version: str | None = None) -> ET.Element:
+        if self.__version__ is None and version is not None:
+            self.__version__ = version
+        elif version is not None and version != self.__version__:
             return self.to_version(version).to_sdf()
-        version = version or self.__version__
+        version = self.__version__ or version
         el = ET.Element("quadratic")
         if self.quadratic is not None:
             el.text = str(self.quadratic)
@@ -775,7 +868,7 @@ class Quadratic(BaseModel):
 
 
 class Range(BaseModel):
-    def __init__(self, sdf_version: str, range: float = 10):
+    def __init__(self, sdf_version: str | None = None, range: float = 10):
         self.__version__ = sdf_version
         self.range = range
 
@@ -787,10 +880,12 @@ class Range(BaseModel):
         new_obj = self.__class__(**kwargs)
         return new_obj
 
-    def to_sdf(self, version: str = None) -> ET.Element:
-        if version is not None and version != self.__version__:
+    def to_sdf(self, version: str | None = None) -> ET.Element:
+        if self.__version__ is None and version is not None:
+            self.__version__ = version
+        elif version is not None and version != self.__version__:
             return self.to_version(version).to_sdf()
-        version = version or self.__version__
+        version = self.__version__ or version
         el = ET.Element("range")
         if self.range is not None:
             el.text = str(self.range)
@@ -809,12 +904,17 @@ class Range(BaseModel):
 
 
 class Specular(BaseModel):
-    def __init__(self, sdf_version: str, rgba: _SDFColor = None, specular: _SDFColor = None):
+    def __init__(
+        self,
+        sdf_version: str | None = None,
+        rgba: _SDFColor = None,
+        specular: _SDFColor = None
+    ):
         self.__version__ = sdf_version
         if rgba is None:
-            rgba = _SDFColor.from_sdf(".1 .1 .1 1")
+            rgba = _SDFColor.from_sdf(".1 .1 .1 1", version=sdf_version)
         if specular is None:
-            specular = _SDFColor.from_sdf(".1 .1 .1 1")
+            specular = _SDFColor.from_sdf(".1 .1 .1 1", version=sdf_version)
         self.rgba = rgba
         self.specular = specular
 
@@ -829,15 +929,17 @@ class Specular(BaseModel):
         new_obj = self.__class__(**kwargs)
         return new_obj
 
-    def to_sdf(self, version: str = None) -> ET.Element:
-        if version is not None and version != self.__version__:
+    def to_sdf(self, version: str | None = None) -> ET.Element:
+        if self.__version__ is None and version is not None:
+            self.__version__ = version
+        elif version is not None and version != self.__version__:
             return self.to_version(version).to_sdf()
-        version = version or self.__version__
+        version = self.__version__ or version
         el = ET.Element("specular")
         if self.rgba is not None:
-            el.set("rgba", self.rgba.to_sdf())
+            el.set("rgba", self.rgba.to_sdf(version))
         if self.specular is not None:
-            el.text = self.specular.to_sdf()
+            el.text = self.specular.to_sdf(version)
         return el
 
     @classmethod
@@ -855,7 +957,7 @@ class Specular(BaseModel):
 class Spot(BaseModel):
     def __init__(
         self,
-        sdf_version: str,
+        sdf_version: str | None = None,
         falloff: float = 0,
         inner_angle: float = 0,
         outer_angle: float = 0
@@ -879,10 +981,12 @@ class Spot(BaseModel):
         new_obj = self.__class__(**kwargs)
         return new_obj
 
-    def to_sdf(self, version: str = None) -> ET.Element:
-        if version is not None and version != self.__version__:
+    def to_sdf(self, version: str | None = None) -> ET.Element:
+        if self.__version__ is None and version is not None:
+            self.__version__ = version
+        elif version is not None and version != self.__version__:
             return self.to_version(version).to_sdf()
-        version = version or self.__version__
+        version = self.__version__ or version
         el = ET.Element("spot")
         if self.falloff is not None:
             el.set("falloff", str(self.falloff))
@@ -907,7 +1011,7 @@ class Spot(BaseModel):
 
 
 class Visualize(BaseModel):
-    def __init__(self, sdf_version: str, visualize: bool = True):
+    def __init__(self, sdf_version: str | None = None, visualize: bool = True):
         self.__version__ = sdf_version
         self.visualize = visualize
 
@@ -919,10 +1023,12 @@ class Visualize(BaseModel):
         new_obj = self.__class__(**kwargs)
         return new_obj
 
-    def to_sdf(self, version: str = None) -> ET.Element:
-        if version is not None and version != self.__version__:
+    def to_sdf(self, version: str | None = None) -> ET.Element:
+        if self.__version__ is None and version is not None:
+            self.__version__ = version
+        elif version is not None and version != self.__version__:
             return self.to_version(version).to_sdf()
-        version = version or self.__version__
+        version = self.__version__ or version
         el = ET.Element("visualize")
         if self.visualize is not None:
             el.text = str(self.visualize).lower()

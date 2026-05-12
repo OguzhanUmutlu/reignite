@@ -11,10 +11,10 @@ from ..utils.vector3 import Vector3 as _SDFVector3
 
 
 class Normal(BaseModel):
-    def __init__(self, sdf_version: str, normal: _SDFVector3 = None):
+    def __init__(self, sdf_version: str | None = None, normal: _SDFVector3 = None):
         self.__version__ = sdf_version
         if normal is None:
-            normal = _SDFVector3.from_sdf("0 0 1")
+            normal = _SDFVector3.from_sdf("0 0 1", version=sdf_version)
         self.normal = normal
 
     def to_version(self, target_version: str) -> "Normal":
@@ -23,13 +23,15 @@ class Normal(BaseModel):
         new_obj = self.__class__(**kwargs)
         return new_obj
 
-    def to_sdf(self, version: str = None) -> ET.Element:
-        if version is not None and version != self.__version__:
+    def to_sdf(self, version: str | None = None) -> ET.Element:
+        if self.__version__ is None and version is not None:
+            self.__version__ = version
+        elif version is not None and version != self.__version__:
             return self.to_version(version).to_sdf()
-        version = version or self.__version__
+        version = self.__version__ or version
         el = ET.Element("normal")
         if self.normal is not None:
-            el.text = self.normal.to_sdf()
+            el.text = self.normal.to_sdf(version)
         return el
 
     @classmethod
@@ -42,10 +44,25 @@ class Normal(BaseModel):
 
 
 class Plane(BaseModel):
-    def __init__(self, sdf_version: str, normal: "Normal" = None, size: "Size" = None):
+    def __init__(
+        self,
+        sdf_version: str | None = None,
+        normal: "Normal" = None,
+        size: "Size" = None
+    ):
         self.__version__ = sdf_version
         self.normal = normal
         self.size = size
+        if self.normal is not None:
+            if getattr(self.normal, '__version__', None) is None:
+                self.normal.__version__ = self.__version__
+            elif getattr(self.normal, '__version__', None) != self.__version__ and self.__version__ is not None:
+                self.normal = self.normal.to_version(self.__version__)
+        if self.size is not None:
+            if getattr(self.size, '__version__', None) is None:
+                self.size.__version__ = self.__version__
+            elif getattr(self.size, '__version__', None) != self.__version__ and self.__version__ is not None:
+                self.size = self.size.to_version(self.__version__)
 
     def to_version(self, target_version: str) -> "Plane":
         kwargs = {"sdf_version": target_version}
@@ -54,10 +71,12 @@ class Plane(BaseModel):
         new_obj = self.__class__(**kwargs)
         return new_obj
 
-    def to_sdf(self, version: str = None) -> ET.Element:
-        if version is not None and version != self.__version__:
+    def to_sdf(self, version: str | None = None) -> ET.Element:
+        if self.__version__ is None and version is not None:
+            self.__version__ = version
+        elif version is not None and version != self.__version__:
             return self.to_version(version).to_sdf()
-        version = version or self.__version__
+        version = self.__version__ or version
         el = ET.Element("plane")
         if self.normal is not None:
             el.append(self.normal.to_sdf(version))
@@ -87,10 +106,10 @@ class Plane(BaseModel):
 
 
 class Size(BaseModel):
-    def __init__(self, sdf_version: str, size: _SDFVector2d = None):
+    def __init__(self, sdf_version: str | None = None, size: _SDFVector2d = None):
         self.__version__ = sdf_version
         if size is None:
-            size = _SDFVector2d.from_sdf("1 1")
+            size = _SDFVector2d.from_sdf("1 1", version=sdf_version)
         self.size = size
 
     def to_version(self, target_version: str) -> "Size":
@@ -99,13 +118,15 @@ class Size(BaseModel):
         new_obj = self.__class__(**kwargs)
         return new_obj
 
-    def to_sdf(self, version: str = None) -> ET.Element:
-        if version is not None and version != self.__version__:
+    def to_sdf(self, version: str | None = None) -> ET.Element:
+        if self.__version__ is None and version is not None:
+            self.__version__ = version
+        elif version is not None and version != self.__version__:
             return self.to_version(version).to_sdf()
-        version = version or self.__version__
+        version = self.__version__ or version
         el = ET.Element("size")
         if self.size is not None:
-            el.text = self.size.to_sdf()
+            el.text = self.size.to_sdf(version)
         return el
 
     @classmethod

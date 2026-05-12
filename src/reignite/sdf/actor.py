@@ -56,7 +56,7 @@ def _parse_double(raw: str) -> float | SDFError:
 class Actor(BaseModel):
     def __init__(
         self,
-        sdf_version: str,
+        sdf_version: str | None = None,
         animation: List["Animation"] = None,
         frame: List["Frame"] = None,
         joint: List["Joint"] = None,
@@ -81,6 +81,51 @@ class Actor(BaseModel):
         self.script = script
         self.skin = skin
         self.static = static
+        for _i, _c in enumerate(self.animation):
+            if getattr(_c, '__version__', None) is None:
+                _c.__version__ = self.__version__
+            elif getattr(_c, '__version__', None) != self.__version__ and self.__version__ is not None:
+                self.animation[_i] = _c.to_version(self.__version__)
+        for _i, _c in enumerate(self.frame):
+            if getattr(_c, '__version__', None) is None:
+                _c.__version__ = self.__version__
+            elif getattr(_c, '__version__', None) != self.__version__ and self.__version__ is not None:
+                self.frame[_i] = _c.to_version(self.__version__)
+        for _i, _c in enumerate(self.joint):
+            if getattr(_c, '__version__', None) is None:
+                _c.__version__ = self.__version__
+            elif getattr(_c, '__version__', None) != self.__version__ and self.__version__ is not None:
+                self.joint[_i] = _c.to_version(self.__version__)
+        for _i, _c in enumerate(self.link):
+            if getattr(_c, '__version__', None) is None:
+                _c.__version__ = self.__version__
+            elif getattr(_c, '__version__', None) != self.__version__ and self.__version__ is not None:
+                self.link[_i] = _c.to_version(self.__version__)
+        if self.origin is not None:
+            if getattr(self.origin, '__version__', None) is None:
+                self.origin.__version__ = self.__version__
+            elif getattr(self.origin, '__version__', None) != self.__version__ and self.__version__ is not None:
+                self.origin = self.origin.to_version(self.__version__)
+        for _i, _c in enumerate(self.plugin):
+            if getattr(_c, '__version__', None) is None:
+                _c.__version__ = self.__version__
+            elif getattr(_c, '__version__', None) != self.__version__ and self.__version__ is not None:
+                self.plugin[_i] = _c.to_version(self.__version__)
+        if self.pose is not None:
+            if getattr(self.pose, '__version__', None) is None:
+                self.pose.__version__ = self.__version__
+            elif getattr(self.pose, '__version__', None) != self.__version__ and self.__version__ is not None:
+                self.pose = self.pose.to_version(self.__version__)
+        if self.script is not None:
+            if getattr(self.script, '__version__', None) is None:
+                self.script.__version__ = self.__version__
+            elif getattr(self.script, '__version__', None) != self.__version__ and self.__version__ is not None:
+                self.script = self.script.to_version(self.__version__)
+        if self.skin is not None:
+            if getattr(self.skin, '__version__', None) is None:
+                self.skin.__version__ = self.__version__
+            elif getattr(self.skin, '__version__', None) != self.__version__ and self.__version__ is not None:
+                self.skin = self.skin.to_version(self.__version__)
 
     def to_version(self, target_version: str) -> "Actor":
         from ..elements.frame import Frame
@@ -113,15 +158,17 @@ class Actor(BaseModel):
         new_obj = self.__class__(**kwargs)
         return new_obj
 
-    def to_sdf(self, version: str = None) -> ET.Element:
+    def to_sdf(self, version: str | None = None) -> ET.Element:
         from ..elements.frame import Frame
         from ..elements.joint import Joint
         from ..elements.link import Link
         from ..elements.plugin import Plugin
         from ..elements.pose import Pose
-        if version is not None and version != self.__version__:
+        if self.__version__ is None and version is not None:
+            self.__version__ = version
+        elif version is not None and version != self.__version__:
             return self.to_version(version).to_sdf()
-        version = version or self.__version__
+        version = self.__version__ or version
         el = ET.Element("actor")
         for item in (self.animation or []):
             el.append(item.to_sdf(version))
@@ -237,7 +284,7 @@ class Actor(BaseModel):
 class Animation(BaseModel):
     def __init__(
         self,
-        sdf_version: str,
+        sdf_version: str | None = None,
         filename: str = "__default__",
         interpolate_x: bool = False,
         name: str = "__default__",
@@ -264,10 +311,12 @@ class Animation(BaseModel):
         new_obj = self.__class__(**kwargs)
         return new_obj
 
-    def to_sdf(self, version: str = None) -> ET.Element:
-        if version is not None and version != self.__version__:
+    def to_sdf(self, version: str | None = None) -> ET.Element:
+        if self.__version__ is None and version is not None:
+            self.__version__ = version
+        elif version is not None and version != self.__version__:
             return self.to_version(version).to_sdf()
-        version = version or self.__version__
+        version = self.__version__ or version
         el = ET.Element("animation")
         if self.filename is not None:
             el.set("filename", self.filename)
@@ -297,7 +346,7 @@ class Animation(BaseModel):
 
 
 class AutoStart(BaseModel):
-    def __init__(self, sdf_version: str, auto_start: bool = True):
+    def __init__(self, sdf_version: str | None = None, auto_start: bool = True):
         self.__version__ = sdf_version
         self.auto_start = auto_start
 
@@ -309,10 +358,12 @@ class AutoStart(BaseModel):
         new_obj = self.__class__(**kwargs)
         return new_obj
 
-    def to_sdf(self, version: str = None) -> ET.Element:
-        if version is not None and version != self.__version__:
+    def to_sdf(self, version: str | None = None) -> ET.Element:
+        if self.__version__ is None and version is not None:
+            self.__version__ = version
+        elif version is not None and version != self.__version__:
             return self.to_version(version).to_sdf()
-        version = version or self.__version__
+        version = self.__version__ or version
         el = ET.Element("auto_start")
         if self.auto_start is not None:
             el.text = str(self.auto_start).lower()
@@ -331,7 +382,7 @@ class AutoStart(BaseModel):
 
 
 class DelayStart(BaseModel):
-    def __init__(self, sdf_version: str, delay_start: float = 0.0):
+    def __init__(self, sdf_version: str | None = None, delay_start: float = 0.0):
         self.__version__ = sdf_version
         self.delay_start = delay_start
 
@@ -343,10 +394,12 @@ class DelayStart(BaseModel):
         new_obj = self.__class__(**kwargs)
         return new_obj
 
-    def to_sdf(self, version: str = None) -> ET.Element:
-        if version is not None and version != self.__version__:
+    def to_sdf(self, version: str | None = None) -> ET.Element:
+        if self.__version__ is None and version is not None:
+            self.__version__ = version
+        elif version is not None and version != self.__version__:
             return self.to_version(version).to_sdf()
-        version = version or self.__version__
+        version = self.__version__ or version
         el = ET.Element("delay_start")
         if self.delay_start is not None:
             el.text = str(self.delay_start)
@@ -365,7 +418,7 @@ class DelayStart(BaseModel):
 
 
 class Filename(BaseModel):
-    def __init__(self, sdf_version: str, filename: str = "__default__"):
+    def __init__(self, sdf_version: str | None = None, filename: str = "__default__"):
         self.__version__ = sdf_version
         self.filename = filename
 
@@ -377,10 +430,12 @@ class Filename(BaseModel):
         new_obj = self.__class__(**kwargs)
         return new_obj
 
-    def to_sdf(self, version: str = None) -> ET.Element:
-        if version is not None and version != self.__version__:
+    def to_sdf(self, version: str | None = None) -> ET.Element:
+        if self.__version__ is None and version is not None:
+            self.__version__ = version
+        elif version is not None and version != self.__version__:
             return self.to_version(version).to_sdf()
-        version = version or self.__version__
+        version = self.__version__ or version
         el = ET.Element("filename")
         if self.filename is not None:
             el.text = self.filename
@@ -399,7 +454,7 @@ class Filename(BaseModel):
 
 
 class InterpolateX(BaseModel):
-    def __init__(self, sdf_version: str, interpolate_x: bool = False):
+    def __init__(self, sdf_version: str | None = None, interpolate_x: bool = False):
         self.__version__ = sdf_version
         self.interpolate_x = interpolate_x
 
@@ -411,10 +466,12 @@ class InterpolateX(BaseModel):
         new_obj = self.__class__(**kwargs)
         return new_obj
 
-    def to_sdf(self, version: str = None) -> ET.Element:
-        if version is not None and version != self.__version__:
+    def to_sdf(self, version: str | None = None) -> ET.Element:
+        if self.__version__ is None and version is not None:
+            self.__version__ = version
+        elif version is not None and version != self.__version__:
             return self.to_version(version).to_sdf()
-        version = version or self.__version__
+        version = self.__version__ or version
         el = ET.Element("interpolate_x")
         if self.interpolate_x is not None:
             el.text = str(self.interpolate_x).lower()
@@ -433,7 +490,7 @@ class InterpolateX(BaseModel):
 
 
 class Loop(BaseModel):
-    def __init__(self, sdf_version: str, loop: bool = True):
+    def __init__(self, sdf_version: str | None = None, loop: bool = True):
         self.__version__ = sdf_version
         self.loop = loop
 
@@ -445,10 +502,12 @@ class Loop(BaseModel):
         new_obj = self.__class__(**kwargs)
         return new_obj
 
-    def to_sdf(self, version: str = None) -> ET.Element:
-        if version is not None and version != self.__version__:
+    def to_sdf(self, version: str | None = None) -> ET.Element:
+        if self.__version__ is None and version is not None:
+            self.__version__ = version
+        elif version is not None and version != self.__version__:
             return self.to_version(version).to_sdf()
-        version = version or self.__version__
+        version = self.__version__ or version
         el = ET.Element("loop")
         if self.loop is not None:
             el.text = str(self.loop).lower()
@@ -467,10 +526,10 @@ class Loop(BaseModel):
 
 
 class Origin(BaseModel):
-    def __init__(self, sdf_version: str, pose: _SDFPose = None):
+    def __init__(self, sdf_version: str | None = None, pose: _SDFPose = None):
         self.__version__ = sdf_version
         if pose is None:
-            pose = _SDFPose.from_sdf("0 0 0 0 0 0")
+            pose = _SDFPose.from_sdf("0 0 0 0 0 0", version=sdf_version)
         self.pose = pose
 
     def to_version(self, target_version: str) -> "Origin":
@@ -479,13 +538,15 @@ class Origin(BaseModel):
         new_obj = self.__class__(**kwargs)
         return new_obj
 
-    def to_sdf(self, version: str = None) -> ET.Element:
-        if version is not None and version != self.__version__:
+    def to_sdf(self, version: str | None = None) -> ET.Element:
+        if self.__version__ is None and version is not None:
+            self.__version__ = version
+        elif version is not None and version != self.__version__:
             return self.to_version(version).to_sdf()
-        version = version or self.__version__
+        version = self.__version__ or version
         el = ET.Element("origin")
         if self.pose is not None:
-            el.set("pose", self.pose.to_sdf())
+            el.set("pose", self.pose.to_sdf(version))
         return el
 
     @classmethod
@@ -499,10 +560,10 @@ class Origin(BaseModel):
 class Pose(BaseModel):
     _MIGRATIONS = [{"version": "1.7", "ops": [{"type": "move", "from": "frame", "to": "relative_to"}]}]
 
-    def __init__(self, sdf_version: str, pose: _SDFPose = None):
+    def __init__(self, sdf_version: str | None = None, pose: _SDFPose = None):
         self.__version__ = sdf_version
         if pose is None:
-            pose = _SDFPose.from_sdf("0 0 0 0 0 0")
+            pose = _SDFPose.from_sdf("0 0 0 0 0 0", version=sdf_version)
         self.pose = pose
 
     def to_version(self, target_version: str) -> "Pose":
@@ -514,13 +575,15 @@ class Pose(BaseModel):
         apply_migrations(new_obj, target_version)
         return new_obj
 
-    def to_sdf(self, version: str = None) -> ET.Element:
-        if version is not None and version != self.__version__:
+    def to_sdf(self, version: str | None = None) -> ET.Element:
+        if self.__version__ is None and version is not None:
+            self.__version__ = version
+        elif version is not None and version != self.__version__:
             return self.to_version(version).to_sdf()
-        version = version or self.__version__
+        version = self.__version__ or version
         el = ET.Element("pose")
         if self.pose is not None:
-            el.text = self.pose.to_sdf()
+            el.text = self.pose.to_sdf(version)
         return el
 
     @classmethod
@@ -536,7 +599,7 @@ class Pose(BaseModel):
 
 
 class Scale(BaseModel):
-    def __init__(self, sdf_version: str, scale: float = 1.0):
+    def __init__(self, sdf_version: str | None = None, scale: float = 1.0):
         self.__version__ = sdf_version
         self.scale = scale
 
@@ -548,10 +611,12 @@ class Scale(BaseModel):
         new_obj = self.__class__(**kwargs)
         return new_obj
 
-    def to_sdf(self, version: str = None) -> ET.Element:
-        if version is not None and version != self.__version__:
+    def to_sdf(self, version: str | None = None) -> ET.Element:
+        if self.__version__ is None and version is not None:
+            self.__version__ = version
+        elif version is not None and version != self.__version__:
             return self.to_version(version).to_sdf()
-        version = version or self.__version__
+        version = self.__version__ or version
         el = ET.Element("scale")
         if self.scale is not None:
             el.text = str(self.scale)
@@ -572,7 +637,7 @@ class Scale(BaseModel):
 class Script(BaseModel):
     def __init__(
         self,
-        sdf_version: str,
+        sdf_version: str | None = None,
         auto_start: bool = True,
         delay_start: float = 0.0,
         loop: bool = True,
@@ -583,6 +648,11 @@ class Script(BaseModel):
         self.delay_start = delay_start
         self.loop = loop
         self.trajectory = trajectory or []
+        for _i, _c in enumerate(self.trajectory):
+            if getattr(_c, '__version__', None) is None:
+                _c.__version__ = self.__version__
+            elif getattr(_c, '__version__', None) != self.__version__ and self.__version__ is not None:
+                self.trajectory[_i] = _c.to_version(self.__version__)
 
     def to_version(self, target_version: str) -> "Script":
         if self.auto_start is not None and cmp_version(target_version, "1.2") >= 0:
@@ -599,10 +669,12 @@ class Script(BaseModel):
         new_obj = self.__class__(**kwargs)
         return new_obj
 
-    def to_sdf(self, version: str = None) -> ET.Element:
-        if version is not None and version != self.__version__:
+    def to_sdf(self, version: str | None = None) -> ET.Element:
+        if self.__version__ is None and version is not None:
+            self.__version__ = version
+        elif version is not None and version != self.__version__:
             return self.to_version(version).to_sdf()
-        version = version or self.__version__
+        version = self.__version__ or version
         el = ET.Element("script")
         if self.auto_start is not None:
             el.set("auto_start", str(self.auto_start).lower())
@@ -635,7 +707,12 @@ class Script(BaseModel):
 
 
 class Skin(BaseModel):
-    def __init__(self, sdf_version: str, filename: str = "__default__", scale: float = 1.0):
+    def __init__(
+        self,
+        sdf_version: str | None = None,
+        filename: str = "__default__",
+        scale: float = 1.0
+    ):
         self.__version__ = sdf_version
         self.filename = filename
         self.scale = scale
@@ -651,10 +728,12 @@ class Skin(BaseModel):
         new_obj = self.__class__(**kwargs)
         return new_obj
 
-    def to_sdf(self, version: str = None) -> ET.Element:
-        if version is not None and version != self.__version__:
+    def to_sdf(self, version: str | None = None) -> ET.Element:
+        if self.__version__ is None and version is not None:
+            self.__version__ = version
+        elif version is not None and version != self.__version__:
             return self.to_version(version).to_sdf()
-        version = version or self.__version__
+        version = self.__version__ or version
         el = ET.Element("skin")
         if self.filename is not None:
             el.set("filename", self.filename)
@@ -674,7 +753,7 @@ class Skin(BaseModel):
 
 
 class Static(BaseModel):
-    def __init__(self, sdf_version: str, static: bool = True):
+    def __init__(self, sdf_version: str | None = None, static: bool = True):
         self.__version__ = sdf_version
         self.static = static
 
@@ -688,10 +767,12 @@ class Static(BaseModel):
         new_obj = self.__class__(**kwargs)
         return new_obj
 
-    def to_sdf(self, version: str = None) -> ET.Element:
-        if version is not None and version != self.__version__:
+    def to_sdf(self, version: str | None = None) -> ET.Element:
+        if self.__version__ is None and version is not None:
+            self.__version__ = version
+        elif version is not None and version != self.__version__:
             return self.to_version(version).to_sdf()
-        version = version or self.__version__
+        version = self.__version__ or version
         el = ET.Element("static")
         if self.static is not None:
             el.text = str(self.static).lower()
@@ -710,7 +791,7 @@ class Static(BaseModel):
 
 
 class Time(BaseModel):
-    def __init__(self, sdf_version: str, time: float = 0.0):
+    def __init__(self, sdf_version: str | None = None, time: float = 0.0):
         self.__version__ = sdf_version
         self.time = time
 
@@ -722,10 +803,12 @@ class Time(BaseModel):
         new_obj = self.__class__(**kwargs)
         return new_obj
 
-    def to_sdf(self, version: str = None) -> ET.Element:
-        if version is not None and version != self.__version__:
+    def to_sdf(self, version: str | None = None) -> ET.Element:
+        if self.__version__ is None and version is not None:
+            self.__version__ = version
+        elif version is not None and version != self.__version__:
             return self.to_version(version).to_sdf()
-        version = version or self.__version__
+        version = self.__version__ or version
         el = ET.Element("time")
         if self.time is not None:
             el.text = str(self.time)
@@ -746,7 +829,7 @@ class Time(BaseModel):
 class Trajectory(BaseModel):
     def __init__(
         self,
-        sdf_version: str,
+        sdf_version: str | None = None,
         id: int = 0,
         tension: float = 0.0,
         type: str = "__default__",
@@ -757,6 +840,11 @@ class Trajectory(BaseModel):
         self.tension = tension
         self.type = type
         self.waypoint = waypoint or []
+        for _i, _c in enumerate(self.waypoint):
+            if getattr(_c, '__version__', None) is None:
+                _c.__version__ = self.__version__
+            elif getattr(_c, '__version__', None) != self.__version__ and self.__version__ is not None:
+                self.waypoint[_i] = _c.to_version(self.__version__)
 
     def to_version(self, target_version: str) -> "Trajectory":
         if self.tension is not None and cmp_version(target_version, "1.6") < 0:
@@ -769,10 +857,12 @@ class Trajectory(BaseModel):
         new_obj = self.__class__(**kwargs)
         return new_obj
 
-    def to_sdf(self, version: str = None) -> ET.Element:
-        if version is not None and version != self.__version__:
+    def to_sdf(self, version: str | None = None) -> ET.Element:
+        if self.__version__ is None and version is not None:
+            self.__version__ = version
+        elif version is not None and version != self.__version__:
             return self.to_version(version).to_sdf()
-        version = version or self.__version__
+        version = self.__version__ or version
         el = ET.Element("trajectory")
         if self.id is not None:
             el.set("id", str(self.id))
@@ -808,10 +898,10 @@ class Trajectory(BaseModel):
 
 
 class Waypoint(BaseModel):
-    def __init__(self, sdf_version: str, pose: _SDFPose = None, time: float = 0.0):
+    def __init__(self, sdf_version: str | None = None, pose: _SDFPose = None, time: float = 0.0):
         self.__version__ = sdf_version
         if pose is None:
-            pose = _SDFPose.from_sdf("0 0 0 0 0 0")
+            pose = _SDFPose.from_sdf("0 0 0 0 0 0", version=sdf_version)
         self.pose = pose
         self.time = time
 
@@ -826,13 +916,15 @@ class Waypoint(BaseModel):
         new_obj = self.__class__(**kwargs)
         return new_obj
 
-    def to_sdf(self, version: str = None) -> ET.Element:
-        if version is not None and version != self.__version__:
+    def to_sdf(self, version: str | None = None) -> ET.Element:
+        if self.__version__ is None and version is not None:
+            self.__version__ = version
+        elif version is not None and version != self.__version__:
             return self.to_version(version).to_sdf()
-        version = version or self.__version__
+        version = self.__version__ or version
         el = ET.Element("waypoint")
         if self.pose is not None:
-            el.set("pose", self.pose.to_sdf())
+            el.set("pose", self.pose.to_sdf(version))
         if self.time is not None:
             el.set("time", str(self.time))
         return el

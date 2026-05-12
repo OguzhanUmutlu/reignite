@@ -42,10 +42,25 @@ def _parse_double(raw: str) -> float | SDFError:
 
 
 class Cylinder(BaseModel):
-    def __init__(self, sdf_version: str, length: "Length" = None, radius: "Radius" = None):
+    def __init__(
+        self,
+        sdf_version: str | None = None,
+        length: "Length" = None,
+        radius: "Radius" = None
+    ):
         self.__version__ = sdf_version
         self.length = length
         self.radius = radius
+        if self.length is not None:
+            if getattr(self.length, '__version__', None) is None:
+                self.length.__version__ = self.__version__
+            elif getattr(self.length, '__version__', None) != self.__version__ and self.__version__ is not None:
+                self.length = self.length.to_version(self.__version__)
+        if self.radius is not None:
+            if getattr(self.radius, '__version__', None) is None:
+                self.radius.__version__ = self.__version__
+            elif getattr(self.radius, '__version__', None) != self.__version__ and self.__version__ is not None:
+                self.radius = self.radius.to_version(self.__version__)
 
     def to_version(self, target_version: str) -> "Cylinder":
         kwargs = {"sdf_version": target_version}
@@ -54,10 +69,12 @@ class Cylinder(BaseModel):
         new_obj = self.__class__(**kwargs)
         return new_obj
 
-    def to_sdf(self, version: str = None) -> ET.Element:
-        if version is not None and version != self.__version__:
+    def to_sdf(self, version: str | None = None) -> ET.Element:
+        if self.__version__ is None and version is not None:
+            self.__version__ = version
+        elif version is not None and version != self.__version__:
             return self.to_version(version).to_sdf()
-        version = version or self.__version__
+        version = self.__version__ or version
         el = ET.Element("cylinder")
         if self.length is not None:
             el.append(self.length.to_sdf(version))
@@ -87,7 +104,7 @@ class Cylinder(BaseModel):
 
 
 class Length(BaseModel):
-    def __init__(self, sdf_version: str, length: float = 1):
+    def __init__(self, sdf_version: str | None = None, length: float = 1):
         self.__version__ = sdf_version
         self.length = length
 
@@ -97,10 +114,12 @@ class Length(BaseModel):
         new_obj = self.__class__(**kwargs)
         return new_obj
 
-    def to_sdf(self, version: str = None) -> ET.Element:
-        if version is not None and version != self.__version__:
+    def to_sdf(self, version: str | None = None) -> ET.Element:
+        if self.__version__ is None and version is not None:
+            self.__version__ = version
+        elif version is not None and version != self.__version__:
             return self.to_version(version).to_sdf()
-        version = version or self.__version__
+        version = self.__version__ or version
         el = ET.Element("length")
         if self.length is not None:
             el.text = str(self.length)
@@ -116,7 +135,7 @@ class Length(BaseModel):
 
 
 class Radius(BaseModel):
-    def __init__(self, sdf_version: str, radius: float = 1):
+    def __init__(self, sdf_version: str | None = None, radius: float = 1):
         self.__version__ = sdf_version
         self.radius = radius
 
@@ -126,10 +145,12 @@ class Radius(BaseModel):
         new_obj = self.__class__(**kwargs)
         return new_obj
 
-    def to_sdf(self, version: str = None) -> ET.Element:
-        if version is not None and version != self.__version__:
+    def to_sdf(self, version: str | None = None) -> ET.Element:
+        if self.__version__ is None and version is not None:
+            self.__version__ = version
+        elif version is not None and version != self.__version__:
             return self.to_version(version).to_sdf()
-        version = version or self.__version__
+        version = self.__version__ or version
         el = ET.Element("radius")
         if self.radius is not None:
             el.text = str(self.radius)

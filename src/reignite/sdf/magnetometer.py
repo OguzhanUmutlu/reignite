@@ -12,11 +12,26 @@ if typing.TYPE_CHECKING:
 
 
 class Magnetometer(BaseModel):
-    def __init__(self, sdf_version: str, x: "X" = None, y: "Y" = None, z: "Z" = None):
+    def __init__(self, sdf_version: str | None = None, x: "X" = None, y: "Y" = None, z: "Z" = None):
         self.__version__ = sdf_version
         self.x = x
         self.y = y
         self.z = z
+        if self.x is not None:
+            if getattr(self.x, '__version__', None) is None:
+                self.x.__version__ = self.__version__
+            elif getattr(self.x, '__version__', None) != self.__version__ and self.__version__ is not None:
+                self.x = self.x.to_version(self.__version__)
+        if self.y is not None:
+            if getattr(self.y, '__version__', None) is None:
+                self.y.__version__ = self.__version__
+            elif getattr(self.y, '__version__', None) != self.__version__ and self.__version__ is not None:
+                self.y = self.y.to_version(self.__version__)
+        if self.z is not None:
+            if getattr(self.z, '__version__', None) is None:
+                self.z.__version__ = self.__version__
+            elif getattr(self.z, '__version__', None) != self.__version__ and self.__version__ is not None:
+                self.z = self.z.to_version(self.__version__)
 
     def to_version(self, target_version: str) -> "Magnetometer":
         kwargs = {"sdf_version": target_version}
@@ -26,10 +41,12 @@ class Magnetometer(BaseModel):
         new_obj = self.__class__(**kwargs)
         return new_obj
 
-    def to_sdf(self, version: str = None) -> ET.Element:
-        if version is not None and version != self.__version__:
+    def to_sdf(self, version: str | None = None) -> ET.Element:
+        if self.__version__ is None and version is not None:
+            self.__version__ = version
+        elif version is not None and version != self.__version__:
             return self.to_version(version).to_sdf()
-        version = version or self.__version__
+        version = self.__version__ or version
         el = ET.Element("magnetometer")
         if self.x is not None:
             el.append(self.x.to_sdf(version))
@@ -69,9 +86,14 @@ class Magnetometer(BaseModel):
 
 
 class X(BaseModel):
-    def __init__(self, sdf_version: str, noise: "Noise" = None):
+    def __init__(self, sdf_version: str | None = None, noise: "Noise" = None):
         self.__version__ = sdf_version
         self.noise = noise
+        if self.noise is not None:
+            if getattr(self.noise, '__version__', None) is None:
+                self.noise.__version__ = self.__version__
+            elif getattr(self.noise, '__version__', None) != self.__version__ and self.__version__ is not None:
+                self.noise = self.noise.to_version(self.__version__)
 
     def to_version(self, target_version: str) -> "X":
         from ..elements.noise import Noise
@@ -80,11 +102,13 @@ class X(BaseModel):
         new_obj = self.__class__(**kwargs)
         return new_obj
 
-    def to_sdf(self, version: str = None) -> ET.Element:
+    def to_sdf(self, version: str | None = None) -> ET.Element:
         from ..elements.noise import Noise
-        if version is not None and version != self.__version__:
+        if self.__version__ is None and version is not None:
+            self.__version__ = version
+        elif version is not None and version != self.__version__:
             return self.to_version(version).to_sdf()
-        version = version or self.__version__
+        version = self.__version__ or version
         el = ET.Element("x")
         if self.noise is None:
             self.noise = Noise(sdf_version=version)
@@ -110,9 +134,14 @@ class X(BaseModel):
 
 
 class Y(BaseModel):
-    def __init__(self, sdf_version: str, noise: "Noise" = None):
+    def __init__(self, sdf_version: str | None = None, noise: "Noise" = None):
         self.__version__ = sdf_version
         self.noise = noise
+        if self.noise is not None:
+            if getattr(self.noise, '__version__', None) is None:
+                self.noise.__version__ = self.__version__
+            elif getattr(self.noise, '__version__', None) != self.__version__ and self.__version__ is not None:
+                self.noise = self.noise.to_version(self.__version__)
 
     def to_version(self, target_version: str) -> "Y":
         from ..elements.noise import Noise
@@ -121,11 +150,13 @@ class Y(BaseModel):
         new_obj = self.__class__(**kwargs)
         return new_obj
 
-    def to_sdf(self, version: str = None) -> ET.Element:
+    def to_sdf(self, version: str | None = None) -> ET.Element:
         from ..elements.noise import Noise
-        if version is not None and version != self.__version__:
+        if self.__version__ is None and version is not None:
+            self.__version__ = version
+        elif version is not None and version != self.__version__:
             return self.to_version(version).to_sdf()
-        version = version or self.__version__
+        version = self.__version__ or version
         el = ET.Element("y")
         if self.noise is None:
             self.noise = Noise(sdf_version=version)
@@ -151,9 +182,14 @@ class Y(BaseModel):
 
 
 class Z(BaseModel):
-    def __init__(self, sdf_version: str, noise: "Noise" = None):
+    def __init__(self, sdf_version: str | None = None, noise: "Noise" = None):
         self.__version__ = sdf_version
         self.noise = noise
+        if self.noise is not None:
+            if getattr(self.noise, '__version__', None) is None:
+                self.noise.__version__ = self.__version__
+            elif getattr(self.noise, '__version__', None) != self.__version__ and self.__version__ is not None:
+                self.noise = self.noise.to_version(self.__version__)
 
     def to_version(self, target_version: str) -> "Z":
         from ..elements.noise import Noise
@@ -162,11 +198,13 @@ class Z(BaseModel):
         new_obj = self.__class__(**kwargs)
         return new_obj
 
-    def to_sdf(self, version: str = None) -> ET.Element:
+    def to_sdf(self, version: str | None = None) -> ET.Element:
         from ..elements.noise import Noise
-        if version is not None and version != self.__version__:
+        if self.__version__ is None and version is not None:
+            self.__version__ = version
+        elif version is not None and version != self.__version__:
             return self.to_version(version).to_sdf()
-        version = version or self.__version__
+        version = self.__version__ or version
         el = ET.Element("z")
         if self.noise is None:
             self.noise = Noise(sdf_version=version)

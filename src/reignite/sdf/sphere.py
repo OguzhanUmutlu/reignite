@@ -42,7 +42,7 @@ def _parse_double(raw: str) -> float | SDFError:
 
 
 class Radius(BaseModel):
-    def __init__(self, sdf_version: str, radius: float = 1):
+    def __init__(self, sdf_version: str | None = None, radius: float = 1):
         self.__version__ = sdf_version
         self.radius = radius
 
@@ -52,10 +52,12 @@ class Radius(BaseModel):
         new_obj = self.__class__(**kwargs)
         return new_obj
 
-    def to_sdf(self, version: str = None) -> ET.Element:
-        if version is not None and version != self.__version__:
+    def to_sdf(self, version: str | None = None) -> ET.Element:
+        if self.__version__ is None and version is not None:
+            self.__version__ = version
+        elif version is not None and version != self.__version__:
             return self.to_version(version).to_sdf()
-        version = version or self.__version__
+        version = self.__version__ or version
         el = ET.Element("radius")
         if self.radius is not None:
             el.text = str(self.radius)
@@ -71,9 +73,14 @@ class Radius(BaseModel):
 
 
 class Sphere(BaseModel):
-    def __init__(self, sdf_version: str, radius: "Radius" = None):
+    def __init__(self, sdf_version: str | None = None, radius: "Radius" = None):
         self.__version__ = sdf_version
         self.radius = radius
+        if self.radius is not None:
+            if getattr(self.radius, '__version__', None) is None:
+                self.radius.__version__ = self.__version__
+            elif getattr(self.radius, '__version__', None) != self.__version__ and self.__version__ is not None:
+                self.radius = self.radius.to_version(self.__version__)
 
     def to_version(self, target_version: str) -> "Sphere":
         kwargs = {"sdf_version": target_version}
@@ -81,10 +88,12 @@ class Sphere(BaseModel):
         new_obj = self.__class__(**kwargs)
         return new_obj
 
-    def to_sdf(self, version: str = None) -> ET.Element:
-        if version is not None and version != self.__version__:
+    def to_sdf(self, version: str | None = None) -> ET.Element:
+        if self.__version__ is None and version is not None:
+            self.__version__ = version
+        elif version is not None and version != self.__version__:
             return self.to_version(version).to_sdf()
-        version = version or self.__version__
+        version = self.__version__ or version
         el = ET.Element("sphere")
         if self.radius is not None:
             el.append(self.radius.to_sdf(version))

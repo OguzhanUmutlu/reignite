@@ -68,7 +68,7 @@ def _parse_double(raw: str) -> float | SDFError:
 
 
 class AlwaysOn(BaseModel):
-    def __init__(self, sdf_version: str, always_on: bool = False):
+    def __init__(self, sdf_version: str | None = None, always_on: bool = False):
         self.__version__ = sdf_version
         self.always_on = always_on
 
@@ -80,10 +80,12 @@ class AlwaysOn(BaseModel):
         new_obj = self.__class__(**kwargs)
         return new_obj
 
-    def to_sdf(self, version: str = None) -> ET.Element:
-        if version is not None and version != self.__version__:
+    def to_sdf(self, version: str | None = None) -> ET.Element:
+        if self.__version__ is None and version is not None:
+            self.__version__ = version
+        elif version is not None and version != self.__version__:
             return self.to_version(version).to_sdf()
-        version = version or self.__version__
+        version = self.__version__ or version
         el = ET.Element("always_on")
         if self.always_on is not None:
             el.text = str(self.always_on).lower()
@@ -102,7 +104,7 @@ class AlwaysOn(BaseModel):
 
 
 class EnableMetrics(BaseModel):
-    def __init__(self, sdf_version: str, enable_metrics: bool = False):
+    def __init__(self, sdf_version: str | None = None, enable_metrics: bool = False):
         self.__version__ = sdf_version
         self.enable_metrics = enable_metrics
 
@@ -114,10 +116,12 @@ class EnableMetrics(BaseModel):
         new_obj = self.__class__(**kwargs)
         return new_obj
 
-    def to_sdf(self, version: str = None) -> ET.Element:
-        if version is not None and version != self.__version__:
+    def to_sdf(self, version: str | None = None) -> ET.Element:
+        if self.__version__ is None and version is not None:
+            self.__version__ = version
+        elif version is not None and version != self.__version__:
             return self.to_version(version).to_sdf()
-        version = version or self.__version__
+        version = self.__version__ or version
         el = ET.Element("enable_metrics")
         if self.enable_metrics is not None:
             el.text = str(self.enable_metrics).lower()
@@ -136,7 +140,7 @@ class EnableMetrics(BaseModel):
 
 
 class FrameId(BaseModel):
-    def __init__(self, sdf_version: str, frame_id: str = ""):
+    def __init__(self, sdf_version: str | None = None, frame_id: str = ""):
         self.__version__ = sdf_version
         self.frame_id = frame_id
 
@@ -148,10 +152,12 @@ class FrameId(BaseModel):
         new_obj = self.__class__(**kwargs)
         return new_obj
 
-    def to_sdf(self, version: str = None) -> ET.Element:
-        if version is not None and version != self.__version__:
+    def to_sdf(self, version: str | None = None) -> ET.Element:
+        if self.__version__ is None and version is not None:
+            self.__version__ = version
+        elif version is not None and version != self.__version__:
             return self.to_version(version).to_sdf()
-        version = version or self.__version__
+        version = self.__version__ or version
         el = ET.Element("frame_id")
         if self.frame_id is not None:
             el.text = self.frame_id
@@ -170,10 +176,10 @@ class FrameId(BaseModel):
 
 
 class Origin(BaseModel):
-    def __init__(self, sdf_version: str, pose: _SDFPose = None):
+    def __init__(self, sdf_version: str | None = None, pose: _SDFPose = None):
         self.__version__ = sdf_version
         if pose is None:
-            pose = _SDFPose.from_sdf("0 0 0 0 0 0")
+            pose = _SDFPose.from_sdf("0 0 0 0 0 0", version=sdf_version)
         self.pose = pose
 
     def to_version(self, target_version: str) -> "Origin":
@@ -182,13 +188,15 @@ class Origin(BaseModel):
         new_obj = self.__class__(**kwargs)
         return new_obj
 
-    def to_sdf(self, version: str = None) -> ET.Element:
-        if version is not None and version != self.__version__:
+    def to_sdf(self, version: str | None = None) -> ET.Element:
+        if self.__version__ is None and version is not None:
+            self.__version__ = version
+        elif version is not None and version != self.__version__:
             return self.to_version(version).to_sdf()
-        version = version or self.__version__
+        version = self.__version__ or version
         el = ET.Element("origin")
         if self.pose is not None:
-            el.set("pose", self.pose.to_sdf())
+            el.set("pose", self.pose.to_sdf(version))
         return el
 
     @classmethod
@@ -202,7 +210,7 @@ class Origin(BaseModel):
 class Sensor(BaseModel):
     def __init__(
         self,
-        sdf_version: str,
+        sdf_version: str | None = None,
         air_pressure: "AirPressure" = None,
         air_speed: "AirSpeed" = None,
         altimeter: "Altimeter" = None,
@@ -263,6 +271,126 @@ class Sensor(BaseModel):
         self.type = type
         self.update_rate = update_rate
         self.visualize = visualize
+        if self.air_pressure is not None:
+            if getattr(self.air_pressure, '__version__', None) is None:
+                self.air_pressure.__version__ = self.__version__
+            elif getattr(self.air_pressure, '__version__', None) != self.__version__ and self.__version__ is not None:
+                self.air_pressure = self.air_pressure.to_version(self.__version__)
+        if self.air_speed is not None:
+            if getattr(self.air_speed, '__version__', None) is None:
+                self.air_speed.__version__ = self.__version__
+            elif getattr(self.air_speed, '__version__', None) != self.__version__ and self.__version__ is not None:
+                self.air_speed = self.air_speed.to_version(self.__version__)
+        if self.altimeter is not None:
+            if getattr(self.altimeter, '__version__', None) is None:
+                self.altimeter.__version__ = self.__version__
+            elif getattr(self.altimeter, '__version__', None) != self.__version__ and self.__version__ is not None:
+                self.altimeter = self.altimeter.to_version(self.__version__)
+        if self.camera is not None:
+            if getattr(self.camera, '__version__', None) is None:
+                self.camera.__version__ = self.__version__
+            elif getattr(self.camera, '__version__', None) != self.__version__ and self.__version__ is not None:
+                self.camera = self.camera.to_version(self.__version__)
+        if self.contact is not None:
+            if getattr(self.contact, '__version__', None) is None:
+                self.contact.__version__ = self.__version__
+            elif getattr(self.contact, '__version__', None) != self.__version__ and self.__version__ is not None:
+                self.contact = self.contact.to_version(self.__version__)
+        if self.enable_metrics is not None:
+            if getattr(self.enable_metrics, '__version__', None) is None:
+                self.enable_metrics.__version__ = self.__version__
+            elif getattr(self.enable_metrics, '__version__', None) != self.__version__ and self.__version__ is not None:
+                self.enable_metrics = self.enable_metrics.to_version(self.__version__)
+        if self.force_torque is not None:
+            if getattr(self.force_torque, '__version__', None) is None:
+                self.force_torque.__version__ = self.__version__
+            elif getattr(self.force_torque, '__version__', None) != self.__version__ and self.__version__ is not None:
+                self.force_torque = self.force_torque.to_version(self.__version__)
+        for _i, _c in enumerate(self.frame):
+            if getattr(_c, '__version__', None) is None:
+                _c.__version__ = self.__version__
+            elif getattr(_c, '__version__', None) != self.__version__ and self.__version__ is not None:
+                self.frame[_i] = _c.to_version(self.__version__)
+        if self.frame_id is not None:
+            if getattr(self.frame_id, '__version__', None) is None:
+                self.frame_id.__version__ = self.__version__
+            elif getattr(self.frame_id, '__version__', None) != self.__version__ and self.__version__ is not None:
+                self.frame_id = self.frame_id.to_version(self.__version__)
+        if self.gps is not None:
+            if getattr(self.gps, '__version__', None) is None:
+                self.gps.__version__ = self.__version__
+            elif getattr(self.gps, '__version__', None) != self.__version__ and self.__version__ is not None:
+                self.gps = self.gps.to_version(self.__version__)
+        if self.imu is not None:
+            if getattr(self.imu, '__version__', None) is None:
+                self.imu.__version__ = self.__version__
+            elif getattr(self.imu, '__version__', None) != self.__version__ and self.__version__ is not None:
+                self.imu = self.imu.to_version(self.__version__)
+        if self.lidar is not None:
+            if getattr(self.lidar, '__version__', None) is None:
+                self.lidar.__version__ = self.__version__
+            elif getattr(self.lidar, '__version__', None) != self.__version__ and self.__version__ is not None:
+                self.lidar = self.lidar.to_version(self.__version__)
+        if self.logical_camera is not None:
+            if getattr(self.logical_camera, '__version__', None) is None:
+                self.logical_camera.__version__ = self.__version__
+            elif getattr(self.logical_camera, '__version__', None) != self.__version__ and self.__version__ is not None:
+                self.logical_camera = self.logical_camera.to_version(self.__version__)
+        if self.magnetometer is not None:
+            if getattr(self.magnetometer, '__version__', None) is None:
+                self.magnetometer.__version__ = self.__version__
+            elif getattr(self.magnetometer, '__version__', None) != self.__version__ and self.__version__ is not None:
+                self.magnetometer = self.magnetometer.to_version(self.__version__)
+        if self.navsat is not None:
+            if getattr(self.navsat, '__version__', None) is None:
+                self.navsat.__version__ = self.__version__
+            elif getattr(self.navsat, '__version__', None) != self.__version__ and self.__version__ is not None:
+                self.navsat = self.navsat.to_version(self.__version__)
+        if self.origin is not None:
+            if getattr(self.origin, '__version__', None) is None:
+                self.origin.__version__ = self.__version__
+            elif getattr(self.origin, '__version__', None) != self.__version__ and self.__version__ is not None:
+                self.origin = self.origin.to_version(self.__version__)
+        for _i, _c in enumerate(self.plugin):
+            if getattr(_c, '__version__', None) is None:
+                _c.__version__ = self.__version__
+            elif getattr(_c, '__version__', None) != self.__version__ and self.__version__ is not None:
+                self.plugin[_i] = _c.to_version(self.__version__)
+        if self.pose is not None:
+            if getattr(self.pose, '__version__', None) is None:
+                self.pose.__version__ = self.__version__
+            elif getattr(self.pose, '__version__', None) != self.__version__ and self.__version__ is not None:
+                self.pose = self.pose.to_version(self.__version__)
+        if self.ray is not None:
+            if getattr(self.ray, '__version__', None) is None:
+                self.ray.__version__ = self.__version__
+            elif getattr(self.ray, '__version__', None) != self.__version__ and self.__version__ is not None:
+                self.ray = self.ray.to_version(self.__version__)
+        if self.rfid is not None:
+            if getattr(self.rfid, '__version__', None) is None:
+                self.rfid.__version__ = self.__version__
+            elif getattr(self.rfid, '__version__', None) != self.__version__ and self.__version__ is not None:
+                self.rfid = self.rfid.to_version(self.__version__)
+        if self.rfidtag is not None:
+            if getattr(self.rfidtag, '__version__', None) is None:
+                self.rfidtag.__version__ = self.__version__
+            elif getattr(self.rfidtag, '__version__', None) != self.__version__ and self.__version__ is not None:
+                self.rfidtag = self.rfidtag.to_version(self.__version__)
+        if self.sonar is not None:
+            if getattr(self.sonar, '__version__', None) is None:
+                self.sonar.__version__ = self.__version__
+            elif getattr(self.sonar, '__version__', None) != self.__version__ and self.__version__ is not None:
+                self.sonar = self.sonar.to_version(self.__version__)
+        if self.topic is not None:
+            if getattr(self.topic, '__version__', None) is None:
+                self.topic.__version__ = self.__version__
+            elif getattr(self.topic, '__version__', None) != self.__version__ and self.__version__ is not None:
+                self.topic = self.topic.to_version(self.__version__)
+        if self.transceiver is not None:
+            if getattr(self.transceiver, '__version__', None) is None:
+                self.transceiver.__version__ = self.__version__
+            elif getattr(self.transceiver, '__version__', None) != self.__version__ and self.__version__ is not None:
+                self.transceiver = self.transceiver.to_version(self.__version__)
 
     def to_version(self, target_version: str) -> "Sensor":
         from ..elements.air_pressure import AirPressure
@@ -360,7 +488,7 @@ class Sensor(BaseModel):
         new_obj = self.__class__(**kwargs)
         return new_obj
 
-    def to_sdf(self, version: str = None) -> ET.Element:
+    def to_sdf(self, version: str | None = None) -> ET.Element:
         from ..elements.air_pressure import AirPressure
         from ..elements.air_speed import AirSpeed
         from ..elements.altimeter import Altimeter
@@ -381,9 +509,11 @@ class Sensor(BaseModel):
         from ..elements.rfidtag import Rfidtag
         from ..elements.sonar import Sonar
         from ..elements.transceiver import Transceiver
-        if version is not None and version != self.__version__:
+        if self.__version__ is None and version is not None:
+            self.__version__ = version
+        elif version is not None and version != self.__version__:
             return self.to_version(version).to_sdf()
-        version = version or self.__version__
+        version = self.__version__ or version
         el = ET.Element("sensor")
         if self.air_pressure is not None:
             el.append(self.air_pressure.to_sdf(version))
@@ -706,7 +836,7 @@ class Sensor(BaseModel):
 
 
 class Topic(BaseModel):
-    def __init__(self, sdf_version: str, topic: str = "__default"):
+    def __init__(self, sdf_version: str | None = None, topic: str = "__default"):
         self.__version__ = sdf_version
         self.topic = topic
 
@@ -716,10 +846,12 @@ class Topic(BaseModel):
         new_obj = self.__class__(**kwargs)
         return new_obj
 
-    def to_sdf(self, version: str = None) -> ET.Element:
-        if version is not None and version != self.__version__:
+    def to_sdf(self, version: str | None = None) -> ET.Element:
+        if self.__version__ is None and version is not None:
+            self.__version__ = version
+        elif version is not None and version != self.__version__:
             return self.to_version(version).to_sdf()
-        version = version or self.__version__
+        version = self.__version__ or version
         el = ET.Element("topic")
         if self.topic is not None:
             el.text = self.topic
@@ -735,7 +867,7 @@ class Topic(BaseModel):
 
 
 class UpdateRate(BaseModel):
-    def __init__(self, sdf_version: str, update_rate: float = 0):
+    def __init__(self, sdf_version: str | None = None, update_rate: float = 0):
         self.__version__ = sdf_version
         self.update_rate = update_rate
 
@@ -747,10 +879,12 @@ class UpdateRate(BaseModel):
         new_obj = self.__class__(**kwargs)
         return new_obj
 
-    def to_sdf(self, version: str = None) -> ET.Element:
-        if version is not None and version != self.__version__:
+    def to_sdf(self, version: str | None = None) -> ET.Element:
+        if self.__version__ is None and version is not None:
+            self.__version__ = version
+        elif version is not None and version != self.__version__:
             return self.to_version(version).to_sdf()
-        version = version or self.__version__
+        version = self.__version__ or version
         el = ET.Element("update_rate")
         if self.update_rate is not None:
             el.text = str(self.update_rate)
@@ -769,7 +903,7 @@ class UpdateRate(BaseModel):
 
 
 class Visualize(BaseModel):
-    def __init__(self, sdf_version: str, visualize: bool = False):
+    def __init__(self, sdf_version: str | None = None, visualize: bool = False):
         self.__version__ = sdf_version
         self.visualize = visualize
 
@@ -781,10 +915,12 @@ class Visualize(BaseModel):
         new_obj = self.__class__(**kwargs)
         return new_obj
 
-    def to_sdf(self, version: str = None) -> ET.Element:
-        if version is not None and version != self.__version__:
+    def to_sdf(self, version: str | None = None) -> ET.Element:
+        if self.__version__ is None and version is not None:
+            self.__version__ = version
+        elif version is not None and version != self.__version__:
             return self.to_version(version).to_sdf()
-        version = version or self.__version__
+        version = self.__version__ or version
         el = ET.Element("visualize")
         if self.visualize is not None:
             el.text = str(self.visualize).lower()

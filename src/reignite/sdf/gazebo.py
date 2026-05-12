@@ -19,7 +19,7 @@ if typing.TYPE_CHECKING:
 class Gazebo(BaseModel):
     def __init__(
         self,
-        sdf_version: str,
+        sdf_version: str | None = None,
         actor: List["Actor"] = None,
         light: List["Light"] = None,
         model: List["Model"] = None,
@@ -32,6 +32,26 @@ class Gazebo(BaseModel):
         self.model = model or []
         self.version = version
         self.world = world or []
+        for _i, _c in enumerate(self.actor):
+            if getattr(_c, '__version__', None) is None:
+                _c.__version__ = self.__version__
+            elif getattr(_c, '__version__', None) != self.__version__ and self.__version__ is not None:
+                self.actor[_i] = _c.to_version(self.__version__)
+        for _i, _c in enumerate(self.light):
+            if getattr(_c, '__version__', None) is None:
+                _c.__version__ = self.__version__
+            elif getattr(_c, '__version__', None) != self.__version__ and self.__version__ is not None:
+                self.light[_i] = _c.to_version(self.__version__)
+        for _i, _c in enumerate(self.model):
+            if getattr(_c, '__version__', None) is None:
+                _c.__version__ = self.__version__
+            elif getattr(_c, '__version__', None) != self.__version__ and self.__version__ is not None:
+                self.model[_i] = _c.to_version(self.__version__)
+        for _i, _c in enumerate(self.world):
+            if getattr(_c, '__version__', None) is None:
+                _c.__version__ = self.__version__
+            elif getattr(_c, '__version__', None) != self.__version__ and self.__version__ is not None:
+                self.world[_i] = _c.to_version(self.__version__)
 
     def to_version(self, target_version: str) -> "Gazebo":
         from ..elements.actor import Actor
@@ -47,14 +67,16 @@ class Gazebo(BaseModel):
         new_obj = self.__class__(**kwargs)
         return new_obj
 
-    def to_sdf(self, version: str = None) -> ET.Element:
+    def to_sdf(self, version: str | None = None) -> ET.Element:
         from ..elements.actor import Actor
         from ..elements.light import Light
         from ..elements.model import Model
         from ..elements.world import World
-        if version is not None and version != self.__version__:
+        if self.__version__ is None and version is not None:
+            self.__version__ = version
+        elif version is not None and version != self.__version__:
             return self.to_version(version).to_sdf()
-        version = version or self.__version__
+        version = self.__version__ or version
         el = ET.Element("gazebo")
         for item in (self.actor or []):
             el.append(item.to_sdf(version))

@@ -2,6 +2,7 @@
 
 set -e
 cd "$(dirname "$0")"
+bash run_tests.sh
 rm -rf dist/ build/ src/*.egg-info
 python -m pip install build twine
 python -m build

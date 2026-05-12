@@ -21,10 +21,10 @@ if typing.TYPE_CHECKING:
 class Pose(BaseModel):
     _MIGRATIONS = [{"version": "1.7", "ops": [{"type": "move", "from": "frame", "to": "relative_to"}]}]
 
-    def __init__(self, sdf_version: str, pose: _SDFPose = None):
+    def __init__(self, sdf_version: str | None = None, pose: _SDFPose = None):
         self.__version__ = sdf_version
         if pose is None:
-            pose = _SDFPose.from_sdf("0 0 0 0 0 0")
+            pose = _SDFPose.from_sdf("0 0 0 0 0 0", version=sdf_version)
         self.pose = pose
 
     def to_version(self, target_version: str) -> "Pose":
@@ -34,13 +34,15 @@ class Pose(BaseModel):
         apply_migrations(new_obj, target_version)
         return new_obj
 
-    def to_sdf(self, version: str = None) -> ET.Element:
-        if version is not None and version != self.__version__:
+    def to_sdf(self, version: str | None = None) -> ET.Element:
+        if self.__version__ is None and version is not None:
+            self.__version__ = version
+        elif version is not None and version != self.__version__:
             return self.to_version(version).to_sdf()
-        version = version or self.__version__
+        version = self.__version__ or version
         el = ET.Element("pose")
         if self.pose is not None:
-            el.text = self.pose.to_sdf()
+            el.text = self.pose.to_sdf(version)
         return el
 
     @classmethod
@@ -55,7 +57,7 @@ class Pose(BaseModel):
 class Robot(BaseModel):
     def __init__(
         self,
-        sdf_version: str,
+        sdf_version: str | None = None,
         gripper: List["Gripper"] = None,
         joint: List["Joint"] = None,
         link: List["Link"] = None,
@@ -70,6 +72,31 @@ class Robot(BaseModel):
         self.name = name
         self.plugin = plugin or []
         self.pose = pose
+        for _i, _c in enumerate(self.gripper):
+            if getattr(_c, '__version__', None) is None:
+                _c.__version__ = self.__version__
+            elif getattr(_c, '__version__', None) != self.__version__ and self.__version__ is not None:
+                self.gripper[_i] = _c.to_version(self.__version__)
+        for _i, _c in enumerate(self.joint):
+            if getattr(_c, '__version__', None) is None:
+                _c.__version__ = self.__version__
+            elif getattr(_c, '__version__', None) != self.__version__ and self.__version__ is not None:
+                self.joint[_i] = _c.to_version(self.__version__)
+        for _i, _c in enumerate(self.link):
+            if getattr(_c, '__version__', None) is None:
+                _c.__version__ = self.__version__
+            elif getattr(_c, '__version__', None) != self.__version__ and self.__version__ is not None:
+                self.link[_i] = _c.to_version(self.__version__)
+        for _i, _c in enumerate(self.plugin):
+            if getattr(_c, '__version__', None) is None:
+                _c.__version__ = self.__version__
+            elif getattr(_c, '__version__', None) != self.__version__ and self.__version__ is not None:
+                self.plugin[_i] = _c.to_version(self.__version__)
+        if self.pose is not None:
+            if getattr(self.pose, '__version__', None) is None:
+                self.pose.__version__ = self.__version__
+            elif getattr(self.pose, '__version__', None) != self.__version__ and self.__version__ is not None:
+                self.pose = self.pose.to_version(self.__version__)
 
     def to_version(self, target_version: str) -> "Robot":
         from ..elements.gripper import Gripper
@@ -86,14 +113,16 @@ class Robot(BaseModel):
         new_obj = self.__class__(**kwargs)
         return new_obj
 
-    def to_sdf(self, version: str = None) -> ET.Element:
+    def to_sdf(self, version: str | None = None) -> ET.Element:
         from ..elements.gripper import Gripper
         from ..elements.joint import Joint
         from ..elements.link import Link
         from ..elements.plugin import Plugin
-        if version is not None and version != self.__version__:
+        if self.__version__ is None and version is not None:
+            self.__version__ = version
+        elif version is not None and version != self.__version__:
             return self.to_version(version).to_sdf()
-        version = version or self.__version__
+        version = self.__version__ or version
         el = ET.Element("robot")
         for item in (self.gripper or []):
             el.append(item.to_sdf(version))

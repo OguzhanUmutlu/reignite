@@ -45,7 +45,7 @@ def _parse_double(raw: str) -> float | SDFError:
 
 
 class Accuracy(BaseModel):
-    def __init__(self, sdf_version: str, accuracy: float = 1e-3):
+    def __init__(self, sdf_version: str | None = None, accuracy: float = 1e-3):
         self.__version__ = sdf_version
         self.accuracy = accuracy
 
@@ -55,10 +55,12 @@ class Accuracy(BaseModel):
         new_obj = self.__class__(**kwargs)
         return new_obj
 
-    def to_sdf(self, version: str = None) -> ET.Element:
-        if version is not None and version != self.__version__:
+    def to_sdf(self, version: str | None = None) -> ET.Element:
+        if self.__version__ is None and version is not None:
+            self.__version__ = version
+        elif version is not None and version != self.__version__:
             return self.to_version(version).to_sdf()
-        version = version or self.__version__
+        version = self.__version__ or version
         el = ET.Element("accuracy")
         if self.accuracy is not None:
             el.text = str(self.accuracy)
@@ -76,7 +78,7 @@ class Accuracy(BaseModel):
 class Bullet(BaseModel):
     def __init__(
         self,
-        sdf_version: str,
+        sdf_version: str | None = None,
         constraints: "Constraints" = None,
         dt: "Dt" = None,
         solver: "Solver" = None
@@ -85,6 +87,21 @@ class Bullet(BaseModel):
         self.constraints = constraints
         self.dt = dt
         self.solver = solver
+        if self.constraints is not None:
+            if getattr(self.constraints, '__version__', None) is None:
+                self.constraints.__version__ = self.__version__
+            elif getattr(self.constraints, '__version__', None) != self.__version__ and self.__version__ is not None:
+                self.constraints = self.constraints.to_version(self.__version__)
+        if self.dt is not None:
+            if getattr(self.dt, '__version__', None) is None:
+                self.dt.__version__ = self.__version__
+            elif getattr(self.dt, '__version__', None) != self.__version__ and self.__version__ is not None:
+                self.dt = self.dt.to_version(self.__version__)
+        if self.solver is not None:
+            if getattr(self.solver, '__version__', None) is None:
+                self.solver.__version__ = self.__version__
+            elif getattr(self.solver, '__version__', None) != self.__version__ and self.__version__ is not None:
+                self.solver = self.solver.to_version(self.__version__)
 
     def to_version(self, target_version: str) -> "Bullet":
         if self.constraints is not None and cmp_version(target_version, "1.4") < 0:
@@ -100,10 +117,12 @@ class Bullet(BaseModel):
         new_obj = self.__class__(**kwargs)
         return new_obj
 
-    def to_sdf(self, version: str = None) -> ET.Element:
-        if version is not None and version != self.__version__:
+    def to_sdf(self, version: str | None = None) -> ET.Element:
+        if self.__version__ is None and version is not None:
+            self.__version__ = version
+        elif version is not None and version != self.__version__:
             return self.to_version(version).to_sdf()
-        version = version or self.__version__
+        version = self.__version__ or version
         el = ET.Element("bullet")
         if cmp_version(version, "1.4") >= 0:
             if self.constraints is None:
@@ -159,7 +178,7 @@ class Bullet(BaseModel):
 
 
 class Cfm(BaseModel):
-    def __init__(self, sdf_version: str, cfm: float = 0):
+    def __init__(self, sdf_version: str | None = None, cfm: float = 0):
         self.__version__ = sdf_version
         self.cfm = cfm
 
@@ -169,10 +188,12 @@ class Cfm(BaseModel):
         new_obj = self.__class__(**kwargs)
         return new_obj
 
-    def to_sdf(self, version: str = None) -> ET.Element:
-        if version is not None and version != self.__version__:
+    def to_sdf(self, version: str | None = None) -> ET.Element:
+        if self.__version__ is None and version is not None:
+            self.__version__ = version
+        elif version is not None and version != self.__version__:
             return self.to_version(version).to_sdf()
-        version = version or self.__version__
+        version = self.__version__ or version
         el = ET.Element("cfm")
         if self.cfm is not None:
             el.text = str(self.cfm)
@@ -188,7 +209,7 @@ class Cfm(BaseModel):
 
 
 class CollisionDetector(BaseModel):
-    def __init__(self, sdf_version: str, collision_detector: str = "fcl"):
+    def __init__(self, sdf_version: str | None = None, collision_detector: str = "fcl"):
         self.__version__ = sdf_version
         self.collision_detector = collision_detector
 
@@ -198,10 +219,12 @@ class CollisionDetector(BaseModel):
         new_obj = self.__class__(**kwargs)
         return new_obj
 
-    def to_sdf(self, version: str = None) -> ET.Element:
-        if version is not None and version != self.__version__:
+    def to_sdf(self, version: str | None = None) -> ET.Element:
+        if self.__version__ is None and version is not None:
+            self.__version__ = version
+        elif version is not None and version != self.__version__:
             return self.to_version(version).to_sdf()
-        version = version or self.__version__
+        version = self.__version__ or version
         el = ET.Element("collision_detector")
         if self.collision_detector is not None:
             el.text = self.collision_detector
@@ -219,7 +242,7 @@ class CollisionDetector(BaseModel):
 class Constraints(BaseModel):
     def __init__(
         self,
-        sdf_version: str,
+        sdf_version: str | None = None,
         cfm: "Cfm" = None,
         contact_surface_layer: "ContactSurfaceLayer" = None,
         erp: "Erp" = None,
@@ -232,6 +255,31 @@ class Constraints(BaseModel):
         self.erp = erp
         self.split_impulse = split_impulse
         self.split_impulse_penetration_threshold = split_impulse_penetration_threshold
+        if self.cfm is not None:
+            if getattr(self.cfm, '__version__', None) is None:
+                self.cfm.__version__ = self.__version__
+            elif getattr(self.cfm, '__version__', None) != self.__version__ and self.__version__ is not None:
+                self.cfm = self.cfm.to_version(self.__version__)
+        if self.contact_surface_layer is not None:
+            if getattr(self.contact_surface_layer, '__version__', None) is None:
+                self.contact_surface_layer.__version__ = self.__version__
+            elif getattr(self.contact_surface_layer, '__version__', None) != self.__version__ and self.__version__ is not None:
+                self.contact_surface_layer = self.contact_surface_layer.to_version(self.__version__)
+        if self.erp is not None:
+            if getattr(self.erp, '__version__', None) is None:
+                self.erp.__version__ = self.__version__
+            elif getattr(self.erp, '__version__', None) != self.__version__ and self.__version__ is not None:
+                self.erp = self.erp.to_version(self.__version__)
+        if self.split_impulse is not None:
+            if getattr(self.split_impulse, '__version__', None) is None:
+                self.split_impulse.__version__ = self.__version__
+            elif getattr(self.split_impulse, '__version__', None) != self.__version__ and self.__version__ is not None:
+                self.split_impulse = self.split_impulse.to_version(self.__version__)
+        if self.split_impulse_penetration_threshold is not None:
+            if getattr(self.split_impulse_penetration_threshold, '__version__', None) is None:
+                self.split_impulse_penetration_threshold.__version__ = self.__version__
+            elif getattr(self.split_impulse_penetration_threshold, '__version__', None) != self.__version__ and self.__version__ is not None:
+                self.split_impulse_penetration_threshold = self.split_impulse_penetration_threshold.to_version(self.__version__)
 
     def to_version(self, target_version: str) -> "Constraints":
         kwargs = {"sdf_version": target_version}
@@ -243,10 +291,12 @@ class Constraints(BaseModel):
         new_obj = self.__class__(**kwargs)
         return new_obj
 
-    def to_sdf(self, version: str = None) -> ET.Element:
-        if version is not None and version != self.__version__:
+    def to_sdf(self, version: str | None = None) -> ET.Element:
+        if self.__version__ is None and version is not None:
+            self.__version__ = version
+        elif version is not None and version != self.__version__:
             return self.to_version(version).to_sdf()
-        version = version or self.__version__
+        version = self.__version__ or version
         el = ET.Element("constraints")
         if self.cfm is not None:
             el.append(self.cfm.to_sdf(version))
@@ -308,7 +358,7 @@ class Constraints(BaseModel):
 class Contact(BaseModel):
     def __init__(
         self,
-        sdf_version: str,
+        sdf_version: str | None = None,
         dissipation: "Dissipation" = None,
         dynamic_friction: "DynamicFriction" = None,
         override_impact_capture_velocity: "OverrideImpactCaptureVelocity" = None,
@@ -329,6 +379,51 @@ class Contact(BaseModel):
         self.static_friction = static_friction
         self.stiffness = stiffness
         self.viscous_friction = viscous_friction
+        if self.dissipation is not None:
+            if getattr(self.dissipation, '__version__', None) is None:
+                self.dissipation.__version__ = self.__version__
+            elif getattr(self.dissipation, '__version__', None) != self.__version__ and self.__version__ is not None:
+                self.dissipation = self.dissipation.to_version(self.__version__)
+        if self.dynamic_friction is not None:
+            if getattr(self.dynamic_friction, '__version__', None) is None:
+                self.dynamic_friction.__version__ = self.__version__
+            elif getattr(self.dynamic_friction, '__version__', None) != self.__version__ and self.__version__ is not None:
+                self.dynamic_friction = self.dynamic_friction.to_version(self.__version__)
+        if self.override_impact_capture_velocity is not None:
+            if getattr(self.override_impact_capture_velocity, '__version__', None) is None:
+                self.override_impact_capture_velocity.__version__ = self.__version__
+            elif getattr(self.override_impact_capture_velocity, '__version__', None) != self.__version__ and self.__version__ is not None:
+                self.override_impact_capture_velocity = self.override_impact_capture_velocity.to_version(self.__version__)
+        if self.override_stiction_transition_velocity is not None:
+            if getattr(self.override_stiction_transition_velocity, '__version__', None) is None:
+                self.override_stiction_transition_velocity.__version__ = self.__version__
+            elif getattr(self.override_stiction_transition_velocity, '__version__', None) != self.__version__ and self.__version__ is not None:
+                self.override_stiction_transition_velocity = self.override_stiction_transition_velocity.to_version(self.__version__)
+        if self.plastic_coef_restitution is not None:
+            if getattr(self.plastic_coef_restitution, '__version__', None) is None:
+                self.plastic_coef_restitution.__version__ = self.__version__
+            elif getattr(self.plastic_coef_restitution, '__version__', None) != self.__version__ and self.__version__ is not None:
+                self.plastic_coef_restitution = self.plastic_coef_restitution.to_version(self.__version__)
+        if self.plastic_impact_velocity is not None:
+            if getattr(self.plastic_impact_velocity, '__version__', None) is None:
+                self.plastic_impact_velocity.__version__ = self.__version__
+            elif getattr(self.plastic_impact_velocity, '__version__', None) != self.__version__ and self.__version__ is not None:
+                self.plastic_impact_velocity = self.plastic_impact_velocity.to_version(self.__version__)
+        if self.static_friction is not None:
+            if getattr(self.static_friction, '__version__', None) is None:
+                self.static_friction.__version__ = self.__version__
+            elif getattr(self.static_friction, '__version__', None) != self.__version__ and self.__version__ is not None:
+                self.static_friction = self.static_friction.to_version(self.__version__)
+        if self.stiffness is not None:
+            if getattr(self.stiffness, '__version__', None) is None:
+                self.stiffness.__version__ = self.__version__
+            elif getattr(self.stiffness, '__version__', None) != self.__version__ and self.__version__ is not None:
+                self.stiffness = self.stiffness.to_version(self.__version__)
+        if self.viscous_friction is not None:
+            if getattr(self.viscous_friction, '__version__', None) is None:
+                self.viscous_friction.__version__ = self.__version__
+            elif getattr(self.viscous_friction, '__version__', None) != self.__version__ and self.__version__ is not None:
+                self.viscous_friction = self.viscous_friction.to_version(self.__version__)
 
     def to_version(self, target_version: str) -> "Contact":
         kwargs = {"sdf_version": target_version}
@@ -344,10 +439,12 @@ class Contact(BaseModel):
         new_obj = self.__class__(**kwargs)
         return new_obj
 
-    def to_sdf(self, version: str = None) -> ET.Element:
-        if version is not None and version != self.__version__:
+    def to_sdf(self, version: str | None = None) -> ET.Element:
+        if self.__version__ is None and version is not None:
+            self.__version__ = version
+        elif version is not None and version != self.__version__:
             return self.to_version(version).to_sdf()
-        version = version or self.__version__
+        version = self.__version__ or version
         el = ET.Element("contact")
         if self.dissipation is not None:
             el.append(self.dissipation.to_sdf(version))
@@ -447,7 +544,7 @@ class Contact(BaseModel):
 
 
 class ContactMaxCorrectingVel(BaseModel):
-    def __init__(self, sdf_version: str, contact_max_correcting_vel: float = 100.0):
+    def __init__(self, sdf_version: str | None = None, contact_max_correcting_vel: float = 100.0):
         self.__version__ = sdf_version
         self.contact_max_correcting_vel = contact_max_correcting_vel
 
@@ -459,10 +556,12 @@ class ContactMaxCorrectingVel(BaseModel):
         new_obj = self.__class__(**kwargs)
         return new_obj
 
-    def to_sdf(self, version: str = None) -> ET.Element:
-        if version is not None and version != self.__version__:
+    def to_sdf(self, version: str | None = None) -> ET.Element:
+        if self.__version__ is None and version is not None:
+            self.__version__ = version
+        elif version is not None and version != self.__version__:
             return self.to_version(version).to_sdf()
-        version = version or self.__version__
+        version = self.__version__ or version
         el = ET.Element("contact_max_correcting_vel")
         if self.contact_max_correcting_vel is not None:
             el.text = str(self.contact_max_correcting_vel)
@@ -481,7 +580,7 @@ class ContactMaxCorrectingVel(BaseModel):
 
 
 class ContactSurfaceLayer(BaseModel):
-    def __init__(self, sdf_version: str, contact_surface_layer: float = 0.001):
+    def __init__(self, sdf_version: str | None = None, contact_surface_layer: float = 0.001):
         self.__version__ = sdf_version
         self.contact_surface_layer = contact_surface_layer
 
@@ -491,10 +590,12 @@ class ContactSurfaceLayer(BaseModel):
         new_obj = self.__class__(**kwargs)
         return new_obj
 
-    def to_sdf(self, version: str = None) -> ET.Element:
-        if version is not None and version != self.__version__:
+    def to_sdf(self, version: str | None = None) -> ET.Element:
+        if self.__version__ is None and version is not None:
+            self.__version__ = version
+        elif version is not None and version != self.__version__:
             return self.to_version(version).to_sdf()
-        version = version or self.__version__
+        version = self.__version__ or version
         el = ET.Element("contact_surface_layer")
         if self.contact_surface_layer is not None:
             el.text = str(self.contact_surface_layer)
@@ -512,13 +613,23 @@ class ContactSurfaceLayer(BaseModel):
 class Dart(BaseModel):
     def __init__(
         self,
-        sdf_version: str,
+        sdf_version: str | None = None,
         collision_detector: "CollisionDetector" = None,
         solver: "DartSolver" = None
     ):
         self.__version__ = sdf_version
         self.collision_detector = collision_detector
         self.solver = solver
+        if self.collision_detector is not None:
+            if getattr(self.collision_detector, '__version__', None) is None:
+                self.collision_detector.__version__ = self.__version__
+            elif getattr(self.collision_detector, '__version__', None) != self.__version__ and self.__version__ is not None:
+                self.collision_detector = self.collision_detector.to_version(self.__version__)
+        if self.solver is not None:
+            if getattr(self.solver, '__version__', None) is None:
+                self.solver.__version__ = self.__version__
+            elif getattr(self.solver, '__version__', None) != self.__version__ and self.__version__ is not None:
+                self.solver = self.solver.to_version(self.__version__)
 
     def to_version(self, target_version: str) -> "Dart":
         kwargs = {"sdf_version": target_version}
@@ -527,10 +638,12 @@ class Dart(BaseModel):
         new_obj = self.__class__(**kwargs)
         return new_obj
 
-    def to_sdf(self, version: str = None) -> ET.Element:
-        if version is not None and version != self.__version__:
+    def to_sdf(self, version: str | None = None) -> ET.Element:
+        if self.__version__ is None and version is not None:
+            self.__version__ = version
+        elif version is not None and version != self.__version__:
             return self.to_version(version).to_sdf()
-        version = version or self.__version__
+        version = self.__version__ or version
         el = ET.Element("dart")
         if self.collision_detector is not None:
             el.append(self.collision_detector.to_sdf(version))
@@ -565,9 +678,14 @@ class Dart(BaseModel):
 
 
 class DartSolver(BaseModel):
-    def __init__(self, sdf_version: str, solver_type: "SolverSolverType" = None):
+    def __init__(self, sdf_version: str | None = None, solver_type: "SolverSolverType" = None):
         self.__version__ = sdf_version
         self.solver_type = solver_type
+        if self.solver_type is not None:
+            if getattr(self.solver_type, '__version__', None) is None:
+                self.solver_type.__version__ = self.__version__
+            elif getattr(self.solver_type, '__version__', None) != self.__version__ and self.__version__ is not None:
+                self.solver_type = self.solver_type.to_version(self.__version__)
 
     def to_version(self, target_version: str) -> "DartSolver":
         kwargs = {"sdf_version": target_version}
@@ -575,10 +693,12 @@ class DartSolver(BaseModel):
         new_obj = self.__class__(**kwargs)
         return new_obj
 
-    def to_sdf(self, version: str = None) -> ET.Element:
-        if version is not None and version != self.__version__:
+    def to_sdf(self, version: str | None = None) -> ET.Element:
+        if self.__version__ is None and version is not None:
+            self.__version__ = version
+        elif version is not None and version != self.__version__:
             return self.to_version(version).to_sdf()
-        version = version or self.__version__
+        version = self.__version__ or version
         el = ET.Element("solver")
         if self.solver_type is not None:
             el.append(self.solver_type.to_sdf(version))
@@ -598,7 +718,7 @@ class DartSolver(BaseModel):
 
 
 class Dissipation(BaseModel):
-    def __init__(self, sdf_version: str, dissipation: float = 100):
+    def __init__(self, sdf_version: str | None = None, dissipation: float = 100):
         self.__version__ = sdf_version
         self.dissipation = dissipation
 
@@ -608,10 +728,12 @@ class Dissipation(BaseModel):
         new_obj = self.__class__(**kwargs)
         return new_obj
 
-    def to_sdf(self, version: str = None) -> ET.Element:
-        if version is not None and version != self.__version__:
+    def to_sdf(self, version: str | None = None) -> ET.Element:
+        if self.__version__ is None and version is not None:
+            self.__version__ = version
+        elif version is not None and version != self.__version__:
             return self.to_version(version).to_sdf()
-        version = version or self.__version__
+        version = self.__version__ or version
         el = ET.Element("dissipation")
         if self.dissipation is not None:
             el.text = str(self.dissipation)
@@ -627,7 +749,7 @@ class Dissipation(BaseModel):
 
 
 class Dt(BaseModel):
-    def __init__(self, sdf_version: str, dt: float = 0.003):
+    def __init__(self, sdf_version: str | None = None, dt: float = 0.003):
         self.__version__ = sdf_version
         self.dt = dt
 
@@ -639,10 +761,12 @@ class Dt(BaseModel):
         new_obj = self.__class__(**kwargs)
         return new_obj
 
-    def to_sdf(self, version: str = None) -> ET.Element:
-        if version is not None and version != self.__version__:
+    def to_sdf(self, version: str | None = None) -> ET.Element:
+        if self.__version__ is None and version is not None:
+            self.__version__ = version
+        elif version is not None and version != self.__version__:
             return self.to_version(version).to_sdf()
-        version = version or self.__version__
+        version = self.__version__ or version
         el = ET.Element("dt")
         if self.dt is not None:
             el.text = str(self.dt)
@@ -658,7 +782,7 @@ class Dt(BaseModel):
 
 
 class DynamicFriction(BaseModel):
-    def __init__(self, sdf_version: str, dynamic_friction: float = 0.9):
+    def __init__(self, sdf_version: str | None = None, dynamic_friction: float = 0.9):
         self.__version__ = sdf_version
         self.dynamic_friction = dynamic_friction
 
@@ -668,10 +792,12 @@ class DynamicFriction(BaseModel):
         new_obj = self.__class__(**kwargs)
         return new_obj
 
-    def to_sdf(self, version: str = None) -> ET.Element:
-        if version is not None and version != self.__version__:
+    def to_sdf(self, version: str | None = None) -> ET.Element:
+        if self.__version__ is None and version is not None:
+            self.__version__ = version
+        elif version is not None and version != self.__version__:
             return self.to_version(version).to_sdf()
-        version = version or self.__version__
+        version = self.__version__ or version
         el = ET.Element("dynamic_friction")
         if self.dynamic_friction is not None:
             el.text = str(self.dynamic_friction)
@@ -687,7 +813,7 @@ class DynamicFriction(BaseModel):
 
 
 class Erp(BaseModel):
-    def __init__(self, sdf_version: str, erp: float = 0.2):
+    def __init__(self, sdf_version: str | None = None, erp: float = 0.2):
         self.__version__ = sdf_version
         self.erp = erp
 
@@ -697,10 +823,12 @@ class Erp(BaseModel):
         new_obj = self.__class__(**kwargs)
         return new_obj
 
-    def to_sdf(self, version: str = None) -> ET.Element:
-        if version is not None and version != self.__version__:
+    def to_sdf(self, version: str | None = None) -> ET.Element:
+        if self.__version__ is None and version is not None:
+            self.__version__ = version
+        elif version is not None and version != self.__version__:
             return self.to_version(version).to_sdf()
-        version = version or self.__version__
+        version = self.__version__ or version
         el = ET.Element("erp")
         if self.erp is not None:
             el.text = str(self.erp)
@@ -716,7 +844,7 @@ class Erp(BaseModel):
 
 
 class FrictionModel(BaseModel):
-    def __init__(self, sdf_version: str, friction_model: str = "pyramid_model"):
+    def __init__(self, sdf_version: str | None = None, friction_model: str = "pyramid_model"):
         self.__version__ = sdf_version
         self.friction_model = friction_model
 
@@ -728,10 +856,12 @@ class FrictionModel(BaseModel):
         new_obj = self.__class__(**kwargs)
         return new_obj
 
-    def to_sdf(self, version: str = None) -> ET.Element:
-        if version is not None and version != self.__version__:
+    def to_sdf(self, version: str | None = None) -> ET.Element:
+        if self.__version__ is None and version is not None:
+            self.__version__ = version
+        elif version is not None and version != self.__version__:
             return self.to_version(version).to_sdf()
-        version = version or self.__version__
+        version = self.__version__ or version
         el = ET.Element("friction_model")
         if self.friction_model is not None:
             el.text = self.friction_model
@@ -750,12 +880,17 @@ class FrictionModel(BaseModel):
 
 
 class Gravity(BaseModel):
-    def __init__(self, sdf_version: str, gravity: _SDFVector3 = None, xyz: _SDFVector3 = None):
+    def __init__(
+        self,
+        sdf_version: str | None = None,
+        gravity: _SDFVector3 = None,
+        xyz: _SDFVector3 = None
+    ):
         self.__version__ = sdf_version
         if gravity is None:
-            gravity = _SDFVector3.from_sdf("0 0 -9.8")
+            gravity = _SDFVector3.from_sdf("0 0 -9.8", version=sdf_version)
         if xyz is None:
-            xyz = _SDFVector3.from_sdf("0 0 -9.8")
+            xyz = _SDFVector3.from_sdf("0 0 -9.8", version=sdf_version)
         self.gravity = gravity
         self.xyz = xyz
 
@@ -770,15 +905,17 @@ class Gravity(BaseModel):
         new_obj = self.__class__(**kwargs)
         return new_obj
 
-    def to_sdf(self, version: str = None) -> ET.Element:
-        if version is not None and version != self.__version__:
+    def to_sdf(self, version: str | None = None) -> ET.Element:
+        if self.__version__ is None and version is not None:
+            self.__version__ = version
+        elif version is not None and version != self.__version__:
             return self.to_version(version).to_sdf()
-        version = version or self.__version__
+        version = self.__version__ or version
         el = ET.Element("gravity")
         if self.gravity is not None:
-            el.text = self.gravity.to_sdf()
+            el.text = self.gravity.to_sdf(version)
         if self.xyz is not None:
-            el.set("xyz", self.xyz.to_sdf())
+            el.set("xyz", self.xyz.to_sdf(version))
         return el
 
     @classmethod
@@ -794,7 +931,7 @@ class Gravity(BaseModel):
 
 
 class IslandThreads(BaseModel):
-    def __init__(self, sdf_version: str, island_threads: int = 0):
+    def __init__(self, sdf_version: str | None = None, island_threads: int = 0):
         self.__version__ = sdf_version
         self.island_threads = island_threads
 
@@ -806,10 +943,12 @@ class IslandThreads(BaseModel):
         new_obj = self.__class__(**kwargs)
         return new_obj
 
-    def to_sdf(self, version: str = None) -> ET.Element:
-        if version is not None and version != self.__version__:
+    def to_sdf(self, version: str | None = None) -> ET.Element:
+        if self.__version__ is None and version is not None:
+            self.__version__ = version
+        elif version is not None and version != self.__version__:
             return self.to_version(version).to_sdf()
-        version = version or self.__version__
+        version = self.__version__ or version
         el = ET.Element("island_threads")
         if self.island_threads is not None:
             el.text = str(self.island_threads)
@@ -828,7 +967,7 @@ class IslandThreads(BaseModel):
 
 
 class Iters(BaseModel):
-    def __init__(self, sdf_version: str, iters: int = 50):
+    def __init__(self, sdf_version: str | None = None, iters: int = 50):
         self.__version__ = sdf_version
         self.iters = iters
 
@@ -838,10 +977,12 @@ class Iters(BaseModel):
         new_obj = self.__class__(**kwargs)
         return new_obj
 
-    def to_sdf(self, version: str = None) -> ET.Element:
-        if version is not None and version != self.__version__:
+    def to_sdf(self, version: str | None = None) -> ET.Element:
+        if self.__version__ is None and version is not None:
+            self.__version__ = version
+        elif version is not None and version != self.__version__:
             return self.to_version(version).to_sdf()
-        version = version or self.__version__
+        version = self.__version__ or version
         el = ET.Element("iters")
         if self.iters is not None:
             el.text = str(self.iters)
@@ -857,10 +998,10 @@ class Iters(BaseModel):
 
 
 class MagneticField(BaseModel):
-    def __init__(self, sdf_version: str, magnetic_field: _SDFVector3 = None):
+    def __init__(self, sdf_version: str | None = None, magnetic_field: _SDFVector3 = None):
         self.__version__ = sdf_version
         if magnetic_field is None:
-            magnetic_field = _SDFVector3.from_sdf("5.5645e-6 22.8758e-6 -42.3884e-6")
+            magnetic_field = _SDFVector3.from_sdf("5.5645e-6 22.8758e-6 -42.3884e-6", version=sdf_version)
         self.magnetic_field = magnetic_field
 
     def to_version(self, target_version: str) -> "MagneticField":
@@ -873,13 +1014,15 @@ class MagneticField(BaseModel):
         new_obj = self.__class__(**kwargs)
         return new_obj
 
-    def to_sdf(self, version: str = None) -> ET.Element:
-        if version is not None and version != self.__version__:
+    def to_sdf(self, version: str | None = None) -> ET.Element:
+        if self.__version__ is None and version is not None:
+            self.__version__ = version
+        elif version is not None and version != self.__version__:
             return self.to_version(version).to_sdf()
-        version = version or self.__version__
+        version = self.__version__ or version
         el = ET.Element("magnetic_field")
         if self.magnetic_field is not None:
-            el.text = self.magnetic_field.to_sdf()
+            el.text = self.magnetic_field.to_sdf(version)
         return el
 
     @classmethod
@@ -895,7 +1038,7 @@ class MagneticField(BaseModel):
 
 
 class MaxContacts(BaseModel):
-    def __init__(self, sdf_version: str, max_contacts: int = 20):
+    def __init__(self, sdf_version: str | None = None, max_contacts: int = 20):
         self.__version__ = sdf_version
         self.max_contacts = max_contacts
 
@@ -905,10 +1048,12 @@ class MaxContacts(BaseModel):
         new_obj = self.__class__(**kwargs)
         return new_obj
 
-    def to_sdf(self, version: str = None) -> ET.Element:
-        if version is not None and version != self.__version__:
+    def to_sdf(self, version: str | None = None) -> ET.Element:
+        if self.__version__ is None and version is not None:
+            self.__version__ = version
+        elif version is not None and version != self.__version__:
             return self.to_version(version).to_sdf()
-        version = version or self.__version__
+        version = self.__version__ or version
         el = ET.Element("max_contacts")
         if self.max_contacts is not None:
             el.text = str(self.max_contacts)
@@ -924,7 +1069,7 @@ class MaxContacts(BaseModel):
 
 
 class MaxStepSize(BaseModel):
-    def __init__(self, sdf_version: str, max_step_size: float = 0.001):
+    def __init__(self, sdf_version: str | None = None, max_step_size: float = 0.001):
         self.__version__ = sdf_version
         self.max_step_size = max_step_size
 
@@ -936,10 +1081,12 @@ class MaxStepSize(BaseModel):
         new_obj = self.__class__(**kwargs)
         return new_obj
 
-    def to_sdf(self, version: str = None) -> ET.Element:
-        if version is not None and version != self.__version__:
+    def to_sdf(self, version: str | None = None) -> ET.Element:
+        if self.__version__ is None and version is not None:
+            self.__version__ = version
+        elif version is not None and version != self.__version__:
             return self.to_version(version).to_sdf()
-        version = version or self.__version__
+        version = self.__version__ or version
         el = ET.Element("max_step_size")
         if self.max_step_size is not None:
             el.text = str(self.max_step_size)
@@ -958,7 +1105,7 @@ class MaxStepSize(BaseModel):
 
 
 class MaxTransientVelocity(BaseModel):
-    def __init__(self, sdf_version: str, max_transient_velocity: float = 0.01):
+    def __init__(self, sdf_version: str | None = None, max_transient_velocity: float = 0.01):
         self.__version__ = sdf_version
         self.max_transient_velocity = max_transient_velocity
 
@@ -968,10 +1115,12 @@ class MaxTransientVelocity(BaseModel):
         new_obj = self.__class__(**kwargs)
         return new_obj
 
-    def to_sdf(self, version: str = None) -> ET.Element:
-        if version is not None and version != self.__version__:
+    def to_sdf(self, version: str | None = None) -> ET.Element:
+        if self.__version__ is None and version is not None:
+            self.__version__ = version
+        elif version is not None and version != self.__version__:
             return self.to_version(version).to_sdf()
-        version = version or self.__version__
+        version = self.__version__ or version
         el = ET.Element("max_transient_velocity")
         if self.max_transient_velocity is not None:
             el.text = str(self.max_transient_velocity)
@@ -987,7 +1136,7 @@ class MaxTransientVelocity(BaseModel):
 
 
 class MinStepSize(BaseModel):
-    def __init__(self, sdf_version: str, min_step_size: float = 0.0001):
+    def __init__(self, sdf_version: str | None = None, min_step_size: float = 0.0001):
         self.__version__ = sdf_version
         self.min_step_size = min_step_size
 
@@ -997,10 +1146,12 @@ class MinStepSize(BaseModel):
         new_obj = self.__class__(**kwargs)
         return new_obj
 
-    def to_sdf(self, version: str = None) -> ET.Element:
-        if version is not None and version != self.__version__:
+    def to_sdf(self, version: str | None = None) -> ET.Element:
+        if self.__version__ is None and version is not None:
+            self.__version__ = version
+        elif version is not None and version != self.__version__:
             return self.to_version(version).to_sdf()
-        version = version or self.__version__
+        version = self.__version__ or version
         el = ET.Element("min_step_size")
         if self.min_step_size is not None:
             el.text = str(self.min_step_size)
@@ -1018,13 +1169,23 @@ class MinStepSize(BaseModel):
 class Ode(BaseModel):
     def __init__(
         self,
-        sdf_version: str,
+        sdf_version: str | None = None,
         constraints: "OdeConstraints" = None,
         solver: "OdeSolver" = None
     ):
         self.__version__ = sdf_version
         self.constraints = constraints
         self.solver = solver
+        if self.constraints is not None:
+            if getattr(self.constraints, '__version__', None) is None:
+                self.constraints.__version__ = self.__version__
+            elif getattr(self.constraints, '__version__', None) != self.__version__ and self.__version__ is not None:
+                self.constraints = self.constraints.to_version(self.__version__)
+        if self.solver is not None:
+            if getattr(self.solver, '__version__', None) is None:
+                self.solver.__version__ = self.__version__
+            elif getattr(self.solver, '__version__', None) != self.__version__ and self.__version__ is not None:
+                self.solver = self.solver.to_version(self.__version__)
 
     def to_version(self, target_version: str) -> "Ode":
         kwargs = {"sdf_version": target_version}
@@ -1033,10 +1194,12 @@ class Ode(BaseModel):
         new_obj = self.__class__(**kwargs)
         return new_obj
 
-    def to_sdf(self, version: str = None) -> ET.Element:
-        if version is not None and version != self.__version__:
+    def to_sdf(self, version: str | None = None) -> ET.Element:
+        if self.__version__ is None and version is not None:
+            self.__version__ = version
+        elif version is not None and version != self.__version__:
             return self.to_version(version).to_sdf()
-        version = version or self.__version__
+        version = self.__version__ or version
         el = ET.Element("ode")
         if self.constraints is None:
             self.constraints = OdeConstraints(sdf_version=version)
@@ -1078,7 +1241,7 @@ class Ode(BaseModel):
 class OdeConstraints(BaseModel):
     def __init__(
         self,
-        sdf_version: str,
+        sdf_version: str | None = None,
         cfm: float = 0,
         contact_max_correcting_vel: float = 100.0,
         contact_surface_layer: float = 0.001,
@@ -1107,10 +1270,12 @@ class OdeConstraints(BaseModel):
         new_obj = self.__class__(**kwargs)
         return new_obj
 
-    def to_sdf(self, version: str = None) -> ET.Element:
-        if version is not None and version != self.__version__:
+    def to_sdf(self, version: str | None = None) -> ET.Element:
+        if self.__version__ is None and version is not None:
+            self.__version__ = version
+        elif version is not None and version != self.__version__:
             return self.to_version(version).to_sdf()
-        version = version or self.__version__
+        version = self.__version__ or version
         el = ET.Element("constraints")
         if self.cfm is not None:
             el.set("cfm", str(self.cfm))
@@ -1142,7 +1307,7 @@ class OdeConstraints(BaseModel):
 class OdeSolver(BaseModel):
     def __init__(
         self,
-        sdf_version: str,
+        sdf_version: str | None = None,
         dt: float = 0.001,
         friction_model: "FrictionModel" = None,
         island_threads: "IslandThreads" = None,
@@ -1165,6 +1330,31 @@ class OdeSolver(BaseModel):
         self.thread_position_correction = thread_position_correction
         self.type = type
         self.use_dynamic_moi_rescaling = use_dynamic_moi_rescaling
+        if self.friction_model is not None:
+            if getattr(self.friction_model, '__version__', None) is None:
+                self.friction_model.__version__ = self.__version__
+            elif getattr(self.friction_model, '__version__', None) != self.__version__ and self.__version__ is not None:
+                self.friction_model = self.friction_model.to_version(self.__version__)
+        if self.island_threads is not None:
+            if getattr(self.island_threads, '__version__', None) is None:
+                self.island_threads.__version__ = self.__version__
+            elif getattr(self.island_threads, '__version__', None) != self.__version__ and self.__version__ is not None:
+                self.island_threads = self.island_threads.to_version(self.__version__)
+        if self.min_step_size is not None:
+            if getattr(self.min_step_size, '__version__', None) is None:
+                self.min_step_size.__version__ = self.__version__
+            elif getattr(self.min_step_size, '__version__', None) != self.__version__ and self.__version__ is not None:
+                self.min_step_size = self.min_step_size.to_version(self.__version__)
+        if self.thread_position_correction is not None:
+            if getattr(self.thread_position_correction, '__version__', None) is None:
+                self.thread_position_correction.__version__ = self.__version__
+            elif getattr(self.thread_position_correction, '__version__', None) != self.__version__ and self.__version__ is not None:
+                self.thread_position_correction = self.thread_position_correction.to_version(self.__version__)
+        if self.use_dynamic_moi_rescaling is not None:
+            if getattr(self.use_dynamic_moi_rescaling, '__version__', None) is None:
+                self.use_dynamic_moi_rescaling.__version__ = self.__version__
+            elif getattr(self.use_dynamic_moi_rescaling, '__version__', None) != self.__version__ and self.__version__ is not None:
+                self.use_dynamic_moi_rescaling = self.use_dynamic_moi_rescaling.to_version(self.__version__)
 
     def to_version(self, target_version: str) -> "OdeSolver":
         if self.dt is not None and cmp_version(target_version, "1.2") >= 0:
@@ -1201,10 +1391,12 @@ class OdeSolver(BaseModel):
         new_obj = self.__class__(**kwargs)
         return new_obj
 
-    def to_sdf(self, version: str = None) -> ET.Element:
-        if version is not None and version != self.__version__:
+    def to_sdf(self, version: str | None = None) -> ET.Element:
+        if self.__version__ is None and version is not None:
+            self.__version__ = version
+        elif version is not None and version != self.__version__:
             return self.to_version(version).to_sdf()
-        version = version or self.__version__
+        version = self.__version__ or version
         el = ET.Element("solver")
         if self.dt is not None:
             el.set("dt", str(self.dt))
@@ -1299,7 +1491,11 @@ class OdeSolver(BaseModel):
 
 
 class OverrideImpactCaptureVelocity(BaseModel):
-    def __init__(self, sdf_version: str, override_impact_capture_velocity: float = 0.001):
+    def __init__(
+        self,
+        sdf_version: str | None = None,
+        override_impact_capture_velocity: float = 0.001
+    ):
         self.__version__ = sdf_version
         self.override_impact_capture_velocity = override_impact_capture_velocity
 
@@ -1309,10 +1505,12 @@ class OverrideImpactCaptureVelocity(BaseModel):
         new_obj = self.__class__(**kwargs)
         return new_obj
 
-    def to_sdf(self, version: str = None) -> ET.Element:
-        if version is not None and version != self.__version__:
+    def to_sdf(self, version: str | None = None) -> ET.Element:
+        if self.__version__ is None and version is not None:
+            self.__version__ = version
+        elif version is not None and version != self.__version__:
             return self.to_version(version).to_sdf()
-        version = version or self.__version__
+        version = self.__version__ or version
         el = ET.Element("override_impact_capture_velocity")
         if self.override_impact_capture_velocity is not None:
             el.text = str(self.override_impact_capture_velocity)
@@ -1328,7 +1526,11 @@ class OverrideImpactCaptureVelocity(BaseModel):
 
 
 class OverrideStictionTransitionVelocity(BaseModel):
-    def __init__(self, sdf_version: str, override_stiction_transition_velocity: float = 0.001):
+    def __init__(
+        self,
+        sdf_version: str | None = None,
+        override_stiction_transition_velocity: float = 0.001
+    ):
         self.__version__ = sdf_version
         self.override_stiction_transition_velocity = override_stiction_transition_velocity
 
@@ -1338,10 +1540,12 @@ class OverrideStictionTransitionVelocity(BaseModel):
         new_obj = self.__class__(**kwargs)
         return new_obj
 
-    def to_sdf(self, version: str = None) -> ET.Element:
-        if version is not None and version != self.__version__:
+    def to_sdf(self, version: str | None = None) -> ET.Element:
+        if self.__version__ is None and version is not None:
+            self.__version__ = version
+        elif version is not None and version != self.__version__:
             return self.to_version(version).to_sdf()
-        version = version or self.__version__
+        version = self.__version__ or version
         el = ET.Element("override_stiction_transition_velocity")
         if self.override_stiction_transition_velocity is not None:
             el.text = str(self.override_stiction_transition_velocity)
@@ -1361,7 +1565,7 @@ class Physics(BaseModel):
 
     def __init__(
         self,
-        sdf_version: str,
+        sdf_version: str | None = None,
         bullet: "Bullet" = None,
         dart: "Dart" = None,
         default: bool = False,
@@ -1392,6 +1596,56 @@ class Physics(BaseModel):
         self.simbody = simbody
         self.type = type
         self.update_rate = update_rate
+        if self.bullet is not None:
+            if getattr(self.bullet, '__version__', None) is None:
+                self.bullet.__version__ = self.__version__
+            elif getattr(self.bullet, '__version__', None) != self.__version__ and self.__version__ is not None:
+                self.bullet = self.bullet.to_version(self.__version__)
+        if self.dart is not None:
+            if getattr(self.dart, '__version__', None) is None:
+                self.dart.__version__ = self.__version__
+            elif getattr(self.dart, '__version__', None) != self.__version__ and self.__version__ is not None:
+                self.dart = self.dart.to_version(self.__version__)
+        if self.gravity is not None:
+            if getattr(self.gravity, '__version__', None) is None:
+                self.gravity.__version__ = self.__version__
+            elif getattr(self.gravity, '__version__', None) != self.__version__ and self.__version__ is not None:
+                self.gravity = self.gravity.to_version(self.__version__)
+        if self.magnetic_field is not None:
+            if getattr(self.magnetic_field, '__version__', None) is None:
+                self.magnetic_field.__version__ = self.__version__
+            elif getattr(self.magnetic_field, '__version__', None) != self.__version__ and self.__version__ is not None:
+                self.magnetic_field = self.magnetic_field.to_version(self.__version__)
+        if self.max_contacts is not None:
+            if getattr(self.max_contacts, '__version__', None) is None:
+                self.max_contacts.__version__ = self.__version__
+            elif getattr(self.max_contacts, '__version__', None) != self.__version__ and self.__version__ is not None:
+                self.max_contacts = self.max_contacts.to_version(self.__version__)
+        if self.max_step_size is not None:
+            if getattr(self.max_step_size, '__version__', None) is None:
+                self.max_step_size.__version__ = self.__version__
+            elif getattr(self.max_step_size, '__version__', None) != self.__version__ and self.__version__ is not None:
+                self.max_step_size = self.max_step_size.to_version(self.__version__)
+        if self.ode is not None:
+            if getattr(self.ode, '__version__', None) is None:
+                self.ode.__version__ = self.__version__
+            elif getattr(self.ode, '__version__', None) != self.__version__ and self.__version__ is not None:
+                self.ode = self.ode.to_version(self.__version__)
+        if self.real_time_factor is not None:
+            if getattr(self.real_time_factor, '__version__', None) is None:
+                self.real_time_factor.__version__ = self.__version__
+            elif getattr(self.real_time_factor, '__version__', None) != self.__version__ and self.__version__ is not None:
+                self.real_time_factor = self.real_time_factor.to_version(self.__version__)
+        if self.real_time_update_rate is not None:
+            if getattr(self.real_time_update_rate, '__version__', None) is None:
+                self.real_time_update_rate.__version__ = self.__version__
+            elif getattr(self.real_time_update_rate, '__version__', None) != self.__version__ and self.__version__ is not None:
+                self.real_time_update_rate = self.real_time_update_rate.to_version(self.__version__)
+        if self.simbody is not None:
+            if getattr(self.simbody, '__version__', None) is None:
+                self.simbody.__version__ = self.__version__
+            elif getattr(self.simbody, '__version__', None) != self.__version__ and self.__version__ is not None:
+                self.simbody = self.simbody.to_version(self.__version__)
 
     def to_version(self, target_version: str) -> "Physics":
         if self.dart is not None and cmp_version(target_version, "1.6") < 0:
@@ -1435,10 +1689,12 @@ class Physics(BaseModel):
         apply_migrations(new_obj, target_version)
         return new_obj
 
-    def to_sdf(self, version: str = None) -> ET.Element:
-        if version is not None and version != self.__version__:
+    def to_sdf(self, version: str | None = None) -> ET.Element:
+        if self.__version__ is None and version is not None:
+            self.__version__ = version
+        elif version is not None and version != self.__version__:
             return self.to_version(version).to_sdf()
-        version = version or self.__version__
+        version = self.__version__ or version
         el = ET.Element("physics")
         if self.bullet is not None:
             el.append(self.bullet.to_sdf(version))
@@ -1586,7 +1842,7 @@ class Physics(BaseModel):
 
 
 class PlasticCoefRestitution(BaseModel):
-    def __init__(self, sdf_version: str, plastic_coef_restitution: float = 0.5):
+    def __init__(self, sdf_version: str | None = None, plastic_coef_restitution: float = 0.5):
         self.__version__ = sdf_version
         self.plastic_coef_restitution = plastic_coef_restitution
 
@@ -1596,10 +1852,12 @@ class PlasticCoefRestitution(BaseModel):
         new_obj = self.__class__(**kwargs)
         return new_obj
 
-    def to_sdf(self, version: str = None) -> ET.Element:
-        if version is not None and version != self.__version__:
+    def to_sdf(self, version: str | None = None) -> ET.Element:
+        if self.__version__ is None and version is not None:
+            self.__version__ = version
+        elif version is not None and version != self.__version__:
             return self.to_version(version).to_sdf()
-        version = version or self.__version__
+        version = self.__version__ or version
         el = ET.Element("plastic_coef_restitution")
         if self.plastic_coef_restitution is not None:
             el.text = str(self.plastic_coef_restitution)
@@ -1615,7 +1873,7 @@ class PlasticCoefRestitution(BaseModel):
 
 
 class PlasticImpactVelocity(BaseModel):
-    def __init__(self, sdf_version: str, plastic_impact_velocity: float = 0.5):
+    def __init__(self, sdf_version: str | None = None, plastic_impact_velocity: float = 0.5):
         self.__version__ = sdf_version
         self.plastic_impact_velocity = plastic_impact_velocity
 
@@ -1625,10 +1883,12 @@ class PlasticImpactVelocity(BaseModel):
         new_obj = self.__class__(**kwargs)
         return new_obj
 
-    def to_sdf(self, version: str = None) -> ET.Element:
-        if version is not None and version != self.__version__:
+    def to_sdf(self, version: str | None = None) -> ET.Element:
+        if self.__version__ is None and version is not None:
+            self.__version__ = version
+        elif version is not None and version != self.__version__:
             return self.to_version(version).to_sdf()
-        version = version or self.__version__
+        version = self.__version__ or version
         el = ET.Element("plastic_impact_velocity")
         if self.plastic_impact_velocity is not None:
             el.text = str(self.plastic_impact_velocity)
@@ -1644,7 +1904,7 @@ class PlasticImpactVelocity(BaseModel):
 
 
 class PreconIters(BaseModel):
-    def __init__(self, sdf_version: str, precon_iters: int = 0):
+    def __init__(self, sdf_version: str | None = None, precon_iters: int = 0):
         self.__version__ = sdf_version
         self.precon_iters = precon_iters
 
@@ -1656,10 +1916,12 @@ class PreconIters(BaseModel):
         new_obj = self.__class__(**kwargs)
         return new_obj
 
-    def to_sdf(self, version: str = None) -> ET.Element:
-        if version is not None and version != self.__version__:
+    def to_sdf(self, version: str | None = None) -> ET.Element:
+        if self.__version__ is None and version is not None:
+            self.__version__ = version
+        elif version is not None and version != self.__version__:
             return self.to_version(version).to_sdf()
-        version = version or self.__version__
+        version = self.__version__ or version
         el = ET.Element("precon_iters")
         if self.precon_iters is not None:
             el.text = str(self.precon_iters)
@@ -1678,7 +1940,7 @@ class PreconIters(BaseModel):
 
 
 class RealTimeFactor(BaseModel):
-    def __init__(self, sdf_version: str, real_time_factor: float = 1.0):
+    def __init__(self, sdf_version: str | None = None, real_time_factor: float = 1.0):
         self.__version__ = sdf_version
         self.real_time_factor = real_time_factor
 
@@ -1690,10 +1952,12 @@ class RealTimeFactor(BaseModel):
         new_obj = self.__class__(**kwargs)
         return new_obj
 
-    def to_sdf(self, version: str = None) -> ET.Element:
-        if version is not None and version != self.__version__:
+    def to_sdf(self, version: str | None = None) -> ET.Element:
+        if self.__version__ is None and version is not None:
+            self.__version__ = version
+        elif version is not None and version != self.__version__:
             return self.to_version(version).to_sdf()
-        version = version or self.__version__
+        version = self.__version__ or version
         el = ET.Element("real_time_factor")
         if self.real_time_factor is not None:
             el.text = str(self.real_time_factor)
@@ -1712,7 +1976,7 @@ class RealTimeFactor(BaseModel):
 
 
 class RealTimeUpdateRate(BaseModel):
-    def __init__(self, sdf_version: str, real_time_update_rate: float = 1000):
+    def __init__(self, sdf_version: str | None = None, real_time_update_rate: float = 1000):
         self.__version__ = sdf_version
         self.real_time_update_rate = real_time_update_rate
 
@@ -1724,10 +1988,12 @@ class RealTimeUpdateRate(BaseModel):
         new_obj = self.__class__(**kwargs)
         return new_obj
 
-    def to_sdf(self, version: str = None) -> ET.Element:
-        if version is not None and version != self.__version__:
+    def to_sdf(self, version: str | None = None) -> ET.Element:
+        if self.__version__ is None and version is not None:
+            self.__version__ = version
+        elif version is not None and version != self.__version__:
             return self.to_version(version).to_sdf()
-        version = version or self.__version__
+        version = self.__version__ or version
         el = ET.Element("real_time_update_rate")
         if self.real_time_update_rate is not None:
             el.text = str(self.real_time_update_rate)
@@ -1748,7 +2014,7 @@ class RealTimeUpdateRate(BaseModel):
 class Simbody(BaseModel):
     def __init__(
         self,
-        sdf_version: str,
+        sdf_version: str | None = None,
         accuracy: "Accuracy" = None,
         contact: "Contact" = None,
         max_transient_velocity: "MaxTransientVelocity" = None,
@@ -1759,6 +2025,26 @@ class Simbody(BaseModel):
         self.contact = contact
         self.max_transient_velocity = max_transient_velocity
         self.min_step_size = min_step_size
+        if self.accuracy is not None:
+            if getattr(self.accuracy, '__version__', None) is None:
+                self.accuracy.__version__ = self.__version__
+            elif getattr(self.accuracy, '__version__', None) != self.__version__ and self.__version__ is not None:
+                self.accuracy = self.accuracy.to_version(self.__version__)
+        if self.contact is not None:
+            if getattr(self.contact, '__version__', None) is None:
+                self.contact.__version__ = self.__version__
+            elif getattr(self.contact, '__version__', None) != self.__version__ and self.__version__ is not None:
+                self.contact = self.contact.to_version(self.__version__)
+        if self.max_transient_velocity is not None:
+            if getattr(self.max_transient_velocity, '__version__', None) is None:
+                self.max_transient_velocity.__version__ = self.__version__
+            elif getattr(self.max_transient_velocity, '__version__', None) != self.__version__ and self.__version__ is not None:
+                self.max_transient_velocity = self.max_transient_velocity.to_version(self.__version__)
+        if self.min_step_size is not None:
+            if getattr(self.min_step_size, '__version__', None) is None:
+                self.min_step_size.__version__ = self.__version__
+            elif getattr(self.min_step_size, '__version__', None) != self.__version__ and self.__version__ is not None:
+                self.min_step_size = self.min_step_size.to_version(self.__version__)
 
     def to_version(self, target_version: str) -> "Simbody":
         kwargs = {"sdf_version": target_version}
@@ -1769,10 +2055,12 @@ class Simbody(BaseModel):
         new_obj = self.__class__(**kwargs)
         return new_obj
 
-    def to_sdf(self, version: str = None) -> ET.Element:
-        if version is not None and version != self.__version__:
+    def to_sdf(self, version: str | None = None) -> ET.Element:
+        if self.__version__ is None and version is not None:
+            self.__version__ = version
+        elif version is not None and version != self.__version__:
             return self.to_version(version).to_sdf()
-        version = version or self.__version__
+        version = self.__version__ or version
         el = ET.Element("simbody")
         if self.accuracy is not None:
             el.append(self.accuracy.to_sdf(version))
@@ -1824,7 +2112,7 @@ class Simbody(BaseModel):
 class Solver(BaseModel):
     def __init__(
         self,
-        sdf_version: str,
+        sdf_version: str | None = None,
         iters: "Iters" = None,
         min_step_size: "MinStepSize" = None,
         sor: "Sor" = None,
@@ -1835,6 +2123,26 @@ class Solver(BaseModel):
         self.min_step_size = min_step_size
         self.sor = sor
         self.type = type
+        if self.iters is not None:
+            if getattr(self.iters, '__version__', None) is None:
+                self.iters.__version__ = self.__version__
+            elif getattr(self.iters, '__version__', None) != self.__version__ and self.__version__ is not None:
+                self.iters = self.iters.to_version(self.__version__)
+        if self.min_step_size is not None:
+            if getattr(self.min_step_size, '__version__', None) is None:
+                self.min_step_size.__version__ = self.__version__
+            elif getattr(self.min_step_size, '__version__', None) != self.__version__ and self.__version__ is not None:
+                self.min_step_size = self.min_step_size.to_version(self.__version__)
+        if self.sor is not None:
+            if getattr(self.sor, '__version__', None) is None:
+                self.sor.__version__ = self.__version__
+            elif getattr(self.sor, '__version__', None) != self.__version__ and self.__version__ is not None:
+                self.sor = self.sor.to_version(self.__version__)
+        if self.type is not None:
+            if getattr(self.type, '__version__', None) is None:
+                self.type.__version__ = self.__version__
+            elif getattr(self.type, '__version__', None) != self.__version__ and self.__version__ is not None:
+                self.type = self.type.to_version(self.__version__)
 
     def to_version(self, target_version: str) -> "Solver":
         kwargs = {"sdf_version": target_version}
@@ -1845,10 +2153,12 @@ class Solver(BaseModel):
         new_obj = self.__class__(**kwargs)
         return new_obj
 
-    def to_sdf(self, version: str = None) -> ET.Element:
-        if version is not None and version != self.__version__:
+    def to_sdf(self, version: str | None = None) -> ET.Element:
+        if self.__version__ is None and version is not None:
+            self.__version__ = version
+        elif version is not None and version != self.__version__:
             return self.to_version(version).to_sdf()
-        version = version or self.__version__
+        version = self.__version__ or version
         el = ET.Element("solver")
         if self.iters is not None:
             el.append(self.iters.to_sdf(version))
@@ -1898,7 +2208,7 @@ class Solver(BaseModel):
 
 
 class SolverDt(BaseModel):
-    def __init__(self, sdf_version: str, dt: float = 0.001):
+    def __init__(self, sdf_version: str | None = None, dt: float = 0.001):
         self.__version__ = sdf_version
         self.dt = dt
 
@@ -1912,10 +2222,12 @@ class SolverDt(BaseModel):
         new_obj = self.__class__(**kwargs)
         return new_obj
 
-    def to_sdf(self, version: str = None) -> ET.Element:
-        if version is not None and version != self.__version__:
+    def to_sdf(self, version: str | None = None) -> ET.Element:
+        if self.__version__ is None and version is not None:
+            self.__version__ = version
+        elif version is not None and version != self.__version__:
             return self.to_version(version).to_sdf()
-        version = version or self.__version__
+        version = self.__version__ or version
         el = ET.Element("dt")
         if self.dt is not None:
             el.text = str(self.dt)
@@ -1934,7 +2246,7 @@ class SolverDt(BaseModel):
 
 
 class SolverSolverType(BaseModel):
-    def __init__(self, sdf_version: str, solver_type: str = "dantzig"):
+    def __init__(self, sdf_version: str | None = None, solver_type: str = "dantzig"):
         self.__version__ = sdf_version
         self.solver_type = solver_type
 
@@ -1944,10 +2256,12 @@ class SolverSolverType(BaseModel):
         new_obj = self.__class__(**kwargs)
         return new_obj
 
-    def to_sdf(self, version: str = None) -> ET.Element:
-        if version is not None and version != self.__version__:
+    def to_sdf(self, version: str | None = None) -> ET.Element:
+        if self.__version__ is None and version is not None:
+            self.__version__ = version
+        elif version is not None and version != self.__version__:
             return self.to_version(version).to_sdf()
-        version = version or self.__version__
+        version = self.__version__ or version
         el = ET.Element("solver_type")
         if self.solver_type is not None:
             el.text = self.solver_type
@@ -1963,7 +2277,7 @@ class SolverSolverType(BaseModel):
 
 
 class SolverType(BaseModel):
-    def __init__(self, sdf_version: str, type: str = "quick"):
+    def __init__(self, sdf_version: str | None = None, type: str = "quick"):
         self.__version__ = sdf_version
         self.type = type
 
@@ -1975,10 +2289,12 @@ class SolverType(BaseModel):
         new_obj = self.__class__(**kwargs)
         return new_obj
 
-    def to_sdf(self, version: str = None) -> ET.Element:
-        if version is not None and version != self.__version__:
+    def to_sdf(self, version: str | None = None) -> ET.Element:
+        if self.__version__ is None and version is not None:
+            self.__version__ = version
+        elif version is not None and version != self.__version__:
             return self.to_version(version).to_sdf()
-        version = version or self.__version__
+        version = self.__version__ or version
         el = ET.Element("type")
         if self.type is not None:
             el.text = self.type
@@ -1997,7 +2313,7 @@ class SolverType(BaseModel):
 
 
 class Sor(BaseModel):
-    def __init__(self, sdf_version: str, sor: float = 1.3):
+    def __init__(self, sdf_version: str | None = None, sor: float = 1.3):
         self.__version__ = sdf_version
         self.sor = sor
 
@@ -2007,10 +2323,12 @@ class Sor(BaseModel):
         new_obj = self.__class__(**kwargs)
         return new_obj
 
-    def to_sdf(self, version: str = None) -> ET.Element:
-        if version is not None and version != self.__version__:
+    def to_sdf(self, version: str | None = None) -> ET.Element:
+        if self.__version__ is None and version is not None:
+            self.__version__ = version
+        elif version is not None and version != self.__version__:
             return self.to_version(version).to_sdf()
-        version = version or self.__version__
+        version = self.__version__ or version
         el = ET.Element("sor")
         if self.sor is not None:
             el.text = str(self.sor)
@@ -2026,7 +2344,7 @@ class Sor(BaseModel):
 
 
 class SplitImpulse(BaseModel):
-    def __init__(self, sdf_version: str, split_impulse: bool = True):
+    def __init__(self, sdf_version: str | None = None, split_impulse: bool = True):
         self.__version__ = sdf_version
         self.split_impulse = split_impulse
 
@@ -2036,10 +2354,12 @@ class SplitImpulse(BaseModel):
         new_obj = self.__class__(**kwargs)
         return new_obj
 
-    def to_sdf(self, version: str = None) -> ET.Element:
-        if version is not None and version != self.__version__:
+    def to_sdf(self, version: str | None = None) -> ET.Element:
+        if self.__version__ is None and version is not None:
+            self.__version__ = version
+        elif version is not None and version != self.__version__:
             return self.to_version(version).to_sdf()
-        version = version or self.__version__
+        version = self.__version__ or version
         el = ET.Element("split_impulse")
         if self.split_impulse is not None:
             el.text = str(self.split_impulse).lower()
@@ -2055,7 +2375,11 @@ class SplitImpulse(BaseModel):
 
 
 class SplitImpulsePenetrationThreshold(BaseModel):
-    def __init__(self, sdf_version: str, split_impulse_penetration_threshold: float = -0.01):
+    def __init__(
+        self,
+        sdf_version: str | None = None,
+        split_impulse_penetration_threshold: float = -0.01
+    ):
         self.__version__ = sdf_version
         self.split_impulse_penetration_threshold = split_impulse_penetration_threshold
 
@@ -2065,10 +2389,12 @@ class SplitImpulsePenetrationThreshold(BaseModel):
         new_obj = self.__class__(**kwargs)
         return new_obj
 
-    def to_sdf(self, version: str = None) -> ET.Element:
-        if version is not None and version != self.__version__:
+    def to_sdf(self, version: str | None = None) -> ET.Element:
+        if self.__version__ is None and version is not None:
+            self.__version__ = version
+        elif version is not None and version != self.__version__:
             return self.to_version(version).to_sdf()
-        version = version or self.__version__
+        version = self.__version__ or version
         el = ET.Element("split_impulse_penetration_threshold")
         if self.split_impulse_penetration_threshold is not None:
             el.text = str(self.split_impulse_penetration_threshold)
@@ -2084,7 +2410,7 @@ class SplitImpulsePenetrationThreshold(BaseModel):
 
 
 class StaticFriction(BaseModel):
-    def __init__(self, sdf_version: str, static_friction: float = 0.9):
+    def __init__(self, sdf_version: str | None = None, static_friction: float = 0.9):
         self.__version__ = sdf_version
         self.static_friction = static_friction
 
@@ -2094,10 +2420,12 @@ class StaticFriction(BaseModel):
         new_obj = self.__class__(**kwargs)
         return new_obj
 
-    def to_sdf(self, version: str = None) -> ET.Element:
-        if version is not None and version != self.__version__:
+    def to_sdf(self, version: str | None = None) -> ET.Element:
+        if self.__version__ is None and version is not None:
+            self.__version__ = version
+        elif version is not None and version != self.__version__:
             return self.to_version(version).to_sdf()
-        version = version or self.__version__
+        version = self.__version__ or version
         el = ET.Element("static_friction")
         if self.static_friction is not None:
             el.text = str(self.static_friction)
@@ -2113,7 +2441,7 @@ class StaticFriction(BaseModel):
 
 
 class Stiffness(BaseModel):
-    def __init__(self, sdf_version: str, stiffness: float = 1e8):
+    def __init__(self, sdf_version: str | None = None, stiffness: float = 1e8):
         self.__version__ = sdf_version
         self.stiffness = stiffness
 
@@ -2123,10 +2451,12 @@ class Stiffness(BaseModel):
         new_obj = self.__class__(**kwargs)
         return new_obj
 
-    def to_sdf(self, version: str = None) -> ET.Element:
-        if version is not None and version != self.__version__:
+    def to_sdf(self, version: str | None = None) -> ET.Element:
+        if self.__version__ is None and version is not None:
+            self.__version__ = version
+        elif version is not None and version != self.__version__:
             return self.to_version(version).to_sdf()
-        version = version or self.__version__
+        version = self.__version__ or version
         el = ET.Element("stiffness")
         if self.stiffness is not None:
             el.text = str(self.stiffness)
@@ -2142,7 +2472,7 @@ class Stiffness(BaseModel):
 
 
 class ThreadPositionCorrection(BaseModel):
-    def __init__(self, sdf_version: str, thread_position_correction: bool = False):
+    def __init__(self, sdf_version: str | None = None, thread_position_correction: bool = False):
         self.__version__ = sdf_version
         self.thread_position_correction = thread_position_correction
 
@@ -2154,10 +2484,12 @@ class ThreadPositionCorrection(BaseModel):
         new_obj = self.__class__(**kwargs)
         return new_obj
 
-    def to_sdf(self, version: str = None) -> ET.Element:
-        if version is not None and version != self.__version__:
+    def to_sdf(self, version: str | None = None) -> ET.Element:
+        if self.__version__ is None and version is not None:
+            self.__version__ = version
+        elif version is not None and version != self.__version__:
             return self.to_version(version).to_sdf()
-        version = version or self.__version__
+        version = self.__version__ or version
         el = ET.Element("thread_position_correction")
         if self.thread_position_correction is not None:
             el.text = str(self.thread_position_correction).lower()
@@ -2176,7 +2508,7 @@ class ThreadPositionCorrection(BaseModel):
 
 
 class Type(BaseModel):
-    def __init__(self, sdf_version: str, type: str = "sequential_impulse"):
+    def __init__(self, sdf_version: str | None = None, type: str = "sequential_impulse"):
         self.__version__ = sdf_version
         self.type = type
 
@@ -2186,10 +2518,12 @@ class Type(BaseModel):
         new_obj = self.__class__(**kwargs)
         return new_obj
 
-    def to_sdf(self, version: str = None) -> ET.Element:
-        if version is not None and version != self.__version__:
+    def to_sdf(self, version: str | None = None) -> ET.Element:
+        if self.__version__ is None and version is not None:
+            self.__version__ = version
+        elif version is not None and version != self.__version__:
             return self.to_version(version).to_sdf()
-        version = version or self.__version__
+        version = self.__version__ or version
         el = ET.Element("type")
         if self.type is not None:
             el.text = self.type
@@ -2205,7 +2539,7 @@ class Type(BaseModel):
 
 
 class UpdateRate(BaseModel):
-    def __init__(self, sdf_version: str, update_rate: float = 1000):
+    def __init__(self, sdf_version: str | None = None, update_rate: float = 1000):
         self.__version__ = sdf_version
         self.update_rate = update_rate
 
@@ -2219,10 +2553,12 @@ class UpdateRate(BaseModel):
         new_obj = self.__class__(**kwargs)
         return new_obj
 
-    def to_sdf(self, version: str = None) -> ET.Element:
-        if version is not None and version != self.__version__:
+    def to_sdf(self, version: str | None = None) -> ET.Element:
+        if self.__version__ is None and version is not None:
+            self.__version__ = version
+        elif version is not None and version != self.__version__:
             return self.to_version(version).to_sdf()
-        version = version or self.__version__
+        version = self.__version__ or version
         el = ET.Element("update_rate")
         if self.update_rate is not None:
             el.text = str(self.update_rate)
@@ -2241,7 +2577,7 @@ class UpdateRate(BaseModel):
 
 
 class UseDynamicMoiRescaling(BaseModel):
-    def __init__(self, sdf_version: str, use_dynamic_moi_rescaling: bool = False):
+    def __init__(self, sdf_version: str | None = None, use_dynamic_moi_rescaling: bool = False):
         self.__version__ = sdf_version
         self.use_dynamic_moi_rescaling = use_dynamic_moi_rescaling
 
@@ -2253,10 +2589,12 @@ class UseDynamicMoiRescaling(BaseModel):
         new_obj = self.__class__(**kwargs)
         return new_obj
 
-    def to_sdf(self, version: str = None) -> ET.Element:
-        if version is not None and version != self.__version__:
+    def to_sdf(self, version: str | None = None) -> ET.Element:
+        if self.__version__ is None and version is not None:
+            self.__version__ = version
+        elif version is not None and version != self.__version__:
             return self.to_version(version).to_sdf()
-        version = version or self.__version__
+        version = self.__version__ or version
         el = ET.Element("use_dynamic_moi_rescaling")
         if self.use_dynamic_moi_rescaling is not None:
             el.text = str(self.use_dynamic_moi_rescaling).lower()
@@ -2275,7 +2613,7 @@ class UseDynamicMoiRescaling(BaseModel):
 
 
 class ViscousFriction(BaseModel):
-    def __init__(self, sdf_version: str, viscous_friction: float = 0.0):
+    def __init__(self, sdf_version: str | None = None, viscous_friction: float = 0.0):
         self.__version__ = sdf_version
         self.viscous_friction = viscous_friction
 
@@ -2285,10 +2623,12 @@ class ViscousFriction(BaseModel):
         new_obj = self.__class__(**kwargs)
         return new_obj
 
-    def to_sdf(self, version: str = None) -> ET.Element:
-        if version is not None and version != self.__version__:
+    def to_sdf(self, version: str | None = None) -> ET.Element:
+        if self.__version__ is None and version is not None:
+            self.__version__ = version
+        elif version is not None and version != self.__version__:
             return self.to_version(version).to_sdf()
-        version = version or self.__version__
+        version = self.__version__ or version
         el = ET.Element("viscous_friction")
         if self.viscous_friction is not None:
             el.text = str(self.viscous_friction)

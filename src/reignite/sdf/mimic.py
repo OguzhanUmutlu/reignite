@@ -44,7 +44,7 @@ def _parse_double(raw: str) -> float | SDFError:
 class Mimic(BaseModel):
     def __init__(
         self,
-        sdf_version: str,
+        sdf_version: str | None = None,
         axis: str = "axis",
         joint: str = "",
         multiplier: "Multiplier" = None,
@@ -57,6 +57,21 @@ class Mimic(BaseModel):
         self.multiplier = multiplier
         self.offset = offset
         self.reference = reference
+        if self.multiplier is not None:
+            if getattr(self.multiplier, '__version__', None) is None:
+                self.multiplier.__version__ = self.__version__
+            elif getattr(self.multiplier, '__version__', None) != self.__version__ and self.__version__ is not None:
+                self.multiplier = self.multiplier.to_version(self.__version__)
+        if self.offset is not None:
+            if getattr(self.offset, '__version__', None) is None:
+                self.offset.__version__ = self.__version__
+            elif getattr(self.offset, '__version__', None) != self.__version__ and self.__version__ is not None:
+                self.offset = self.offset.to_version(self.__version__)
+        if self.reference is not None:
+            if getattr(self.reference, '__version__', None) is None:
+                self.reference.__version__ = self.__version__
+            elif getattr(self.reference, '__version__', None) != self.__version__ and self.__version__ is not None:
+                self.reference = self.reference.to_version(self.__version__)
 
     def to_version(self, target_version: str) -> "Mimic":
         kwargs = {"sdf_version": target_version}
@@ -68,10 +83,12 @@ class Mimic(BaseModel):
         new_obj = self.__class__(**kwargs)
         return new_obj
 
-    def to_sdf(self, version: str = None) -> ET.Element:
-        if version is not None and version != self.__version__:
+    def to_sdf(self, version: str | None = None) -> ET.Element:
+        if self.__version__ is None and version is not None:
+            self.__version__ = version
+        elif version is not None and version != self.__version__:
             return self.to_version(version).to_sdf()
-        version = version or self.__version__
+        version = self.__version__ or version
         el = ET.Element("mimic")
         if self.axis is not None:
             el.set("axis", self.axis)
@@ -125,7 +142,7 @@ class Mimic(BaseModel):
 
 
 class Multiplier(BaseModel):
-    def __init__(self, sdf_version: str, multiplier: float = 1.0):
+    def __init__(self, sdf_version: str | None = None, multiplier: float = 1.0):
         self.__version__ = sdf_version
         self.multiplier = multiplier
 
@@ -135,10 +152,12 @@ class Multiplier(BaseModel):
         new_obj = self.__class__(**kwargs)
         return new_obj
 
-    def to_sdf(self, version: str = None) -> ET.Element:
-        if version is not None and version != self.__version__:
+    def to_sdf(self, version: str | None = None) -> ET.Element:
+        if self.__version__ is None and version is not None:
+            self.__version__ = version
+        elif version is not None and version != self.__version__:
             return self.to_version(version).to_sdf()
-        version = version or self.__version__
+        version = self.__version__ or version
         el = ET.Element("multiplier")
         if self.multiplier is not None:
             el.text = str(self.multiplier)
@@ -154,7 +173,7 @@ class Multiplier(BaseModel):
 
 
 class Offset(BaseModel):
-    def __init__(self, sdf_version: str, offset: float = 0):
+    def __init__(self, sdf_version: str | None = None, offset: float = 0):
         self.__version__ = sdf_version
         self.offset = offset
 
@@ -164,10 +183,12 @@ class Offset(BaseModel):
         new_obj = self.__class__(**kwargs)
         return new_obj
 
-    def to_sdf(self, version: str = None) -> ET.Element:
-        if version is not None and version != self.__version__:
+    def to_sdf(self, version: str | None = None) -> ET.Element:
+        if self.__version__ is None and version is not None:
+            self.__version__ = version
+        elif version is not None and version != self.__version__:
             return self.to_version(version).to_sdf()
-        version = version or self.__version__
+        version = self.__version__ or version
         el = ET.Element("offset")
         if self.offset is not None:
             el.text = str(self.offset)
@@ -183,7 +204,7 @@ class Offset(BaseModel):
 
 
 class Reference(BaseModel):
-    def __init__(self, sdf_version: str, reference: float = 0):
+    def __init__(self, sdf_version: str | None = None, reference: float = 0):
         self.__version__ = sdf_version
         self.reference = reference
 
@@ -193,10 +214,12 @@ class Reference(BaseModel):
         new_obj = self.__class__(**kwargs)
         return new_obj
 
-    def to_sdf(self, version: str = None) -> ET.Element:
-        if version is not None and version != self.__version__:
+    def to_sdf(self, version: str | None = None) -> ET.Element:
+        if self.__version__ is None and version is not None:
+            self.__version__ = version
+        elif version is not None and version != self.__version__:
             return self.to_version(version).to_sdf()
-        version = version or self.__version__
+        version = self.__version__ or version
         el = ET.Element("reference")
         if self.reference is not None:
             el.text = str(self.reference)

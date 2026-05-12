@@ -50,7 +50,7 @@ def _parse_double(raw: str) -> float | SDFError:
 
 
 class FarClip(BaseModel):
-    def __init__(self, sdf_version: str, far_clip: float = 10.0):
+    def __init__(self, sdf_version: str | None = None, far_clip: float = 10.0):
         self.__version__ = sdf_version
         self.far_clip = far_clip
 
@@ -60,10 +60,12 @@ class FarClip(BaseModel):
         new_obj = self.__class__(**kwargs)
         return new_obj
 
-    def to_sdf(self, version: str = None) -> ET.Element:
-        if version is not None and version != self.__version__:
+    def to_sdf(self, version: str | None = None) -> ET.Element:
+        if self.__version__ is None and version is not None:
+            self.__version__ = version
+        elif version is not None and version != self.__version__:
             return self.to_version(version).to_sdf()
-        version = version or self.__version__
+        version = self.__version__ or version
         el = ET.Element("far_clip")
         if self.far_clip is not None:
             el.text = str(self.far_clip)
@@ -79,7 +81,7 @@ class FarClip(BaseModel):
 
 
 class Fov(BaseModel):
-    def __init__(self, sdf_version: str, fov: float = 0.785):
+    def __init__(self, sdf_version: str | None = None, fov: float = 0.785):
         self.__version__ = sdf_version
         self.fov = fov
 
@@ -89,10 +91,12 @@ class Fov(BaseModel):
         new_obj = self.__class__(**kwargs)
         return new_obj
 
-    def to_sdf(self, version: str = None) -> ET.Element:
-        if version is not None and version != self.__version__:
+    def to_sdf(self, version: str | None = None) -> ET.Element:
+        if self.__version__ is None and version is not None:
+            self.__version__ = version
+        elif version is not None and version != self.__version__:
             return self.to_version(version).to_sdf()
-        version = version or self.__version__
+        version = self.__version__ or version
         el = ET.Element("fov")
         if self.fov is not None:
             el.text = str(self.fov)
@@ -108,7 +112,7 @@ class Fov(BaseModel):
 
 
 class NearClip(BaseModel):
-    def __init__(self, sdf_version: str, near_clip: float = 0.1):
+    def __init__(self, sdf_version: str | None = None, near_clip: float = 0.1):
         self.__version__ = sdf_version
         self.near_clip = near_clip
 
@@ -118,10 +122,12 @@ class NearClip(BaseModel):
         new_obj = self.__class__(**kwargs)
         return new_obj
 
-    def to_sdf(self, version: str = None) -> ET.Element:
-        if version is not None and version != self.__version__:
+    def to_sdf(self, version: str | None = None) -> ET.Element:
+        if self.__version__ is None and version is not None:
+            self.__version__ = version
+        elif version is not None and version != self.__version__:
             return self.to_version(version).to_sdf()
-        version = version or self.__version__
+        version = self.__version__ or version
         el = ET.Element("near_clip")
         if self.near_clip is not None:
             el.text = str(self.near_clip)
@@ -139,7 +145,7 @@ class NearClip(BaseModel):
 class Projector(BaseModel):
     def __init__(
         self,
-        sdf_version: str,
+        sdf_version: str | None = None,
         far_clip: "FarClip" = None,
         fov: "Fov" = None,
         frame: List["Frame"] = None,
@@ -160,6 +166,46 @@ class Projector(BaseModel):
         self.pose = pose
         self.texture = texture
         self.visibility_flags = visibility_flags
+        if self.far_clip is not None:
+            if getattr(self.far_clip, '__version__', None) is None:
+                self.far_clip.__version__ = self.__version__
+            elif getattr(self.far_clip, '__version__', None) != self.__version__ and self.__version__ is not None:
+                self.far_clip = self.far_clip.to_version(self.__version__)
+        if self.fov is not None:
+            if getattr(self.fov, '__version__', None) is None:
+                self.fov.__version__ = self.__version__
+            elif getattr(self.fov, '__version__', None) != self.__version__ and self.__version__ is not None:
+                self.fov = self.fov.to_version(self.__version__)
+        for _i, _c in enumerate(self.frame):
+            if getattr(_c, '__version__', None) is None:
+                _c.__version__ = self.__version__
+            elif getattr(_c, '__version__', None) != self.__version__ and self.__version__ is not None:
+                self.frame[_i] = _c.to_version(self.__version__)
+        if self.near_clip is not None:
+            if getattr(self.near_clip, '__version__', None) is None:
+                self.near_clip.__version__ = self.__version__
+            elif getattr(self.near_clip, '__version__', None) != self.__version__ and self.__version__ is not None:
+                self.near_clip = self.near_clip.to_version(self.__version__)
+        for _i, _c in enumerate(self.plugin):
+            if getattr(_c, '__version__', None) is None:
+                _c.__version__ = self.__version__
+            elif getattr(_c, '__version__', None) != self.__version__ and self.__version__ is not None:
+                self.plugin[_i] = _c.to_version(self.__version__)
+        if self.pose is not None:
+            if getattr(self.pose, '__version__', None) is None:
+                self.pose.__version__ = self.__version__
+            elif getattr(self.pose, '__version__', None) != self.__version__ and self.__version__ is not None:
+                self.pose = self.pose.to_version(self.__version__)
+        if self.texture is not None:
+            if getattr(self.texture, '__version__', None) is None:
+                self.texture.__version__ = self.__version__
+            elif getattr(self.texture, '__version__', None) != self.__version__ and self.__version__ is not None:
+                self.texture = self.texture.to_version(self.__version__)
+        if self.visibility_flags is not None:
+            if getattr(self.visibility_flags, '__version__', None) is None:
+                self.visibility_flags.__version__ = self.__version__
+            elif getattr(self.visibility_flags, '__version__', None) != self.__version__ and self.__version__ is not None:
+                self.visibility_flags = self.visibility_flags.to_version(self.__version__)
 
     def to_version(self, target_version: str) -> "Projector":
         from ..elements.frame import Frame
@@ -184,13 +230,15 @@ class Projector(BaseModel):
         new_obj = self.__class__(**kwargs)
         return new_obj
 
-    def to_sdf(self, version: str = None) -> ET.Element:
+    def to_sdf(self, version: str | None = None) -> ET.Element:
         from ..elements.frame import Frame
         from ..elements.plugin import Plugin
         from ..elements.pose import Pose
-        if version is not None and version != self.__version__:
+        if self.__version__ is None and version is not None:
+            self.__version__ = version
+        elif version is not None and version != self.__version__:
             return self.to_version(version).to_sdf()
-        version = version or self.__version__
+        version = self.__version__ or version
         el = ET.Element("projector")
         if self.far_clip is not None:
             el.append(self.far_clip.to_sdf(version))
@@ -288,7 +336,7 @@ class Projector(BaseModel):
 
 
 class Texture(BaseModel):
-    def __init__(self, sdf_version: str, texture: str = "__default__"):
+    def __init__(self, sdf_version: str | None = None, texture: str = "__default__"):
         self.__version__ = sdf_version
         self.texture = texture
 
@@ -298,10 +346,12 @@ class Texture(BaseModel):
         new_obj = self.__class__(**kwargs)
         return new_obj
 
-    def to_sdf(self, version: str = None) -> ET.Element:
-        if version is not None and version != self.__version__:
+    def to_sdf(self, version: str | None = None) -> ET.Element:
+        if self.__version__ is None and version is not None:
+            self.__version__ = version
+        elif version is not None and version != self.__version__:
             return self.to_version(version).to_sdf()
-        version = version or self.__version__
+        version = self.__version__ or version
         el = ET.Element("texture")
         if self.texture is not None:
             el.text = self.texture
@@ -317,7 +367,7 @@ class Texture(BaseModel):
 
 
 class VisibilityFlags(BaseModel):
-    def __init__(self, sdf_version: str, visibility_flags: int = 4294967295):
+    def __init__(self, sdf_version: str | None = None, visibility_flags: int = 4294967295):
         self.__version__ = sdf_version
         self.visibility_flags = visibility_flags
 
@@ -329,10 +379,12 @@ class VisibilityFlags(BaseModel):
         new_obj = self.__class__(**kwargs)
         return new_obj
 
-    def to_sdf(self, version: str = None) -> ET.Element:
-        if version is not None and version != self.__version__:
+    def to_sdf(self, version: str | None = None) -> ET.Element:
+        if self.__version__ is None and version is not None:
+            self.__version__ = version
+        elif version is not None and version != self.__version__:
             return self.to_version(version).to_sdf()
-        version = version or self.__version__
+        version = self.__version__ or version
         el = ET.Element("visibility_flags")
         if self.visibility_flags is not None:
             el.text = str(self.visibility_flags)

@@ -45,7 +45,7 @@ def _parse_double(raw: str) -> float | SDFError:
 class Horizontal(BaseModel):
     def __init__(
         self,
-        sdf_version: str,
+        sdf_version: str | None = None,
         max_angle: float = 0,
         min_angle: float = 0,
         resolution: float = 1,
@@ -74,10 +74,12 @@ class Horizontal(BaseModel):
         new_obj = self.__class__(**kwargs)
         return new_obj
 
-    def to_sdf(self, version: str = None) -> ET.Element:
-        if version is not None and version != self.__version__:
+    def to_sdf(self, version: str | None = None) -> ET.Element:
+        if self.__version__ is None and version is not None:
+            self.__version__ = version
+        elif version is not None and version != self.__version__:
             return self.to_version(version).to_sdf()
-        version = version or self.__version__
+        version = self.__version__ or version
         el = ET.Element("horizontal")
         if self.max_angle is not None:
             el.set("max_angle", str(self.max_angle))
@@ -107,7 +109,7 @@ class Horizontal(BaseModel):
 
 
 class Max(BaseModel):
-    def __init__(self, sdf_version: str, max: float = 0):
+    def __init__(self, sdf_version: str | None = None, max: float = 0):
         self.__version__ = sdf_version
         self.max = max
 
@@ -119,10 +121,12 @@ class Max(BaseModel):
         new_obj = self.__class__(**kwargs)
         return new_obj
 
-    def to_sdf(self, version: str = None) -> ET.Element:
-        if version is not None and version != self.__version__:
+    def to_sdf(self, version: str | None = None) -> ET.Element:
+        if self.__version__ is None and version is not None:
+            self.__version__ = version
+        elif version is not None and version != self.__version__:
             return self.to_version(version).to_sdf()
-        version = version or self.__version__
+        version = self.__version__ or version
         el = ET.Element("max")
         if self.max is not None:
             el.text = str(self.max)
@@ -141,7 +145,7 @@ class Max(BaseModel):
 
 
 class MaxAngle(BaseModel):
-    def __init__(self, sdf_version: str, max_angle: float = 0):
+    def __init__(self, sdf_version: str | None = None, max_angle: float = 0):
         self.__version__ = sdf_version
         self.max_angle = max_angle
 
@@ -153,10 +157,12 @@ class MaxAngle(BaseModel):
         new_obj = self.__class__(**kwargs)
         return new_obj
 
-    def to_sdf(self, version: str = None) -> ET.Element:
-        if version is not None and version != self.__version__:
+    def to_sdf(self, version: str | None = None) -> ET.Element:
+        if self.__version__ is None and version is not None:
+            self.__version__ = version
+        elif version is not None and version != self.__version__:
             return self.to_version(version).to_sdf()
-        version = version or self.__version__
+        version = self.__version__ or version
         el = ET.Element("max_angle")
         if self.max_angle is not None:
             el.text = str(self.max_angle)
@@ -175,7 +181,7 @@ class MaxAngle(BaseModel):
 
 
 class Mean(BaseModel):
-    def __init__(self, sdf_version: str, mean: float = 0.0):
+    def __init__(self, sdf_version: str | None = None, mean: float = 0.0):
         self.__version__ = sdf_version
         self.mean = mean
 
@@ -185,10 +191,12 @@ class Mean(BaseModel):
         new_obj = self.__class__(**kwargs)
         return new_obj
 
-    def to_sdf(self, version: str = None) -> ET.Element:
-        if version is not None and version != self.__version__:
+    def to_sdf(self, version: str | None = None) -> ET.Element:
+        if self.__version__ is None and version is not None:
+            self.__version__ = version
+        elif version is not None and version != self.__version__:
             return self.to_version(version).to_sdf()
-        version = version or self.__version__
+        version = self.__version__ or version
         el = ET.Element("mean")
         if self.mean is not None:
             el.text = str(self.mean)
@@ -204,7 +212,7 @@ class Mean(BaseModel):
 
 
 class Min(BaseModel):
-    def __init__(self, sdf_version: str, min: float = 0):
+    def __init__(self, sdf_version: str | None = None, min: float = 0):
         self.__version__ = sdf_version
         self.min = min
 
@@ -216,10 +224,12 @@ class Min(BaseModel):
         new_obj = self.__class__(**kwargs)
         return new_obj
 
-    def to_sdf(self, version: str = None) -> ET.Element:
-        if version is not None and version != self.__version__:
+    def to_sdf(self, version: str | None = None) -> ET.Element:
+        if self.__version__ is None and version is not None:
+            self.__version__ = version
+        elif version is not None and version != self.__version__:
             return self.to_version(version).to_sdf()
-        version = version or self.__version__
+        version = self.__version__ or version
         el = ET.Element("min")
         if self.min is not None:
             el.text = str(self.min)
@@ -238,7 +248,7 @@ class Min(BaseModel):
 
 
 class MinAngle(BaseModel):
-    def __init__(self, sdf_version: str, min_angle: float = 0):
+    def __init__(self, sdf_version: str | None = None, min_angle: float = 0):
         self.__version__ = sdf_version
         self.min_angle = min_angle
 
@@ -250,10 +260,12 @@ class MinAngle(BaseModel):
         new_obj = self.__class__(**kwargs)
         return new_obj
 
-    def to_sdf(self, version: str = None) -> ET.Element:
-        if version is not None and version != self.__version__:
+    def to_sdf(self, version: str | None = None) -> ET.Element:
+        if self.__version__ is None and version is not None:
+            self.__version__ = version
+        elif version is not None and version != self.__version__:
             return self.to_version(version).to_sdf()
-        version = version or self.__version__
+        version = self.__version__ or version
         el = ET.Element("min_angle")
         if self.min_angle is not None:
             el.text = str(self.min_angle)
@@ -274,7 +286,7 @@ class MinAngle(BaseModel):
 class Noise(BaseModel):
     def __init__(
         self,
-        sdf_version: str,
+        sdf_version: str | None = None,
         mean: "Mean" = None,
         stddev: "Stddev" = None,
         type: "Type" = None
@@ -283,6 +295,21 @@ class Noise(BaseModel):
         self.mean = mean
         self.stddev = stddev
         self.type = type
+        if self.mean is not None:
+            if getattr(self.mean, '__version__', None) is None:
+                self.mean.__version__ = self.__version__
+            elif getattr(self.mean, '__version__', None) != self.__version__ and self.__version__ is not None:
+                self.mean = self.mean.to_version(self.__version__)
+        if self.stddev is not None:
+            if getattr(self.stddev, '__version__', None) is None:
+                self.stddev.__version__ = self.__version__
+            elif getattr(self.stddev, '__version__', None) != self.__version__ and self.__version__ is not None:
+                self.stddev = self.stddev.to_version(self.__version__)
+        if self.type is not None:
+            if getattr(self.type, '__version__', None) is None:
+                self.type.__version__ = self.__version__
+            elif getattr(self.type, '__version__', None) != self.__version__ and self.__version__ is not None:
+                self.type = self.type.to_version(self.__version__)
 
     def to_version(self, target_version: str) -> "Noise":
         kwargs = {"sdf_version": target_version}
@@ -292,10 +319,12 @@ class Noise(BaseModel):
         new_obj = self.__class__(**kwargs)
         return new_obj
 
-    def to_sdf(self, version: str = None) -> ET.Element:
-        if version is not None and version != self.__version__:
+    def to_sdf(self, version: str | None = None) -> ET.Element:
+        if self.__version__ is None and version is not None:
+            self.__version__ = version
+        elif version is not None and version != self.__version__:
             return self.to_version(version).to_sdf()
-        version = version or self.__version__
+        version = self.__version__ or version
         el = ET.Element("noise")
         if self.mean is not None:
             el.append(self.mean.to_sdf(version))
@@ -335,7 +364,13 @@ class Noise(BaseModel):
 
 
 class Range(BaseModel):
-    def __init__(self, sdf_version: str, max: float = 0, min: float = 0, resolution: float = 0):
+    def __init__(
+        self,
+        sdf_version: str | None = None,
+        max: float = 0,
+        min: float = 0,
+        resolution: float = 0
+    ):
         self.__version__ = sdf_version
         self.max = max
         self.min = min
@@ -355,10 +390,12 @@ class Range(BaseModel):
         new_obj = self.__class__(**kwargs)
         return new_obj
 
-    def to_sdf(self, version: str = None) -> ET.Element:
-        if version is not None and version != self.__version__:
+    def to_sdf(self, version: str | None = None) -> ET.Element:
+        if self.__version__ is None and version is not None:
+            self.__version__ = version
+        elif version is not None and version != self.__version__:
             return self.to_version(version).to_sdf()
-        version = version or self.__version__
+        version = self.__version__ or version
         el = ET.Element("range")
         if self.max is not None:
             el.set("max", str(self.max))
@@ -383,7 +420,7 @@ class Range(BaseModel):
 
 
 class RangeResolution(BaseModel):
-    def __init__(self, sdf_version: str, resolution: float = 0):
+    def __init__(self, sdf_version: str | None = None, resolution: float = 0):
         self.__version__ = sdf_version
         self.resolution = resolution
 
@@ -395,10 +432,12 @@ class RangeResolution(BaseModel):
         new_obj = self.__class__(**kwargs)
         return new_obj
 
-    def to_sdf(self, version: str = None) -> ET.Element:
-        if version is not None and version != self.__version__:
+    def to_sdf(self, version: str | None = None) -> ET.Element:
+        if self.__version__ is None and version is not None:
+            self.__version__ = version
+        elif version is not None and version != self.__version__:
             return self.to_version(version).to_sdf()
-        version = version or self.__version__
+        version = self.__version__ or version
         el = ET.Element("resolution")
         if self.resolution is not None:
             el.text = str(self.resolution)
@@ -419,7 +458,7 @@ class RangeResolution(BaseModel):
 class Ray(BaseModel):
     def __init__(
         self,
-        sdf_version: str,
+        sdf_version: str | None = None,
         noise: "Noise" = None,
         range: "Range" = None,
         scan: "Scan" = None,
@@ -430,6 +469,26 @@ class Ray(BaseModel):
         self.range = range
         self.scan = scan
         self.visibility_mask = visibility_mask
+        if self.noise is not None:
+            if getattr(self.noise, '__version__', None) is None:
+                self.noise.__version__ = self.__version__
+            elif getattr(self.noise, '__version__', None) != self.__version__ and self.__version__ is not None:
+                self.noise = self.noise.to_version(self.__version__)
+        if self.range is not None:
+            if getattr(self.range, '__version__', None) is None:
+                self.range.__version__ = self.__version__
+            elif getattr(self.range, '__version__', None) != self.__version__ and self.__version__ is not None:
+                self.range = self.range.to_version(self.__version__)
+        if self.scan is not None:
+            if getattr(self.scan, '__version__', None) is None:
+                self.scan.__version__ = self.__version__
+            elif getattr(self.scan, '__version__', None) != self.__version__ and self.__version__ is not None:
+                self.scan = self.scan.to_version(self.__version__)
+        if self.visibility_mask is not None:
+            if getattr(self.visibility_mask, '__version__', None) is None:
+                self.visibility_mask.__version__ = self.__version__
+            elif getattr(self.visibility_mask, '__version__', None) != self.__version__ and self.__version__ is not None:
+                self.visibility_mask = self.visibility_mask.to_version(self.__version__)
 
     def to_version(self, target_version: str) -> "Ray":
         if self.noise is not None and cmp_version(target_version, "1.4") < 0:
@@ -444,10 +503,12 @@ class Ray(BaseModel):
         new_obj = self.__class__(**kwargs)
         return new_obj
 
-    def to_sdf(self, version: str = None) -> ET.Element:
-        if version is not None and version != self.__version__:
+    def to_sdf(self, version: str | None = None) -> ET.Element:
+        if self.__version__ is None and version is not None:
+            self.__version__ = version
+        elif version is not None and version != self.__version__:
             return self.to_version(version).to_sdf()
-        version = version or self.__version__
+        version = self.__version__ or version
         el = ET.Element("ray")
         if self.noise is not None:
             el.append(self.noise.to_sdf(version))
@@ -511,7 +572,7 @@ class Ray(BaseModel):
 
 
 class Resolution(BaseModel):
-    def __init__(self, sdf_version: str, resolution: float = 1):
+    def __init__(self, sdf_version: str | None = None, resolution: float = 1):
         self.__version__ = sdf_version
         self.resolution = resolution
 
@@ -523,10 +584,12 @@ class Resolution(BaseModel):
         new_obj = self.__class__(**kwargs)
         return new_obj
 
-    def to_sdf(self, version: str = None) -> ET.Element:
-        if version is not None and version != self.__version__:
+    def to_sdf(self, version: str | None = None) -> ET.Element:
+        if self.__version__ is None and version is not None:
+            self.__version__ = version
+        elif version is not None and version != self.__version__:
             return self.to_version(version).to_sdf()
-        version = version or self.__version__
+        version = self.__version__ or version
         el = ET.Element("resolution")
         if self.resolution is not None:
             el.text = str(self.resolution)
@@ -545,7 +608,7 @@ class Resolution(BaseModel):
 
 
 class Samples(BaseModel):
-    def __init__(self, sdf_version: str, samples: int = 640):
+    def __init__(self, sdf_version: str | None = None, samples: int = 640):
         self.__version__ = sdf_version
         self.samples = samples
 
@@ -557,10 +620,12 @@ class Samples(BaseModel):
         new_obj = self.__class__(**kwargs)
         return new_obj
 
-    def to_sdf(self, version: str = None) -> ET.Element:
-        if version is not None and version != self.__version__:
+    def to_sdf(self, version: str | None = None) -> ET.Element:
+        if self.__version__ is None and version is not None:
+            self.__version__ = version
+        elif version is not None and version != self.__version__:
             return self.to_version(version).to_sdf()
-        version = version or self.__version__
+        version = self.__version__ or version
         el = ET.Element("samples")
         if self.samples is not None:
             el.text = str(self.samples)
@@ -581,13 +646,23 @@ class Samples(BaseModel):
 class Scan(BaseModel):
     def __init__(
         self,
-        sdf_version: str,
+        sdf_version: str | None = None,
         horizontal: "Horizontal" = None,
         vertical: "Vertical" = None
     ):
         self.__version__ = sdf_version
         self.horizontal = horizontal
         self.vertical = vertical
+        if self.horizontal is not None:
+            if getattr(self.horizontal, '__version__', None) is None:
+                self.horizontal.__version__ = self.__version__
+            elif getattr(self.horizontal, '__version__', None) != self.__version__ and self.__version__ is not None:
+                self.horizontal = self.horizontal.to_version(self.__version__)
+        if self.vertical is not None:
+            if getattr(self.vertical, '__version__', None) is None:
+                self.vertical.__version__ = self.__version__
+            elif getattr(self.vertical, '__version__', None) != self.__version__ and self.__version__ is not None:
+                self.vertical = self.vertical.to_version(self.__version__)
 
     def to_version(self, target_version: str) -> "Scan":
         kwargs = {"sdf_version": target_version}
@@ -596,10 +671,12 @@ class Scan(BaseModel):
         new_obj = self.__class__(**kwargs)
         return new_obj
 
-    def to_sdf(self, version: str = None) -> ET.Element:
-        if version is not None and version != self.__version__:
+    def to_sdf(self, version: str | None = None) -> ET.Element:
+        if self.__version__ is None and version is not None:
+            self.__version__ = version
+        elif version is not None and version != self.__version__:
             return self.to_version(version).to_sdf()
-        version = version or self.__version__
+        version = self.__version__ or version
         el = ET.Element("scan")
         if self.horizontal is None:
             self.horizontal = Horizontal(sdf_version=version)
@@ -634,7 +711,7 @@ class Scan(BaseModel):
 
 
 class Stddev(BaseModel):
-    def __init__(self, sdf_version: str, stddev: float = 0.0):
+    def __init__(self, sdf_version: str | None = None, stddev: float = 0.0):
         self.__version__ = sdf_version
         self.stddev = stddev
 
@@ -644,10 +721,12 @@ class Stddev(BaseModel):
         new_obj = self.__class__(**kwargs)
         return new_obj
 
-    def to_sdf(self, version: str = None) -> ET.Element:
-        if version is not None and version != self.__version__:
+    def to_sdf(self, version: str | None = None) -> ET.Element:
+        if self.__version__ is None and version is not None:
+            self.__version__ = version
+        elif version is not None and version != self.__version__:
             return self.to_version(version).to_sdf()
-        version = version or self.__version__
+        version = self.__version__ or version
         el = ET.Element("stddev")
         if self.stddev is not None:
             el.text = str(self.stddev)
@@ -663,7 +742,7 @@ class Stddev(BaseModel):
 
 
 class Type(BaseModel):
-    def __init__(self, sdf_version: str, type: str = "gaussian"):
+    def __init__(self, sdf_version: str | None = None, type: str = "gaussian"):
         self.__version__ = sdf_version
         self.type = type
 
@@ -673,10 +752,12 @@ class Type(BaseModel):
         new_obj = self.__class__(**kwargs)
         return new_obj
 
-    def to_sdf(self, version: str = None) -> ET.Element:
-        if version is not None and version != self.__version__:
+    def to_sdf(self, version: str | None = None) -> ET.Element:
+        if self.__version__ is None and version is not None:
+            self.__version__ = version
+        elif version is not None and version != self.__version__:
             return self.to_version(version).to_sdf()
-        version = version or self.__version__
+        version = self.__version__ or version
         el = ET.Element("type")
         if self.type is not None:
             el.text = self.type
@@ -694,7 +775,7 @@ class Type(BaseModel):
 class Vertical(BaseModel):
     def __init__(
         self,
-        sdf_version: str,
+        sdf_version: str | None = None,
         max_angle: float = 0,
         min_angle: float = 0,
         resolution: float = 1,
@@ -723,10 +804,12 @@ class Vertical(BaseModel):
         new_obj = self.__class__(**kwargs)
         return new_obj
 
-    def to_sdf(self, version: str = None) -> ET.Element:
-        if version is not None and version != self.__version__:
+    def to_sdf(self, version: str | None = None) -> ET.Element:
+        if self.__version__ is None and version is not None:
+            self.__version__ = version
+        elif version is not None and version != self.__version__:
             return self.to_version(version).to_sdf()
-        version = version or self.__version__
+        version = self.__version__ or version
         el = ET.Element("vertical")
         if self.max_angle is not None:
             el.set("max_angle", str(self.max_angle))
@@ -756,7 +839,7 @@ class Vertical(BaseModel):
 
 
 class VerticalSamples(BaseModel):
-    def __init__(self, sdf_version: str, samples: int = 1):
+    def __init__(self, sdf_version: str | None = None, samples: int = 1):
         self.__version__ = sdf_version
         self.samples = samples
 
@@ -768,10 +851,12 @@ class VerticalSamples(BaseModel):
         new_obj = self.__class__(**kwargs)
         return new_obj
 
-    def to_sdf(self, version: str = None) -> ET.Element:
-        if version is not None and version != self.__version__:
+    def to_sdf(self, version: str | None = None) -> ET.Element:
+        if self.__version__ is None and version is not None:
+            self.__version__ = version
+        elif version is not None and version != self.__version__:
             return self.to_version(version).to_sdf()
-        version = version or self.__version__
+        version = self.__version__ or version
         el = ET.Element("samples")
         if self.samples is not None:
             el.text = str(self.samples)
@@ -790,7 +875,7 @@ class VerticalSamples(BaseModel):
 
 
 class VisibilityMask(BaseModel):
-    def __init__(self, sdf_version: str, visibility_mask: int = 4294967295):
+    def __init__(self, sdf_version: str | None = None, visibility_mask: int = 4294967295):
         self.__version__ = sdf_version
         self.visibility_mask = visibility_mask
 
@@ -802,10 +887,12 @@ class VisibilityMask(BaseModel):
         new_obj = self.__class__(**kwargs)
         return new_obj
 
-    def to_sdf(self, version: str = None) -> ET.Element:
-        if version is not None and version != self.__version__:
+    def to_sdf(self, version: str | None = None) -> ET.Element:
+        if self.__version__ is None and version is not None:
+            self.__version__ = version
+        elif version is not None and version != self.__version__:
             return self.to_version(version).to_sdf()
-        version = version or self.__version__
+        version = self.__version__ or version
         el = ET.Element("visibility_mask")
         if self.visibility_mask is not None:
             el.text = str(self.visibility_mask)

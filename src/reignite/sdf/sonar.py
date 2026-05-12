@@ -43,7 +43,7 @@ def _parse_double(raw: str) -> float | SDFError:
 
 
 class Geometry(BaseModel):
-    def __init__(self, sdf_version: str, geometry: str = "cone"):
+    def __init__(self, sdf_version: str | None = None, geometry: str = "cone"):
         self.__version__ = sdf_version
         self.geometry = geometry
 
@@ -55,10 +55,12 @@ class Geometry(BaseModel):
         new_obj = self.__class__(**kwargs)
         return new_obj
 
-    def to_sdf(self, version: str = None) -> ET.Element:
-        if version is not None and version != self.__version__:
+    def to_sdf(self, version: str | None = None) -> ET.Element:
+        if self.__version__ is None and version is not None:
+            self.__version__ = version
+        elif version is not None and version != self.__version__:
             return self.to_version(version).to_sdf()
-        version = version or self.__version__
+        version = self.__version__ or version
         el = ET.Element("geometry")
         if self.geometry is not None:
             el.text = self.geometry
@@ -77,7 +79,7 @@ class Geometry(BaseModel):
 
 
 class Max(BaseModel):
-    def __init__(self, sdf_version: str, max: float = 1.0):
+    def __init__(self, sdf_version: str | None = None, max: float = 1.0):
         self.__version__ = sdf_version
         self.max = max
 
@@ -87,10 +89,12 @@ class Max(BaseModel):
         new_obj = self.__class__(**kwargs)
         return new_obj
 
-    def to_sdf(self, version: str = None) -> ET.Element:
-        if version is not None and version != self.__version__:
+    def to_sdf(self, version: str | None = None) -> ET.Element:
+        if self.__version__ is None and version is not None:
+            self.__version__ = version
+        elif version is not None and version != self.__version__:
             return self.to_version(version).to_sdf()
-        version = version or self.__version__
+        version = self.__version__ or version
         el = ET.Element("max")
         if self.max is not None:
             el.text = str(self.max)
@@ -106,7 +110,7 @@ class Max(BaseModel):
 
 
 class Min(BaseModel):
-    def __init__(self, sdf_version: str, min: float = 0):
+    def __init__(self, sdf_version: str | None = None, min: float = 0):
         self.__version__ = sdf_version
         self.min = min
 
@@ -116,10 +120,12 @@ class Min(BaseModel):
         new_obj = self.__class__(**kwargs)
         return new_obj
 
-    def to_sdf(self, version: str = None) -> ET.Element:
-        if version is not None and version != self.__version__:
+    def to_sdf(self, version: str | None = None) -> ET.Element:
+        if self.__version__ is None and version is not None:
+            self.__version__ = version
+        elif version is not None and version != self.__version__:
             return self.to_version(version).to_sdf()
-        version = version or self.__version__
+        version = self.__version__ or version
         el = ET.Element("min")
         if self.min is not None:
             el.text = str(self.min)
@@ -135,7 +141,7 @@ class Min(BaseModel):
 
 
 class Radius(BaseModel):
-    def __init__(self, sdf_version: str, radius: float = 0.5):
+    def __init__(self, sdf_version: str | None = None, radius: float = 0.5):
         self.__version__ = sdf_version
         self.radius = radius
 
@@ -145,10 +151,12 @@ class Radius(BaseModel):
         new_obj = self.__class__(**kwargs)
         return new_obj
 
-    def to_sdf(self, version: str = None) -> ET.Element:
-        if version is not None and version != self.__version__:
+    def to_sdf(self, version: str | None = None) -> ET.Element:
+        if self.__version__ is None and version is not None:
+            self.__version__ = version
+        elif version is not None and version != self.__version__:
             return self.to_version(version).to_sdf()
-        version = version or self.__version__
+        version = self.__version__ or version
         el = ET.Element("radius")
         if self.radius is not None:
             el.text = str(self.radius)
@@ -166,7 +174,7 @@ class Radius(BaseModel):
 class Sonar(BaseModel):
     def __init__(
         self,
-        sdf_version: str,
+        sdf_version: str | None = None,
         geometry: "Geometry" = None,
         max: "Max" = None,
         min: "Min" = None,
@@ -177,6 +185,26 @@ class Sonar(BaseModel):
         self.max = max
         self.min = min
         self.radius = radius
+        if self.geometry is not None:
+            if getattr(self.geometry, '__version__', None) is None:
+                self.geometry.__version__ = self.__version__
+            elif getattr(self.geometry, '__version__', None) != self.__version__ and self.__version__ is not None:
+                self.geometry = self.geometry.to_version(self.__version__)
+        if self.max is not None:
+            if getattr(self.max, '__version__', None) is None:
+                self.max.__version__ = self.__version__
+            elif getattr(self.max, '__version__', None) != self.__version__ and self.__version__ is not None:
+                self.max = self.max.to_version(self.__version__)
+        if self.min is not None:
+            if getattr(self.min, '__version__', None) is None:
+                self.min.__version__ = self.__version__
+            elif getattr(self.min, '__version__', None) != self.__version__ and self.__version__ is not None:
+                self.min = self.min.to_version(self.__version__)
+        if self.radius is not None:
+            if getattr(self.radius, '__version__', None) is None:
+                self.radius.__version__ = self.__version__
+            elif getattr(self.radius, '__version__', None) != self.__version__ and self.__version__ is not None:
+                self.radius = self.radius.to_version(self.__version__)
 
     def to_version(self, target_version: str) -> "Sonar":
         if self.geometry is not None and cmp_version(target_version, "1.6") < 0:
@@ -189,10 +217,12 @@ class Sonar(BaseModel):
         new_obj = self.__class__(**kwargs)
         return new_obj
 
-    def to_sdf(self, version: str = None) -> ET.Element:
-        if version is not None and version != self.__version__:
+    def to_sdf(self, version: str | None = None) -> ET.Element:
+        if self.__version__ is None and version is not None:
+            self.__version__ = version
+        elif version is not None and version != self.__version__:
             return self.to_version(version).to_sdf()
-        version = version or self.__version__
+        version = self.__version__ or version
         el = ET.Element("sonar")
         if self.geometry is not None:
             el.append(self.geometry.to_sdf(version))

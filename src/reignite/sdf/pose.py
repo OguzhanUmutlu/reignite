@@ -16,7 +16,7 @@ class Pose(BaseModel):
 
     def __init__(
         self,
-        sdf_version: str,
+        sdf_version: str | None = None,
         degrees: bool = False,
         frame: str = "",
         pose: _SDFPose = None,
@@ -25,7 +25,7 @@ class Pose(BaseModel):
     ):
         self.__version__ = sdf_version
         if pose is None:
-            pose = _SDFPose.from_sdf("0 0 0 0 0 0")
+            pose = _SDFPose.from_sdf("0 0 0 0 0 0", version=sdf_version)
         self.degrees = degrees
         self.frame = frame
         self.pose = pose
@@ -53,17 +53,19 @@ class Pose(BaseModel):
         apply_migrations(new_obj, target_version)
         return new_obj
 
-    def to_sdf(self, version: str = None) -> ET.Element:
-        if version is not None and version != self.__version__:
+    def to_sdf(self, version: str | None = None) -> ET.Element:
+        if self.__version__ is None and version is not None:
+            self.__version__ = version
+        elif version is not None and version != self.__version__:
             return self.to_version(version).to_sdf()
-        version = version or self.__version__
+        version = self.__version__ or version
         el = ET.Element("pose")
         if self.degrees is not None:
             el.set("degrees", str(self.degrees).lower())
         if self.frame is not None:
             el.set("frame", self.frame)
         if self.pose is not None:
-            el.text = self.pose.to_sdf()
+            el.text = self.pose.to_sdf(version)
         if self.relative_to is not None:
             el.set("relative_to", self.relative_to)
         if self.rotation_format is not None:

@@ -44,7 +44,7 @@ def _parse_double(raw: str) -> float | SDFError:
 
 
 class BoneAttachment(BaseModel):
-    def __init__(self, sdf_version: str, bone_attachment: float = 100.0):
+    def __init__(self, sdf_version: str | None = None, bone_attachment: float = 100.0):
         self.__version__ = sdf_version
         self.bone_attachment = bone_attachment
 
@@ -54,10 +54,12 @@ class BoneAttachment(BaseModel):
         new_obj = self.__class__(**kwargs)
         return new_obj
 
-    def to_sdf(self, version: str = None) -> ET.Element:
-        if version is not None and version != self.__version__:
+    def to_sdf(self, version: str | None = None) -> ET.Element:
+        if self.__version__ is None and version is not None:
+            self.__version__ = version
+        elif version is not None and version != self.__version__:
             return self.to_version(version).to_sdf()
-        version = version or self.__version__
+        version = self.__version__ or version
         el = ET.Element("bone_attachment")
         if self.bone_attachment is not None:
             el.text = str(self.bone_attachment)
@@ -75,7 +77,7 @@ class BoneAttachment(BaseModel):
 class Bounce(BaseModel):
     def __init__(
         self,
-        sdf_version: str,
+        sdf_version: str | None = None,
         restitution_coefficient: float = 0,
         threshold: float = 100000
     ):
@@ -94,10 +96,12 @@ class Bounce(BaseModel):
         new_obj = self.__class__(**kwargs)
         return new_obj
 
-    def to_sdf(self, version: str = None) -> ET.Element:
-        if version is not None and version != self.__version__:
+    def to_sdf(self, version: str | None = None) -> ET.Element:
+        if self.__version__ is None and version is not None:
+            self.__version__ = version
+        elif version is not None and version != self.__version__:
             return self.to_version(version).to_sdf()
-        version = version or self.__version__
+        version = self.__version__ or version
         el = ET.Element("bounce")
         if self.restitution_coefficient is not None:
             el.set("restitution_coefficient", str(self.restitution_coefficient))
@@ -119,7 +123,7 @@ class Bounce(BaseModel):
 class Bullet(BaseModel):
     def __init__(
         self,
-        sdf_version: str,
+        sdf_version: str | None = None,
         fdir1: "Fdir1" = None,
         friction: "BulletFriction" = None,
         friction2: "Friction2" = None,
@@ -130,6 +134,26 @@ class Bullet(BaseModel):
         self.friction = friction
         self.friction2 = friction2
         self.rolling_friction = rolling_friction
+        if self.fdir1 is not None:
+            if getattr(self.fdir1, '__version__', None) is None:
+                self.fdir1.__version__ = self.__version__
+            elif getattr(self.fdir1, '__version__', None) != self.__version__ and self.__version__ is not None:
+                self.fdir1 = self.fdir1.to_version(self.__version__)
+        if self.friction is not None:
+            if getattr(self.friction, '__version__', None) is None:
+                self.friction.__version__ = self.__version__
+            elif getattr(self.friction, '__version__', None) != self.__version__ and self.__version__ is not None:
+                self.friction = self.friction.to_version(self.__version__)
+        if self.friction2 is not None:
+            if getattr(self.friction2, '__version__', None) is None:
+                self.friction2.__version__ = self.__version__
+            elif getattr(self.friction2, '__version__', None) != self.__version__ and self.__version__ is not None:
+                self.friction2 = self.friction2.to_version(self.__version__)
+        if self.rolling_friction is not None:
+            if getattr(self.rolling_friction, '__version__', None) is None:
+                self.rolling_friction.__version__ = self.__version__
+            elif getattr(self.rolling_friction, '__version__', None) != self.__version__ and self.__version__ is not None:
+                self.rolling_friction = self.rolling_friction.to_version(self.__version__)
 
     def to_version(self, target_version: str) -> "Bullet":
         kwargs = {"sdf_version": target_version}
@@ -140,10 +164,12 @@ class Bullet(BaseModel):
         new_obj = self.__class__(**kwargs)
         return new_obj
 
-    def to_sdf(self, version: str = None) -> ET.Element:
-        if version is not None and version != self.__version__:
+    def to_sdf(self, version: str | None = None) -> ET.Element:
+        if self.__version__ is None and version is not None:
+            self.__version__ = version
+        elif version is not None and version != self.__version__:
             return self.to_version(version).to_sdf()
-        version = version or self.__version__
+        version = self.__version__ or version
         el = ET.Element("bullet")
         if self.fdir1 is not None:
             el.append(self.fdir1.to_sdf(version))
@@ -193,7 +219,7 @@ class Bullet(BaseModel):
 
 
 class BulletFriction(BaseModel):
-    def __init__(self, sdf_version: str, friction: float = 1):
+    def __init__(self, sdf_version: str | None = None, friction: float = 1):
         self.__version__ = sdf_version
         self.friction = friction
 
@@ -203,10 +229,12 @@ class BulletFriction(BaseModel):
         new_obj = self.__class__(**kwargs)
         return new_obj
 
-    def to_sdf(self, version: str = None) -> ET.Element:
-        if version is not None and version != self.__version__:
+    def to_sdf(self, version: str | None = None) -> ET.Element:
+        if self.__version__ is None and version is not None:
+            self.__version__ = version
+        elif version is not None and version != self.__version__:
             return self.to_version(version).to_sdf()
-        version = version or self.__version__
+        version = self.__version__ or version
         el = ET.Element("friction")
         if self.friction is not None:
             el.text = str(self.friction)
@@ -222,7 +250,7 @@ class BulletFriction(BaseModel):
 
 
 class CategoryBitmask(BaseModel):
-    def __init__(self, sdf_version: str, category_bitmask: int = 65535):
+    def __init__(self, sdf_version: str | None = None, category_bitmask: int = 65535):
         self.__version__ = sdf_version
         self.category_bitmask = category_bitmask
 
@@ -234,10 +262,12 @@ class CategoryBitmask(BaseModel):
         new_obj = self.__class__(**kwargs)
         return new_obj
 
-    def to_sdf(self, version: str = None) -> ET.Element:
-        if version is not None and version != self.__version__:
+    def to_sdf(self, version: str | None = None) -> ET.Element:
+        if self.__version__ is None and version is not None:
+            self.__version__ = version
+        elif version is not None and version != self.__version__:
             return self.to_version(version).to_sdf()
-        version = version or self.__version__
+        version = self.__version__ or version
         el = ET.Element("category_bitmask")
         if self.category_bitmask is not None:
             el.text = str(self.category_bitmask)
@@ -256,7 +286,7 @@ class CategoryBitmask(BaseModel):
 
 
 class Coefficient(BaseModel):
-    def __init__(self, sdf_version: str, coefficient: float = 1.0):
+    def __init__(self, sdf_version: str | None = None, coefficient: float = 1.0):
         self.__version__ = sdf_version
         self.coefficient = coefficient
 
@@ -266,10 +296,12 @@ class Coefficient(BaseModel):
         new_obj = self.__class__(**kwargs)
         return new_obj
 
-    def to_sdf(self, version: str = None) -> ET.Element:
-        if version is not None and version != self.__version__:
+    def to_sdf(self, version: str | None = None) -> ET.Element:
+        if self.__version__ is None and version is not None:
+            self.__version__ = version
+        elif version is not None and version != self.__version__:
             return self.to_version(version).to_sdf()
-        version = version or self.__version__
+        version = self.__version__ or version
         el = ET.Element("coefficient")
         if self.coefficient is not None:
             el.text = str(self.coefficient)
@@ -285,7 +317,7 @@ class Coefficient(BaseModel):
 
 
 class CollideBitmask(BaseModel):
-    def __init__(self, sdf_version: str, collide_bitmask: int = 1):
+    def __init__(self, sdf_version: str | None = None, collide_bitmask: int = 1):
         self.__version__ = sdf_version
         self.collide_bitmask = collide_bitmask
 
@@ -297,10 +329,12 @@ class CollideBitmask(BaseModel):
         new_obj = self.__class__(**kwargs)
         return new_obj
 
-    def to_sdf(self, version: str = None) -> ET.Element:
-        if version is not None and version != self.__version__:
+    def to_sdf(self, version: str | None = None) -> ET.Element:
+        if self.__version__ is None and version is not None:
+            self.__version__ = version
+        elif version is not None and version != self.__version__:
             return self.to_version(version).to_sdf()
-        version = version or self.__version__
+        version = self.__version__ or version
         el = ET.Element("collide_bitmask")
         if self.collide_bitmask is not None:
             el.text = str(self.collide_bitmask)
@@ -319,7 +353,7 @@ class CollideBitmask(BaseModel):
 
 
 class CollideWithoutContact(BaseModel):
-    def __init__(self, sdf_version: str, collide_without_contact: bool = False):
+    def __init__(self, sdf_version: str | None = None, collide_without_contact: bool = False):
         self.__version__ = sdf_version
         self.collide_without_contact = collide_without_contact
 
@@ -331,10 +365,12 @@ class CollideWithoutContact(BaseModel):
         new_obj = self.__class__(**kwargs)
         return new_obj
 
-    def to_sdf(self, version: str = None) -> ET.Element:
-        if version is not None and version != self.__version__:
+    def to_sdf(self, version: str | None = None) -> ET.Element:
+        if self.__version__ is None and version is not None:
+            self.__version__ = version
+        elif version is not None and version != self.__version__:
             return self.to_version(version).to_sdf()
-        version = version or self.__version__
+        version = self.__version__ or version
         el = ET.Element("collide_without_contact")
         if self.collide_without_contact is not None:
             el.text = str(self.collide_without_contact).lower()
@@ -353,7 +389,7 @@ class CollideWithoutContact(BaseModel):
 
 
 class CollideWithoutContactBitmask(BaseModel):
-    def __init__(self, sdf_version: str, collide_without_contact_bitmask: int = 1):
+    def __init__(self, sdf_version: str | None = None, collide_without_contact_bitmask: int = 1):
         self.__version__ = sdf_version
         self.collide_without_contact_bitmask = collide_without_contact_bitmask
 
@@ -365,10 +401,12 @@ class CollideWithoutContactBitmask(BaseModel):
         new_obj = self.__class__(**kwargs)
         return new_obj
 
-    def to_sdf(self, version: str = None) -> ET.Element:
-        if version is not None and version != self.__version__:
+    def to_sdf(self, version: str | None = None) -> ET.Element:
+        if self.__version__ is None and version is not None:
+            self.__version__ = version
+        elif version is not None and version != self.__version__:
             return self.to_version(version).to_sdf()
-        version = version or self.__version__
+        version = self.__version__ or version
         el = ET.Element("collide_without_contact_bitmask")
         if self.collide_without_contact_bitmask is not None:
             el.text = str(self.collide_without_contact_bitmask)
@@ -389,7 +427,7 @@ class CollideWithoutContactBitmask(BaseModel):
 class Contact(BaseModel):
     def __init__(
         self,
-        sdf_version: str,
+        sdf_version: str | None = None,
         bullet: "ContactBullet" = None,
         category_bitmask: "CategoryBitmask" = None,
         collide_bitmask: "CollideBitmask" = None,
@@ -408,6 +446,46 @@ class Contact(BaseModel):
         self.elastic_modulus = elastic_modulus
         self.ode = ode
         self.poissons_ratio = poissons_ratio
+        if self.bullet is not None:
+            if getattr(self.bullet, '__version__', None) is None:
+                self.bullet.__version__ = self.__version__
+            elif getattr(self.bullet, '__version__', None) != self.__version__ and self.__version__ is not None:
+                self.bullet = self.bullet.to_version(self.__version__)
+        if self.category_bitmask is not None:
+            if getattr(self.category_bitmask, '__version__', None) is None:
+                self.category_bitmask.__version__ = self.__version__
+            elif getattr(self.category_bitmask, '__version__', None) != self.__version__ and self.__version__ is not None:
+                self.category_bitmask = self.category_bitmask.to_version(self.__version__)
+        if self.collide_bitmask is not None:
+            if getattr(self.collide_bitmask, '__version__', None) is None:
+                self.collide_bitmask.__version__ = self.__version__
+            elif getattr(self.collide_bitmask, '__version__', None) != self.__version__ and self.__version__ is not None:
+                self.collide_bitmask = self.collide_bitmask.to_version(self.__version__)
+        if self.collide_without_contact is not None:
+            if getattr(self.collide_without_contact, '__version__', None) is None:
+                self.collide_without_contact.__version__ = self.__version__
+            elif getattr(self.collide_without_contact, '__version__', None) != self.__version__ and self.__version__ is not None:
+                self.collide_without_contact = self.collide_without_contact.to_version(self.__version__)
+        if self.collide_without_contact_bitmask is not None:
+            if getattr(self.collide_without_contact_bitmask, '__version__', None) is None:
+                self.collide_without_contact_bitmask.__version__ = self.__version__
+            elif getattr(self.collide_without_contact_bitmask, '__version__', None) != self.__version__ and self.__version__ is not None:
+                self.collide_without_contact_bitmask = self.collide_without_contact_bitmask.to_version(self.__version__)
+        if self.elastic_modulus is not None:
+            if getattr(self.elastic_modulus, '__version__', None) is None:
+                self.elastic_modulus.__version__ = self.__version__
+            elif getattr(self.elastic_modulus, '__version__', None) != self.__version__ and self.__version__ is not None:
+                self.elastic_modulus = self.elastic_modulus.to_version(self.__version__)
+        if self.ode is not None:
+            if getattr(self.ode, '__version__', None) is None:
+                self.ode.__version__ = self.__version__
+            elif getattr(self.ode, '__version__', None) != self.__version__ and self.__version__ is not None:
+                self.ode = self.ode.to_version(self.__version__)
+        if self.poissons_ratio is not None:
+            if getattr(self.poissons_ratio, '__version__', None) is None:
+                self.poissons_ratio.__version__ = self.__version__
+            elif getattr(self.poissons_ratio, '__version__', None) != self.__version__ and self.__version__ is not None:
+                self.poissons_ratio = self.poissons_ratio.to_version(self.__version__)
 
     def to_version(self, target_version: str) -> "Contact":
         if self.bullet is not None and cmp_version(target_version, "1.4") < 0:
@@ -436,10 +514,12 @@ class Contact(BaseModel):
         new_obj = self.__class__(**kwargs)
         return new_obj
 
-    def to_sdf(self, version: str = None) -> ET.Element:
-        if version is not None and version != self.__version__:
+    def to_sdf(self, version: str | None = None) -> ET.Element:
+        if self.__version__ is None and version is not None:
+            self.__version__ = version
+        elif version is not None and version != self.__version__:
             return self.to_version(version).to_sdf()
-        version = version or self.__version__
+        version = self.__version__ or version
         el = ET.Element("contact")
         if self.bullet is not None:
             el.append(self.bullet.to_sdf(version))
@@ -545,7 +625,7 @@ class Contact(BaseModel):
 class ContactBullet(BaseModel):
     def __init__(
         self,
-        sdf_version: str,
+        sdf_version: str | None = None,
         kd: "Kd" = None,
         kp: "Kp" = None,
         soft_cfm: "SoftCfm" = None,
@@ -560,6 +640,36 @@ class ContactBullet(BaseModel):
         self.soft_erp = soft_erp
         self.split_impulse = split_impulse
         self.split_impulse_penetration_threshold = split_impulse_penetration_threshold
+        if self.kd is not None:
+            if getattr(self.kd, '__version__', None) is None:
+                self.kd.__version__ = self.__version__
+            elif getattr(self.kd, '__version__', None) != self.__version__ and self.__version__ is not None:
+                self.kd = self.kd.to_version(self.__version__)
+        if self.kp is not None:
+            if getattr(self.kp, '__version__', None) is None:
+                self.kp.__version__ = self.__version__
+            elif getattr(self.kp, '__version__', None) != self.__version__ and self.__version__ is not None:
+                self.kp = self.kp.to_version(self.__version__)
+        if self.soft_cfm is not None:
+            if getattr(self.soft_cfm, '__version__', None) is None:
+                self.soft_cfm.__version__ = self.__version__
+            elif getattr(self.soft_cfm, '__version__', None) != self.__version__ and self.__version__ is not None:
+                self.soft_cfm = self.soft_cfm.to_version(self.__version__)
+        if self.soft_erp is not None:
+            if getattr(self.soft_erp, '__version__', None) is None:
+                self.soft_erp.__version__ = self.__version__
+            elif getattr(self.soft_erp, '__version__', None) != self.__version__ and self.__version__ is not None:
+                self.soft_erp = self.soft_erp.to_version(self.__version__)
+        if self.split_impulse is not None:
+            if getattr(self.split_impulse, '__version__', None) is None:
+                self.split_impulse.__version__ = self.__version__
+            elif getattr(self.split_impulse, '__version__', None) != self.__version__ and self.__version__ is not None:
+                self.split_impulse = self.split_impulse.to_version(self.__version__)
+        if self.split_impulse_penetration_threshold is not None:
+            if getattr(self.split_impulse_penetration_threshold, '__version__', None) is None:
+                self.split_impulse_penetration_threshold.__version__ = self.__version__
+            elif getattr(self.split_impulse_penetration_threshold, '__version__', None) != self.__version__ and self.__version__ is not None:
+                self.split_impulse_penetration_threshold = self.split_impulse_penetration_threshold.to_version(self.__version__)
 
     def to_version(self, target_version: str) -> "ContactBullet":
         kwargs = {"sdf_version": target_version}
@@ -572,10 +682,12 @@ class ContactBullet(BaseModel):
         new_obj = self.__class__(**kwargs)
         return new_obj
 
-    def to_sdf(self, version: str = None) -> ET.Element:
-        if version is not None and version != self.__version__:
+    def to_sdf(self, version: str | None = None) -> ET.Element:
+        if self.__version__ is None and version is not None:
+            self.__version__ = version
+        elif version is not None and version != self.__version__:
             return self.to_version(version).to_sdf()
-        version = version or self.__version__
+        version = self.__version__ or version
         el = ET.Element("bullet")
         if self.kd is not None:
             el.append(self.kd.to_sdf(version))
@@ -647,7 +759,7 @@ class ContactBullet(BaseModel):
 class ContactOde(BaseModel):
     def __init__(
         self,
-        sdf_version: str,
+        sdf_version: str | None = None,
         kd: float = 1.0,
         kp: float = 1000000000000.0,
         max_vel: float = 0.01,
@@ -686,10 +798,12 @@ class ContactOde(BaseModel):
         new_obj = self.__class__(**kwargs)
         return new_obj
 
-    def to_sdf(self, version: str = None) -> ET.Element:
-        if version is not None and version != self.__version__:
+    def to_sdf(self, version: str | None = None) -> ET.Element:
+        if self.__version__ is None and version is not None:
+            self.__version__ = version
+        elif version is not None and version != self.__version__:
             return self.to_version(version).to_sdf()
-        version = version or self.__version__
+        version = self.__version__ or version
         el = ET.Element("ode")
         if self.kd is not None:
             el.set("kd", str(self.kd))
@@ -729,7 +843,7 @@ class ContactOde(BaseModel):
 
 
 class Damping(BaseModel):
-    def __init__(self, sdf_version: str, damping: float = 10.0):
+    def __init__(self, sdf_version: str | None = None, damping: float = 10.0):
         self.__version__ = sdf_version
         self.damping = damping
 
@@ -739,10 +853,12 @@ class Damping(BaseModel):
         new_obj = self.__class__(**kwargs)
         return new_obj
 
-    def to_sdf(self, version: str = None) -> ET.Element:
-        if version is not None and version != self.__version__:
+    def to_sdf(self, version: str | None = None) -> ET.Element:
+        if self.__version__ is None and version is not None:
+            self.__version__ = version
+        elif version is not None and version != self.__version__:
             return self.to_version(version).to_sdf()
-        version = version or self.__version__
+        version = self.__version__ or version
         el = ET.Element("damping")
         if self.damping is not None:
             el.text = str(self.damping)
@@ -760,7 +876,7 @@ class Damping(BaseModel):
 class Dart(BaseModel):
     def __init__(
         self,
-        sdf_version: str,
+        sdf_version: str | None = None,
         bone_attachment: "BoneAttachment" = None,
         damping: "Damping" = None,
         flesh_mass_fraction: "FleshMassFraction" = None,
@@ -771,6 +887,26 @@ class Dart(BaseModel):
         self.damping = damping
         self.flesh_mass_fraction = flesh_mass_fraction
         self.stiffness = stiffness
+        if self.bone_attachment is not None:
+            if getattr(self.bone_attachment, '__version__', None) is None:
+                self.bone_attachment.__version__ = self.__version__
+            elif getattr(self.bone_attachment, '__version__', None) != self.__version__ and self.__version__ is not None:
+                self.bone_attachment = self.bone_attachment.to_version(self.__version__)
+        if self.damping is not None:
+            if getattr(self.damping, '__version__', None) is None:
+                self.damping.__version__ = self.__version__
+            elif getattr(self.damping, '__version__', None) != self.__version__ and self.__version__ is not None:
+                self.damping = self.damping.to_version(self.__version__)
+        if self.flesh_mass_fraction is not None:
+            if getattr(self.flesh_mass_fraction, '__version__', None) is None:
+                self.flesh_mass_fraction.__version__ = self.__version__
+            elif getattr(self.flesh_mass_fraction, '__version__', None) != self.__version__ and self.__version__ is not None:
+                self.flesh_mass_fraction = self.flesh_mass_fraction.to_version(self.__version__)
+        if self.stiffness is not None:
+            if getattr(self.stiffness, '__version__', None) is None:
+                self.stiffness.__version__ = self.__version__
+            elif getattr(self.stiffness, '__version__', None) != self.__version__ and self.__version__ is not None:
+                self.stiffness = self.stiffness.to_version(self.__version__)
 
     def to_version(self, target_version: str) -> "Dart":
         kwargs = {"sdf_version": target_version}
@@ -781,10 +917,12 @@ class Dart(BaseModel):
         new_obj = self.__class__(**kwargs)
         return new_obj
 
-    def to_sdf(self, version: str = None) -> ET.Element:
-        if version is not None and version != self.__version__:
+    def to_sdf(self, version: str | None = None) -> ET.Element:
+        if self.__version__ is None and version is not None:
+            self.__version__ = version
+        elif version is not None and version != self.__version__:
             return self.to_version(version).to_sdf()
-        version = version or self.__version__
+        version = self.__version__ or version
         el = ET.Element("dart")
         if self.bone_attachment is not None:
             el.append(self.bone_attachment.to_sdf(version))
@@ -834,7 +972,7 @@ class Dart(BaseModel):
 
 
 class ElasticModulus(BaseModel):
-    def __init__(self, sdf_version: str, elastic_modulus: float = -1):
+    def __init__(self, sdf_version: str | None = None, elastic_modulus: float = -1):
         self.__version__ = sdf_version
         self.elastic_modulus = elastic_modulus
 
@@ -846,10 +984,12 @@ class ElasticModulus(BaseModel):
         new_obj = self.__class__(**kwargs)
         return new_obj
 
-    def to_sdf(self, version: str = None) -> ET.Element:
-        if version is not None and version != self.__version__:
+    def to_sdf(self, version: str | None = None) -> ET.Element:
+        if self.__version__ is None and version is not None:
+            self.__version__ = version
+        elif version is not None and version != self.__version__:
             return self.to_version(version).to_sdf()
-        version = version or self.__version__
+        version = self.__version__ or version
         el = ET.Element("elastic_modulus")
         if self.elastic_modulus is not None:
             el.text = str(self.elastic_modulus)
@@ -868,10 +1008,10 @@ class ElasticModulus(BaseModel):
 
 
 class Fdir1(BaseModel):
-    def __init__(self, sdf_version: str, fdir1: _SDFVector3 = None):
+    def __init__(self, sdf_version: str | None = None, fdir1: _SDFVector3 = None):
         self.__version__ = sdf_version
         if fdir1 is None:
-            fdir1 = _SDFVector3.from_sdf("0 0 0")
+            fdir1 = _SDFVector3.from_sdf("0 0 0", version=sdf_version)
         self.fdir1 = fdir1
 
     def to_version(self, target_version: str) -> "Fdir1":
@@ -882,13 +1022,15 @@ class Fdir1(BaseModel):
         new_obj = self.__class__(**kwargs)
         return new_obj
 
-    def to_sdf(self, version: str = None) -> ET.Element:
-        if version is not None and version != self.__version__:
+    def to_sdf(self, version: str | None = None) -> ET.Element:
+        if self.__version__ is None and version is not None:
+            self.__version__ = version
+        elif version is not None and version != self.__version__:
             return self.to_version(version).to_sdf()
-        version = version or self.__version__
+        version = self.__version__ or version
         el = ET.Element("fdir1")
         if self.fdir1 is not None:
-            el.text = self.fdir1.to_sdf()
+            el.text = self.fdir1.to_sdf(version)
         return el
 
     @classmethod
@@ -904,7 +1046,7 @@ class Fdir1(BaseModel):
 
 
 class FleshMassFraction(BaseModel):
-    def __init__(self, sdf_version: str, flesh_mass_fraction: float = 0.05):
+    def __init__(self, sdf_version: str | None = None, flesh_mass_fraction: float = 0.05):
         self.__version__ = sdf_version
         self.flesh_mass_fraction = flesh_mass_fraction
 
@@ -914,10 +1056,12 @@ class FleshMassFraction(BaseModel):
         new_obj = self.__class__(**kwargs)
         return new_obj
 
-    def to_sdf(self, version: str = None) -> ET.Element:
-        if version is not None and version != self.__version__:
+    def to_sdf(self, version: str | None = None) -> ET.Element:
+        if self.__version__ is None and version is not None:
+            self.__version__ = version
+        elif version is not None and version != self.__version__:
             return self.to_version(version).to_sdf()
-        version = version or self.__version__
+        version = self.__version__ or version
         el = ET.Element("flesh_mass_fraction")
         if self.flesh_mass_fraction is not None:
             el.text = str(self.flesh_mass_fraction)
@@ -935,7 +1079,7 @@ class FleshMassFraction(BaseModel):
 class Friction(BaseModel):
     def __init__(
         self,
-        sdf_version: str,
+        sdf_version: str | None = None,
         bullet: "Bullet" = None,
         ode: "Ode" = None,
         torsional: "Torsional" = None
@@ -944,6 +1088,21 @@ class Friction(BaseModel):
         self.bullet = bullet
         self.ode = ode
         self.torsional = torsional
+        if self.bullet is not None:
+            if getattr(self.bullet, '__version__', None) is None:
+                self.bullet.__version__ = self.__version__
+            elif getattr(self.bullet, '__version__', None) != self.__version__ and self.__version__ is not None:
+                self.bullet = self.bullet.to_version(self.__version__)
+        if self.ode is not None:
+            if getattr(self.ode, '__version__', None) is None:
+                self.ode.__version__ = self.__version__
+            elif getattr(self.ode, '__version__', None) != self.__version__ and self.__version__ is not None:
+                self.ode = self.ode.to_version(self.__version__)
+        if self.torsional is not None:
+            if getattr(self.torsional, '__version__', None) is None:
+                self.torsional.__version__ = self.__version__
+            elif getattr(self.torsional, '__version__', None) != self.__version__ and self.__version__ is not None:
+                self.torsional = self.torsional.to_version(self.__version__)
 
     def to_version(self, target_version: str) -> "Friction":
         if self.bullet is not None and cmp_version(target_version, "1.4") < 0:
@@ -957,10 +1116,12 @@ class Friction(BaseModel):
         new_obj = self.__class__(**kwargs)
         return new_obj
 
-    def to_sdf(self, version: str = None) -> ET.Element:
-        if version is not None and version != self.__version__:
+    def to_sdf(self, version: str | None = None) -> ET.Element:
+        if self.__version__ is None and version is not None:
+            self.__version__ = version
+        elif version is not None and version != self.__version__:
             return self.to_version(version).to_sdf()
-        version = version or self.__version__
+        version = self.__version__ or version
         el = ET.Element("friction")
         if self.bullet is not None:
             el.append(self.bullet.to_sdf(version))
@@ -1004,7 +1165,7 @@ class Friction(BaseModel):
 
 
 class Friction2(BaseModel):
-    def __init__(self, sdf_version: str, friction2: float = 1):
+    def __init__(self, sdf_version: str | None = None, friction2: float = 1):
         self.__version__ = sdf_version
         self.friction2 = friction2
 
@@ -1014,10 +1175,12 @@ class Friction2(BaseModel):
         new_obj = self.__class__(**kwargs)
         return new_obj
 
-    def to_sdf(self, version: str = None) -> ET.Element:
-        if version is not None and version != self.__version__:
+    def to_sdf(self, version: str | None = None) -> ET.Element:
+        if self.__version__ is None and version is not None:
+            self.__version__ = version
+        elif version is not None and version != self.__version__:
             return self.to_version(version).to_sdf()
-        version = version or self.__version__
+        version = self.__version__ or version
         el = ET.Element("friction2")
         if self.friction2 is not None:
             el.text = str(self.friction2)
@@ -1033,7 +1196,7 @@ class Friction2(BaseModel):
 
 
 class Kd(BaseModel):
-    def __init__(self, sdf_version: str, kd: float = 1.0):
+    def __init__(self, sdf_version: str | None = None, kd: float = 1.0):
         self.__version__ = sdf_version
         self.kd = kd
 
@@ -1045,10 +1208,12 @@ class Kd(BaseModel):
         new_obj = self.__class__(**kwargs)
         return new_obj
 
-    def to_sdf(self, version: str = None) -> ET.Element:
-        if version is not None and version != self.__version__:
+    def to_sdf(self, version: str | None = None) -> ET.Element:
+        if self.__version__ is None and version is not None:
+            self.__version__ = version
+        elif version is not None and version != self.__version__:
             return self.to_version(version).to_sdf()
-        version = version or self.__version__
+        version = self.__version__ or version
         el = ET.Element("kd")
         if self.kd is not None:
             el.text = str(self.kd)
@@ -1067,7 +1232,7 @@ class Kd(BaseModel):
 
 
 class Kp(BaseModel):
-    def __init__(self, sdf_version: str, kp: float = 1000000000000.0):
+    def __init__(self, sdf_version: str | None = None, kp: float = 1000000000000.0):
         self.__version__ = sdf_version
         self.kp = kp
 
@@ -1079,10 +1244,12 @@ class Kp(BaseModel):
         new_obj = self.__class__(**kwargs)
         return new_obj
 
-    def to_sdf(self, version: str = None) -> ET.Element:
-        if version is not None and version != self.__version__:
+    def to_sdf(self, version: str | None = None) -> ET.Element:
+        if self.__version__ is None and version is not None:
+            self.__version__ = version
+        elif version is not None and version != self.__version__:
             return self.to_version(version).to_sdf()
-        version = version or self.__version__
+        version = self.__version__ or version
         el = ET.Element("kp")
         if self.kp is not None:
             el.text = str(self.kp)
@@ -1101,7 +1268,7 @@ class Kp(BaseModel):
 
 
 class MaxVel(BaseModel):
-    def __init__(self, sdf_version: str, max_vel: float = 0.01):
+    def __init__(self, sdf_version: str | None = None, max_vel: float = 0.01):
         self.__version__ = sdf_version
         self.max_vel = max_vel
 
@@ -1113,10 +1280,12 @@ class MaxVel(BaseModel):
         new_obj = self.__class__(**kwargs)
         return new_obj
 
-    def to_sdf(self, version: str = None) -> ET.Element:
-        if version is not None and version != self.__version__:
+    def to_sdf(self, version: str | None = None) -> ET.Element:
+        if self.__version__ is None and version is not None:
+            self.__version__ = version
+        elif version is not None and version != self.__version__:
             return self.to_version(version).to_sdf()
-        version = version or self.__version__
+        version = self.__version__ or version
         el = ET.Element("max_vel")
         if self.max_vel is not None:
             el.text = str(self.max_vel)
@@ -1135,7 +1304,7 @@ class MaxVel(BaseModel):
 
 
 class MinDepth(BaseModel):
-    def __init__(self, sdf_version: str, min_depth: float = 0):
+    def __init__(self, sdf_version: str | None = None, min_depth: float = 0):
         self.__version__ = sdf_version
         self.min_depth = min_depth
 
@@ -1147,10 +1316,12 @@ class MinDepth(BaseModel):
         new_obj = self.__class__(**kwargs)
         return new_obj
 
-    def to_sdf(self, version: str = None) -> ET.Element:
-        if version is not None and version != self.__version__:
+    def to_sdf(self, version: str | None = None) -> ET.Element:
+        if self.__version__ is None and version is not None:
+            self.__version__ = version
+        elif version is not None and version != self.__version__:
             return self.to_version(version).to_sdf()
-        version = version or self.__version__
+        version = self.__version__ or version
         el = ET.Element("min_depth")
         if self.min_depth is not None:
             el.text = str(self.min_depth)
@@ -1169,7 +1340,7 @@ class MinDepth(BaseModel):
 
 
 class Mu(BaseModel):
-    def __init__(self, sdf_version: str, mu: float = -1):
+    def __init__(self, sdf_version: str | None = None, mu: float = -1):
         self.__version__ = sdf_version
         self.mu = mu
 
@@ -1181,10 +1352,12 @@ class Mu(BaseModel):
         new_obj = self.__class__(**kwargs)
         return new_obj
 
-    def to_sdf(self, version: str = None) -> ET.Element:
-        if version is not None and version != self.__version__:
+    def to_sdf(self, version: str | None = None) -> ET.Element:
+        if self.__version__ is None and version is not None:
+            self.__version__ = version
+        elif version is not None and version != self.__version__:
             return self.to_version(version).to_sdf()
-        version = version or self.__version__
+        version = self.__version__ or version
         el = ET.Element("mu")
         if self.mu is not None:
             el.text = str(self.mu)
@@ -1203,7 +1376,7 @@ class Mu(BaseModel):
 
 
 class Mu2(BaseModel):
-    def __init__(self, sdf_version: str, mu2: float = -1):
+    def __init__(self, sdf_version: str | None = None, mu2: float = -1):
         self.__version__ = sdf_version
         self.mu2 = mu2
 
@@ -1215,10 +1388,12 @@ class Mu2(BaseModel):
         new_obj = self.__class__(**kwargs)
         return new_obj
 
-    def to_sdf(self, version: str = None) -> ET.Element:
-        if version is not None and version != self.__version__:
+    def to_sdf(self, version: str | None = None) -> ET.Element:
+        if self.__version__ is None and version is not None:
+            self.__version__ = version
+        elif version is not None and version != self.__version__:
             return self.to_version(version).to_sdf()
-        version = version or self.__version__
+        version = self.__version__ or version
         el = ET.Element("mu2")
         if self.mu2 is not None:
             el.text = str(self.mu2)
@@ -1239,7 +1414,7 @@ class Mu2(BaseModel):
 class Ode(BaseModel):
     def __init__(
         self,
-        sdf_version: str,
+        sdf_version: str | None = None,
         fdir1: _SDFVector3 = None,
         mu: float = -1,
         mu2: float = -1,
@@ -1248,7 +1423,7 @@ class Ode(BaseModel):
     ):
         self.__version__ = sdf_version
         if fdir1 is None:
-            fdir1 = _SDFVector3.from_sdf("0 0 0")
+            fdir1 = _SDFVector3.from_sdf("0 0 0", version=sdf_version)
         self.fdir1 = fdir1
         self.mu = mu
         self.mu2 = mu2
@@ -1275,13 +1450,15 @@ class Ode(BaseModel):
         new_obj = self.__class__(**kwargs)
         return new_obj
 
-    def to_sdf(self, version: str = None) -> ET.Element:
-        if version is not None and version != self.__version__:
+    def to_sdf(self, version: str | None = None) -> ET.Element:
+        if self.__version__ is None and version is not None:
+            self.__version__ = version
+        elif version is not None and version != self.__version__:
             return self.to_version(version).to_sdf()
-        version = version or self.__version__
+        version = self.__version__ or version
         el = ET.Element("ode")
         if self.fdir1 is not None:
-            el.set("fdir1", self.fdir1.to_sdf())
+            el.set("fdir1", self.fdir1.to_sdf(version))
         if self.mu is not None:
             el.set("mu", str(self.mu))
         if self.mu2 is not None:
@@ -1313,7 +1490,7 @@ class Ode(BaseModel):
 
 
 class PatchRadius(BaseModel):
-    def __init__(self, sdf_version: str, patch_radius: float = 0):
+    def __init__(self, sdf_version: str | None = None, patch_radius: float = 0):
         self.__version__ = sdf_version
         self.patch_radius = patch_radius
 
@@ -1323,10 +1500,12 @@ class PatchRadius(BaseModel):
         new_obj = self.__class__(**kwargs)
         return new_obj
 
-    def to_sdf(self, version: str = None) -> ET.Element:
-        if version is not None and version != self.__version__:
+    def to_sdf(self, version: str | None = None) -> ET.Element:
+        if self.__version__ is None and version is not None:
+            self.__version__ = version
+        elif version is not None and version != self.__version__:
             return self.to_version(version).to_sdf()
-        version = version or self.__version__
+        version = self.__version__ or version
         el = ET.Element("patch_radius")
         if self.patch_radius is not None:
             el.text = str(self.patch_radius)
@@ -1342,7 +1521,7 @@ class PatchRadius(BaseModel):
 
 
 class PoissonsRatio(BaseModel):
-    def __init__(self, sdf_version: str, poissons_ratio: float = 0.3):
+    def __init__(self, sdf_version: str | None = None, poissons_ratio: float = 0.3):
         self.__version__ = sdf_version
         self.poissons_ratio = poissons_ratio
 
@@ -1354,10 +1533,12 @@ class PoissonsRatio(BaseModel):
         new_obj = self.__class__(**kwargs)
         return new_obj
 
-    def to_sdf(self, version: str = None) -> ET.Element:
-        if version is not None and version != self.__version__:
+    def to_sdf(self, version: str | None = None) -> ET.Element:
+        if self.__version__ is None and version is not None:
+            self.__version__ = version
+        elif version is not None and version != self.__version__:
             return self.to_version(version).to_sdf()
-        version = version or self.__version__
+        version = self.__version__ or version
         el = ET.Element("poissons_ratio")
         if self.poissons_ratio is not None:
             el.text = str(self.poissons_ratio)
@@ -1376,7 +1557,7 @@ class PoissonsRatio(BaseModel):
 
 
 class RestitutionCoefficient(BaseModel):
-    def __init__(self, sdf_version: str, restitution_coefficient: float = 0):
+    def __init__(self, sdf_version: str | None = None, restitution_coefficient: float = 0):
         self.__version__ = sdf_version
         self.restitution_coefficient = restitution_coefficient
 
@@ -1388,10 +1569,12 @@ class RestitutionCoefficient(BaseModel):
         new_obj = self.__class__(**kwargs)
         return new_obj
 
-    def to_sdf(self, version: str = None) -> ET.Element:
-        if version is not None and version != self.__version__:
+    def to_sdf(self, version: str | None = None) -> ET.Element:
+        if self.__version__ is None and version is not None:
+            self.__version__ = version
+        elif version is not None and version != self.__version__:
             return self.to_version(version).to_sdf()
-        version = version or self.__version__
+        version = self.__version__ or version
         el = ET.Element("restitution_coefficient")
         if self.restitution_coefficient is not None:
             el.text = str(self.restitution_coefficient)
@@ -1410,7 +1593,7 @@ class RestitutionCoefficient(BaseModel):
 
 
 class RollingFriction(BaseModel):
-    def __init__(self, sdf_version: str, rolling_friction: float = 1):
+    def __init__(self, sdf_version: str | None = None, rolling_friction: float = 1):
         self.__version__ = sdf_version
         self.rolling_friction = rolling_friction
 
@@ -1420,10 +1603,12 @@ class RollingFriction(BaseModel):
         new_obj = self.__class__(**kwargs)
         return new_obj
 
-    def to_sdf(self, version: str = None) -> ET.Element:
-        if version is not None and version != self.__version__:
+    def to_sdf(self, version: str | None = None) -> ET.Element:
+        if self.__version__ is None and version is not None:
+            self.__version__ = version
+        elif version is not None and version != self.__version__:
             return self.to_version(version).to_sdf()
-        version = version or self.__version__
+        version = self.__version__ or version
         el = ET.Element("rolling_friction")
         if self.rolling_friction is not None:
             el.text = str(self.rolling_friction)
@@ -1439,7 +1624,7 @@ class RollingFriction(BaseModel):
 
 
 class Slip(BaseModel):
-    def __init__(self, sdf_version: str, slip: float = 0.0):
+    def __init__(self, sdf_version: str | None = None, slip: float = 0.0):
         self.__version__ = sdf_version
         self.slip = slip
 
@@ -1449,10 +1634,12 @@ class Slip(BaseModel):
         new_obj = self.__class__(**kwargs)
         return new_obj
 
-    def to_sdf(self, version: str = None) -> ET.Element:
-        if version is not None and version != self.__version__:
+    def to_sdf(self, version: str | None = None) -> ET.Element:
+        if self.__version__ is None and version is not None:
+            self.__version__ = version
+        elif version is not None and version != self.__version__:
             return self.to_version(version).to_sdf()
-        version = version or self.__version__
+        version = self.__version__ or version
         el = ET.Element("slip")
         if self.slip is not None:
             el.text = str(self.slip)
@@ -1468,7 +1655,7 @@ class Slip(BaseModel):
 
 
 class Slip1(BaseModel):
-    def __init__(self, sdf_version: str, slip1: float = 0.0):
+    def __init__(self, sdf_version: str | None = None, slip1: float = 0.0):
         self.__version__ = sdf_version
         self.slip1 = slip1
 
@@ -1480,10 +1667,12 @@ class Slip1(BaseModel):
         new_obj = self.__class__(**kwargs)
         return new_obj
 
-    def to_sdf(self, version: str = None) -> ET.Element:
-        if version is not None and version != self.__version__:
+    def to_sdf(self, version: str | None = None) -> ET.Element:
+        if self.__version__ is None and version is not None:
+            self.__version__ = version
+        elif version is not None and version != self.__version__:
             return self.to_version(version).to_sdf()
-        version = version or self.__version__
+        version = self.__version__ or version
         el = ET.Element("slip1")
         if self.slip1 is not None:
             el.text = str(self.slip1)
@@ -1502,7 +1691,7 @@ class Slip1(BaseModel):
 
 
 class Slip2(BaseModel):
-    def __init__(self, sdf_version: str, slip2: float = 0.0):
+    def __init__(self, sdf_version: str | None = None, slip2: float = 0.0):
         self.__version__ = sdf_version
         self.slip2 = slip2
 
@@ -1514,10 +1703,12 @@ class Slip2(BaseModel):
         new_obj = self.__class__(**kwargs)
         return new_obj
 
-    def to_sdf(self, version: str = None) -> ET.Element:
-        if version is not None and version != self.__version__:
+    def to_sdf(self, version: str | None = None) -> ET.Element:
+        if self.__version__ is None and version is not None:
+            self.__version__ = version
+        elif version is not None and version != self.__version__:
             return self.to_version(version).to_sdf()
-        version = version or self.__version__
+        version = self.__version__ or version
         el = ET.Element("slip2")
         if self.slip2 is not None:
             el.text = str(self.slip2)
@@ -1536,7 +1727,7 @@ class Slip2(BaseModel):
 
 
 class SoftCfm(BaseModel):
-    def __init__(self, sdf_version: str, soft_cfm: float = 0):
+    def __init__(self, sdf_version: str | None = None, soft_cfm: float = 0):
         self.__version__ = sdf_version
         self.soft_cfm = soft_cfm
 
@@ -1548,10 +1739,12 @@ class SoftCfm(BaseModel):
         new_obj = self.__class__(**kwargs)
         return new_obj
 
-    def to_sdf(self, version: str = None) -> ET.Element:
-        if version is not None and version != self.__version__:
+    def to_sdf(self, version: str | None = None) -> ET.Element:
+        if self.__version__ is None and version is not None:
+            self.__version__ = version
+        elif version is not None and version != self.__version__:
             return self.to_version(version).to_sdf()
-        version = version or self.__version__
+        version = self.__version__ or version
         el = ET.Element("soft_cfm")
         if self.soft_cfm is not None:
             el.text = str(self.soft_cfm)
@@ -1570,9 +1763,14 @@ class SoftCfm(BaseModel):
 
 
 class SoftContact(BaseModel):
-    def __init__(self, sdf_version: str, dart: "Dart" = None):
+    def __init__(self, sdf_version: str | None = None, dart: "Dart" = None):
         self.__version__ = sdf_version
         self.dart = dart
+        if self.dart is not None:
+            if getattr(self.dart, '__version__', None) is None:
+                self.dart.__version__ = self.__version__
+            elif getattr(self.dart, '__version__', None) != self.__version__ and self.__version__ is not None:
+                self.dart = self.dart.to_version(self.__version__)
 
     def to_version(self, target_version: str) -> "SoftContact":
         kwargs = {"sdf_version": target_version}
@@ -1580,10 +1778,12 @@ class SoftContact(BaseModel):
         new_obj = self.__class__(**kwargs)
         return new_obj
 
-    def to_sdf(self, version: str = None) -> ET.Element:
-        if version is not None and version != self.__version__:
+    def to_sdf(self, version: str | None = None) -> ET.Element:
+        if self.__version__ is None and version is not None:
+            self.__version__ = version
+        elif version is not None and version != self.__version__:
             return self.to_version(version).to_sdf()
-        version = version or self.__version__
+        version = self.__version__ or version
         el = ET.Element("soft_contact")
         if self.dart is not None:
             el.append(self.dart.to_sdf(version))
@@ -1603,7 +1803,7 @@ class SoftContact(BaseModel):
 
 
 class SoftErp(BaseModel):
-    def __init__(self, sdf_version: str, soft_erp: float = 0.2):
+    def __init__(self, sdf_version: str | None = None, soft_erp: float = 0.2):
         self.__version__ = sdf_version
         self.soft_erp = soft_erp
 
@@ -1615,10 +1815,12 @@ class SoftErp(BaseModel):
         new_obj = self.__class__(**kwargs)
         return new_obj
 
-    def to_sdf(self, version: str = None) -> ET.Element:
-        if version is not None and version != self.__version__:
+    def to_sdf(self, version: str | None = None) -> ET.Element:
+        if self.__version__ is None and version is not None:
+            self.__version__ = version
+        elif version is not None and version != self.__version__:
             return self.to_version(version).to_sdf()
-        version = version or self.__version__
+        version = self.__version__ or version
         el = ET.Element("soft_erp")
         if self.soft_erp is not None:
             el.text = str(self.soft_erp)
@@ -1637,7 +1839,7 @@ class SoftErp(BaseModel):
 
 
 class SplitImpulse(BaseModel):
-    def __init__(self, sdf_version: str, split_impulse: bool = True):
+    def __init__(self, sdf_version: str | None = None, split_impulse: bool = True):
         self.__version__ = sdf_version
         self.split_impulse = split_impulse
 
@@ -1647,10 +1849,12 @@ class SplitImpulse(BaseModel):
         new_obj = self.__class__(**kwargs)
         return new_obj
 
-    def to_sdf(self, version: str = None) -> ET.Element:
-        if version is not None and version != self.__version__:
+    def to_sdf(self, version: str | None = None) -> ET.Element:
+        if self.__version__ is None and version is not None:
+            self.__version__ = version
+        elif version is not None and version != self.__version__:
             return self.to_version(version).to_sdf()
-        version = version or self.__version__
+        version = self.__version__ or version
         el = ET.Element("split_impulse")
         if self.split_impulse is not None:
             el.text = str(self.split_impulse).lower()
@@ -1666,7 +1870,11 @@ class SplitImpulse(BaseModel):
 
 
 class SplitImpulsePenetrationThreshold(BaseModel):
-    def __init__(self, sdf_version: str, split_impulse_penetration_threshold: float = -0.01):
+    def __init__(
+        self,
+        sdf_version: str | None = None,
+        split_impulse_penetration_threshold: float = -0.01
+    ):
         self.__version__ = sdf_version
         self.split_impulse_penetration_threshold = split_impulse_penetration_threshold
 
@@ -1676,10 +1884,12 @@ class SplitImpulsePenetrationThreshold(BaseModel):
         new_obj = self.__class__(**kwargs)
         return new_obj
 
-    def to_sdf(self, version: str = None) -> ET.Element:
-        if version is not None and version != self.__version__:
+    def to_sdf(self, version: str | None = None) -> ET.Element:
+        if self.__version__ is None and version is not None:
+            self.__version__ = version
+        elif version is not None and version != self.__version__:
             return self.to_version(version).to_sdf()
-        version = version or self.__version__
+        version = self.__version__ or version
         el = ET.Element("split_impulse_penetration_threshold")
         if self.split_impulse_penetration_threshold is not None:
             el.text = str(self.split_impulse_penetration_threshold)
@@ -1695,7 +1905,7 @@ class SplitImpulsePenetrationThreshold(BaseModel):
 
 
 class Stiffness(BaseModel):
-    def __init__(self, sdf_version: str, stiffness: float = 100.0):
+    def __init__(self, sdf_version: str | None = None, stiffness: float = 100.0):
         self.__version__ = sdf_version
         self.stiffness = stiffness
 
@@ -1705,10 +1915,12 @@ class Stiffness(BaseModel):
         new_obj = self.__class__(**kwargs)
         return new_obj
 
-    def to_sdf(self, version: str = None) -> ET.Element:
-        if version is not None and version != self.__version__:
+    def to_sdf(self, version: str | None = None) -> ET.Element:
+        if self.__version__ is None and version is not None:
+            self.__version__ = version
+        elif version is not None and version != self.__version__:
             return self.to_version(version).to_sdf()
-        version = version or self.__version__
+        version = self.__version__ or version
         el = ET.Element("stiffness")
         if self.stiffness is not None:
             el.text = str(self.stiffness)
@@ -1726,7 +1938,7 @@ class Stiffness(BaseModel):
 class Surface(BaseModel):
     def __init__(
         self,
-        sdf_version: str,
+        sdf_version: str | None = None,
         bounce: "Bounce" = None,
         contact: "Contact" = None,
         friction: "Friction" = None,
@@ -1737,6 +1949,26 @@ class Surface(BaseModel):
         self.contact = contact
         self.friction = friction
         self.soft_contact = soft_contact
+        if self.bounce is not None:
+            if getattr(self.bounce, '__version__', None) is None:
+                self.bounce.__version__ = self.__version__
+            elif getattr(self.bounce, '__version__', None) != self.__version__ and self.__version__ is not None:
+                self.bounce = self.bounce.to_version(self.__version__)
+        if self.contact is not None:
+            if getattr(self.contact, '__version__', None) is None:
+                self.contact.__version__ = self.__version__
+            elif getattr(self.contact, '__version__', None) != self.__version__ and self.__version__ is not None:
+                self.contact = self.contact.to_version(self.__version__)
+        if self.friction is not None:
+            if getattr(self.friction, '__version__', None) is None:
+                self.friction.__version__ = self.__version__
+            elif getattr(self.friction, '__version__', None) != self.__version__ and self.__version__ is not None:
+                self.friction = self.friction.to_version(self.__version__)
+        if self.soft_contact is not None:
+            if getattr(self.soft_contact, '__version__', None) is None:
+                self.soft_contact.__version__ = self.__version__
+            elif getattr(self.soft_contact, '__version__', None) != self.__version__ and self.__version__ is not None:
+                self.soft_contact = self.soft_contact.to_version(self.__version__)
 
     def to_version(self, target_version: str) -> "Surface":
         if self.soft_contact is not None and cmp_version(target_version, "1.4") < 0:
@@ -1749,10 +1981,12 @@ class Surface(BaseModel):
         new_obj = self.__class__(**kwargs)
         return new_obj
 
-    def to_sdf(self, version: str = None) -> ET.Element:
-        if version is not None and version != self.__version__:
+    def to_sdf(self, version: str | None = None) -> ET.Element:
+        if self.__version__ is None and version is not None:
+            self.__version__ = version
+        elif version is not None and version != self.__version__:
             return self.to_version(version).to_sdf()
-        version = version or self.__version__
+        version = self.__version__ or version
         el = ET.Element("surface")
         if self.bounce is not None:
             el.append(self.bounce.to_sdf(version))
@@ -1804,7 +2038,7 @@ class Surface(BaseModel):
 
 
 class SurfaceRadius(BaseModel):
-    def __init__(self, sdf_version: str, surface_radius: float = 0.0):
+    def __init__(self, sdf_version: str | None = None, surface_radius: float = 0.0):
         self.__version__ = sdf_version
         self.surface_radius = surface_radius
 
@@ -1814,10 +2048,12 @@ class SurfaceRadius(BaseModel):
         new_obj = self.__class__(**kwargs)
         return new_obj
 
-    def to_sdf(self, version: str = None) -> ET.Element:
-        if version is not None and version != self.__version__:
+    def to_sdf(self, version: str | None = None) -> ET.Element:
+        if self.__version__ is None and version is not None:
+            self.__version__ = version
+        elif version is not None and version != self.__version__:
             return self.to_version(version).to_sdf()
-        version = version or self.__version__
+        version = self.__version__ or version
         el = ET.Element("surface_radius")
         if self.surface_radius is not None:
             el.text = str(self.surface_radius)
@@ -1833,7 +2069,7 @@ class SurfaceRadius(BaseModel):
 
 
 class Threshold(BaseModel):
-    def __init__(self, sdf_version: str, threshold: float = 100000):
+    def __init__(self, sdf_version: str | None = None, threshold: float = 100000):
         self.__version__ = sdf_version
         self.threshold = threshold
 
@@ -1845,10 +2081,12 @@ class Threshold(BaseModel):
         new_obj = self.__class__(**kwargs)
         return new_obj
 
-    def to_sdf(self, version: str = None) -> ET.Element:
-        if version is not None and version != self.__version__:
+    def to_sdf(self, version: str | None = None) -> ET.Element:
+        if self.__version__ is None and version is not None:
+            self.__version__ = version
+        elif version is not None and version != self.__version__:
             return self.to_version(version).to_sdf()
-        version = version or self.__version__
+        version = self.__version__ or version
         el = ET.Element("threshold")
         if self.threshold is not None:
             el.text = str(self.threshold)
@@ -1869,7 +2107,7 @@ class Threshold(BaseModel):
 class Torsional(BaseModel):
     def __init__(
         self,
-        sdf_version: str,
+        sdf_version: str | None = None,
         coefficient: "Coefficient" = None,
         ode: "TorsionalOde" = None,
         patch_radius: "PatchRadius" = None,
@@ -1882,6 +2120,31 @@ class Torsional(BaseModel):
         self.patch_radius = patch_radius
         self.surface_radius = surface_radius
         self.use_patch_radius = use_patch_radius
+        if self.coefficient is not None:
+            if getattr(self.coefficient, '__version__', None) is None:
+                self.coefficient.__version__ = self.__version__
+            elif getattr(self.coefficient, '__version__', None) != self.__version__ and self.__version__ is not None:
+                self.coefficient = self.coefficient.to_version(self.__version__)
+        if self.ode is not None:
+            if getattr(self.ode, '__version__', None) is None:
+                self.ode.__version__ = self.__version__
+            elif getattr(self.ode, '__version__', None) != self.__version__ and self.__version__ is not None:
+                self.ode = self.ode.to_version(self.__version__)
+        if self.patch_radius is not None:
+            if getattr(self.patch_radius, '__version__', None) is None:
+                self.patch_radius.__version__ = self.__version__
+            elif getattr(self.patch_radius, '__version__', None) != self.__version__ and self.__version__ is not None:
+                self.patch_radius = self.patch_radius.to_version(self.__version__)
+        if self.surface_radius is not None:
+            if getattr(self.surface_radius, '__version__', None) is None:
+                self.surface_radius.__version__ = self.__version__
+            elif getattr(self.surface_radius, '__version__', None) != self.__version__ and self.__version__ is not None:
+                self.surface_radius = self.surface_radius.to_version(self.__version__)
+        if self.use_patch_radius is not None:
+            if getattr(self.use_patch_radius, '__version__', None) is None:
+                self.use_patch_radius.__version__ = self.__version__
+            elif getattr(self.use_patch_radius, '__version__', None) != self.__version__ and self.__version__ is not None:
+                self.use_patch_radius = self.use_patch_radius.to_version(self.__version__)
 
     def to_version(self, target_version: str) -> "Torsional":
         kwargs = {"sdf_version": target_version}
@@ -1893,10 +2156,12 @@ class Torsional(BaseModel):
         new_obj = self.__class__(**kwargs)
         return new_obj
 
-    def to_sdf(self, version: str = None) -> ET.Element:
-        if version is not None and version != self.__version__:
+    def to_sdf(self, version: str | None = None) -> ET.Element:
+        if self.__version__ is None and version is not None:
+            self.__version__ = version
+        elif version is not None and version != self.__version__:
             return self.to_version(version).to_sdf()
-        version = version or self.__version__
+        version = self.__version__ or version
         el = ET.Element("torsional")
         if self.coefficient is not None:
             el.append(self.coefficient.to_sdf(version))
@@ -1956,9 +2221,14 @@ class Torsional(BaseModel):
 
 
 class TorsionalOde(BaseModel):
-    def __init__(self, sdf_version: str, slip: "Slip" = None):
+    def __init__(self, sdf_version: str | None = None, slip: "Slip" = None):
         self.__version__ = sdf_version
         self.slip = slip
+        if self.slip is not None:
+            if getattr(self.slip, '__version__', None) is None:
+                self.slip.__version__ = self.__version__
+            elif getattr(self.slip, '__version__', None) != self.__version__ and self.__version__ is not None:
+                self.slip = self.slip.to_version(self.__version__)
 
     def to_version(self, target_version: str) -> "TorsionalOde":
         kwargs = {"sdf_version": target_version}
@@ -1966,10 +2236,12 @@ class TorsionalOde(BaseModel):
         new_obj = self.__class__(**kwargs)
         return new_obj
 
-    def to_sdf(self, version: str = None) -> ET.Element:
-        if version is not None and version != self.__version__:
+    def to_sdf(self, version: str | None = None) -> ET.Element:
+        if self.__version__ is None and version is not None:
+            self.__version__ = version
+        elif version is not None and version != self.__version__:
             return self.to_version(version).to_sdf()
-        version = version or self.__version__
+        version = self.__version__ or version
         el = ET.Element("ode")
         if self.slip is not None:
             el.append(self.slip.to_sdf(version))
@@ -1989,7 +2261,7 @@ class TorsionalOde(BaseModel):
 
 
 class UsePatchRadius(BaseModel):
-    def __init__(self, sdf_version: str, use_patch_radius: bool = True):
+    def __init__(self, sdf_version: str | None = None, use_patch_radius: bool = True):
         self.__version__ = sdf_version
         self.use_patch_radius = use_patch_radius
 
@@ -1999,10 +2271,12 @@ class UsePatchRadius(BaseModel):
         new_obj = self.__class__(**kwargs)
         return new_obj
 
-    def to_sdf(self, version: str = None) -> ET.Element:
-        if version is not None and version != self.__version__:
+    def to_sdf(self, version: str | None = None) -> ET.Element:
+        if self.__version__ is None and version is not None:
+            self.__version__ = version
+        elif version is not None and version != self.__version__:
             return self.to_version(version).to_sdf()
-        version = version or self.__version__
+        version = self.__version__ or version
         el = ET.Element("use_patch_radius")
         if self.use_patch_radius is not None:
             el.text = str(self.use_patch_radius).lower()

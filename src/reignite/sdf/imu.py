@@ -50,7 +50,7 @@ def _parse_double(raw: str) -> float | SDFError:
 class Accel(BaseModel):
     def __init__(
         self,
-        sdf_version: str,
+        sdf_version: str | None = None,
         bias_mean: "BiasMean" = None,
         bias_stddev: "BiasStddev" = None,
         mean: "Mean" = None,
@@ -61,6 +61,26 @@ class Accel(BaseModel):
         self.bias_stddev = bias_stddev
         self.mean = mean
         self.stddev = stddev
+        if self.bias_mean is not None:
+            if getattr(self.bias_mean, '__version__', None) is None:
+                self.bias_mean.__version__ = self.__version__
+            elif getattr(self.bias_mean, '__version__', None) != self.__version__ and self.__version__ is not None:
+                self.bias_mean = self.bias_mean.to_version(self.__version__)
+        if self.bias_stddev is not None:
+            if getattr(self.bias_stddev, '__version__', None) is None:
+                self.bias_stddev.__version__ = self.__version__
+            elif getattr(self.bias_stddev, '__version__', None) != self.__version__ and self.__version__ is not None:
+                self.bias_stddev = self.bias_stddev.to_version(self.__version__)
+        if self.mean is not None:
+            if getattr(self.mean, '__version__', None) is None:
+                self.mean.__version__ = self.__version__
+            elif getattr(self.mean, '__version__', None) != self.__version__ and self.__version__ is not None:
+                self.mean = self.mean.to_version(self.__version__)
+        if self.stddev is not None:
+            if getattr(self.stddev, '__version__', None) is None:
+                self.stddev.__version__ = self.__version__
+            elif getattr(self.stddev, '__version__', None) != self.__version__ and self.__version__ is not None:
+                self.stddev = self.stddev.to_version(self.__version__)
 
     def to_version(self, target_version: str) -> "Accel":
         kwargs = {"sdf_version": target_version}
@@ -71,10 +91,12 @@ class Accel(BaseModel):
         new_obj = self.__class__(**kwargs)
         return new_obj
 
-    def to_sdf(self, version: str = None) -> ET.Element:
-        if version is not None and version != self.__version__:
+    def to_sdf(self, version: str | None = None) -> ET.Element:
+        if self.__version__ is None and version is not None:
+            self.__version__ = version
+        elif version is not None and version != self.__version__:
             return self.to_version(version).to_sdf()
-        version = version or self.__version__
+        version = self.__version__ or version
         el = ET.Element("accel")
         if self.bias_mean is not None:
             el.append(self.bias_mean.to_sdf(version))
@@ -124,11 +146,26 @@ class Accel(BaseModel):
 
 
 class AngularVelocity(BaseModel):
-    def __init__(self, sdf_version: str, x: "X" = None, y: "Y" = None, z: "Z" = None):
+    def __init__(self, sdf_version: str | None = None, x: "X" = None, y: "Y" = None, z: "Z" = None):
         self.__version__ = sdf_version
         self.x = x
         self.y = y
         self.z = z
+        if self.x is not None:
+            if getattr(self.x, '__version__', None) is None:
+                self.x.__version__ = self.__version__
+            elif getattr(self.x, '__version__', None) != self.__version__ and self.__version__ is not None:
+                self.x = self.x.to_version(self.__version__)
+        if self.y is not None:
+            if getattr(self.y, '__version__', None) is None:
+                self.y.__version__ = self.__version__
+            elif getattr(self.y, '__version__', None) != self.__version__ and self.__version__ is not None:
+                self.y = self.y.to_version(self.__version__)
+        if self.z is not None:
+            if getattr(self.z, '__version__', None) is None:
+                self.z.__version__ = self.__version__
+            elif getattr(self.z, '__version__', None) != self.__version__ and self.__version__ is not None:
+                self.z = self.z.to_version(self.__version__)
 
     def to_version(self, target_version: str) -> "AngularVelocity":
         kwargs = {"sdf_version": target_version}
@@ -138,10 +175,12 @@ class AngularVelocity(BaseModel):
         new_obj = self.__class__(**kwargs)
         return new_obj
 
-    def to_sdf(self, version: str = None) -> ET.Element:
-        if version is not None and version != self.__version__:
+    def to_sdf(self, version: str | None = None) -> ET.Element:
+        if self.__version__ is None and version is not None:
+            self.__version__ = version
+        elif version is not None and version != self.__version__:
             return self.to_version(version).to_sdf()
-        version = version or self.__version__
+        version = self.__version__ or version
         el = ET.Element("angular_velocity")
         if self.x is not None:
             el.append(self.x.to_sdf(version))
@@ -181,7 +220,7 @@ class AngularVelocity(BaseModel):
 
 
 class BiasMean(BaseModel):
-    def __init__(self, sdf_version: str, bias_mean: float = 0.0):
+    def __init__(self, sdf_version: str | None = None, bias_mean: float = 0.0):
         self.__version__ = sdf_version
         self.bias_mean = bias_mean
 
@@ -191,10 +230,12 @@ class BiasMean(BaseModel):
         new_obj = self.__class__(**kwargs)
         return new_obj
 
-    def to_sdf(self, version: str = None) -> ET.Element:
-        if version is not None and version != self.__version__:
+    def to_sdf(self, version: str | None = None) -> ET.Element:
+        if self.__version__ is None and version is not None:
+            self.__version__ = version
+        elif version is not None and version != self.__version__:
             return self.to_version(version).to_sdf()
-        version = version or self.__version__
+        version = self.__version__ or version
         el = ET.Element("bias_mean")
         if self.bias_mean is not None:
             el.text = str(self.bias_mean)
@@ -210,7 +251,7 @@ class BiasMean(BaseModel):
 
 
 class BiasStddev(BaseModel):
-    def __init__(self, sdf_version: str, bias_stddev: float = 0.0):
+    def __init__(self, sdf_version: str | None = None, bias_stddev: float = 0.0):
         self.__version__ = sdf_version
         self.bias_stddev = bias_stddev
 
@@ -220,10 +261,12 @@ class BiasStddev(BaseModel):
         new_obj = self.__class__(**kwargs)
         return new_obj
 
-    def to_sdf(self, version: str = None) -> ET.Element:
-        if version is not None and version != self.__version__:
+    def to_sdf(self, version: str | None = None) -> ET.Element:
+        if self.__version__ is None and version is not None:
+            self.__version__ = version
+        elif version is not None and version != self.__version__:
             return self.to_version(version).to_sdf()
-        version = version or self.__version__
+        version = self.__version__ or version
         el = ET.Element("bias_stddev")
         if self.bias_stddev is not None:
             el.text = str(self.bias_stddev)
@@ -239,10 +282,15 @@ class BiasStddev(BaseModel):
 
 
 class CustomRpy(BaseModel):
-    def __init__(self, sdf_version: str, custom_rpy: _SDFVector3 = None, parent_frame: str = ""):
+    def __init__(
+        self,
+        sdf_version: str | None = None,
+        custom_rpy: _SDFVector3 = None,
+        parent_frame: str = ""
+    ):
         self.__version__ = sdf_version
         if custom_rpy is None:
-            custom_rpy = _SDFVector3.from_sdf("0 0 0")
+            custom_rpy = _SDFVector3.from_sdf("0 0 0", version=sdf_version)
         self.custom_rpy = custom_rpy
         self.parent_frame = parent_frame
 
@@ -253,13 +301,15 @@ class CustomRpy(BaseModel):
         new_obj = self.__class__(**kwargs)
         return new_obj
 
-    def to_sdf(self, version: str = None) -> ET.Element:
-        if version is not None and version != self.__version__:
+    def to_sdf(self, version: str | None = None) -> ET.Element:
+        if self.__version__ is None and version is not None:
+            self.__version__ = version
+        elif version is not None and version != self.__version__:
             return self.to_version(version).to_sdf()
-        version = version or self.__version__
+        version = self.__version__ or version
         el = ET.Element("custom_rpy")
         if self.custom_rpy is not None:
-            el.text = self.custom_rpy.to_sdf()
+            el.text = self.custom_rpy.to_sdf(version)
         if self.parent_frame is not None:
             el.set("parent_frame", self.parent_frame)
         return el
@@ -277,7 +327,7 @@ class CustomRpy(BaseModel):
 
 
 class EnableOrientation(BaseModel):
-    def __init__(self, sdf_version: str, enable_orientation: bool = True):
+    def __init__(self, sdf_version: str | None = None, enable_orientation: bool = True):
         self.__version__ = sdf_version
         self.enable_orientation = enable_orientation
 
@@ -289,10 +339,12 @@ class EnableOrientation(BaseModel):
         new_obj = self.__class__(**kwargs)
         return new_obj
 
-    def to_sdf(self, version: str = None) -> ET.Element:
-        if version is not None and version != self.__version__:
+    def to_sdf(self, version: str | None = None) -> ET.Element:
+        if self.__version__ is None and version is not None:
+            self.__version__ = version
+        elif version is not None and version != self.__version__:
             return self.to_version(version).to_sdf()
-        version = version or self.__version__
+        version = self.__version__ or version
         el = ET.Element("enable_orientation")
         if self.enable_orientation is not None:
             el.text = str(self.enable_orientation).lower()
@@ -311,10 +363,15 @@ class EnableOrientation(BaseModel):
 
 
 class GravDirX(BaseModel):
-    def __init__(self, sdf_version: str, grav_dir_x: _SDFVector3 = None, parent_frame: str = ""):
+    def __init__(
+        self,
+        sdf_version: str | None = None,
+        grav_dir_x: _SDFVector3 = None,
+        parent_frame: str = ""
+    ):
         self.__version__ = sdf_version
         if grav_dir_x is None:
-            grav_dir_x = _SDFVector3.from_sdf("1 0 0")
+            grav_dir_x = _SDFVector3.from_sdf("1 0 0", version=sdf_version)
         self.grav_dir_x = grav_dir_x
         self.parent_frame = parent_frame
 
@@ -325,13 +382,15 @@ class GravDirX(BaseModel):
         new_obj = self.__class__(**kwargs)
         return new_obj
 
-    def to_sdf(self, version: str = None) -> ET.Element:
-        if version is not None and version != self.__version__:
+    def to_sdf(self, version: str | None = None) -> ET.Element:
+        if self.__version__ is None and version is not None:
+            self.__version__ = version
+        elif version is not None and version != self.__version__:
             return self.to_version(version).to_sdf()
-        version = version or self.__version__
+        version = self.__version__ or version
         el = ET.Element("grav_dir_x")
         if self.grav_dir_x is not None:
-            el.text = self.grav_dir_x.to_sdf()
+            el.text = self.grav_dir_x.to_sdf(version)
         if self.parent_frame is not None:
             el.set("parent_frame", self.parent_frame)
         return el
@@ -353,7 +412,7 @@ class Imu(BaseModel):
 
     def __init__(
         self,
-        sdf_version: str,
+        sdf_version: str | None = None,
         angular_velocity: "AngularVelocity" = None,
         enable_orientation: "EnableOrientation" = None,
         linear_acceleration: "LinearAcceleration" = None,
@@ -368,6 +427,36 @@ class Imu(BaseModel):
         self.noise = noise
         self.orientation_reference_frame = orientation_reference_frame
         self.topic = topic
+        if self.angular_velocity is not None:
+            if getattr(self.angular_velocity, '__version__', None) is None:
+                self.angular_velocity.__version__ = self.__version__
+            elif getattr(self.angular_velocity, '__version__', None) != self.__version__ and self.__version__ is not None:
+                self.angular_velocity = self.angular_velocity.to_version(self.__version__)
+        if self.enable_orientation is not None:
+            if getattr(self.enable_orientation, '__version__', None) is None:
+                self.enable_orientation.__version__ = self.__version__
+            elif getattr(self.enable_orientation, '__version__', None) != self.__version__ and self.__version__ is not None:
+                self.enable_orientation = self.enable_orientation.to_version(self.__version__)
+        if self.linear_acceleration is not None:
+            if getattr(self.linear_acceleration, '__version__', None) is None:
+                self.linear_acceleration.__version__ = self.__version__
+            elif getattr(self.linear_acceleration, '__version__', None) != self.__version__ and self.__version__ is not None:
+                self.linear_acceleration = self.linear_acceleration.to_version(self.__version__)
+        if self.noise is not None:
+            if getattr(self.noise, '__version__', None) is None:
+                self.noise.__version__ = self.__version__
+            elif getattr(self.noise, '__version__', None) != self.__version__ and self.__version__ is not None:
+                self.noise = self.noise.to_version(self.__version__)
+        if self.orientation_reference_frame is not None:
+            if getattr(self.orientation_reference_frame, '__version__', None) is None:
+                self.orientation_reference_frame.__version__ = self.__version__
+            elif getattr(self.orientation_reference_frame, '__version__', None) != self.__version__ and self.__version__ is not None:
+                self.orientation_reference_frame = self.orientation_reference_frame.to_version(self.__version__)
+        if self.topic is not None:
+            if getattr(self.topic, '__version__', None) is None:
+                self.topic.__version__ = self.__version__
+            elif getattr(self.topic, '__version__', None) != self.__version__ and self.__version__ is not None:
+                self.topic = self.topic.to_version(self.__version__)
 
     def to_version(self, target_version: str) -> "Imu":
         from ..elements.noise import Noise
@@ -396,11 +485,13 @@ class Imu(BaseModel):
         apply_migrations(new_obj, target_version)
         return new_obj
 
-    def to_sdf(self, version: str = None) -> ET.Element:
+    def to_sdf(self, version: str | None = None) -> ET.Element:
         from ..elements.noise import Noise
-        if version is not None and version != self.__version__:
+        if self.__version__ is None and version is not None:
+            self.__version__ = version
+        elif version is not None and version != self.__version__:
             return self.to_version(version).to_sdf()
-        version = version or self.__version__
+        version = self.__version__ or version
         el = ET.Element("imu")
         if self.angular_velocity is not None:
             el.append(self.angular_velocity.to_sdf(version))
@@ -481,11 +572,26 @@ class Imu(BaseModel):
 
 
 class LinearAcceleration(BaseModel):
-    def __init__(self, sdf_version: str, x: "X" = None, y: "Y" = None, z: "Z" = None):
+    def __init__(self, sdf_version: str | None = None, x: "X" = None, y: "Y" = None, z: "Z" = None):
         self.__version__ = sdf_version
         self.x = x
         self.y = y
         self.z = z
+        if self.x is not None:
+            if getattr(self.x, '__version__', None) is None:
+                self.x.__version__ = self.__version__
+            elif getattr(self.x, '__version__', None) != self.__version__ and self.__version__ is not None:
+                self.x = self.x.to_version(self.__version__)
+        if self.y is not None:
+            if getattr(self.y, '__version__', None) is None:
+                self.y.__version__ = self.__version__
+            elif getattr(self.y, '__version__', None) != self.__version__ and self.__version__ is not None:
+                self.y = self.y.to_version(self.__version__)
+        if self.z is not None:
+            if getattr(self.z, '__version__', None) is None:
+                self.z.__version__ = self.__version__
+            elif getattr(self.z, '__version__', None) != self.__version__ and self.__version__ is not None:
+                self.z = self.z.to_version(self.__version__)
 
     def to_version(self, target_version: str) -> "LinearAcceleration":
         kwargs = {"sdf_version": target_version}
@@ -495,10 +601,12 @@ class LinearAcceleration(BaseModel):
         new_obj = self.__class__(**kwargs)
         return new_obj
 
-    def to_sdf(self, version: str = None) -> ET.Element:
-        if version is not None and version != self.__version__:
+    def to_sdf(self, version: str | None = None) -> ET.Element:
+        if self.__version__ is None and version is not None:
+            self.__version__ = version
+        elif version is not None and version != self.__version__:
             return self.to_version(version).to_sdf()
-        version = version or self.__version__
+        version = self.__version__ or version
         el = ET.Element("linear_acceleration")
         if self.x is not None:
             el.append(self.x.to_sdf(version))
@@ -538,7 +646,7 @@ class LinearAcceleration(BaseModel):
 
 
 class Localization(BaseModel):
-    def __init__(self, sdf_version: str, localization: str = "CUSTOM"):
+    def __init__(self, sdf_version: str | None = None, localization: str = "CUSTOM"):
         self.__version__ = sdf_version
         self.localization = localization
 
@@ -548,10 +656,12 @@ class Localization(BaseModel):
         new_obj = self.__class__(**kwargs)
         return new_obj
 
-    def to_sdf(self, version: str = None) -> ET.Element:
-        if version is not None and version != self.__version__:
+    def to_sdf(self, version: str | None = None) -> ET.Element:
+        if self.__version__ is None and version is not None:
+            self.__version__ = version
+        elif version is not None and version != self.__version__:
             return self.to_version(version).to_sdf()
-        version = version or self.__version__
+        version = self.__version__ or version
         el = ET.Element("localization")
         if self.localization is not None:
             el.text = self.localization
@@ -567,7 +677,7 @@ class Localization(BaseModel):
 
 
 class Mean(BaseModel):
-    def __init__(self, sdf_version: str, mean: float = 0.0):
+    def __init__(self, sdf_version: str | None = None, mean: float = 0.0):
         self.__version__ = sdf_version
         self.mean = mean
 
@@ -577,10 +687,12 @@ class Mean(BaseModel):
         new_obj = self.__class__(**kwargs)
         return new_obj
 
-    def to_sdf(self, version: str = None) -> ET.Element:
-        if version is not None and version != self.__version__:
+    def to_sdf(self, version: str | None = None) -> ET.Element:
+        if self.__version__ is None and version is not None:
+            self.__version__ = version
+        elif version is not None and version != self.__version__:
             return self.to_version(version).to_sdf()
-        version = version or self.__version__
+        version = self.__version__ or version
         el = ET.Element("mean")
         if self.mean is not None:
             el.text = str(self.mean)
@@ -598,7 +710,7 @@ class Mean(BaseModel):
 class Noise(BaseModel):
     def __init__(
         self,
-        sdf_version: str,
+        sdf_version: str | None = None,
         accel: "Accel" = None,
         rate: "Rate" = None,
         type: "Type" = None
@@ -607,6 +719,21 @@ class Noise(BaseModel):
         self.accel = accel
         self.rate = rate
         self.type = type
+        if self.accel is not None:
+            if getattr(self.accel, '__version__', None) is None:
+                self.accel.__version__ = self.__version__
+            elif getattr(self.accel, '__version__', None) != self.__version__ and self.__version__ is not None:
+                self.accel = self.accel.to_version(self.__version__)
+        if self.rate is not None:
+            if getattr(self.rate, '__version__', None) is None:
+                self.rate.__version__ = self.__version__
+            elif getattr(self.rate, '__version__', None) != self.__version__ and self.__version__ is not None:
+                self.rate = self.rate.to_version(self.__version__)
+        if self.type is not None:
+            if getattr(self.type, '__version__', None) is None:
+                self.type.__version__ = self.__version__
+            elif getattr(self.type, '__version__', None) != self.__version__ and self.__version__ is not None:
+                self.type = self.type.to_version(self.__version__)
 
     def to_version(self, target_version: str) -> "Noise":
         kwargs = {"sdf_version": target_version}
@@ -616,10 +743,12 @@ class Noise(BaseModel):
         new_obj = self.__class__(**kwargs)
         return new_obj
 
-    def to_sdf(self, version: str = None) -> ET.Element:
-        if version is not None and version != self.__version__:
+    def to_sdf(self, version: str | None = None) -> ET.Element:
+        if self.__version__ is None and version is not None:
+            self.__version__ = version
+        elif version is not None and version != self.__version__:
             return self.to_version(version).to_sdf()
-        version = version or self.__version__
+        version = self.__version__ or version
         el = ET.Element("noise")
         if self.accel is None:
             self.accel = Accel(sdf_version=version)
@@ -671,7 +800,7 @@ class Noise(BaseModel):
 class OrientationReferenceFrame(BaseModel):
     def __init__(
         self,
-        sdf_version: str,
+        sdf_version: str | None = None,
         custom_rpy: "CustomRpy" = None,
         grav_dir_x: "GravDirX" = None,
         localization: "Localization" = None
@@ -680,6 +809,21 @@ class OrientationReferenceFrame(BaseModel):
         self.custom_rpy = custom_rpy
         self.grav_dir_x = grav_dir_x
         self.localization = localization
+        if self.custom_rpy is not None:
+            if getattr(self.custom_rpy, '__version__', None) is None:
+                self.custom_rpy.__version__ = self.__version__
+            elif getattr(self.custom_rpy, '__version__', None) != self.__version__ and self.__version__ is not None:
+                self.custom_rpy = self.custom_rpy.to_version(self.__version__)
+        if self.grav_dir_x is not None:
+            if getattr(self.grav_dir_x, '__version__', None) is None:
+                self.grav_dir_x.__version__ = self.__version__
+            elif getattr(self.grav_dir_x, '__version__', None) != self.__version__ and self.__version__ is not None:
+                self.grav_dir_x = self.grav_dir_x.to_version(self.__version__)
+        if self.localization is not None:
+            if getattr(self.localization, '__version__', None) is None:
+                self.localization.__version__ = self.__version__
+            elif getattr(self.localization, '__version__', None) != self.__version__ and self.__version__ is not None:
+                self.localization = self.localization.to_version(self.__version__)
 
     def to_version(self, target_version: str) -> "OrientationReferenceFrame":
         kwargs = {"sdf_version": target_version}
@@ -689,10 +833,12 @@ class OrientationReferenceFrame(BaseModel):
         new_obj = self.__class__(**kwargs)
         return new_obj
 
-    def to_sdf(self, version: str = None) -> ET.Element:
-        if version is not None and version != self.__version__:
+    def to_sdf(self, version: str | None = None) -> ET.Element:
+        if self.__version__ is None and version is not None:
+            self.__version__ = version
+        elif version is not None and version != self.__version__:
             return self.to_version(version).to_sdf()
-        version = version or self.__version__
+        version = self.__version__ or version
         el = ET.Element("orientation_reference_frame")
         if self.custom_rpy is not None:
             el.append(self.custom_rpy.to_sdf(version))
@@ -734,7 +880,7 @@ class OrientationReferenceFrame(BaseModel):
 class Rate(BaseModel):
     def __init__(
         self,
-        sdf_version: str,
+        sdf_version: str | None = None,
         bias_mean: "BiasMean" = None,
         bias_stddev: "BiasStddev" = None,
         mean: "Mean" = None,
@@ -745,6 +891,26 @@ class Rate(BaseModel):
         self.bias_stddev = bias_stddev
         self.mean = mean
         self.stddev = stddev
+        if self.bias_mean is not None:
+            if getattr(self.bias_mean, '__version__', None) is None:
+                self.bias_mean.__version__ = self.__version__
+            elif getattr(self.bias_mean, '__version__', None) != self.__version__ and self.__version__ is not None:
+                self.bias_mean = self.bias_mean.to_version(self.__version__)
+        if self.bias_stddev is not None:
+            if getattr(self.bias_stddev, '__version__', None) is None:
+                self.bias_stddev.__version__ = self.__version__
+            elif getattr(self.bias_stddev, '__version__', None) != self.__version__ and self.__version__ is not None:
+                self.bias_stddev = self.bias_stddev.to_version(self.__version__)
+        if self.mean is not None:
+            if getattr(self.mean, '__version__', None) is None:
+                self.mean.__version__ = self.__version__
+            elif getattr(self.mean, '__version__', None) != self.__version__ and self.__version__ is not None:
+                self.mean = self.mean.to_version(self.__version__)
+        if self.stddev is not None:
+            if getattr(self.stddev, '__version__', None) is None:
+                self.stddev.__version__ = self.__version__
+            elif getattr(self.stddev, '__version__', None) != self.__version__ and self.__version__ is not None:
+                self.stddev = self.stddev.to_version(self.__version__)
 
     def to_version(self, target_version: str) -> "Rate":
         kwargs = {"sdf_version": target_version}
@@ -755,10 +921,12 @@ class Rate(BaseModel):
         new_obj = self.__class__(**kwargs)
         return new_obj
 
-    def to_sdf(self, version: str = None) -> ET.Element:
-        if version is not None and version != self.__version__:
+    def to_sdf(self, version: str | None = None) -> ET.Element:
+        if self.__version__ is None and version is not None:
+            self.__version__ = version
+        elif version is not None and version != self.__version__:
             return self.to_version(version).to_sdf()
-        version = version or self.__version__
+        version = self.__version__ or version
         el = ET.Element("rate")
         if self.bias_mean is not None:
             el.append(self.bias_mean.to_sdf(version))
@@ -808,7 +976,7 @@ class Rate(BaseModel):
 
 
 class Stddev(BaseModel):
-    def __init__(self, sdf_version: str, stddev: float = 0.0):
+    def __init__(self, sdf_version: str | None = None, stddev: float = 0.0):
         self.__version__ = sdf_version
         self.stddev = stddev
 
@@ -818,10 +986,12 @@ class Stddev(BaseModel):
         new_obj = self.__class__(**kwargs)
         return new_obj
 
-    def to_sdf(self, version: str = None) -> ET.Element:
-        if version is not None and version != self.__version__:
+    def to_sdf(self, version: str | None = None) -> ET.Element:
+        if self.__version__ is None and version is not None:
+            self.__version__ = version
+        elif version is not None and version != self.__version__:
             return self.to_version(version).to_sdf()
-        version = version or self.__version__
+        version = self.__version__ or version
         el = ET.Element("stddev")
         if self.stddev is not None:
             el.text = str(self.stddev)
@@ -837,7 +1007,7 @@ class Stddev(BaseModel):
 
 
 class Topic(BaseModel):
-    def __init__(self, sdf_version: str, topic: str = "__default_topic__"):
+    def __init__(self, sdf_version: str | None = None, topic: str = "__default_topic__"):
         self.__version__ = sdf_version
         self.topic = topic
 
@@ -849,10 +1019,12 @@ class Topic(BaseModel):
         new_obj = self.__class__(**kwargs)
         return new_obj
 
-    def to_sdf(self, version: str = None) -> ET.Element:
-        if version is not None and version != self.__version__:
+    def to_sdf(self, version: str | None = None) -> ET.Element:
+        if self.__version__ is None and version is not None:
+            self.__version__ = version
+        elif version is not None and version != self.__version__:
             return self.to_version(version).to_sdf()
-        version = version or self.__version__
+        version = self.__version__ or version
         el = ET.Element("topic")
         if self.topic is not None:
             el.text = self.topic
@@ -868,7 +1040,7 @@ class Topic(BaseModel):
 
 
 class Type(BaseModel):
-    def __init__(self, sdf_version: str, type: str = "gaussian"):
+    def __init__(self, sdf_version: str | None = None, type: str = "gaussian"):
         self.__version__ = sdf_version
         self.type = type
 
@@ -878,10 +1050,12 @@ class Type(BaseModel):
         new_obj = self.__class__(**kwargs)
         return new_obj
 
-    def to_sdf(self, version: str = None) -> ET.Element:
-        if version is not None and version != self.__version__:
+    def to_sdf(self, version: str | None = None) -> ET.Element:
+        if self.__version__ is None and version is not None:
+            self.__version__ = version
+        elif version is not None and version != self.__version__:
             return self.to_version(version).to_sdf()
-        version = version or self.__version__
+        version = self.__version__ or version
         el = ET.Element("type")
         if self.type is not None:
             el.text = self.type
@@ -897,9 +1071,14 @@ class Type(BaseModel):
 
 
 class X(BaseModel):
-    def __init__(self, sdf_version: str, noise: "Noise" = None):
+    def __init__(self, sdf_version: str | None = None, noise: "Noise" = None):
         self.__version__ = sdf_version
         self.noise = noise
+        if self.noise is not None:
+            if getattr(self.noise, '__version__', None) is None:
+                self.noise.__version__ = self.__version__
+            elif getattr(self.noise, '__version__', None) != self.__version__ and self.__version__ is not None:
+                self.noise = self.noise.to_version(self.__version__)
 
     def to_version(self, target_version: str) -> "X":
         from ..elements.noise import Noise
@@ -908,11 +1087,13 @@ class X(BaseModel):
         new_obj = self.__class__(**kwargs)
         return new_obj
 
-    def to_sdf(self, version: str = None) -> ET.Element:
+    def to_sdf(self, version: str | None = None) -> ET.Element:
         from ..elements.noise import Noise
-        if version is not None and version != self.__version__:
+        if self.__version__ is None and version is not None:
+            self.__version__ = version
+        elif version is not None and version != self.__version__:
             return self.to_version(version).to_sdf()
-        version = version or self.__version__
+        version = self.__version__ or version
         el = ET.Element("x")
         if self.noise is None:
             self.noise = Noise(sdf_version=version)
@@ -938,9 +1119,14 @@ class X(BaseModel):
 
 
 class Y(BaseModel):
-    def __init__(self, sdf_version: str, noise: "Noise" = None):
+    def __init__(self, sdf_version: str | None = None, noise: "Noise" = None):
         self.__version__ = sdf_version
         self.noise = noise
+        if self.noise is not None:
+            if getattr(self.noise, '__version__', None) is None:
+                self.noise.__version__ = self.__version__
+            elif getattr(self.noise, '__version__', None) != self.__version__ and self.__version__ is not None:
+                self.noise = self.noise.to_version(self.__version__)
 
     def to_version(self, target_version: str) -> "Y":
         from ..elements.noise import Noise
@@ -949,11 +1135,13 @@ class Y(BaseModel):
         new_obj = self.__class__(**kwargs)
         return new_obj
 
-    def to_sdf(self, version: str = None) -> ET.Element:
+    def to_sdf(self, version: str | None = None) -> ET.Element:
         from ..elements.noise import Noise
-        if version is not None and version != self.__version__:
+        if self.__version__ is None and version is not None:
+            self.__version__ = version
+        elif version is not None and version != self.__version__:
             return self.to_version(version).to_sdf()
-        version = version or self.__version__
+        version = self.__version__ or version
         el = ET.Element("y")
         if self.noise is None:
             self.noise = Noise(sdf_version=version)
@@ -979,9 +1167,14 @@ class Y(BaseModel):
 
 
 class Z(BaseModel):
-    def __init__(self, sdf_version: str, noise: "Noise" = None):
+    def __init__(self, sdf_version: str | None = None, noise: "Noise" = None):
         self.__version__ = sdf_version
         self.noise = noise
+        if self.noise is not None:
+            if getattr(self.noise, '__version__', None) is None:
+                self.noise.__version__ = self.__version__
+            elif getattr(self.noise, '__version__', None) != self.__version__ and self.__version__ is not None:
+                self.noise = self.noise.to_version(self.__version__)
 
     def to_version(self, target_version: str) -> "Z":
         from ..elements.noise import Noise
@@ -990,11 +1183,13 @@ class Z(BaseModel):
         new_obj = self.__class__(**kwargs)
         return new_obj
 
-    def to_sdf(self, version: str = None) -> ET.Element:
+    def to_sdf(self, version: str | None = None) -> ET.Element:
         from ..elements.noise import Noise
-        if version is not None and version != self.__version__:
+        if self.__version__ is None and version is not None:
+            self.__version__ = version
+        elif version is not None and version != self.__version__:
             return self.to_version(version).to_sdf()
-        version = version or self.__version__
+        version = self.__version__ or version
         el = ET.Element("z")
         if self.noise is None:
             self.noise = Noise(sdf_version=version)

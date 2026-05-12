@@ -42,7 +42,12 @@ def _parse_double(raw: str) -> float | SDFError:
 
 
 class Acceleration(BaseModel):
-    def __init__(self, sdf_version: str, acceleration: float = 0, degrees: bool = False):
+    def __init__(
+        self,
+        sdf_version: str | None = None,
+        acceleration: float = 0,
+        degrees: bool = False
+    ):
         self.__version__ = sdf_version
         self.acceleration = acceleration
         self.degrees = degrees
@@ -54,10 +59,12 @@ class Acceleration(BaseModel):
         new_obj = self.__class__(**kwargs)
         return new_obj
 
-    def to_sdf(self, version: str = None) -> ET.Element:
-        if version is not None and version != self.__version__:
+    def to_sdf(self, version: str | None = None) -> ET.Element:
+        if self.__version__ is None and version is not None:
+            self.__version__ = version
+        elif version is not None and version != self.__version__:
             return self.to_version(version).to_sdf()
-        version = version or self.__version__
+        version = self.__version__ or version
         el = ET.Element("acceleration")
         if self.acceleration is not None:
             el.text = str(self.acceleration)
@@ -78,7 +85,7 @@ class Acceleration(BaseModel):
 
 
 class Angle(BaseModel):
-    def __init__(self, sdf_version: str, angle: float = 0, axis: int = 0):
+    def __init__(self, sdf_version: str | None = None, angle: float = 0, axis: int = 0):
         self.__version__ = sdf_version
         self.angle = angle
         self.axis = axis
@@ -90,10 +97,12 @@ class Angle(BaseModel):
         new_obj = self.__class__(**kwargs)
         return new_obj
 
-    def to_sdf(self, version: str = None) -> ET.Element:
-        if version is not None and version != self.__version__:
+    def to_sdf(self, version: str | None = None) -> ET.Element:
+        if self.__version__ is None and version is not None:
+            self.__version__ = version
+        elif version is not None and version != self.__version__:
             return self.to_version(version).to_sdf()
-        version = version or self.__version__
+        version = self.__version__ or version
         el = ET.Element("angle")
         if self.angle is not None:
             el.text = str(self.angle)
@@ -116,7 +125,7 @@ class Angle(BaseModel):
 class Axis2State(BaseModel):
     def __init__(
         self,
-        sdf_version: str,
+        sdf_version: str | None = None,
         acceleration: "Acceleration" = None,
         effort: "Effort" = None,
         position: "Position" = None,
@@ -127,6 +136,26 @@ class Axis2State(BaseModel):
         self.effort = effort
         self.position = position
         self.velocity = velocity
+        if self.acceleration is not None:
+            if getattr(self.acceleration, '__version__', None) is None:
+                self.acceleration.__version__ = self.__version__
+            elif getattr(self.acceleration, '__version__', None) != self.__version__ and self.__version__ is not None:
+                self.acceleration = self.acceleration.to_version(self.__version__)
+        if self.effort is not None:
+            if getattr(self.effort, '__version__', None) is None:
+                self.effort.__version__ = self.__version__
+            elif getattr(self.effort, '__version__', None) != self.__version__ and self.__version__ is not None:
+                self.effort = self.effort.to_version(self.__version__)
+        if self.position is not None:
+            if getattr(self.position, '__version__', None) is None:
+                self.position.__version__ = self.__version__
+            elif getattr(self.position, '__version__', None) != self.__version__ and self.__version__ is not None:
+                self.position = self.position.to_version(self.__version__)
+        if self.velocity is not None:
+            if getattr(self.velocity, '__version__', None) is None:
+                self.velocity.__version__ = self.__version__
+            elif getattr(self.velocity, '__version__', None) != self.__version__ and self.__version__ is not None:
+                self.velocity = self.velocity.to_version(self.__version__)
 
     def to_version(self, target_version: str) -> "Axis2State":
         kwargs = {"sdf_version": target_version}
@@ -137,10 +166,12 @@ class Axis2State(BaseModel):
         new_obj = self.__class__(**kwargs)
         return new_obj
 
-    def to_sdf(self, version: str = None) -> ET.Element:
-        if version is not None and version != self.__version__:
+    def to_sdf(self, version: str | None = None) -> ET.Element:
+        if self.__version__ is None and version is not None:
+            self.__version__ = version
+        elif version is not None and version != self.__version__:
             return self.to_version(version).to_sdf()
-        version = version or self.__version__
+        version = self.__version__ or version
         el = ET.Element("axis2_state")
         if self.acceleration is not None:
             el.append(self.acceleration.to_sdf(version))
@@ -192,7 +223,7 @@ class Axis2State(BaseModel):
 class AxisState(BaseModel):
     def __init__(
         self,
-        sdf_version: str,
+        sdf_version: str | None = None,
         acceleration: "Acceleration" = None,
         effort: "Effort" = None,
         position: "Position" = None,
@@ -203,6 +234,26 @@ class AxisState(BaseModel):
         self.effort = effort
         self.position = position
         self.velocity = velocity
+        if self.acceleration is not None:
+            if getattr(self.acceleration, '__version__', None) is None:
+                self.acceleration.__version__ = self.__version__
+            elif getattr(self.acceleration, '__version__', None) != self.__version__ and self.__version__ is not None:
+                self.acceleration = self.acceleration.to_version(self.__version__)
+        if self.effort is not None:
+            if getattr(self.effort, '__version__', None) is None:
+                self.effort.__version__ = self.__version__
+            elif getattr(self.effort, '__version__', None) != self.__version__ and self.__version__ is not None:
+                self.effort = self.effort.to_version(self.__version__)
+        if self.position is not None:
+            if getattr(self.position, '__version__', None) is None:
+                self.position.__version__ = self.__version__
+            elif getattr(self.position, '__version__', None) != self.__version__ and self.__version__ is not None:
+                self.position = self.position.to_version(self.__version__)
+        if self.velocity is not None:
+            if getattr(self.velocity, '__version__', None) is None:
+                self.velocity.__version__ = self.__version__
+            elif getattr(self.velocity, '__version__', None) != self.__version__ and self.__version__ is not None:
+                self.velocity = self.velocity.to_version(self.__version__)
 
     def to_version(self, target_version: str) -> "AxisState":
         kwargs = {"sdf_version": target_version}
@@ -213,10 +264,12 @@ class AxisState(BaseModel):
         new_obj = self.__class__(**kwargs)
         return new_obj
 
-    def to_sdf(self, version: str = None) -> ET.Element:
-        if version is not None and version != self.__version__:
+    def to_sdf(self, version: str | None = None) -> ET.Element:
+        if self.__version__ is None and version is not None:
+            self.__version__ = version
+        elif version is not None and version != self.__version__:
             return self.to_version(version).to_sdf()
-        version = version or self.__version__
+        version = self.__version__ or version
         el = ET.Element("axis_state")
         if self.acceleration is not None:
             el.append(self.acceleration.to_sdf(version))
@@ -266,7 +319,7 @@ class AxisState(BaseModel):
 
 
 class Effort(BaseModel):
-    def __init__(self, sdf_version: str, effort: float = 0):
+    def __init__(self, sdf_version: str | None = None, effort: float = 0):
         self.__version__ = sdf_version
         self.effort = effort
 
@@ -276,10 +329,12 @@ class Effort(BaseModel):
         new_obj = self.__class__(**kwargs)
         return new_obj
 
-    def to_sdf(self, version: str = None) -> ET.Element:
-        if version is not None and version != self.__version__:
+    def to_sdf(self, version: str | None = None) -> ET.Element:
+        if self.__version__ is None and version is not None:
+            self.__version__ = version
+        elif version is not None and version != self.__version__:
             return self.to_version(version).to_sdf()
-        version = version or self.__version__
+        version = self.__version__ or version
         el = ET.Element("effort")
         if self.effort is not None:
             el.text = str(self.effort)
@@ -297,7 +352,7 @@ class Effort(BaseModel):
 class JointState(BaseModel):
     def __init__(
         self,
-        sdf_version: str,
+        sdf_version: str | None = None,
         angle: "Angle" = None,
         axis2_state: "Axis2State" = None,
         axis_state: "AxisState" = None,
@@ -308,6 +363,21 @@ class JointState(BaseModel):
         self.axis2_state = axis2_state
         self.axis_state = axis_state
         self.name = name
+        if self.angle is not None:
+            if getattr(self.angle, '__version__', None) is None:
+                self.angle.__version__ = self.__version__
+            elif getattr(self.angle, '__version__', None) != self.__version__ and self.__version__ is not None:
+                self.angle = self.angle.to_version(self.__version__)
+        if self.axis2_state is not None:
+            if getattr(self.axis2_state, '__version__', None) is None:
+                self.axis2_state.__version__ = self.__version__
+            elif getattr(self.axis2_state, '__version__', None) != self.__version__ and self.__version__ is not None:
+                self.axis2_state = self.axis2_state.to_version(self.__version__)
+        if self.axis_state is not None:
+            if getattr(self.axis_state, '__version__', None) is None:
+                self.axis_state.__version__ = self.__version__
+            elif getattr(self.axis_state, '__version__', None) != self.__version__ and self.__version__ is not None:
+                self.axis_state = self.axis_state.to_version(self.__version__)
 
     def to_version(self, target_version: str) -> "JointState":
         kwargs = {"sdf_version": target_version}
@@ -318,10 +388,12 @@ class JointState(BaseModel):
         new_obj = self.__class__(**kwargs)
         return new_obj
 
-    def to_sdf(self, version: str = None) -> ET.Element:
-        if version is not None and version != self.__version__:
+    def to_sdf(self, version: str | None = None) -> ET.Element:
+        if self.__version__ is None and version is not None:
+            self.__version__ = version
+        elif version is not None and version != self.__version__:
             return self.to_version(version).to_sdf()
-        version = version or self.__version__
+        version = self.__version__ or version
         el = ET.Element("joint_state")
         if self.angle is not None:
             el.append(self.angle.to_sdf(version))
@@ -366,7 +438,7 @@ class JointState(BaseModel):
 
 
 class Position(BaseModel):
-    def __init__(self, sdf_version: str, degrees: bool = False, position: float = 0):
+    def __init__(self, sdf_version: str | None = None, degrees: bool = False, position: float = 0):
         self.__version__ = sdf_version
         self.degrees = degrees
         self.position = position
@@ -378,10 +450,12 @@ class Position(BaseModel):
         new_obj = self.__class__(**kwargs)
         return new_obj
 
-    def to_sdf(self, version: str = None) -> ET.Element:
-        if version is not None and version != self.__version__:
+    def to_sdf(self, version: str | None = None) -> ET.Element:
+        if self.__version__ is None and version is not None:
+            self.__version__ = version
+        elif version is not None and version != self.__version__:
             return self.to_version(version).to_sdf()
-        version = version or self.__version__
+        version = self.__version__ or version
         el = ET.Element("position")
         if self.degrees is not None:
             el.set("degrees", str(self.degrees).lower())
@@ -402,7 +476,7 @@ class Position(BaseModel):
 
 
 class Velocity(BaseModel):
-    def __init__(self, sdf_version: str, degrees: bool = False, velocity: float = 0):
+    def __init__(self, sdf_version: str | None = None, degrees: bool = False, velocity: float = 0):
         self.__version__ = sdf_version
         self.degrees = degrees
         self.velocity = velocity
@@ -414,10 +488,12 @@ class Velocity(BaseModel):
         new_obj = self.__class__(**kwargs)
         return new_obj
 
-    def to_sdf(self, version: str = None) -> ET.Element:
-        if version is not None and version != self.__version__:
+    def to_sdf(self, version: str | None = None) -> ET.Element:
+        if self.__version__ is None and version is not None:
+            self.__version__ = version
+        elif version is not None and version != self.__version__:
             return self.to_version(version).to_sdf()
-        version = version or self.__version__
+        version = self.__version__ or version
         el = ET.Element("velocity")
         if self.degrees is not None:
             el.set("degrees", str(self.degrees).lower())

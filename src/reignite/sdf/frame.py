@@ -15,7 +15,7 @@ if typing.TYPE_CHECKING:
 class Frame(BaseModel):
     def __init__(
         self,
-        sdf_version: str,
+        sdf_version: str | None = None,
         attached_to: str = "",
         name: str = "",
         pose: "Pose" = None
@@ -24,6 +24,11 @@ class Frame(BaseModel):
         self.attached_to = attached_to
         self.name = name
         self.pose = pose
+        if self.pose is not None:
+            if getattr(self.pose, '__version__', None) is None:
+                self.pose.__version__ = self.__version__
+            elif getattr(self.pose, '__version__', None) != self.__version__ and self.__version__ is not None:
+                self.pose = self.pose.to_version(self.__version__)
 
     def to_version(self, target_version: str) -> "Frame":
         from ..elements.pose import Pose
@@ -36,11 +41,13 @@ class Frame(BaseModel):
         new_obj = self.__class__(**kwargs)
         return new_obj
 
-    def to_sdf(self, version: str = None) -> ET.Element:
+    def to_sdf(self, version: str | None = None) -> ET.Element:
         from ..elements.pose import Pose
-        if version is not None and version != self.__version__:
+        if self.__version__ is None and version is not None:
+            self.__version__ = version
+        elif version is not None and version != self.__version__:
             return self.to_version(version).to_sdf()
-        version = version or self.__version__
+        version = self.__version__ or version
         el = ET.Element("frame")
         if self.attached_to is not None:
             el.set("attached_to", self.attached_to)

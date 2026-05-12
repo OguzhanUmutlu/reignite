@@ -52,7 +52,7 @@ def _parse_double(raw: str) -> float | SDFError:
 
 
 class Cols(BaseModel):
-    def __init__(self, sdf_version: str, cols: int = 1):
+    def __init__(self, sdf_version: str | None = None, cols: int = 1):
         self.__version__ = sdf_version
         self.cols = cols
 
@@ -62,10 +62,12 @@ class Cols(BaseModel):
         new_obj = self.__class__(**kwargs)
         return new_obj
 
-    def to_sdf(self, version: str = None) -> ET.Element:
-        if version is not None and version != self.__version__:
+    def to_sdf(self, version: str | None = None) -> ET.Element:
+        if self.__version__ is None and version is not None:
+            self.__version__ = version
+        elif version is not None and version != self.__version__:
             return self.to_version(version).to_sdf()
-        version = version or self.__version__
+        version = self.__version__ or version
         el = ET.Element("cols")
         if self.cols is not None:
             el.text = str(self.cols)
@@ -83,7 +85,7 @@ class Cols(BaseModel):
 class Distribution(BaseModel):
     def __init__(
         self,
-        sdf_version: str,
+        sdf_version: str | None = None,
         cols: "Cols" = None,
         rows: "Rows" = None,
         step: "Step" = None,
@@ -94,6 +96,26 @@ class Distribution(BaseModel):
         self.rows = rows
         self.step = step
         self.type = type
+        if self.cols is not None:
+            if getattr(self.cols, '__version__', None) is None:
+                self.cols.__version__ = self.__version__
+            elif getattr(self.cols, '__version__', None) != self.__version__ and self.__version__ is not None:
+                self.cols = self.cols.to_version(self.__version__)
+        if self.rows is not None:
+            if getattr(self.rows, '__version__', None) is None:
+                self.rows.__version__ = self.__version__
+            elif getattr(self.rows, '__version__', None) != self.__version__ and self.__version__ is not None:
+                self.rows = self.rows.to_version(self.__version__)
+        if self.step is not None:
+            if getattr(self.step, '__version__', None) is None:
+                self.step.__version__ = self.__version__
+            elif getattr(self.step, '__version__', None) != self.__version__ and self.__version__ is not None:
+                self.step = self.step.to_version(self.__version__)
+        if self.type is not None:
+            if getattr(self.type, '__version__', None) is None:
+                self.type.__version__ = self.__version__
+            elif getattr(self.type, '__version__', None) != self.__version__ and self.__version__ is not None:
+                self.type = self.type.to_version(self.__version__)
 
     def to_version(self, target_version: str) -> "Distribution":
         kwargs = {"sdf_version": target_version}
@@ -104,10 +126,12 @@ class Distribution(BaseModel):
         new_obj = self.__class__(**kwargs)
         return new_obj
 
-    def to_sdf(self, version: str = None) -> ET.Element:
-        if version is not None and version != self.__version__:
+    def to_sdf(self, version: str | None = None) -> ET.Element:
+        if self.__version__ is None and version is not None:
+            self.__version__ = version
+        elif version is not None and version != self.__version__:
             return self.to_version(version).to_sdf()
-        version = version or self.__version__
+        version = self.__version__ or version
         el = ET.Element("distribution")
         if self.cols is not None:
             el.append(self.cols.to_sdf(version))
@@ -157,7 +181,7 @@ class Distribution(BaseModel):
 
 
 class ModelCount(BaseModel):
-    def __init__(self, sdf_version: str, model_count: int = 1):
+    def __init__(self, sdf_version: str | None = None, model_count: int = 1):
         self.__version__ = sdf_version
         self.model_count = model_count
 
@@ -167,10 +191,12 @@ class ModelCount(BaseModel):
         new_obj = self.__class__(**kwargs)
         return new_obj
 
-    def to_sdf(self, version: str = None) -> ET.Element:
-        if version is not None and version != self.__version__:
+    def to_sdf(self, version: str | None = None) -> ET.Element:
+        if self.__version__ is None and version is not None:
+            self.__version__ = version
+        elif version is not None and version != self.__version__:
             return self.to_version(version).to_sdf()
-        version = version or self.__version__
+        version = self.__version__ or version
         el = ET.Element("model_count")
         if self.model_count is not None:
             el.text = str(self.model_count)
@@ -188,7 +214,7 @@ class ModelCount(BaseModel):
 class Population(BaseModel):
     def __init__(
         self,
-        sdf_version: str,
+        sdf_version: str | None = None,
         box: "Box" = None,
         cylinder: "Cylinder" = None,
         distribution: "Distribution" = None,
@@ -207,6 +233,41 @@ class Population(BaseModel):
         self.model_count = model_count
         self.name = name
         self.pose = pose
+        if self.box is not None:
+            if getattr(self.box, '__version__', None) is None:
+                self.box.__version__ = self.__version__
+            elif getattr(self.box, '__version__', None) != self.__version__ and self.__version__ is not None:
+                self.box = self.box.to_version(self.__version__)
+        if self.cylinder is not None:
+            if getattr(self.cylinder, '__version__', None) is None:
+                self.cylinder.__version__ = self.__version__
+            elif getattr(self.cylinder, '__version__', None) != self.__version__ and self.__version__ is not None:
+                self.cylinder = self.cylinder.to_version(self.__version__)
+        if self.distribution is not None:
+            if getattr(self.distribution, '__version__', None) is None:
+                self.distribution.__version__ = self.__version__
+            elif getattr(self.distribution, '__version__', None) != self.__version__ and self.__version__ is not None:
+                self.distribution = self.distribution.to_version(self.__version__)
+        for _i, _c in enumerate(self.frame):
+            if getattr(_c, '__version__', None) is None:
+                _c.__version__ = self.__version__
+            elif getattr(_c, '__version__', None) != self.__version__ and self.__version__ is not None:
+                self.frame[_i] = _c.to_version(self.__version__)
+        for _i, _c in enumerate(self.model):
+            if getattr(_c, '__version__', None) is None:
+                _c.__version__ = self.__version__
+            elif getattr(_c, '__version__', None) != self.__version__ and self.__version__ is not None:
+                self.model[_i] = _c.to_version(self.__version__)
+        if self.model_count is not None:
+            if getattr(self.model_count, '__version__', None) is None:
+                self.model_count.__version__ = self.__version__
+            elif getattr(self.model_count, '__version__', None) != self.__version__ and self.__version__ is not None:
+                self.model_count = self.model_count.to_version(self.__version__)
+        if self.pose is not None:
+            if getattr(self.pose, '__version__', None) is None:
+                self.pose.__version__ = self.__version__
+            elif getattr(self.pose, '__version__', None) != self.__version__ and self.__version__ is not None:
+                self.pose = self.pose.to_version(self.__version__)
 
     def to_version(self, target_version: str) -> "Population":
         from ..elements.box import Box
@@ -228,15 +289,17 @@ class Population(BaseModel):
         new_obj = self.__class__(**kwargs)
         return new_obj
 
-    def to_sdf(self, version: str = None) -> ET.Element:
+    def to_sdf(self, version: str | None = None) -> ET.Element:
         from ..elements.box import Box
         from ..elements.cylinder import Cylinder
         from ..elements.frame import Frame
         from ..elements.model import Model
         from ..elements.pose import Pose
-        if version is not None and version != self.__version__:
+        if self.__version__ is None and version is not None:
+            self.__version__ = version
+        elif version is not None and version != self.__version__:
             return self.to_version(version).to_sdf()
-        version = version or self.__version__
+        version = self.__version__ or version
         el = ET.Element("population")
         if self.box is not None:
             el.append(self.box.to_sdf(version))
@@ -327,7 +390,7 @@ class Population(BaseModel):
 
 
 class Rows(BaseModel):
-    def __init__(self, sdf_version: str, rows: int = 1):
+    def __init__(self, sdf_version: str | None = None, rows: int = 1):
         self.__version__ = sdf_version
         self.rows = rows
 
@@ -337,10 +400,12 @@ class Rows(BaseModel):
         new_obj = self.__class__(**kwargs)
         return new_obj
 
-    def to_sdf(self, version: str = None) -> ET.Element:
-        if version is not None and version != self.__version__:
+    def to_sdf(self, version: str | None = None) -> ET.Element:
+        if self.__version__ is None and version is not None:
+            self.__version__ = version
+        elif version is not None and version != self.__version__:
             return self.to_version(version).to_sdf()
-        version = version or self.__version__
+        version = self.__version__ or version
         el = ET.Element("rows")
         if self.rows is not None:
             el.text = str(self.rows)
@@ -356,10 +421,10 @@ class Rows(BaseModel):
 
 
 class Step(BaseModel):
-    def __init__(self, sdf_version: str, step: _SDFVector3 = None):
+    def __init__(self, sdf_version: str | None = None, step: _SDFVector3 = None):
         self.__version__ = sdf_version
         if step is None:
-            step = _SDFVector3.from_sdf("0.5 0.5 0")
+            step = _SDFVector3.from_sdf("0.5 0.5 0", version=sdf_version)
         self.step = step
 
     def to_version(self, target_version: str) -> "Step":
@@ -368,13 +433,15 @@ class Step(BaseModel):
         new_obj = self.__class__(**kwargs)
         return new_obj
 
-    def to_sdf(self, version: str = None) -> ET.Element:
-        if version is not None and version != self.__version__:
+    def to_sdf(self, version: str | None = None) -> ET.Element:
+        if self.__version__ is None and version is not None:
+            self.__version__ = version
+        elif version is not None and version != self.__version__:
             return self.to_version(version).to_sdf()
-        version = version or self.__version__
+        version = self.__version__ or version
         el = ET.Element("step")
         if self.step is not None:
-            el.text = self.step.to_sdf()
+            el.text = self.step.to_sdf(version)
         return el
 
     @classmethod
@@ -387,7 +454,7 @@ class Step(BaseModel):
 
 
 class Type(BaseModel):
-    def __init__(self, sdf_version: str, type: str = "random"):
+    def __init__(self, sdf_version: str | None = None, type: str = "random"):
         self.__version__ = sdf_version
         self.type = type
 
@@ -397,10 +464,12 @@ class Type(BaseModel):
         new_obj = self.__class__(**kwargs)
         return new_obj
 
-    def to_sdf(self, version: str = None) -> ET.Element:
-        if version is not None and version != self.__version__:
+    def to_sdf(self, version: str | None = None) -> ET.Element:
+        if self.__version__ is None and version is not None:
+            self.__version__ = version
+        elif version is not None and version != self.__version__:
             return self.to_version(version).to_sdf()
-        version = version or self.__version__
+        version = self.__version__ or version
         el = ET.Element("type")
         if self.type is not None:
             el.text = self.type

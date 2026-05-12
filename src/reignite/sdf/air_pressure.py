@@ -47,13 +47,23 @@ def _parse_double(raw: str) -> float | SDFError:
 class AirPressure(BaseModel):
     def __init__(
         self,
-        sdf_version: str,
+        sdf_version: str | None = None,
         pressure: "Pressure" = None,
         reference_altitude: "ReferenceAltitude" = None
     ):
         self.__version__ = sdf_version
         self.pressure = pressure
         self.reference_altitude = reference_altitude
+        if self.pressure is not None:
+            if getattr(self.pressure, '__version__', None) is None:
+                self.pressure.__version__ = self.__version__
+            elif getattr(self.pressure, '__version__', None) != self.__version__ and self.__version__ is not None:
+                self.pressure = self.pressure.to_version(self.__version__)
+        if self.reference_altitude is not None:
+            if getattr(self.reference_altitude, '__version__', None) is None:
+                self.reference_altitude.__version__ = self.__version__
+            elif getattr(self.reference_altitude, '__version__', None) != self.__version__ and self.__version__ is not None:
+                self.reference_altitude = self.reference_altitude.to_version(self.__version__)
 
     def to_version(self, target_version: str) -> "AirPressure":
         kwargs = {"sdf_version": target_version}
@@ -62,10 +72,12 @@ class AirPressure(BaseModel):
         new_obj = self.__class__(**kwargs)
         return new_obj
 
-    def to_sdf(self, version: str = None) -> ET.Element:
-        if version is not None and version != self.__version__:
+    def to_sdf(self, version: str | None = None) -> ET.Element:
+        if self.__version__ is None and version is not None:
+            self.__version__ = version
+        elif version is not None and version != self.__version__:
             return self.to_version(version).to_sdf()
-        version = version or self.__version__
+        version = self.__version__ or version
         el = ET.Element("air_pressure")
         if self.pressure is not None:
             el.append(self.pressure.to_sdf(version))
@@ -95,9 +107,14 @@ class AirPressure(BaseModel):
 
 
 class Pressure(BaseModel):
-    def __init__(self, sdf_version: str, noise: "Noise" = None):
+    def __init__(self, sdf_version: str | None = None, noise: "Noise" = None):
         self.__version__ = sdf_version
         self.noise = noise
+        if self.noise is not None:
+            if getattr(self.noise, '__version__', None) is None:
+                self.noise.__version__ = self.__version__
+            elif getattr(self.noise, '__version__', None) != self.__version__ and self.__version__ is not None:
+                self.noise = self.noise.to_version(self.__version__)
 
     def to_version(self, target_version: str) -> "Pressure":
         from ..elements.noise import Noise
@@ -106,11 +123,13 @@ class Pressure(BaseModel):
         new_obj = self.__class__(**kwargs)
         return new_obj
 
-    def to_sdf(self, version: str = None) -> ET.Element:
+    def to_sdf(self, version: str | None = None) -> ET.Element:
         from ..elements.noise import Noise
-        if version is not None and version != self.__version__:
+        if self.__version__ is None and version is not None:
+            self.__version__ = version
+        elif version is not None and version != self.__version__:
             return self.to_version(version).to_sdf()
-        version = version or self.__version__
+        version = self.__version__ or version
         el = ET.Element("pressure")
         if self.noise is None:
             self.noise = Noise(sdf_version=version)
@@ -136,7 +155,7 @@ class Pressure(BaseModel):
 
 
 class ReferenceAltitude(BaseModel):
-    def __init__(self, sdf_version: str, reference_altitude: float = 0.0):
+    def __init__(self, sdf_version: str | None = None, reference_altitude: float = 0.0):
         self.__version__ = sdf_version
         self.reference_altitude = reference_altitude
 
@@ -146,10 +165,12 @@ class ReferenceAltitude(BaseModel):
         new_obj = self.__class__(**kwargs)
         return new_obj
 
-    def to_sdf(self, version: str = None) -> ET.Element:
-        if version is not None and version != self.__version__:
+    def to_sdf(self, version: str | None = None) -> ET.Element:
+        if self.__version__ is None and version is not None:
+            self.__version__ = version
+        elif version is not None and version != self.__version__:
             return self.to_version(version).to_sdf()
-        version = version or self.__version__
+        version = self.__version__ or version
         el = ET.Element("reference_altitude")
         if self.reference_altitude is not None:
             el.text = str(self.reference_altitude)

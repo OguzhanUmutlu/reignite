@@ -53,9 +53,14 @@ def _parse_double(raw: str) -> float | SDFError:
 
 
 class Deletions(BaseModel):
-    def __init__(self, sdf_version: str, name: List["Name"] = None):
+    def __init__(self, sdf_version: str | None = None, name: List["Name"] = None):
         self.__version__ = sdf_version
         self.name = name or []
+        for _i, _c in enumerate(self.name):
+            if getattr(_c, '__version__', None) is None:
+                _c.__version__ = self.__version__
+            elif getattr(_c, '__version__', None) != self.__version__ and self.__version__ is not None:
+                self.name[_i] = _c.to_version(self.__version__)
 
     def to_version(self, target_version: str) -> "Deletions":
         kwargs = {"sdf_version": target_version}
@@ -63,10 +68,12 @@ class Deletions(BaseModel):
         new_obj = self.__class__(**kwargs)
         return new_obj
 
-    def to_sdf(self, version: str = None) -> ET.Element:
-        if version is not None and version != self.__version__:
+    def to_sdf(self, version: str | None = None) -> ET.Element:
+        if self.__version__ is None and version is not None:
+            self.__version__ = version
+        elif version is not None and version != self.__version__:
             return self.to_version(version).to_sdf()
-        version = version or self.__version__
+        version = self.__version__ or version
         el = ET.Element("deletions")
         for item in (self.name or []):
             el.append(item.to_sdf(version))
@@ -86,7 +93,7 @@ class Deletions(BaseModel):
 class Insertions(BaseModel):
     def __init__(
         self,
-        sdf_version: str,
+        sdf_version: str | None = None,
         joint: List["Joint"] = None,
         light: List["Light"] = None,
         model: List["Model"] = None
@@ -95,6 +102,21 @@ class Insertions(BaseModel):
         self.joint = joint or []
         self.light = light or []
         self.model = model or []
+        for _i, _c in enumerate(self.joint):
+            if getattr(_c, '__version__', None) is None:
+                _c.__version__ = self.__version__
+            elif getattr(_c, '__version__', None) != self.__version__ and self.__version__ is not None:
+                self.joint[_i] = _c.to_version(self.__version__)
+        for _i, _c in enumerate(self.light):
+            if getattr(_c, '__version__', None) is None:
+                _c.__version__ = self.__version__
+            elif getattr(_c, '__version__', None) != self.__version__ and self.__version__ is not None:
+                self.light[_i] = _c.to_version(self.__version__)
+        for _i, _c in enumerate(self.model):
+            if getattr(_c, '__version__', None) is None:
+                _c.__version__ = self.__version__
+            elif getattr(_c, '__version__', None) != self.__version__ and self.__version__ is not None:
+                self.model[_i] = _c.to_version(self.__version__)
 
     def to_version(self, target_version: str) -> "Insertions":
         from ..elements.joint import Joint
@@ -111,13 +133,15 @@ class Insertions(BaseModel):
         new_obj = self.__class__(**kwargs)
         return new_obj
 
-    def to_sdf(self, version: str = None) -> ET.Element:
+    def to_sdf(self, version: str | None = None) -> ET.Element:
         from ..elements.joint import Joint
         from ..elements.light import Light
         from ..elements.model import Model
-        if version is not None and version != self.__version__:
+        if self.__version__ is None and version is not None:
+            self.__version__ = version
+        elif version is not None and version != self.__version__:
             return self.to_version(version).to_sdf()
-        version = version or self.__version__
+        version = self.__version__ or version
         el = ET.Element("insertions")
         for item in (self.joint or []):
             el.append(item.to_sdf(version))
@@ -158,7 +182,7 @@ class Insertions(BaseModel):
 
 
 class Iterations(BaseModel):
-    def __init__(self, sdf_version: str, iterations: int = 0):
+    def __init__(self, sdf_version: str | None = None, iterations: int = 0):
         self.__version__ = sdf_version
         self.iterations = iterations
 
@@ -170,10 +194,12 @@ class Iterations(BaseModel):
         new_obj = self.__class__(**kwargs)
         return new_obj
 
-    def to_sdf(self, version: str = None) -> ET.Element:
-        if version is not None and version != self.__version__:
+    def to_sdf(self, version: str | None = None) -> ET.Element:
+        if self.__version__ is None and version is not None:
+            self.__version__ = version
+        elif version is not None and version != self.__version__:
             return self.to_version(version).to_sdf()
-        version = version or self.__version__
+        version = self.__version__ or version
         el = ET.Element("iterations")
         if self.iterations is not None:
             el.text = str(self.iterations)
@@ -192,7 +218,7 @@ class Iterations(BaseModel):
 
 
 class Name(BaseModel):
-    def __init__(self, sdf_version: str, name: str = "__default__"):
+    def __init__(self, sdf_version: str | None = None, name: str = "__default__"):
         self.__version__ = sdf_version
         self.name = name
 
@@ -202,10 +228,12 @@ class Name(BaseModel):
         new_obj = self.__class__(**kwargs)
         return new_obj
 
-    def to_sdf(self, version: str = None) -> ET.Element:
-        if version is not None and version != self.__version__:
+    def to_sdf(self, version: str | None = None) -> ET.Element:
+        if self.__version__ is None and version is not None:
+            self.__version__ = version
+        elif version is not None and version != self.__version__:
             return self.to_version(version).to_sdf()
-        version = version or self.__version__
+        version = self.__version__ or version
         el = ET.Element("name")
         if self.name is not None:
             el.text = self.name
@@ -221,7 +249,7 @@ class Name(BaseModel):
 
 
 class RealTime(BaseModel):
-    def __init__(self, sdf_version: str, real_time: float = "0 0"):
+    def __init__(self, sdf_version: str | None = None, real_time: float = "0 0"):
         self.__version__ = sdf_version
         self.real_time = real_time
 
@@ -233,10 +261,12 @@ class RealTime(BaseModel):
         new_obj = self.__class__(**kwargs)
         return new_obj
 
-    def to_sdf(self, version: str = None) -> ET.Element:
-        if version is not None and version != self.__version__:
+    def to_sdf(self, version: str | None = None) -> ET.Element:
+        if self.__version__ is None and version is not None:
+            self.__version__ = version
+        elif version is not None and version != self.__version__:
             return self.to_version(version).to_sdf()
-        version = version or self.__version__
+        version = self.__version__ or version
         el = ET.Element("real_time")
         if self.real_time is not None:
             el.text = str(self.real_time)
@@ -255,7 +285,7 @@ class RealTime(BaseModel):
 
 
 class SimTime(BaseModel):
-    def __init__(self, sdf_version: str, sim_time: float = "0 0"):
+    def __init__(self, sdf_version: str | None = None, sim_time: float = "0 0"):
         self.__version__ = sdf_version
         self.sim_time = sim_time
 
@@ -267,10 +297,12 @@ class SimTime(BaseModel):
         new_obj = self.__class__(**kwargs)
         return new_obj
 
-    def to_sdf(self, version: str = None) -> ET.Element:
-        if version is not None and version != self.__version__:
+    def to_sdf(self, version: str | None = None) -> ET.Element:
+        if self.__version__ is None and version is not None:
+            self.__version__ = version
+        elif version is not None and version != self.__version__:
             return self.to_version(version).to_sdf()
-        version = version or self.__version__
+        version = self.__version__ or version
         el = ET.Element("sim_time")
         if self.sim_time is not None:
             el.text = str(self.sim_time)
@@ -291,7 +323,7 @@ class SimTime(BaseModel):
 class State(BaseModel):
     def __init__(
         self,
-        sdf_version: str,
+        sdf_version: str | None = None,
         deletions: "Deletions" = None,
         insertions: "Insertions" = None,
         iterations: "Iterations" = None,
@@ -320,6 +352,61 @@ class State(BaseModel):
         self.time = time
         self.wall_time = wall_time
         self.world_name = world_name
+        if self.deletions is not None:
+            if getattr(self.deletions, '__version__', None) is None:
+                self.deletions.__version__ = self.__version__
+            elif getattr(self.deletions, '__version__', None) != self.__version__ and self.__version__ is not None:
+                self.deletions = self.deletions.to_version(self.__version__)
+        if self.insertions is not None:
+            if getattr(self.insertions, '__version__', None) is None:
+                self.insertions.__version__ = self.__version__
+            elif getattr(self.insertions, '__version__', None) != self.__version__ and self.__version__ is not None:
+                self.insertions = self.insertions.to_version(self.__version__)
+        if self.iterations is not None:
+            if getattr(self.iterations, '__version__', None) is None:
+                self.iterations.__version__ = self.__version__
+            elif getattr(self.iterations, '__version__', None) != self.__version__ and self.__version__ is not None:
+                self.iterations = self.iterations.to_version(self.__version__)
+        for _i, _c in enumerate(self.joint_state):
+            if getattr(_c, '__version__', None) is None:
+                _c.__version__ = self.__version__
+            elif getattr(_c, '__version__', None) != self.__version__ and self.__version__ is not None:
+                self.joint_state[_i] = _c.to_version(self.__version__)
+        for _i, _c in enumerate(self.light):
+            if getattr(_c, '__version__', None) is None:
+                _c.__version__ = self.__version__
+            elif getattr(_c, '__version__', None) != self.__version__ and self.__version__ is not None:
+                self.light[_i] = _c.to_version(self.__version__)
+        for _i, _c in enumerate(self.light_state):
+            if getattr(_c, '__version__', None) is None:
+                _c.__version__ = self.__version__
+            elif getattr(_c, '__version__', None) != self.__version__ and self.__version__ is not None:
+                self.light_state[_i] = _c.to_version(self.__version__)
+        for _i, _c in enumerate(self.model):
+            if getattr(_c, '__version__', None) is None:
+                _c.__version__ = self.__version__
+            elif getattr(_c, '__version__', None) != self.__version__ and self.__version__ is not None:
+                self.model[_i] = _c.to_version(self.__version__)
+        for _i, _c in enumerate(self.model_state):
+            if getattr(_c, '__version__', None) is None:
+                _c.__version__ = self.__version__
+            elif getattr(_c, '__version__', None) != self.__version__ and self.__version__ is not None:
+                self.model_state[_i] = _c.to_version(self.__version__)
+        if self.real_time is not None:
+            if getattr(self.real_time, '__version__', None) is None:
+                self.real_time.__version__ = self.__version__
+            elif getattr(self.real_time, '__version__', None) != self.__version__ and self.__version__ is not None:
+                self.real_time = self.real_time.to_version(self.__version__)
+        if self.sim_time is not None:
+            if getattr(self.sim_time, '__version__', None) is None:
+                self.sim_time.__version__ = self.__version__
+            elif getattr(self.sim_time, '__version__', None) != self.__version__ and self.__version__ is not None:
+                self.sim_time = self.sim_time.to_version(self.__version__)
+        if self.wall_time is not None:
+            if getattr(self.wall_time, '__version__', None) is None:
+                self.wall_time.__version__ = self.__version__
+            elif getattr(self.wall_time, '__version__', None) != self.__version__ and self.__version__ is not None:
+                self.wall_time = self.wall_time.to_version(self.__version__)
 
     def to_version(self, target_version: str) -> "State":
         from ..elements.joint_state import JointState
@@ -370,15 +457,17 @@ class State(BaseModel):
         new_obj = self.__class__(**kwargs)
         return new_obj
 
-    def to_sdf(self, version: str = None) -> ET.Element:
+    def to_sdf(self, version: str | None = None) -> ET.Element:
         from ..elements.joint_state import JointState
         from ..elements.light import Light
         from ..elements.light_state import LightState
         from ..elements.model import Model
         from ..elements.model_state import ModelState
-        if version is not None and version != self.__version__:
+        if self.__version__ is None and version is not None:
+            self.__version__ = version
+        elif version is not None and version != self.__version__:
             return self.to_version(version).to_sdf()
-        version = version or self.__version__
+        version = self.__version__ or version
         el = ET.Element("state")
         if self.deletions is not None:
             el.append(self.deletions.to_sdf(version))
@@ -523,7 +612,7 @@ class State(BaseModel):
 
 
 class Time(BaseModel):
-    def __init__(self, sdf_version: str, time: float = "0 0"):
+    def __init__(self, sdf_version: str | None = None, time: float = "0 0"):
         self.__version__ = sdf_version
         self.time = time
 
@@ -537,10 +626,12 @@ class Time(BaseModel):
         new_obj = self.__class__(**kwargs)
         return new_obj
 
-    def to_sdf(self, version: str = None) -> ET.Element:
-        if version is not None and version != self.__version__:
+    def to_sdf(self, version: str | None = None) -> ET.Element:
+        if self.__version__ is None and version is not None:
+            self.__version__ = version
+        elif version is not None and version != self.__version__:
             return self.to_version(version).to_sdf()
-        version = version or self.__version__
+        version = self.__version__ or version
         el = ET.Element("time")
         if self.time is not None:
             el.text = str(self.time)
@@ -559,7 +650,7 @@ class Time(BaseModel):
 
 
 class WallTime(BaseModel):
-    def __init__(self, sdf_version: str, wall_time: float = "0 0"):
+    def __init__(self, sdf_version: str | None = None, wall_time: float = "0 0"):
         self.__version__ = sdf_version
         self.wall_time = wall_time
 
@@ -571,10 +662,12 @@ class WallTime(BaseModel):
         new_obj = self.__class__(**kwargs)
         return new_obj
 
-    def to_sdf(self, version: str = None) -> ET.Element:
-        if version is not None and version != self.__version__:
+    def to_sdf(self, version: str | None = None) -> ET.Element:
+        if self.__version__ is None and version is not None:
+            self.__version__ = version
+        elif version is not None and version != self.__version__:
             return self.to_version(version).to_sdf()
-        version = version or self.__version__
+        version = self.__version__ or version
         el = ET.Element("wall_time")
         if self.wall_time is not None:
             el.text = str(self.wall_time)

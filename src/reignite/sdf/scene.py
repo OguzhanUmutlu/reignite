@@ -44,12 +44,17 @@ def _parse_double(raw: str) -> float | SDFError:
 
 
 class Ambient(BaseModel):
-    def __init__(self, sdf_version: str, ambient: _SDFColor = None, rgba: _SDFColor = None):
+    def __init__(
+        self,
+        sdf_version: str | None = None,
+        ambient: _SDFColor = None,
+        rgba: _SDFColor = None
+    ):
         self.__version__ = sdf_version
         if ambient is None:
-            ambient = _SDFColor.from_sdf("0.0 0.0 0.0 1.0")
+            ambient = _SDFColor.from_sdf("0.0 0.0 0.0 1.0", version=sdf_version)
         if rgba is None:
-            rgba = _SDFColor.from_sdf("0.0 0.0 0.0 1.0")
+            rgba = _SDFColor.from_sdf("0.0 0.0 0.0 1.0", version=sdf_version)
         self.ambient = ambient
         self.rgba = rgba
 
@@ -62,15 +67,17 @@ class Ambient(BaseModel):
         new_obj = self.__class__(**kwargs)
         return new_obj
 
-    def to_sdf(self, version: str = None) -> ET.Element:
-        if version is not None and version != self.__version__:
+    def to_sdf(self, version: str | None = None) -> ET.Element:
+        if self.__version__ is None and version is not None:
+            self.__version__ = version
+        elif version is not None and version != self.__version__:
             return self.to_version(version).to_sdf()
-        version = version or self.__version__
+        version = self.__version__ or version
         el = ET.Element("ambient")
         if self.ambient is not None:
-            el.text = self.ambient.to_sdf()
+            el.text = self.ambient.to_sdf(version)
         if self.rgba is not None:
-            el.set("rgba", self.rgba.to_sdf())
+            el.set("rgba", self.rgba.to_sdf(version))
         return el
 
     @classmethod
@@ -86,12 +93,17 @@ class Ambient(BaseModel):
 
 
 class Background(BaseModel):
-    def __init__(self, sdf_version: str, rgba: _SDFColor = None, sky: "Sky" = None):
+    def __init__(self, sdf_version: str | None = None, rgba: _SDFColor = None, sky: "Sky" = None):
         self.__version__ = sdf_version
         if rgba is None:
-            rgba = _SDFColor.from_sdf(".7 .7 .7 1")
+            rgba = _SDFColor.from_sdf(".7 .7 .7 1", version=sdf_version)
         self.rgba = rgba
         self.sky = sky
+        if self.sky is not None:
+            if getattr(self.sky, '__version__', None) is None:
+                self.sky.__version__ = self.__version__
+            elif getattr(self.sky, '__version__', None) != self.__version__ and self.__version__ is not None:
+                self.sky = self.sky.to_version(self.__version__)
 
     def to_version(self, target_version: str) -> "Background":
         if self.rgba is not None and cmp_version(target_version, "1.2") >= 0:
@@ -104,13 +116,15 @@ class Background(BaseModel):
         new_obj = self.__class__(**kwargs)
         return new_obj
 
-    def to_sdf(self, version: str = None) -> ET.Element:
-        if version is not None and version != self.__version__:
+    def to_sdf(self, version: str | None = None) -> ET.Element:
+        if self.__version__ is None and version is not None:
+            self.__version__ = version
+        elif version is not None and version != self.__version__:
             return self.to_version(version).to_sdf()
-        version = version or self.__version__
+        version = self.__version__ or version
         el = ET.Element("background")
         if self.rgba is not None:
-            el.set("rgba", self.rgba.to_sdf())
+            el.set("rgba", self.rgba.to_sdf(version))
         if self.sky is not None:
             el.append(self.sky.to_sdf(version))
         return el
@@ -134,7 +148,7 @@ class Background(BaseModel):
 class Clouds(BaseModel):
     def __init__(
         self,
-        sdf_version: str,
+        sdf_version: str | None = None,
         ambient: "CloudsAmbient" = None,
         direction: "Direction" = None,
         humidity: "Humidity" = None,
@@ -147,6 +161,31 @@ class Clouds(BaseModel):
         self.humidity = humidity
         self.mean_size = mean_size
         self.speed = speed
+        if self.ambient is not None:
+            if getattr(self.ambient, '__version__', None) is None:
+                self.ambient.__version__ = self.__version__
+            elif getattr(self.ambient, '__version__', None) != self.__version__ and self.__version__ is not None:
+                self.ambient = self.ambient.to_version(self.__version__)
+        if self.direction is not None:
+            if getattr(self.direction, '__version__', None) is None:
+                self.direction.__version__ = self.__version__
+            elif getattr(self.direction, '__version__', None) != self.__version__ and self.__version__ is not None:
+                self.direction = self.direction.to_version(self.__version__)
+        if self.humidity is not None:
+            if getattr(self.humidity, '__version__', None) is None:
+                self.humidity.__version__ = self.__version__
+            elif getattr(self.humidity, '__version__', None) != self.__version__ and self.__version__ is not None:
+                self.humidity = self.humidity.to_version(self.__version__)
+        if self.mean_size is not None:
+            if getattr(self.mean_size, '__version__', None) is None:
+                self.mean_size.__version__ = self.__version__
+            elif getattr(self.mean_size, '__version__', None) != self.__version__ and self.__version__ is not None:
+                self.mean_size = self.mean_size.to_version(self.__version__)
+        if self.speed is not None:
+            if getattr(self.speed, '__version__', None) is None:
+                self.speed.__version__ = self.__version__
+            elif getattr(self.speed, '__version__', None) != self.__version__ and self.__version__ is not None:
+                self.speed = self.speed.to_version(self.__version__)
 
     def to_version(self, target_version: str) -> "Clouds":
         kwargs = {"sdf_version": target_version}
@@ -158,10 +197,12 @@ class Clouds(BaseModel):
         new_obj = self.__class__(**kwargs)
         return new_obj
 
-    def to_sdf(self, version: str = None) -> ET.Element:
-        if version is not None and version != self.__version__:
+    def to_sdf(self, version: str | None = None) -> ET.Element:
+        if self.__version__ is None and version is not None:
+            self.__version__ = version
+        elif version is not None and version != self.__version__:
             return self.to_version(version).to_sdf()
-        version = version or self.__version__
+        version = self.__version__ or version
         el = ET.Element("clouds")
         if self.ambient is not None:
             el.append(self.ambient.to_sdf(version))
@@ -221,10 +262,10 @@ class Clouds(BaseModel):
 
 
 class CloudsAmbient(BaseModel):
-    def __init__(self, sdf_version: str, ambient: _SDFColor = None):
+    def __init__(self, sdf_version: str | None = None, ambient: _SDFColor = None):
         self.__version__ = sdf_version
         if ambient is None:
-            ambient = _SDFColor.from_sdf(".8 .8 .8 1")
+            ambient = _SDFColor.from_sdf(".8 .8 .8 1", version=sdf_version)
         self.ambient = ambient
 
     def to_version(self, target_version: str) -> "CloudsAmbient":
@@ -233,13 +274,15 @@ class CloudsAmbient(BaseModel):
         new_obj = self.__class__(**kwargs)
         return new_obj
 
-    def to_sdf(self, version: str = None) -> ET.Element:
-        if version is not None and version != self.__version__:
+    def to_sdf(self, version: str | None = None) -> ET.Element:
+        if self.__version__ is None and version is not None:
+            self.__version__ = version
+        elif version is not None and version != self.__version__:
             return self.to_version(version).to_sdf()
-        version = version or self.__version__
+        version = self.__version__ or version
         el = ET.Element("ambient")
         if self.ambient is not None:
-            el.text = self.ambient.to_sdf()
+            el.text = self.ambient.to_sdf(version)
         return el
 
     @classmethod
@@ -252,10 +295,10 @@ class CloudsAmbient(BaseModel):
 
 
 class Color(BaseModel):
-    def __init__(self, sdf_version: str, color: _SDFColor = None):
+    def __init__(self, sdf_version: str | None = None, color: _SDFColor = None):
         self.__version__ = sdf_version
         if color is None:
-            color = _SDFColor.from_sdf("1 1 1 1")
+            color = _SDFColor.from_sdf("1 1 1 1", version=sdf_version)
         self.color = color
 
     def to_version(self, target_version: str) -> "Color":
@@ -266,13 +309,15 @@ class Color(BaseModel):
         new_obj = self.__class__(**kwargs)
         return new_obj
 
-    def to_sdf(self, version: str = None) -> ET.Element:
-        if version is not None and version != self.__version__:
+    def to_sdf(self, version: str | None = None) -> ET.Element:
+        if self.__version__ is None and version is not None:
+            self.__version__ = version
+        elif version is not None and version != self.__version__:
             return self.to_version(version).to_sdf()
-        version = version or self.__version__
+        version = self.__version__ or version
         el = ET.Element("color")
         if self.color is not None:
-            el.text = self.color.to_sdf()
+            el.text = self.color.to_sdf(version)
         return el
 
     @classmethod
@@ -288,7 +333,7 @@ class Color(BaseModel):
 
 
 class CubemapUri(BaseModel):
-    def __init__(self, sdf_version: str, cubemap_uri: str = ""):
+    def __init__(self, sdf_version: str | None = None, cubemap_uri: str = ""):
         self.__version__ = sdf_version
         self.cubemap_uri = cubemap_uri
 
@@ -300,10 +345,12 @@ class CubemapUri(BaseModel):
         new_obj = self.__class__(**kwargs)
         return new_obj
 
-    def to_sdf(self, version: str = None) -> ET.Element:
-        if version is not None and version != self.__version__:
+    def to_sdf(self, version: str | None = None) -> ET.Element:
+        if self.__version__ is None and version is not None:
+            self.__version__ = version
+        elif version is not None and version != self.__version__:
             return self.to_version(version).to_sdf()
-        version = version or self.__version__
+        version = self.__version__ or version
         el = ET.Element("cubemap_uri")
         if self.cubemap_uri is not None:
             el.text = self.cubemap_uri
@@ -322,7 +369,7 @@ class CubemapUri(BaseModel):
 
 
 class Density(BaseModel):
-    def __init__(self, sdf_version: str, density: float = 1.0):
+    def __init__(self, sdf_version: str | None = None, density: float = 1.0):
         self.__version__ = sdf_version
         self.density = density
 
@@ -334,10 +381,12 @@ class Density(BaseModel):
         new_obj = self.__class__(**kwargs)
         return new_obj
 
-    def to_sdf(self, version: str = None) -> ET.Element:
-        if version is not None and version != self.__version__:
+    def to_sdf(self, version: str | None = None) -> ET.Element:
+        if self.__version__ is None and version is not None:
+            self.__version__ = version
+        elif version is not None and version != self.__version__:
             return self.to_version(version).to_sdf()
-        version = version or self.__version__
+        version = self.__version__ or version
         el = ET.Element("density")
         if self.density is not None:
             el.text = str(self.density)
@@ -356,7 +405,7 @@ class Density(BaseModel):
 
 
 class Direction(BaseModel):
-    def __init__(self, sdf_version: str, direction: float = 0.0):
+    def __init__(self, sdf_version: str | None = None, direction: float = 0.0):
         self.__version__ = sdf_version
         self.direction = direction
 
@@ -366,10 +415,12 @@ class Direction(BaseModel):
         new_obj = self.__class__(**kwargs)
         return new_obj
 
-    def to_sdf(self, version: str = None) -> ET.Element:
-        if version is not None and version != self.__version__:
+    def to_sdf(self, version: str | None = None) -> ET.Element:
+        if self.__version__ is None and version is not None:
+            self.__version__ = version
+        elif version is not None and version != self.__version__:
             return self.to_version(version).to_sdf()
-        version = version or self.__version__
+        version = self.__version__ or version
         el = ET.Element("direction")
         if self.direction is not None:
             el.text = str(self.direction)
@@ -385,7 +436,7 @@ class Direction(BaseModel):
 
 
 class End(BaseModel):
-    def __init__(self, sdf_version: str, end: float = 100.0):
+    def __init__(self, sdf_version: str | None = None, end: float = 100.0):
         self.__version__ = sdf_version
         self.end = end
 
@@ -397,10 +448,12 @@ class End(BaseModel):
         new_obj = self.__class__(**kwargs)
         return new_obj
 
-    def to_sdf(self, version: str = None) -> ET.Element:
-        if version is not None and version != self.__version__:
+    def to_sdf(self, version: str | None = None) -> ET.Element:
+        if self.__version__ is None and version is not None:
+            self.__version__ = version
+        elif version is not None and version != self.__version__:
             return self.to_version(version).to_sdf()
-        version = version or self.__version__
+        version = self.__version__ or version
         el = ET.Element("end")
         if self.end is not None:
             el.text = str(self.end)
@@ -421,7 +474,7 @@ class End(BaseModel):
 class Fog(BaseModel):
     def __init__(
         self,
-        sdf_version: str,
+        sdf_version: str | None = None,
         color: "Color" = None,
         density: float = 1.0,
         end: float = 100.0,
@@ -431,13 +484,18 @@ class Fog(BaseModel):
     ):
         self.__version__ = sdf_version
         if rgba is None:
-            rgba = _SDFColor.from_sdf("1 1 1 1")
+            rgba = _SDFColor.from_sdf("1 1 1 1", version=sdf_version)
         self.color = color
         self.density = density
         self.end = end
         self.rgba = rgba
         self.start = start
         self.type = type
+        if self.color is not None:
+            if getattr(self.color, '__version__', None) is None:
+                self.color.__version__ = self.__version__
+            elif getattr(self.color, '__version__', None) != self.__version__ and self.__version__ is not None:
+                self.color = self.color.to_version(self.__version__)
 
     def to_version(self, target_version: str) -> "Fog":
         if self.color is not None and cmp_version(target_version, "1.2") < 0:
@@ -462,10 +520,12 @@ class Fog(BaseModel):
         new_obj = self.__class__(**kwargs)
         return new_obj
 
-    def to_sdf(self, version: str = None) -> ET.Element:
-        if version is not None and version != self.__version__:
+    def to_sdf(self, version: str | None = None) -> ET.Element:
+        if self.__version__ is None and version is not None:
+            self.__version__ = version
+        elif version is not None and version != self.__version__:
             return self.to_version(version).to_sdf()
-        version = version or self.__version__
+        version = self.__version__ or version
         el = ET.Element("fog")
         if self.color is not None:
             el.append(self.color.to_sdf(version))
@@ -476,10 +536,10 @@ class Fog(BaseModel):
         if self.rgba is not None:
             if cmp_version(version, "1.2") >= 0:
                 _c_tmp = ET.Element("color")
-                _c_tmp.text = self.rgba.to_sdf()
+                _c_tmp.text = self.rgba.to_sdf(version)
                 el.append(_c_tmp)
             else:
-                el.set("rgba", self.rgba.to_sdf())
+                el.set("rgba", self.rgba.to_sdf(version))
         if self.start is not None:
             el.set("start", str(self.start))
         if self.type is not None:
@@ -524,7 +584,7 @@ class Fog(BaseModel):
 
 
 class Grid(BaseModel):
-    def __init__(self, sdf_version: str, enabled: bool = True, grid: bool = True):
+    def __init__(self, sdf_version: str | None = None, enabled: bool = True, grid: bool = True):
         self.__version__ = sdf_version
         self.enabled = enabled
         self.grid = grid
@@ -538,10 +598,12 @@ class Grid(BaseModel):
         new_obj = self.__class__(**kwargs)
         return new_obj
 
-    def to_sdf(self, version: str = None) -> ET.Element:
-        if version is not None and version != self.__version__:
+    def to_sdf(self, version: str | None = None) -> ET.Element:
+        if self.__version__ is None and version is not None:
+            self.__version__ = version
+        elif version is not None and version != self.__version__:
             return self.to_version(version).to_sdf()
-        version = version or self.__version__
+        version = self.__version__ or version
         el = ET.Element("grid")
         if self.enabled is not None:
             el.set("enabled", str(self.enabled).lower())
@@ -562,7 +624,7 @@ class Grid(BaseModel):
 
 
 class Humidity(BaseModel):
-    def __init__(self, sdf_version: str, humidity: float = 0.5):
+    def __init__(self, sdf_version: str | None = None, humidity: float = 0.5):
         self.__version__ = sdf_version
         self.humidity = humidity
 
@@ -572,10 +634,12 @@ class Humidity(BaseModel):
         new_obj = self.__class__(**kwargs)
         return new_obj
 
-    def to_sdf(self, version: str = None) -> ET.Element:
-        if version is not None and version != self.__version__:
+    def to_sdf(self, version: str | None = None) -> ET.Element:
+        if self.__version__ is None and version is not None:
+            self.__version__ = version
+        elif version is not None and version != self.__version__:
             return self.to_version(version).to_sdf()
-        version = version or self.__version__
+        version = self.__version__ or version
         el = ET.Element("humidity")
         if self.humidity is not None:
             el.text = str(self.humidity)
@@ -591,7 +655,7 @@ class Humidity(BaseModel):
 
 
 class MeanSize(BaseModel):
-    def __init__(self, sdf_version: str, mean_size: float = 0.5):
+    def __init__(self, sdf_version: str | None = None, mean_size: float = 0.5):
         self.__version__ = sdf_version
         self.mean_size = mean_size
 
@@ -601,10 +665,12 @@ class MeanSize(BaseModel):
         new_obj = self.__class__(**kwargs)
         return new_obj
 
-    def to_sdf(self, version: str = None) -> ET.Element:
-        if version is not None and version != self.__version__:
+    def to_sdf(self, version: str | None = None) -> ET.Element:
+        if self.__version__ is None and version is not None:
+            self.__version__ = version
+        elif version is not None and version != self.__version__:
             return self.to_version(version).to_sdf()
-        version = version or self.__version__
+        version = self.__version__ or version
         el = ET.Element("mean_size")
         if self.mean_size is not None:
             el.text = str(self.mean_size)
@@ -620,7 +686,7 @@ class MeanSize(BaseModel):
 
 
 class OriginVisual(BaseModel):
-    def __init__(self, sdf_version: str, origin_visual: bool = True):
+    def __init__(self, sdf_version: str | None = None, origin_visual: bool = True):
         self.__version__ = sdf_version
         self.origin_visual = origin_visual
 
@@ -632,10 +698,12 @@ class OriginVisual(BaseModel):
         new_obj = self.__class__(**kwargs)
         return new_obj
 
-    def to_sdf(self, version: str = None) -> ET.Element:
-        if version is not None and version != self.__version__:
+    def to_sdf(self, version: str | None = None) -> ET.Element:
+        if self.__version__ is None and version is not None:
+            self.__version__ = version
+        elif version is not None and version != self.__version__:
             return self.to_version(version).to_sdf()
-        version = version or self.__version__
+        version = self.__version__ or version
         el = ET.Element("origin_visual")
         if self.origin_visual is not None:
             el.text = str(self.origin_visual).lower()
@@ -656,7 +724,7 @@ class OriginVisual(BaseModel):
 class Scene(BaseModel):
     def __init__(
         self,
-        sdf_version: str,
+        sdf_version: str | None = None,
         ambient: "Ambient" = None,
         background: "Background" = None,
         fog: "Fog" = None,
@@ -673,6 +741,41 @@ class Scene(BaseModel):
         self.origin_visual = origin_visual
         self.shadows = shadows
         self.sky = sky
+        if self.ambient is not None:
+            if getattr(self.ambient, '__version__', None) is None:
+                self.ambient.__version__ = self.__version__
+            elif getattr(self.ambient, '__version__', None) != self.__version__ and self.__version__ is not None:
+                self.ambient = self.ambient.to_version(self.__version__)
+        if self.background is not None:
+            if getattr(self.background, '__version__', None) is None:
+                self.background.__version__ = self.__version__
+            elif getattr(self.background, '__version__', None) != self.__version__ and self.__version__ is not None:
+                self.background = self.background.to_version(self.__version__)
+        if self.fog is not None:
+            if getattr(self.fog, '__version__', None) is None:
+                self.fog.__version__ = self.__version__
+            elif getattr(self.fog, '__version__', None) != self.__version__ and self.__version__ is not None:
+                self.fog = self.fog.to_version(self.__version__)
+        if self.grid is not None:
+            if getattr(self.grid, '__version__', None) is None:
+                self.grid.__version__ = self.__version__
+            elif getattr(self.grid, '__version__', None) != self.__version__ and self.__version__ is not None:
+                self.grid = self.grid.to_version(self.__version__)
+        if self.origin_visual is not None:
+            if getattr(self.origin_visual, '__version__', None) is None:
+                self.origin_visual.__version__ = self.__version__
+            elif getattr(self.origin_visual, '__version__', None) != self.__version__ and self.__version__ is not None:
+                self.origin_visual = self.origin_visual.to_version(self.__version__)
+        if self.shadows is not None:
+            if getattr(self.shadows, '__version__', None) is None:
+                self.shadows.__version__ = self.__version__
+            elif getattr(self.shadows, '__version__', None) != self.__version__ and self.__version__ is not None:
+                self.shadows = self.shadows.to_version(self.__version__)
+        if self.sky is not None:
+            if getattr(self.sky, '__version__', None) is None:
+                self.sky.__version__ = self.__version__
+            elif getattr(self.sky, '__version__', None) != self.__version__ and self.__version__ is not None:
+                self.sky = self.sky.to_version(self.__version__)
 
     def to_version(self, target_version: str) -> "Scene":
         if self.origin_visual is not None and cmp_version(target_version, "1.5") < 0:
@@ -690,10 +793,12 @@ class Scene(BaseModel):
         new_obj = self.__class__(**kwargs)
         return new_obj
 
-    def to_sdf(self, version: str = None) -> ET.Element:
-        if version is not None and version != self.__version__:
+    def to_sdf(self, version: str | None = None) -> ET.Element:
+        if self.__version__ is None and version is not None:
+            self.__version__ = version
+        elif version is not None and version != self.__version__:
             return self.to_version(version).to_sdf()
-        version = version or self.__version__
+        version = self.__version__ or version
         el = ET.Element("scene")
         if self.ambient is not None:
             el.append(self.ambient.to_sdf(version))
@@ -779,7 +884,7 @@ class Scene(BaseModel):
 class SceneSky(BaseModel):
     def __init__(
         self,
-        sdf_version: str,
+        sdf_version: str | None = None,
         clouds: "Clouds" = None,
         cubemap_uri: "CubemapUri" = None,
         sunrise: "Sunrise" = None,
@@ -792,6 +897,31 @@ class SceneSky(BaseModel):
         self.sunrise = sunrise
         self.sunset = sunset
         self.time = time
+        if self.clouds is not None:
+            if getattr(self.clouds, '__version__', None) is None:
+                self.clouds.__version__ = self.__version__
+            elif getattr(self.clouds, '__version__', None) != self.__version__ and self.__version__ is not None:
+                self.clouds = self.clouds.to_version(self.__version__)
+        if self.cubemap_uri is not None:
+            if getattr(self.cubemap_uri, '__version__', None) is None:
+                self.cubemap_uri.__version__ = self.__version__
+            elif getattr(self.cubemap_uri, '__version__', None) != self.__version__ and self.__version__ is not None:
+                self.cubemap_uri = self.cubemap_uri.to_version(self.__version__)
+        if self.sunrise is not None:
+            if getattr(self.sunrise, '__version__', None) is None:
+                self.sunrise.__version__ = self.__version__
+            elif getattr(self.sunrise, '__version__', None) != self.__version__ and self.__version__ is not None:
+                self.sunrise = self.sunrise.to_version(self.__version__)
+        if self.sunset is not None:
+            if getattr(self.sunset, '__version__', None) is None:
+                self.sunset.__version__ = self.__version__
+            elif getattr(self.sunset, '__version__', None) != self.__version__ and self.__version__ is not None:
+                self.sunset = self.sunset.to_version(self.__version__)
+        if self.time is not None:
+            if getattr(self.time, '__version__', None) is None:
+                self.time.__version__ = self.__version__
+            elif getattr(self.time, '__version__', None) != self.__version__ and self.__version__ is not None:
+                self.time = self.time.to_version(self.__version__)
 
     def to_version(self, target_version: str) -> "SceneSky":
         if self.cubemap_uri is not None and cmp_version(target_version, "1.9") < 0:
@@ -805,10 +935,12 @@ class SceneSky(BaseModel):
         new_obj = self.__class__(**kwargs)
         return new_obj
 
-    def to_sdf(self, version: str = None) -> ET.Element:
-        if version is not None and version != self.__version__:
+    def to_sdf(self, version: str | None = None) -> ET.Element:
+        if self.__version__ is None and version is not None:
+            self.__version__ = version
+        elif version is not None and version != self.__version__:
             return self.to_version(version).to_sdf()
-        version = version or self.__version__
+        version = self.__version__ or version
         el = ET.Element("sky")
         if self.clouds is not None:
             el.append(self.clouds.to_sdf(version))
@@ -870,7 +1002,7 @@ class SceneSky(BaseModel):
 
 
 class Shadows(BaseModel):
-    def __init__(self, sdf_version: str, enabled: bool = True, shadows: bool = True):
+    def __init__(self, sdf_version: str | None = None, enabled: bool = True, shadows: bool = True):
         self.__version__ = sdf_version
         self.enabled = enabled
         self.shadows = shadows
@@ -884,10 +1016,12 @@ class Shadows(BaseModel):
         new_obj = self.__class__(**kwargs)
         return new_obj
 
-    def to_sdf(self, version: str = None) -> ET.Element:
-        if version is not None and version != self.__version__:
+    def to_sdf(self, version: str | None = None) -> ET.Element:
+        if self.__version__ is None and version is not None:
+            self.__version__ = version
+        elif version is not None and version != self.__version__:
             return self.to_version(version).to_sdf()
-        version = version or self.__version__
+        version = self.__version__ or version
         el = ET.Element("shadows")
         if self.enabled is not None:
             el.set("enabled", str(self.enabled).lower())
@@ -908,7 +1042,7 @@ class Shadows(BaseModel):
 
 
 class Sky(BaseModel):
-    def __init__(self, sdf_version: str, material: str = "Gazebo/CloudySky"):
+    def __init__(self, sdf_version: str | None = None, material: str = "Gazebo/CloudySky"):
         self.__version__ = sdf_version
         self.material = material
 
@@ -918,10 +1052,12 @@ class Sky(BaseModel):
         new_obj = self.__class__(**kwargs)
         return new_obj
 
-    def to_sdf(self, version: str = None) -> ET.Element:
-        if version is not None and version != self.__version__:
+    def to_sdf(self, version: str | None = None) -> ET.Element:
+        if self.__version__ is None and version is not None:
+            self.__version__ = version
+        elif version is not None and version != self.__version__:
             return self.to_version(version).to_sdf()
-        version = version or self.__version__
+        version = self.__version__ or version
         el = ET.Element("sky")
         if self.material is not None:
             el.set("material", self.material)
@@ -936,7 +1072,7 @@ class Sky(BaseModel):
 
 
 class Speed(BaseModel):
-    def __init__(self, sdf_version: str, speed: float = 0.6):
+    def __init__(self, sdf_version: str | None = None, speed: float = 0.6):
         self.__version__ = sdf_version
         self.speed = speed
 
@@ -946,10 +1082,12 @@ class Speed(BaseModel):
         new_obj = self.__class__(**kwargs)
         return new_obj
 
-    def to_sdf(self, version: str = None) -> ET.Element:
-        if version is not None and version != self.__version__:
+    def to_sdf(self, version: str | None = None) -> ET.Element:
+        if self.__version__ is None and version is not None:
+            self.__version__ = version
+        elif version is not None and version != self.__version__:
             return self.to_version(version).to_sdf()
-        version = version or self.__version__
+        version = self.__version__ or version
         el = ET.Element("speed")
         if self.speed is not None:
             el.text = str(self.speed)
@@ -965,7 +1103,7 @@ class Speed(BaseModel):
 
 
 class Start(BaseModel):
-    def __init__(self, sdf_version: str, start: float = 1.0):
+    def __init__(self, sdf_version: str | None = None, start: float = 1.0):
         self.__version__ = sdf_version
         self.start = start
 
@@ -977,10 +1115,12 @@ class Start(BaseModel):
         new_obj = self.__class__(**kwargs)
         return new_obj
 
-    def to_sdf(self, version: str = None) -> ET.Element:
-        if version is not None and version != self.__version__:
+    def to_sdf(self, version: str | None = None) -> ET.Element:
+        if self.__version__ is None and version is not None:
+            self.__version__ = version
+        elif version is not None and version != self.__version__:
             return self.to_version(version).to_sdf()
-        version = version or self.__version__
+        version = self.__version__ or version
         el = ET.Element("start")
         if self.start is not None:
             el.text = str(self.start)
@@ -999,7 +1139,7 @@ class Start(BaseModel):
 
 
 class Sunrise(BaseModel):
-    def __init__(self, sdf_version: str, sunrise: float = 6.0):
+    def __init__(self, sdf_version: str | None = None, sunrise: float = 6.0):
         self.__version__ = sdf_version
         self.sunrise = sunrise
 
@@ -1009,10 +1149,12 @@ class Sunrise(BaseModel):
         new_obj = self.__class__(**kwargs)
         return new_obj
 
-    def to_sdf(self, version: str = None) -> ET.Element:
-        if version is not None and version != self.__version__:
+    def to_sdf(self, version: str | None = None) -> ET.Element:
+        if self.__version__ is None and version is not None:
+            self.__version__ = version
+        elif version is not None and version != self.__version__:
             return self.to_version(version).to_sdf()
-        version = version or self.__version__
+        version = self.__version__ or version
         el = ET.Element("sunrise")
         if self.sunrise is not None:
             el.text = str(self.sunrise)
@@ -1028,7 +1170,7 @@ class Sunrise(BaseModel):
 
 
 class Sunset(BaseModel):
-    def __init__(self, sdf_version: str, sunset: float = 20.0):
+    def __init__(self, sdf_version: str | None = None, sunset: float = 20.0):
         self.__version__ = sdf_version
         self.sunset = sunset
 
@@ -1038,10 +1180,12 @@ class Sunset(BaseModel):
         new_obj = self.__class__(**kwargs)
         return new_obj
 
-    def to_sdf(self, version: str = None) -> ET.Element:
-        if version is not None and version != self.__version__:
+    def to_sdf(self, version: str | None = None) -> ET.Element:
+        if self.__version__ is None and version is not None:
+            self.__version__ = version
+        elif version is not None and version != self.__version__:
             return self.to_version(version).to_sdf()
-        version = version or self.__version__
+        version = self.__version__ or version
         el = ET.Element("sunset")
         if self.sunset is not None:
             el.text = str(self.sunset)
@@ -1057,7 +1201,7 @@ class Sunset(BaseModel):
 
 
 class Time(BaseModel):
-    def __init__(self, sdf_version: str, time: float = 10.0):
+    def __init__(self, sdf_version: str | None = None, time: float = 10.0):
         self.__version__ = sdf_version
         self.time = time
 
@@ -1067,10 +1211,12 @@ class Time(BaseModel):
         new_obj = self.__class__(**kwargs)
         return new_obj
 
-    def to_sdf(self, version: str = None) -> ET.Element:
-        if version is not None and version != self.__version__:
+    def to_sdf(self, version: str | None = None) -> ET.Element:
+        if self.__version__ is None and version is not None:
+            self.__version__ = version
+        elif version is not None and version != self.__version__:
             return self.to_version(version).to_sdf()
-        version = version or self.__version__
+        version = self.__version__ or version
         el = ET.Element("time")
         if self.time is not None:
             el.text = str(self.time)
@@ -1086,7 +1232,7 @@ class Time(BaseModel):
 
 
 class Type(BaseModel):
-    def __init__(self, sdf_version: str, type: str = "none"):
+    def __init__(self, sdf_version: str | None = None, type: str = "none"):
         self.__version__ = sdf_version
         self.type = type
 
@@ -1098,10 +1244,12 @@ class Type(BaseModel):
         new_obj = self.__class__(**kwargs)
         return new_obj
 
-    def to_sdf(self, version: str = None) -> ET.Element:
-        if version is not None and version != self.__version__:
+    def to_sdf(self, version: str | None = None) -> ET.Element:
+        if self.__version__ is None and version is not None:
+            self.__version__ = version
+        elif version is not None and version != self.__version__:
             return self.to_version(version).to_sdf()
-        version = version or self.__version__
+        version = self.__version__ or version
         el = ET.Element("type")
         if self.type is not None:
             el.text = self.type

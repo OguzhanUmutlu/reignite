@@ -42,7 +42,7 @@ def _parse_double(raw: str) -> float | SDFError:
 
 
 class Granularity(BaseModel):
-    def __init__(self, sdf_version: str, granularity: int = 1):
+    def __init__(self, sdf_version: str | None = None, granularity: int = 1):
         self.__version__ = sdf_version
         self.granularity = granularity
 
@@ -52,10 +52,12 @@ class Granularity(BaseModel):
         new_obj = self.__class__(**kwargs)
         return new_obj
 
-    def to_sdf(self, version: str = None) -> ET.Element:
-        if version is not None and version != self.__version__:
+    def to_sdf(self, version: str | None = None) -> ET.Element:
+        if self.__version__ is None and version is not None:
+            self.__version__ = version
+        elif version is not None and version != self.__version__:
             return self.to_version(version).to_sdf()
-        version = version or self.__version__
+        version = self.__version__ or version
         el = ET.Element("granularity")
         if self.granularity is not None:
             el.text = str(self.granularity)
@@ -71,7 +73,7 @@ class Granularity(BaseModel):
 
 
 class Height(BaseModel):
-    def __init__(self, sdf_version: str, height: float = 1):
+    def __init__(self, sdf_version: str | None = None, height: float = 1):
         self.__version__ = sdf_version
         self.height = height
 
@@ -81,10 +83,12 @@ class Height(BaseModel):
         new_obj = self.__class__(**kwargs)
         return new_obj
 
-    def to_sdf(self, version: str = None) -> ET.Element:
-        if version is not None and version != self.__version__:
+    def to_sdf(self, version: str | None = None) -> ET.Element:
+        if self.__version__ is None and version is not None:
+            self.__version__ = version
+        elif version is not None and version != self.__version__:
             return self.to_version(version).to_sdf()
-        version = version or self.__version__
+        version = self.__version__ or version
         el = ET.Element("height")
         if self.height is not None:
             el.text = str(self.height)
@@ -102,7 +106,7 @@ class Height(BaseModel):
 class Image(BaseModel):
     def __init__(
         self,
-        sdf_version: str,
+        sdf_version: str | None = None,
         granularity: "Granularity" = None,
         height: "Height" = None,
         scale: "Scale" = None,
@@ -115,6 +119,31 @@ class Image(BaseModel):
         self.scale = scale
         self.threshold = threshold
         self.uri = uri
+        if self.granularity is not None:
+            if getattr(self.granularity, '__version__', None) is None:
+                self.granularity.__version__ = self.__version__
+            elif getattr(self.granularity, '__version__', None) != self.__version__ and self.__version__ is not None:
+                self.granularity = self.granularity.to_version(self.__version__)
+        if self.height is not None:
+            if getattr(self.height, '__version__', None) is None:
+                self.height.__version__ = self.__version__
+            elif getattr(self.height, '__version__', None) != self.__version__ and self.__version__ is not None:
+                self.height = self.height.to_version(self.__version__)
+        if self.scale is not None:
+            if getattr(self.scale, '__version__', None) is None:
+                self.scale.__version__ = self.__version__
+            elif getattr(self.scale, '__version__', None) != self.__version__ and self.__version__ is not None:
+                self.scale = self.scale.to_version(self.__version__)
+        if self.threshold is not None:
+            if getattr(self.threshold, '__version__', None) is None:
+                self.threshold.__version__ = self.__version__
+            elif getattr(self.threshold, '__version__', None) != self.__version__ and self.__version__ is not None:
+                self.threshold = self.threshold.to_version(self.__version__)
+        if self.uri is not None:
+            if getattr(self.uri, '__version__', None) is None:
+                self.uri.__version__ = self.__version__
+            elif getattr(self.uri, '__version__', None) != self.__version__ and self.__version__ is not None:
+                self.uri = self.uri.to_version(self.__version__)
 
     def to_version(self, target_version: str) -> "Image":
         kwargs = {"sdf_version": target_version}
@@ -126,10 +155,12 @@ class Image(BaseModel):
         new_obj = self.__class__(**kwargs)
         return new_obj
 
-    def to_sdf(self, version: str = None) -> ET.Element:
-        if version is not None and version != self.__version__:
+    def to_sdf(self, version: str | None = None) -> ET.Element:
+        if self.__version__ is None and version is not None:
+            self.__version__ = version
+        elif version is not None and version != self.__version__:
             return self.to_version(version).to_sdf()
-        version = version or self.__version__
+        version = self.__version__ or version
         el = ET.Element("image")
         if self.granularity is not None:
             el.append(self.granularity.to_sdf(version))
@@ -189,7 +220,7 @@ class Image(BaseModel):
 
 
 class Scale(BaseModel):
-    def __init__(self, sdf_version: str, scale: float = 1):
+    def __init__(self, sdf_version: str | None = None, scale: float = 1):
         self.__version__ = sdf_version
         self.scale = scale
 
@@ -199,10 +230,12 @@ class Scale(BaseModel):
         new_obj = self.__class__(**kwargs)
         return new_obj
 
-    def to_sdf(self, version: str = None) -> ET.Element:
-        if version is not None and version != self.__version__:
+    def to_sdf(self, version: str | None = None) -> ET.Element:
+        if self.__version__ is None and version is not None:
+            self.__version__ = version
+        elif version is not None and version != self.__version__:
             return self.to_version(version).to_sdf()
-        version = version or self.__version__
+        version = self.__version__ or version
         el = ET.Element("scale")
         if self.scale is not None:
             el.text = str(self.scale)
@@ -218,7 +251,7 @@ class Scale(BaseModel):
 
 
 class Threshold(BaseModel):
-    def __init__(self, sdf_version: str, threshold: int = 200):
+    def __init__(self, sdf_version: str | None = None, threshold: int = 200):
         self.__version__ = sdf_version
         self.threshold = threshold
 
@@ -228,10 +261,12 @@ class Threshold(BaseModel):
         new_obj = self.__class__(**kwargs)
         return new_obj
 
-    def to_sdf(self, version: str = None) -> ET.Element:
-        if version is not None and version != self.__version__:
+    def to_sdf(self, version: str | None = None) -> ET.Element:
+        if self.__version__ is None and version is not None:
+            self.__version__ = version
+        elif version is not None and version != self.__version__:
             return self.to_version(version).to_sdf()
-        version = version or self.__version__
+        version = self.__version__ or version
         el = ET.Element("threshold")
         if self.threshold is not None:
             el.text = str(self.threshold)
@@ -247,7 +282,7 @@ class Threshold(BaseModel):
 
 
 class Uri(BaseModel):
-    def __init__(self, sdf_version: str, uri: str = "__default__"):
+    def __init__(self, sdf_version: str | None = None, uri: str = "__default__"):
         self.__version__ = sdf_version
         self.uri = uri
 
@@ -257,10 +292,12 @@ class Uri(BaseModel):
         new_obj = self.__class__(**kwargs)
         return new_obj
 
-    def to_sdf(self, version: str = None) -> ET.Element:
-        if version is not None and version != self.__version__:
+    def to_sdf(self, version: str | None = None) -> ET.Element:
+        if self.__version__ is None and version is not None:
+            self.__version__ = version
+        elif version is not None and version != self.__version__:
             return self.to_version(version).to_sdf()
-        version = version or self.__version__
+        version = self.__version__ or version
         el = ET.Element("uri")
         if self.uri is not None:
             el.text = self.uri

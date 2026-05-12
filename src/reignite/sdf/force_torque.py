@@ -13,11 +13,26 @@ if typing.TYPE_CHECKING:
 
 
 class Force(BaseModel):
-    def __init__(self, sdf_version: str, x: "X" = None, y: "Y" = None, z: "Z" = None):
+    def __init__(self, sdf_version: str | None = None, x: "X" = None, y: "Y" = None, z: "Z" = None):
         self.__version__ = sdf_version
         self.x = x
         self.y = y
         self.z = z
+        if self.x is not None:
+            if getattr(self.x, '__version__', None) is None:
+                self.x.__version__ = self.__version__
+            elif getattr(self.x, '__version__', None) != self.__version__ and self.__version__ is not None:
+                self.x = self.x.to_version(self.__version__)
+        if self.y is not None:
+            if getattr(self.y, '__version__', None) is None:
+                self.y.__version__ = self.__version__
+            elif getattr(self.y, '__version__', None) != self.__version__ and self.__version__ is not None:
+                self.y = self.y.to_version(self.__version__)
+        if self.z is not None:
+            if getattr(self.z, '__version__', None) is None:
+                self.z.__version__ = self.__version__
+            elif getattr(self.z, '__version__', None) != self.__version__ and self.__version__ is not None:
+                self.z = self.z.to_version(self.__version__)
 
     def to_version(self, target_version: str) -> "Force":
         kwargs = {"sdf_version": target_version}
@@ -27,10 +42,12 @@ class Force(BaseModel):
         new_obj = self.__class__(**kwargs)
         return new_obj
 
-    def to_sdf(self, version: str = None) -> ET.Element:
-        if version is not None and version != self.__version__:
+    def to_sdf(self, version: str | None = None) -> ET.Element:
+        if self.__version__ is None and version is not None:
+            self.__version__ = version
+        elif version is not None and version != self.__version__:
             return self.to_version(version).to_sdf()
-        version = version or self.__version__
+        version = self.__version__ or version
         el = ET.Element("force")
         if self.x is not None:
             el.append(self.x.to_sdf(version))
@@ -72,7 +89,7 @@ class Force(BaseModel):
 class ForceTorque(BaseModel):
     def __init__(
         self,
-        sdf_version: str,
+        sdf_version: str | None = None,
         force: "Force" = None,
         frame: "Frame" = None,
         measure_direction: "MeasureDirection" = None,
@@ -83,6 +100,26 @@ class ForceTorque(BaseModel):
         self.frame = frame
         self.measure_direction = measure_direction
         self.torque = torque
+        if self.force is not None:
+            if getattr(self.force, '__version__', None) is None:
+                self.force.__version__ = self.__version__
+            elif getattr(self.force, '__version__', None) != self.__version__ and self.__version__ is not None:
+                self.force = self.force.to_version(self.__version__)
+        if self.frame is not None:
+            if getattr(self.frame, '__version__', None) is None:
+                self.frame.__version__ = self.__version__
+            elif getattr(self.frame, '__version__', None) != self.__version__ and self.__version__ is not None:
+                self.frame = self.frame.to_version(self.__version__)
+        if self.measure_direction is not None:
+            if getattr(self.measure_direction, '__version__', None) is None:
+                self.measure_direction.__version__ = self.__version__
+            elif getattr(self.measure_direction, '__version__', None) != self.__version__ and self.__version__ is not None:
+                self.measure_direction = self.measure_direction.to_version(self.__version__)
+        if self.torque is not None:
+            if getattr(self.torque, '__version__', None) is None:
+                self.torque.__version__ = self.__version__
+            elif getattr(self.torque, '__version__', None) != self.__version__ and self.__version__ is not None:
+                self.torque = self.torque.to_version(self.__version__)
 
     def to_version(self, target_version: str) -> "ForceTorque":
         if self.force is not None and cmp_version(target_version, "1.7") < 0:
@@ -99,10 +136,12 @@ class ForceTorque(BaseModel):
         new_obj = self.__class__(**kwargs)
         return new_obj
 
-    def to_sdf(self, version: str = None) -> ET.Element:
-        if version is not None and version != self.__version__:
+    def to_sdf(self, version: str | None = None) -> ET.Element:
+        if self.__version__ is None and version is not None:
+            self.__version__ = version
+        elif version is not None and version != self.__version__:
             return self.to_version(version).to_sdf()
-        version = version or self.__version__
+        version = self.__version__ or version
         el = ET.Element("force_torque")
         if self.force is not None:
             el.append(self.force.to_sdf(version))
@@ -158,7 +197,7 @@ class ForceTorque(BaseModel):
 
 
 class Frame(BaseModel):
-    def __init__(self, sdf_version: str, frame: str = "parent"):
+    def __init__(self, sdf_version: str | None = None, frame: str = "parent"):
         self.__version__ = sdf_version
         self.frame = frame
 
@@ -168,10 +207,12 @@ class Frame(BaseModel):
         new_obj = self.__class__(**kwargs)
         return new_obj
 
-    def to_sdf(self, version: str = None) -> ET.Element:
-        if version is not None and version != self.__version__:
+    def to_sdf(self, version: str | None = None) -> ET.Element:
+        if self.__version__ is None and version is not None:
+            self.__version__ = version
+        elif version is not None and version != self.__version__:
             return self.to_version(version).to_sdf()
-        version = version or self.__version__
+        version = self.__version__ or version
         el = ET.Element("frame")
         if self.frame is not None:
             el.text = self.frame
@@ -187,7 +228,7 @@ class Frame(BaseModel):
 
 
 class MeasureDirection(BaseModel):
-    def __init__(self, sdf_version: str, measure_direction: str = "child_to_parent"):
+    def __init__(self, sdf_version: str | None = None, measure_direction: str = "child_to_parent"):
         self.__version__ = sdf_version
         self.measure_direction = measure_direction
 
@@ -199,10 +240,12 @@ class MeasureDirection(BaseModel):
         new_obj = self.__class__(**kwargs)
         return new_obj
 
-    def to_sdf(self, version: str = None) -> ET.Element:
-        if version is not None and version != self.__version__:
+    def to_sdf(self, version: str | None = None) -> ET.Element:
+        if self.__version__ is None and version is not None:
+            self.__version__ = version
+        elif version is not None and version != self.__version__:
             return self.to_version(version).to_sdf()
-        version = version or self.__version__
+        version = self.__version__ or version
         el = ET.Element("measure_direction")
         if self.measure_direction is not None:
             el.text = self.measure_direction
@@ -221,11 +264,26 @@ class MeasureDirection(BaseModel):
 
 
 class Torque(BaseModel):
-    def __init__(self, sdf_version: str, x: "X" = None, y: "Y" = None, z: "Z" = None):
+    def __init__(self, sdf_version: str | None = None, x: "X" = None, y: "Y" = None, z: "Z" = None):
         self.__version__ = sdf_version
         self.x = x
         self.y = y
         self.z = z
+        if self.x is not None:
+            if getattr(self.x, '__version__', None) is None:
+                self.x.__version__ = self.__version__
+            elif getattr(self.x, '__version__', None) != self.__version__ and self.__version__ is not None:
+                self.x = self.x.to_version(self.__version__)
+        if self.y is not None:
+            if getattr(self.y, '__version__', None) is None:
+                self.y.__version__ = self.__version__
+            elif getattr(self.y, '__version__', None) != self.__version__ and self.__version__ is not None:
+                self.y = self.y.to_version(self.__version__)
+        if self.z is not None:
+            if getattr(self.z, '__version__', None) is None:
+                self.z.__version__ = self.__version__
+            elif getattr(self.z, '__version__', None) != self.__version__ and self.__version__ is not None:
+                self.z = self.z.to_version(self.__version__)
 
     def to_version(self, target_version: str) -> "Torque":
         kwargs = {"sdf_version": target_version}
@@ -235,10 +293,12 @@ class Torque(BaseModel):
         new_obj = self.__class__(**kwargs)
         return new_obj
 
-    def to_sdf(self, version: str = None) -> ET.Element:
-        if version is not None and version != self.__version__:
+    def to_sdf(self, version: str | None = None) -> ET.Element:
+        if self.__version__ is None and version is not None:
+            self.__version__ = version
+        elif version is not None and version != self.__version__:
             return self.to_version(version).to_sdf()
-        version = version or self.__version__
+        version = self.__version__ or version
         el = ET.Element("torque")
         if self.x is not None:
             el.append(self.x.to_sdf(version))
@@ -278,9 +338,14 @@ class Torque(BaseModel):
 
 
 class X(BaseModel):
-    def __init__(self, sdf_version: str, noise: "Noise" = None):
+    def __init__(self, sdf_version: str | None = None, noise: "Noise" = None):
         self.__version__ = sdf_version
         self.noise = noise
+        if self.noise is not None:
+            if getattr(self.noise, '__version__', None) is None:
+                self.noise.__version__ = self.__version__
+            elif getattr(self.noise, '__version__', None) != self.__version__ and self.__version__ is not None:
+                self.noise = self.noise.to_version(self.__version__)
 
     def to_version(self, target_version: str) -> "X":
         from ..elements.noise import Noise
@@ -289,11 +354,13 @@ class X(BaseModel):
         new_obj = self.__class__(**kwargs)
         return new_obj
 
-    def to_sdf(self, version: str = None) -> ET.Element:
+    def to_sdf(self, version: str | None = None) -> ET.Element:
         from ..elements.noise import Noise
-        if version is not None and version != self.__version__:
+        if self.__version__ is None and version is not None:
+            self.__version__ = version
+        elif version is not None and version != self.__version__:
             return self.to_version(version).to_sdf()
-        version = version or self.__version__
+        version = self.__version__ or version
         el = ET.Element("x")
         if self.noise is None:
             self.noise = Noise(sdf_version=version)
@@ -319,9 +386,14 @@ class X(BaseModel):
 
 
 class Y(BaseModel):
-    def __init__(self, sdf_version: str, noise: "Noise" = None):
+    def __init__(self, sdf_version: str | None = None, noise: "Noise" = None):
         self.__version__ = sdf_version
         self.noise = noise
+        if self.noise is not None:
+            if getattr(self.noise, '__version__', None) is None:
+                self.noise.__version__ = self.__version__
+            elif getattr(self.noise, '__version__', None) != self.__version__ and self.__version__ is not None:
+                self.noise = self.noise.to_version(self.__version__)
 
     def to_version(self, target_version: str) -> "Y":
         from ..elements.noise import Noise
@@ -330,11 +402,13 @@ class Y(BaseModel):
         new_obj = self.__class__(**kwargs)
         return new_obj
 
-    def to_sdf(self, version: str = None) -> ET.Element:
+    def to_sdf(self, version: str | None = None) -> ET.Element:
         from ..elements.noise import Noise
-        if version is not None and version != self.__version__:
+        if self.__version__ is None and version is not None:
+            self.__version__ = version
+        elif version is not None and version != self.__version__:
             return self.to_version(version).to_sdf()
-        version = version or self.__version__
+        version = self.__version__ or version
         el = ET.Element("y")
         if self.noise is None:
             self.noise = Noise(sdf_version=version)
@@ -360,9 +434,14 @@ class Y(BaseModel):
 
 
 class Z(BaseModel):
-    def __init__(self, sdf_version: str, noise: "Noise" = None):
+    def __init__(self, sdf_version: str | None = None, noise: "Noise" = None):
         self.__version__ = sdf_version
         self.noise = noise
+        if self.noise is not None:
+            if getattr(self.noise, '__version__', None) is None:
+                self.noise.__version__ = self.__version__
+            elif getattr(self.noise, '__version__', None) != self.__version__ and self.__version__ is not None:
+                self.noise = self.noise.to_version(self.__version__)
 
     def to_version(self, target_version: str) -> "Z":
         from ..elements.noise import Noise
@@ -371,11 +450,13 @@ class Z(BaseModel):
         new_obj = self.__class__(**kwargs)
         return new_obj
 
-    def to_sdf(self, version: str = None) -> ET.Element:
+    def to_sdf(self, version: str | None = None) -> ET.Element:
         from ..elements.noise import Noise
-        if version is not None and version != self.__version__:
+        if self.__version__ is None and version is not None:
+            self.__version__ = version
+        elif version is not None and version != self.__version__:
             return self.to_version(version).to_sdf()
-        version = version or self.__version__
+        version = self.__version__ or version
         el = ET.Element("z")
         if self.noise is None:
             self.noise = Noise(sdf_version=version)

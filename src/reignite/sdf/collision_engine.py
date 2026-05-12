@@ -9,7 +9,7 @@ from ..utils.errors import SDFError
 
 
 class Bullet(BaseModel):
-    def __init__(self, sdf_version: str, type: str = "__default__"):
+    def __init__(self, sdf_version: str | None = None, type: str = "__default__"):
         self.__version__ = sdf_version
         self.type = type
 
@@ -19,10 +19,12 @@ class Bullet(BaseModel):
         new_obj = self.__class__(**kwargs)
         return new_obj
 
-    def to_sdf(self, version: str = None) -> ET.Element:
-        if version is not None and version != self.__version__:
+    def to_sdf(self, version: str | None = None) -> ET.Element:
+        if self.__version__ is None and version is not None:
+            self.__version__ = version
+        elif version is not None and version != self.__version__:
             return self.to_version(version).to_sdf()
-        version = version or self.__version__
+        version = self.__version__ or version
         el = ET.Element("bullet")
         if self.type is not None:
             el.set("type", self.type)
@@ -37,10 +39,20 @@ class Bullet(BaseModel):
 
 
 class CollisionEngine(BaseModel):
-    def __init__(self, sdf_version: str, bullet: "Bullet" = None, ode: "Ode" = None):
+    def __init__(self, sdf_version: str | None = None, bullet: "Bullet" = None, ode: "Ode" = None):
         self.__version__ = sdf_version
         self.bullet = bullet
         self.ode = ode
+        if self.bullet is not None:
+            if getattr(self.bullet, '__version__', None) is None:
+                self.bullet.__version__ = self.__version__
+            elif getattr(self.bullet, '__version__', None) != self.__version__ and self.__version__ is not None:
+                self.bullet = self.bullet.to_version(self.__version__)
+        if self.ode is not None:
+            if getattr(self.ode, '__version__', None) is None:
+                self.ode.__version__ = self.__version__
+            elif getattr(self.ode, '__version__', None) != self.__version__ and self.__version__ is not None:
+                self.ode = self.ode.to_version(self.__version__)
 
     def to_version(self, target_version: str) -> "CollisionEngine":
         kwargs = {"sdf_version": target_version}
@@ -49,10 +61,12 @@ class CollisionEngine(BaseModel):
         new_obj = self.__class__(**kwargs)
         return new_obj
 
-    def to_sdf(self, version: str = None) -> ET.Element:
-        if version is not None and version != self.__version__:
+    def to_sdf(self, version: str | None = None) -> ET.Element:
+        if self.__version__ is None and version is not None:
+            self.__version__ = version
+        elif version is not None and version != self.__version__:
             return self.to_version(version).to_sdf()
-        version = version or self.__version__
+        version = self.__version__ or version
         el = ET.Element("collision_engine")
         if self.bullet is not None:
             el.append(self.bullet.to_sdf(version))
@@ -82,7 +96,7 @@ class CollisionEngine(BaseModel):
 
 
 class Ode(BaseModel):
-    def __init__(self, sdf_version: str, type: str = "__default__"):
+    def __init__(self, sdf_version: str | None = None, type: str = "__default__"):
         self.__version__ = sdf_version
         self.type = type
 
@@ -92,10 +106,12 @@ class Ode(BaseModel):
         new_obj = self.__class__(**kwargs)
         return new_obj
 
-    def to_sdf(self, version: str = None) -> ET.Element:
-        if version is not None and version != self.__version__:
+    def to_sdf(self, version: str | None = None) -> ET.Element:
+        if self.__version__ is None and version is not None:
+            self.__version__ = version
+        elif version is not None and version != self.__version__:
             return self.to_version(version).to_sdf()
-        version = version or self.__version__
+        version = self.__version__ or version
         el = ET.Element("ode")
         if self.type is not None:
             el.set("type", self.type)

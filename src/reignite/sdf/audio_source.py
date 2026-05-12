@@ -51,7 +51,7 @@ def _parse_double(raw: str) -> float | SDFError:
 class AudioSource(BaseModel):
     def __init__(
         self,
-        sdf_version: str,
+        sdf_version: str | None = None,
         contact: "Contact" = None,
         frame: List["Frame"] = None,
         gain: "Gain" = None,
@@ -68,6 +68,41 @@ class AudioSource(BaseModel):
         self.pitch = pitch
         self.pose = pose
         self.uri = uri
+        if self.contact is not None:
+            if getattr(self.contact, '__version__', None) is None:
+                self.contact.__version__ = self.__version__
+            elif getattr(self.contact, '__version__', None) != self.__version__ and self.__version__ is not None:
+                self.contact = self.contact.to_version(self.__version__)
+        for _i, _c in enumerate(self.frame):
+            if getattr(_c, '__version__', None) is None:
+                _c.__version__ = self.__version__
+            elif getattr(_c, '__version__', None) != self.__version__ and self.__version__ is not None:
+                self.frame[_i] = _c.to_version(self.__version__)
+        if self.gain is not None:
+            if getattr(self.gain, '__version__', None) is None:
+                self.gain.__version__ = self.__version__
+            elif getattr(self.gain, '__version__', None) != self.__version__ and self.__version__ is not None:
+                self.gain = self.gain.to_version(self.__version__)
+        if self.loop is not None:
+            if getattr(self.loop, '__version__', None) is None:
+                self.loop.__version__ = self.__version__
+            elif getattr(self.loop, '__version__', None) != self.__version__ and self.__version__ is not None:
+                self.loop = self.loop.to_version(self.__version__)
+        if self.pitch is not None:
+            if getattr(self.pitch, '__version__', None) is None:
+                self.pitch.__version__ = self.__version__
+            elif getattr(self.pitch, '__version__', None) != self.__version__ and self.__version__ is not None:
+                self.pitch = self.pitch.to_version(self.__version__)
+        if self.pose is not None:
+            if getattr(self.pose, '__version__', None) is None:
+                self.pose.__version__ = self.__version__
+            elif getattr(self.pose, '__version__', None) != self.__version__ and self.__version__ is not None:
+                self.pose = self.pose.to_version(self.__version__)
+        if self.uri is not None:
+            if getattr(self.uri, '__version__', None) is None:
+                self.uri.__version__ = self.__version__
+            elif getattr(self.uri, '__version__', None) != self.__version__ and self.__version__ is not None:
+                self.uri = self.uri.to_version(self.__version__)
 
     def to_version(self, target_version: str) -> "AudioSource":
         from ..elements.frame import Frame
@@ -87,12 +122,14 @@ class AudioSource(BaseModel):
         new_obj = self.__class__(**kwargs)
         return new_obj
 
-    def to_sdf(self, version: str = None) -> ET.Element:
+    def to_sdf(self, version: str | None = None) -> ET.Element:
         from ..elements.frame import Frame
         from ..elements.pose import Pose
-        if version is not None and version != self.__version__:
+        if self.__version__ is None and version is not None:
+            self.__version__ = version
+        elif version is not None and version != self.__version__:
             return self.to_version(version).to_sdf()
-        version = version or self.__version__
+        version = self.__version__ or version
         el = ET.Element("audio_source")
         if self.contact is not None:
             el.append(self.contact.to_sdf(version))
@@ -174,7 +211,7 @@ class AudioSource(BaseModel):
 
 
 class Collision(BaseModel):
-    def __init__(self, sdf_version: str, collision: str = "__default__"):
+    def __init__(self, sdf_version: str | None = None, collision: str = "__default__"):
         self.__version__ = sdf_version
         self.collision = collision
 
@@ -184,10 +221,12 @@ class Collision(BaseModel):
         new_obj = self.__class__(**kwargs)
         return new_obj
 
-    def to_sdf(self, version: str = None) -> ET.Element:
-        if version is not None and version != self.__version__:
+    def to_sdf(self, version: str | None = None) -> ET.Element:
+        if self.__version__ is None and version is not None:
+            self.__version__ = version
+        elif version is not None and version != self.__version__:
             return self.to_version(version).to_sdf()
-        version = version or self.__version__
+        version = self.__version__ or version
         el = ET.Element("collision")
         if self.collision is not None:
             el.text = self.collision
@@ -203,9 +242,14 @@ class Collision(BaseModel):
 
 
 class Contact(BaseModel):
-    def __init__(self, sdf_version: str, collision: List["Collision"] = None):
+    def __init__(self, sdf_version: str | None = None, collision: List["Collision"] = None):
         self.__version__ = sdf_version
         self.collision = collision or []
+        for _i, _c in enumerate(self.collision):
+            if getattr(_c, '__version__', None) is None:
+                _c.__version__ = self.__version__
+            elif getattr(_c, '__version__', None) != self.__version__ and self.__version__ is not None:
+                self.collision[_i] = _c.to_version(self.__version__)
 
     def to_version(self, target_version: str) -> "Contact":
         kwargs = {"sdf_version": target_version}
@@ -213,10 +257,12 @@ class Contact(BaseModel):
         new_obj = self.__class__(**kwargs)
         return new_obj
 
-    def to_sdf(self, version: str = None) -> ET.Element:
-        if version is not None and version != self.__version__:
+    def to_sdf(self, version: str | None = None) -> ET.Element:
+        if self.__version__ is None and version is not None:
+            self.__version__ = version
+        elif version is not None and version != self.__version__:
             return self.to_version(version).to_sdf()
-        version = version or self.__version__
+        version = self.__version__ or version
         el = ET.Element("contact")
         for item in (self.collision or []):
             el.append(item.to_sdf(version))
@@ -234,7 +280,7 @@ class Contact(BaseModel):
 
 
 class Gain(BaseModel):
-    def __init__(self, sdf_version: str, gain: float = 1.0):
+    def __init__(self, sdf_version: str | None = None, gain: float = 1.0):
         self.__version__ = sdf_version
         self.gain = gain
 
@@ -244,10 +290,12 @@ class Gain(BaseModel):
         new_obj = self.__class__(**kwargs)
         return new_obj
 
-    def to_sdf(self, version: str = None) -> ET.Element:
-        if version is not None and version != self.__version__:
+    def to_sdf(self, version: str | None = None) -> ET.Element:
+        if self.__version__ is None and version is not None:
+            self.__version__ = version
+        elif version is not None and version != self.__version__:
             return self.to_version(version).to_sdf()
-        version = version or self.__version__
+        version = self.__version__ or version
         el = ET.Element("gain")
         if self.gain is not None:
             el.text = str(self.gain)
@@ -263,7 +311,7 @@ class Gain(BaseModel):
 
 
 class Loop(BaseModel):
-    def __init__(self, sdf_version: str, loop: bool = False):
+    def __init__(self, sdf_version: str | None = None, loop: bool = False):
         self.__version__ = sdf_version
         self.loop = loop
 
@@ -273,10 +321,12 @@ class Loop(BaseModel):
         new_obj = self.__class__(**kwargs)
         return new_obj
 
-    def to_sdf(self, version: str = None) -> ET.Element:
-        if version is not None and version != self.__version__:
+    def to_sdf(self, version: str | None = None) -> ET.Element:
+        if self.__version__ is None and version is not None:
+            self.__version__ = version
+        elif version is not None and version != self.__version__:
             return self.to_version(version).to_sdf()
-        version = version or self.__version__
+        version = self.__version__ or version
         el = ET.Element("loop")
         if self.loop is not None:
             el.text = str(self.loop).lower()
@@ -292,7 +342,7 @@ class Loop(BaseModel):
 
 
 class Pitch(BaseModel):
-    def __init__(self, sdf_version: str, pitch: float = 1.0):
+    def __init__(self, sdf_version: str | None = None, pitch: float = 1.0):
         self.__version__ = sdf_version
         self.pitch = pitch
 
@@ -302,10 +352,12 @@ class Pitch(BaseModel):
         new_obj = self.__class__(**kwargs)
         return new_obj
 
-    def to_sdf(self, version: str = None) -> ET.Element:
-        if version is not None and version != self.__version__:
+    def to_sdf(self, version: str | None = None) -> ET.Element:
+        if self.__version__ is None and version is not None:
+            self.__version__ = version
+        elif version is not None and version != self.__version__:
             return self.to_version(version).to_sdf()
-        version = version or self.__version__
+        version = self.__version__ or version
         el = ET.Element("pitch")
         if self.pitch is not None:
             el.text = str(self.pitch)
@@ -321,7 +373,7 @@ class Pitch(BaseModel):
 
 
 class Uri(BaseModel):
-    def __init__(self, sdf_version: str, uri: str = "__default__"):
+    def __init__(self, sdf_version: str | None = None, uri: str = "__default__"):
         self.__version__ = sdf_version
         self.uri = uri
 
@@ -331,10 +383,12 @@ class Uri(BaseModel):
         new_obj = self.__class__(**kwargs)
         return new_obj
 
-    def to_sdf(self, version: str = None) -> ET.Element:
-        if version is not None and version != self.__version__:
+    def to_sdf(self, version: str | None = None) -> ET.Element:
+        if self.__version__ is None and version is not None:
+            self.__version__ = version
+        elif version is not None and version != self.__version__:
             return self.to_version(version).to_sdf()
-        version = version or self.__version__
+        version = self.__version__ or version
         el = ET.Element("uri")
         if self.uri is not None:
             el.text = self.uri

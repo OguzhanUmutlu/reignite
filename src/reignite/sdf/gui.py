@@ -54,7 +54,7 @@ def _parse_double(raw: str) -> float | SDFError:
 class Camera(BaseModel):
     def __init__(
         self,
-        sdf_version: str,
+        sdf_version: str | None = None,
         frame: List["Frame"] = None,
         name: str = "user_camera",
         origin: "Origin" = None,
@@ -71,6 +71,36 @@ class Camera(BaseModel):
         self.projection_type = projection_type
         self.track_visual = track_visual
         self.view_controller = view_controller
+        for _i, _c in enumerate(self.frame):
+            if getattr(_c, '__version__', None) is None:
+                _c.__version__ = self.__version__
+            elif getattr(_c, '__version__', None) != self.__version__ and self.__version__ is not None:
+                self.frame[_i] = _c.to_version(self.__version__)
+        if self.origin is not None:
+            if getattr(self.origin, '__version__', None) is None:
+                self.origin.__version__ = self.__version__
+            elif getattr(self.origin, '__version__', None) != self.__version__ and self.__version__ is not None:
+                self.origin = self.origin.to_version(self.__version__)
+        if self.pose is not None:
+            if getattr(self.pose, '__version__', None) is None:
+                self.pose.__version__ = self.__version__
+            elif getattr(self.pose, '__version__', None) != self.__version__ and self.__version__ is not None:
+                self.pose = self.pose.to_version(self.__version__)
+        if self.projection_type is not None:
+            if getattr(self.projection_type, '__version__', None) is None:
+                self.projection_type.__version__ = self.__version__
+            elif getattr(self.projection_type, '__version__', None) != self.__version__ and self.__version__ is not None:
+                self.projection_type = self.projection_type.to_version(self.__version__)
+        if self.track_visual is not None:
+            if getattr(self.track_visual, '__version__', None) is None:
+                self.track_visual.__version__ = self.__version__
+            elif getattr(self.track_visual, '__version__', None) != self.__version__ and self.__version__ is not None:
+                self.track_visual = self.track_visual.to_version(self.__version__)
+        if self.view_controller is not None:
+            if getattr(self.view_controller, '__version__', None) is None:
+                self.view_controller.__version__ = self.__version__
+            elif getattr(self.view_controller, '__version__', None) != self.__version__ and self.__version__ is not None:
+                self.view_controller = self.view_controller.to_version(self.__version__)
 
     def to_version(self, target_version: str) -> "Camera":
         from ..elements.frame import Frame
@@ -96,12 +126,14 @@ class Camera(BaseModel):
         new_obj = self.__class__(**kwargs)
         return new_obj
 
-    def to_sdf(self, version: str = None) -> ET.Element:
+    def to_sdf(self, version: str | None = None) -> ET.Element:
         from ..elements.frame import Frame
         from ..elements.pose import Pose
-        if version is not None and version != self.__version__:
+        if self.__version__ is None and version is not None:
+            self.__version__ = version
+        elif version is not None and version != self.__version__:
             return self.to_version(version).to_sdf()
-        version = version or self.__version__
+        version = self.__version__ or version
         el = ET.Element("camera")
         for item in (self.frame or []):
             el.append(item.to_sdf(version))
@@ -184,7 +216,7 @@ class Camera(BaseModel):
 class Gui(BaseModel):
     def __init__(
         self,
-        sdf_version: str,
+        sdf_version: str | None = None,
         camera: "Camera" = None,
         fullscreen: bool = False,
         plugin: List["Plugin"] = None
@@ -193,6 +225,16 @@ class Gui(BaseModel):
         self.camera = camera
         self.fullscreen = fullscreen
         self.plugin = plugin or []
+        if self.camera is not None:
+            if getattr(self.camera, '__version__', None) is None:
+                self.camera.__version__ = self.__version__
+            elif getattr(self.camera, '__version__', None) != self.__version__ and self.__version__ is not None:
+                self.camera = self.camera.to_version(self.__version__)
+        for _i, _c in enumerate(self.plugin):
+            if getattr(_c, '__version__', None) is None:
+                _c.__version__ = self.__version__
+            elif getattr(_c, '__version__', None) != self.__version__ and self.__version__ is not None:
+                self.plugin[_i] = _c.to_version(self.__version__)
 
     def to_version(self, target_version: str) -> "Gui":
         from ..elements.plugin import Plugin
@@ -205,11 +247,13 @@ class Gui(BaseModel):
         new_obj = self.__class__(**kwargs)
         return new_obj
 
-    def to_sdf(self, version: str = None) -> ET.Element:
+    def to_sdf(self, version: str | None = None) -> ET.Element:
         from ..elements.plugin import Plugin
-        if version is not None and version != self.__version__:
+        if self.__version__ is None and version is not None:
+            self.__version__ = version
+        elif version is not None and version != self.__version__:
             return self.to_version(version).to_sdf()
-        version = version or self.__version__
+        version = self.__version__ or version
         el = ET.Element("gui")
         if self.camera is not None:
             el.append(self.camera.to_sdf(version))
@@ -245,7 +289,7 @@ class Gui(BaseModel):
 
 
 class InheritYaw(BaseModel):
-    def __init__(self, sdf_version: str, inherit_yaw: bool = False):
+    def __init__(self, sdf_version: str | None = None, inherit_yaw: bool = False):
         self.__version__ = sdf_version
         self.inherit_yaw = inherit_yaw
 
@@ -257,10 +301,12 @@ class InheritYaw(BaseModel):
         new_obj = self.__class__(**kwargs)
         return new_obj
 
-    def to_sdf(self, version: str = None) -> ET.Element:
-        if version is not None and version != self.__version__:
+    def to_sdf(self, version: str | None = None) -> ET.Element:
+        if self.__version__ is None and version is not None:
+            self.__version__ = version
+        elif version is not None and version != self.__version__:
             return self.to_version(version).to_sdf()
-        version = version or self.__version__
+        version = self.__version__ or version
         el = ET.Element("inherit_yaw")
         if self.inherit_yaw is not None:
             el.text = str(self.inherit_yaw).lower()
@@ -279,7 +325,7 @@ class InheritYaw(BaseModel):
 
 
 class MaxDist(BaseModel):
-    def __init__(self, sdf_version: str, max_dist: float = 0):
+    def __init__(self, sdf_version: str | None = None, max_dist: float = 0):
         self.__version__ = sdf_version
         self.max_dist = max_dist
 
@@ -289,10 +335,12 @@ class MaxDist(BaseModel):
         new_obj = self.__class__(**kwargs)
         return new_obj
 
-    def to_sdf(self, version: str = None) -> ET.Element:
-        if version is not None and version != self.__version__:
+    def to_sdf(self, version: str | None = None) -> ET.Element:
+        if self.__version__ is None and version is not None:
+            self.__version__ = version
+        elif version is not None and version != self.__version__:
             return self.to_version(version).to_sdf()
-        version = version or self.__version__
+        version = self.__version__ or version
         el = ET.Element("max_dist")
         if self.max_dist is not None:
             el.text = str(self.max_dist)
@@ -308,7 +356,7 @@ class MaxDist(BaseModel):
 
 
 class MinDist(BaseModel):
-    def __init__(self, sdf_version: str, min_dist: float = 0):
+    def __init__(self, sdf_version: str | None = None, min_dist: float = 0):
         self.__version__ = sdf_version
         self.min_dist = min_dist
 
@@ -318,10 +366,12 @@ class MinDist(BaseModel):
         new_obj = self.__class__(**kwargs)
         return new_obj
 
-    def to_sdf(self, version: str = None) -> ET.Element:
-        if version is not None and version != self.__version__:
+    def to_sdf(self, version: str | None = None) -> ET.Element:
+        if self.__version__ is None and version is not None:
+            self.__version__ = version
+        elif version is not None and version != self.__version__:
             return self.to_version(version).to_sdf()
-        version = version or self.__version__
+        version = self.__version__ or version
         el = ET.Element("min_dist")
         if self.min_dist is not None:
             el.text = str(self.min_dist)
@@ -337,7 +387,7 @@ class MinDist(BaseModel):
 
 
 class Name(BaseModel):
-    def __init__(self, sdf_version: str, name: str = "__default__"):
+    def __init__(self, sdf_version: str | None = None, name: str = "__default__"):
         self.__version__ = sdf_version
         self.name = name
 
@@ -347,10 +397,12 @@ class Name(BaseModel):
         new_obj = self.__class__(**kwargs)
         return new_obj
 
-    def to_sdf(self, version: str = None) -> ET.Element:
-        if version is not None and version != self.__version__:
+    def to_sdf(self, version: str | None = None) -> ET.Element:
+        if self.__version__ is None and version is not None:
+            self.__version__ = version
+        elif version is not None and version != self.__version__:
             return self.to_version(version).to_sdf()
-        version = version or self.__version__
+        version = self.__version__ or version
         el = ET.Element("name")
         if self.name is not None:
             el.text = self.name
@@ -366,10 +418,10 @@ class Name(BaseModel):
 
 
 class Origin(BaseModel):
-    def __init__(self, sdf_version: str, pose: _SDFPose = None):
+    def __init__(self, sdf_version: str | None = None, pose: _SDFPose = None):
         self.__version__ = sdf_version
         if pose is None:
-            pose = _SDFPose.from_sdf("0 0 0 0 0 0")
+            pose = _SDFPose.from_sdf("0 0 0 0 0 0", version=sdf_version)
         self.pose = pose
 
     def to_version(self, target_version: str) -> "Origin":
@@ -378,13 +430,15 @@ class Origin(BaseModel):
         new_obj = self.__class__(**kwargs)
         return new_obj
 
-    def to_sdf(self, version: str = None) -> ET.Element:
-        if version is not None and version != self.__version__:
+    def to_sdf(self, version: str | None = None) -> ET.Element:
+        if self.__version__ is None and version is not None:
+            self.__version__ = version
+        elif version is not None and version != self.__version__:
             return self.to_version(version).to_sdf()
-        version = version or self.__version__
+        version = self.__version__ or version
         el = ET.Element("origin")
         if self.pose is not None:
-            el.set("pose", self.pose.to_sdf())
+            el.set("pose", self.pose.to_sdf(version))
         return el
 
     @classmethod
@@ -396,7 +450,7 @@ class Origin(BaseModel):
 
 
 class ProjectionType(BaseModel):
-    def __init__(self, sdf_version: str, projection_type: str = "perspective"):
+    def __init__(self, sdf_version: str | None = None, projection_type: str = "perspective"):
         self.__version__ = sdf_version
         self.projection_type = projection_type
 
@@ -408,10 +462,12 @@ class ProjectionType(BaseModel):
         new_obj = self.__class__(**kwargs)
         return new_obj
 
-    def to_sdf(self, version: str = None) -> ET.Element:
-        if version is not None and version != self.__version__:
+    def to_sdf(self, version: str | None = None) -> ET.Element:
+        if self.__version__ is None and version is not None:
+            self.__version__ = version
+        elif version is not None and version != self.__version__:
             return self.to_version(version).to_sdf()
-        version = version or self.__version__
+        version = self.__version__ or version
         el = ET.Element("projection_type")
         if self.projection_type is not None:
             el.text = self.projection_type
@@ -430,7 +486,7 @@ class ProjectionType(BaseModel):
 
 
 class Static(BaseModel):
-    def __init__(self, sdf_version: str, static: bool = False):
+    def __init__(self, sdf_version: str | None = None, static: bool = False):
         self.__version__ = sdf_version
         self.static = static
 
@@ -442,10 +498,12 @@ class Static(BaseModel):
         new_obj = self.__class__(**kwargs)
         return new_obj
 
-    def to_sdf(self, version: str = None) -> ET.Element:
-        if version is not None and version != self.__version__:
+    def to_sdf(self, version: str | None = None) -> ET.Element:
+        if self.__version__ is None and version is not None:
+            self.__version__ = version
+        elif version is not None and version != self.__version__:
             return self.to_version(version).to_sdf()
-        version = version or self.__version__
+        version = self.__version__ or version
         el = ET.Element("static")
         if self.static is not None:
             el.text = str(self.static).lower()
@@ -466,7 +524,7 @@ class Static(BaseModel):
 class TrackVisual(BaseModel):
     def __init__(
         self,
-        sdf_version: str,
+        sdf_version: str | None = None,
         inherit_yaw: "InheritYaw" = None,
         max_dist: "MaxDist" = None,
         min_dist: "MinDist" = None,
@@ -483,6 +541,41 @@ class TrackVisual(BaseModel):
         self.static = static
         self.use_model_frame = use_model_frame
         self.xyz = xyz
+        if self.inherit_yaw is not None:
+            if getattr(self.inherit_yaw, '__version__', None) is None:
+                self.inherit_yaw.__version__ = self.__version__
+            elif getattr(self.inherit_yaw, '__version__', None) != self.__version__ and self.__version__ is not None:
+                self.inherit_yaw = self.inherit_yaw.to_version(self.__version__)
+        if self.max_dist is not None:
+            if getattr(self.max_dist, '__version__', None) is None:
+                self.max_dist.__version__ = self.__version__
+            elif getattr(self.max_dist, '__version__', None) != self.__version__ and self.__version__ is not None:
+                self.max_dist = self.max_dist.to_version(self.__version__)
+        if self.min_dist is not None:
+            if getattr(self.min_dist, '__version__', None) is None:
+                self.min_dist.__version__ = self.__version__
+            elif getattr(self.min_dist, '__version__', None) != self.__version__ and self.__version__ is not None:
+                self.min_dist = self.min_dist.to_version(self.__version__)
+        if self.name is not None:
+            if getattr(self.name, '__version__', None) is None:
+                self.name.__version__ = self.__version__
+            elif getattr(self.name, '__version__', None) != self.__version__ and self.__version__ is not None:
+                self.name = self.name.to_version(self.__version__)
+        if self.static is not None:
+            if getattr(self.static, '__version__', None) is None:
+                self.static.__version__ = self.__version__
+            elif getattr(self.static, '__version__', None) != self.__version__ and self.__version__ is not None:
+                self.static = self.static.to_version(self.__version__)
+        if self.use_model_frame is not None:
+            if getattr(self.use_model_frame, '__version__', None) is None:
+                self.use_model_frame.__version__ = self.__version__
+            elif getattr(self.use_model_frame, '__version__', None) != self.__version__ and self.__version__ is not None:
+                self.use_model_frame = self.use_model_frame.to_version(self.__version__)
+        if self.xyz is not None:
+            if getattr(self.xyz, '__version__', None) is None:
+                self.xyz.__version__ = self.__version__
+            elif getattr(self.xyz, '__version__', None) != self.__version__ and self.__version__ is not None:
+                self.xyz = self.xyz.to_version(self.__version__)
 
     def to_version(self, target_version: str) -> "TrackVisual":
         if self.inherit_yaw is not None and cmp_version(target_version, "1.6") < 0:
@@ -504,10 +597,12 @@ class TrackVisual(BaseModel):
         new_obj = self.__class__(**kwargs)
         return new_obj
 
-    def to_sdf(self, version: str = None) -> ET.Element:
-        if version is not None and version != self.__version__:
+    def to_sdf(self, version: str | None = None) -> ET.Element:
+        if self.__version__ is None and version is not None:
+            self.__version__ = version
+        elif version is not None and version != self.__version__:
             return self.to_version(version).to_sdf()
-        version = version or self.__version__
+        version = self.__version__ or version
         el = ET.Element("track_visual")
         if self.inherit_yaw is not None:
             el.append(self.inherit_yaw.to_sdf(version))
@@ -595,7 +690,7 @@ class TrackVisual(BaseModel):
 
 
 class UseModelFrame(BaseModel):
-    def __init__(self, sdf_version: str, use_model_frame: bool = True):
+    def __init__(self, sdf_version: str | None = None, use_model_frame: bool = True):
         self.__version__ = sdf_version
         self.use_model_frame = use_model_frame
 
@@ -607,10 +702,12 @@ class UseModelFrame(BaseModel):
         new_obj = self.__class__(**kwargs)
         return new_obj
 
-    def to_sdf(self, version: str = None) -> ET.Element:
-        if version is not None and version != self.__version__:
+    def to_sdf(self, version: str | None = None) -> ET.Element:
+        if self.__version__ is None and version is not None:
+            self.__version__ = version
+        elif version is not None and version != self.__version__:
             return self.to_version(version).to_sdf()
-        version = version or self.__version__
+        version = self.__version__ or version
         el = ET.Element("use_model_frame")
         if self.use_model_frame is not None:
             el.text = str(self.use_model_frame).lower()
@@ -629,7 +726,7 @@ class UseModelFrame(BaseModel):
 
 
 class ViewController(BaseModel):
-    def __init__(self, sdf_version: str, view_controller: str = "oribit"):
+    def __init__(self, sdf_version: str | None = None, view_controller: str = "oribit"):
         self.__version__ = sdf_version
         self.view_controller = view_controller
 
@@ -639,10 +736,12 @@ class ViewController(BaseModel):
         new_obj = self.__class__(**kwargs)
         return new_obj
 
-    def to_sdf(self, version: str = None) -> ET.Element:
-        if version is not None and version != self.__version__:
+    def to_sdf(self, version: str | None = None) -> ET.Element:
+        if self.__version__ is None and version is not None:
+            self.__version__ = version
+        elif version is not None and version != self.__version__:
             return self.to_version(version).to_sdf()
-        version = version or self.__version__
+        version = self.__version__ or version
         el = ET.Element("view_controller")
         if self.view_controller is not None:
             el.text = self.view_controller
@@ -658,10 +757,10 @@ class ViewController(BaseModel):
 
 
 class Xyz(BaseModel):
-    def __init__(self, sdf_version: str, xyz: _SDFVector3 = None):
+    def __init__(self, sdf_version: str | None = None, xyz: _SDFVector3 = None):
         self.__version__ = sdf_version
         if xyz is None:
-            xyz = _SDFVector3.from_sdf("-5.0 0.0 3.0")
+            xyz = _SDFVector3.from_sdf("-5.0 0.0 3.0", version=sdf_version)
         self.xyz = xyz
 
     def to_version(self, target_version: str) -> "Xyz":
@@ -672,13 +771,15 @@ class Xyz(BaseModel):
         new_obj = self.__class__(**kwargs)
         return new_obj
 
-    def to_sdf(self, version: str = None) -> ET.Element:
-        if version is not None and version != self.__version__:
+    def to_sdf(self, version: str | None = None) -> ET.Element:
+        if self.__version__ is None and version is not None:
+            self.__version__ = version
+        elif version is not None and version != self.__version__:
             return self.to_version(version).to_sdf()
-        version = version or self.__version__
+        version = self.__version__ or version
         el = ET.Element("xyz")
         if self.xyz is not None:
-            el.text = self.xyz.to_sdf()
+            el.text = self.xyz.to_sdf(version)
         return el
 
     @classmethod

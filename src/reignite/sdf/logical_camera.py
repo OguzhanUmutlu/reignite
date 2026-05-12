@@ -42,7 +42,7 @@ def _parse_double(raw: str) -> float | SDFError:
 
 
 class AspectRatio(BaseModel):
-    def __init__(self, sdf_version: str, aspect_ratio: float = 1):
+    def __init__(self, sdf_version: str | None = None, aspect_ratio: float = 1):
         self.__version__ = sdf_version
         self.aspect_ratio = aspect_ratio
 
@@ -52,10 +52,12 @@ class AspectRatio(BaseModel):
         new_obj = self.__class__(**kwargs)
         return new_obj
 
-    def to_sdf(self, version: str = None) -> ET.Element:
-        if version is not None and version != self.__version__:
+    def to_sdf(self, version: str | None = None) -> ET.Element:
+        if self.__version__ is None and version is not None:
+            self.__version__ = version
+        elif version is not None and version != self.__version__:
             return self.to_version(version).to_sdf()
-        version = version or self.__version__
+        version = self.__version__ or version
         el = ET.Element("aspect_ratio")
         if self.aspect_ratio is not None:
             el.text = str(self.aspect_ratio)
@@ -71,7 +73,7 @@ class AspectRatio(BaseModel):
 
 
 class Far(BaseModel):
-    def __init__(self, sdf_version: str, far: float = 1):
+    def __init__(self, sdf_version: str | None = None, far: float = 1):
         self.__version__ = sdf_version
         self.far = far
 
@@ -81,10 +83,12 @@ class Far(BaseModel):
         new_obj = self.__class__(**kwargs)
         return new_obj
 
-    def to_sdf(self, version: str = None) -> ET.Element:
-        if version is not None and version != self.__version__:
+    def to_sdf(self, version: str | None = None) -> ET.Element:
+        if self.__version__ is None and version is not None:
+            self.__version__ = version
+        elif version is not None and version != self.__version__:
             return self.to_version(version).to_sdf()
-        version = version or self.__version__
+        version = self.__version__ or version
         el = ET.Element("far")
         if self.far is not None:
             el.text = str(self.far)
@@ -100,7 +104,7 @@ class Far(BaseModel):
 
 
 class HorizontalFov(BaseModel):
-    def __init__(self, sdf_version: str, horizontal_fov: float = 1):
+    def __init__(self, sdf_version: str | None = None, horizontal_fov: float = 1):
         self.__version__ = sdf_version
         self.horizontal_fov = horizontal_fov
 
@@ -110,10 +114,12 @@ class HorizontalFov(BaseModel):
         new_obj = self.__class__(**kwargs)
         return new_obj
 
-    def to_sdf(self, version: str = None) -> ET.Element:
-        if version is not None and version != self.__version__:
+    def to_sdf(self, version: str | None = None) -> ET.Element:
+        if self.__version__ is None and version is not None:
+            self.__version__ = version
+        elif version is not None and version != self.__version__:
             return self.to_version(version).to_sdf()
-        version = version or self.__version__
+        version = self.__version__ or version
         el = ET.Element("horizontal_fov")
         if self.horizontal_fov is not None:
             el.text = str(self.horizontal_fov)
@@ -131,7 +137,7 @@ class HorizontalFov(BaseModel):
 class LogicalCamera(BaseModel):
     def __init__(
         self,
-        sdf_version: str,
+        sdf_version: str | None = None,
         aspect_ratio: "AspectRatio" = None,
         far: "Far" = None,
         horizontal_fov: "HorizontalFov" = None,
@@ -142,6 +148,26 @@ class LogicalCamera(BaseModel):
         self.far = far
         self.horizontal_fov = horizontal_fov
         self.near = near
+        if self.aspect_ratio is not None:
+            if getattr(self.aspect_ratio, '__version__', None) is None:
+                self.aspect_ratio.__version__ = self.__version__
+            elif getattr(self.aspect_ratio, '__version__', None) != self.__version__ and self.__version__ is not None:
+                self.aspect_ratio = self.aspect_ratio.to_version(self.__version__)
+        if self.far is not None:
+            if getattr(self.far, '__version__', None) is None:
+                self.far.__version__ = self.__version__
+            elif getattr(self.far, '__version__', None) != self.__version__ and self.__version__ is not None:
+                self.far = self.far.to_version(self.__version__)
+        if self.horizontal_fov is not None:
+            if getattr(self.horizontal_fov, '__version__', None) is None:
+                self.horizontal_fov.__version__ = self.__version__
+            elif getattr(self.horizontal_fov, '__version__', None) != self.__version__ and self.__version__ is not None:
+                self.horizontal_fov = self.horizontal_fov.to_version(self.__version__)
+        if self.near is not None:
+            if getattr(self.near, '__version__', None) is None:
+                self.near.__version__ = self.__version__
+            elif getattr(self.near, '__version__', None) != self.__version__ and self.__version__ is not None:
+                self.near = self.near.to_version(self.__version__)
 
     def to_version(self, target_version: str) -> "LogicalCamera":
         kwargs = {"sdf_version": target_version}
@@ -152,10 +178,12 @@ class LogicalCamera(BaseModel):
         new_obj = self.__class__(**kwargs)
         return new_obj
 
-    def to_sdf(self, version: str = None) -> ET.Element:
-        if version is not None and version != self.__version__:
+    def to_sdf(self, version: str | None = None) -> ET.Element:
+        if self.__version__ is None and version is not None:
+            self.__version__ = version
+        elif version is not None and version != self.__version__:
             return self.to_version(version).to_sdf()
-        version = version or self.__version__
+        version = self.__version__ or version
         el = ET.Element("logical_camera")
         if self.aspect_ratio is not None:
             el.append(self.aspect_ratio.to_sdf(version))
@@ -205,7 +233,7 @@ class LogicalCamera(BaseModel):
 
 
 class Near(BaseModel):
-    def __init__(self, sdf_version: str, near: float = 0):
+    def __init__(self, sdf_version: str | None = None, near: float = 0):
         self.__version__ = sdf_version
         self.near = near
 
@@ -215,10 +243,12 @@ class Near(BaseModel):
         new_obj = self.__class__(**kwargs)
         return new_obj
 
-    def to_sdf(self, version: str = None) -> ET.Element:
-        if version is not None and version != self.__version__:
+    def to_sdf(self, version: str | None = None) -> ET.Element:
+        if self.__version__ is None and version is not None:
+            self.__version__ = version
+        elif version is not None and version != self.__version__:
             return self.to_version(version).to_sdf()
-        version = version or self.__version__
+        version = self.__version__ or version
         el = ET.Element("near")
         if self.near is not None:
             el.text = str(self.near)

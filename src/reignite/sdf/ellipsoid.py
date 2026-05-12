@@ -10,9 +10,14 @@ from ..utils.vector3 import Vector3 as _SDFVector3
 
 
 class Ellipsoid(BaseModel):
-    def __init__(self, sdf_version: str, radii: "Radii" = None):
+    def __init__(self, sdf_version: str | None = None, radii: "Radii" = None):
         self.__version__ = sdf_version
         self.radii = radii
+        if self.radii is not None:
+            if getattr(self.radii, '__version__', None) is None:
+                self.radii.__version__ = self.__version__
+            elif getattr(self.radii, '__version__', None) != self.__version__ and self.__version__ is not None:
+                self.radii = self.radii.to_version(self.__version__)
 
     def to_version(self, target_version: str) -> "Ellipsoid":
         kwargs = {"sdf_version": target_version}
@@ -20,10 +25,12 @@ class Ellipsoid(BaseModel):
         new_obj = self.__class__(**kwargs)
         return new_obj
 
-    def to_sdf(self, version: str = None) -> ET.Element:
-        if version is not None and version != self.__version__:
+    def to_sdf(self, version: str | None = None) -> ET.Element:
+        if self.__version__ is None and version is not None:
+            self.__version__ = version
+        elif version is not None and version != self.__version__:
             return self.to_version(version).to_sdf()
-        version = version or self.__version__
+        version = self.__version__ or version
         el = ET.Element("ellipsoid")
         if self.radii is not None:
             el.append(self.radii.to_sdf(version))
@@ -43,10 +50,10 @@ class Ellipsoid(BaseModel):
 
 
 class Radii(BaseModel):
-    def __init__(self, sdf_version: str, radii: _SDFVector3 = None):
+    def __init__(self, sdf_version: str | None = None, radii: _SDFVector3 = None):
         self.__version__ = sdf_version
         if radii is None:
-            radii = _SDFVector3.from_sdf("1 1 1")
+            radii = _SDFVector3.from_sdf("1 1 1", version=sdf_version)
         self.radii = radii
 
     def to_version(self, target_version: str) -> "Radii":
@@ -55,13 +62,15 @@ class Radii(BaseModel):
         new_obj = self.__class__(**kwargs)
         return new_obj
 
-    def to_sdf(self, version: str = None) -> ET.Element:
-        if version is not None and version != self.__version__:
+    def to_sdf(self, version: str | None = None) -> ET.Element:
+        if self.__version__ is None and version is not None:
+            self.__version__ = version
+        elif version is not None and version != self.__version__:
             return self.to_version(version).to_sdf()
-        version = version or self.__version__
+        version = self.__version__ or version
         el = ET.Element("radii")
         if self.radii is not None:
-            el.text = self.radii.to_sdf()
+            el.text = self.radii.to_sdf(version)
         return el
 
     @classmethod

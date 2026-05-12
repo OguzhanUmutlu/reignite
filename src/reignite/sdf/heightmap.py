@@ -48,13 +48,23 @@ def _parse_double(raw: str) -> float | SDFError:
 class Blend(BaseModel):
     def __init__(
         self,
-        sdf_version: str,
+        sdf_version: str | None = None,
         fade_dist: "FadeDist" = None,
         min_height: "MinHeight" = None
     ):
         self.__version__ = sdf_version
         self.fade_dist = fade_dist
         self.min_height = min_height
+        if self.fade_dist is not None:
+            if getattr(self.fade_dist, '__version__', None) is None:
+                self.fade_dist.__version__ = self.__version__
+            elif getattr(self.fade_dist, '__version__', None) != self.__version__ and self.__version__ is not None:
+                self.fade_dist = self.fade_dist.to_version(self.__version__)
+        if self.min_height is not None:
+            if getattr(self.min_height, '__version__', None) is None:
+                self.min_height.__version__ = self.__version__
+            elif getattr(self.min_height, '__version__', None) != self.__version__ and self.__version__ is not None:
+                self.min_height = self.min_height.to_version(self.__version__)
 
     def to_version(self, target_version: str) -> "Blend":
         kwargs = {"sdf_version": target_version}
@@ -63,10 +73,12 @@ class Blend(BaseModel):
         new_obj = self.__class__(**kwargs)
         return new_obj
 
-    def to_sdf(self, version: str = None) -> ET.Element:
-        if version is not None and version != self.__version__:
+    def to_sdf(self, version: str | None = None) -> ET.Element:
+        if self.__version__ is None and version is not None:
+            self.__version__ = version
+        elif version is not None and version != self.__version__:
             return self.to_version(version).to_sdf()
-        version = version or self.__version__
+        version = self.__version__ or version
         el = ET.Element("blend")
         if self.fade_dist is not None:
             el.append(self.fade_dist.to_sdf(version))
@@ -96,7 +108,7 @@ class Blend(BaseModel):
 
 
 class Diffuse(BaseModel):
-    def __init__(self, sdf_version: str, diffuse: str = "__default__"):
+    def __init__(self, sdf_version: str | None = None, diffuse: str = "__default__"):
         self.__version__ = sdf_version
         self.diffuse = diffuse
 
@@ -106,10 +118,12 @@ class Diffuse(BaseModel):
         new_obj = self.__class__(**kwargs)
         return new_obj
 
-    def to_sdf(self, version: str = None) -> ET.Element:
-        if version is not None and version != self.__version__:
+    def to_sdf(self, version: str | None = None) -> ET.Element:
+        if self.__version__ is None and version is not None:
+            self.__version__ = version
+        elif version is not None and version != self.__version__:
             return self.to_version(version).to_sdf()
-        version = version or self.__version__
+        version = self.__version__ or version
         el = ET.Element("diffuse")
         if self.diffuse is not None:
             el.text = self.diffuse
@@ -125,7 +139,7 @@ class Diffuse(BaseModel):
 
 
 class FadeDist(BaseModel):
-    def __init__(self, sdf_version: str, fade_dist: float = 0):
+    def __init__(self, sdf_version: str | None = None, fade_dist: float = 0):
         self.__version__ = sdf_version
         self.fade_dist = fade_dist
 
@@ -135,10 +149,12 @@ class FadeDist(BaseModel):
         new_obj = self.__class__(**kwargs)
         return new_obj
 
-    def to_sdf(self, version: str = None) -> ET.Element:
-        if version is not None and version != self.__version__:
+    def to_sdf(self, version: str | None = None) -> ET.Element:
+        if self.__version__ is None and version is not None:
+            self.__version__ = version
+        elif version is not None and version != self.__version__:
             return self.to_version(version).to_sdf()
-        version = version or self.__version__
+        version = self.__version__ or version
         el = ET.Element("fade_dist")
         if self.fade_dist is not None:
             el.text = str(self.fade_dist)
@@ -156,7 +172,7 @@ class FadeDist(BaseModel):
 class Heightmap(BaseModel):
     def __init__(
         self,
-        sdf_version: str,
+        sdf_version: str | None = None,
         blend: List["Blend"] = None,
         pos: "Pos" = None,
         sampling: "Sampling" = None,
@@ -173,6 +189,41 @@ class Heightmap(BaseModel):
         self.texture = texture or []
         self.uri = uri
         self.use_terrain_paging = use_terrain_paging
+        for _i, _c in enumerate(self.blend):
+            if getattr(_c, '__version__', None) is None:
+                _c.__version__ = self.__version__
+            elif getattr(_c, '__version__', None) != self.__version__ and self.__version__ is not None:
+                self.blend[_i] = _c.to_version(self.__version__)
+        if self.pos is not None:
+            if getattr(self.pos, '__version__', None) is None:
+                self.pos.__version__ = self.__version__
+            elif getattr(self.pos, '__version__', None) != self.__version__ and self.__version__ is not None:
+                self.pos = self.pos.to_version(self.__version__)
+        if self.sampling is not None:
+            if getattr(self.sampling, '__version__', None) is None:
+                self.sampling.__version__ = self.__version__
+            elif getattr(self.sampling, '__version__', None) != self.__version__ and self.__version__ is not None:
+                self.sampling = self.sampling.to_version(self.__version__)
+        if self.size is not None:
+            if getattr(self.size, '__version__', None) is None:
+                self.size.__version__ = self.__version__
+            elif getattr(self.size, '__version__', None) != self.__version__ and self.__version__ is not None:
+                self.size = self.size.to_version(self.__version__)
+        for _i, _c in enumerate(self.texture):
+            if getattr(_c, '__version__', None) is None:
+                _c.__version__ = self.__version__
+            elif getattr(_c, '__version__', None) != self.__version__ and self.__version__ is not None:
+                self.texture[_i] = _c.to_version(self.__version__)
+        if self.uri is not None:
+            if getattr(self.uri, '__version__', None) is None:
+                self.uri.__version__ = self.__version__
+            elif getattr(self.uri, '__version__', None) != self.__version__ and self.__version__ is not None:
+                self.uri = self.uri.to_version(self.__version__)
+        if self.use_terrain_paging is not None:
+            if getattr(self.use_terrain_paging, '__version__', None) is None:
+                self.use_terrain_paging.__version__ = self.__version__
+            elif getattr(self.use_terrain_paging, '__version__', None) != self.__version__ and self.__version__ is not None:
+                self.use_terrain_paging = self.use_terrain_paging.to_version(self.__version__)
 
     def to_version(self, target_version: str) -> "Heightmap":
         if self.sampling is not None and cmp_version(target_version, "1.6") < 0:
@@ -188,10 +239,12 @@ class Heightmap(BaseModel):
         new_obj = self.__class__(**kwargs)
         return new_obj
 
-    def to_sdf(self, version: str = None) -> ET.Element:
-        if version is not None and version != self.__version__:
+    def to_sdf(self, version: str | None = None) -> ET.Element:
+        if self.__version__ is None and version is not None:
+            self.__version__ = version
+        elif version is not None and version != self.__version__:
             return self.to_version(version).to_sdf()
-        version = version or self.__version__
+        version = self.__version__ or version
         el = ET.Element("heightmap")
         for item in (self.blend or []):
             el.append(item.to_sdf(version))
@@ -269,7 +322,7 @@ class Heightmap(BaseModel):
 
 
 class MinHeight(BaseModel):
-    def __init__(self, sdf_version: str, min_height: float = 0):
+    def __init__(self, sdf_version: str | None = None, min_height: float = 0):
         self.__version__ = sdf_version
         self.min_height = min_height
 
@@ -279,10 +332,12 @@ class MinHeight(BaseModel):
         new_obj = self.__class__(**kwargs)
         return new_obj
 
-    def to_sdf(self, version: str = None) -> ET.Element:
-        if version is not None and version != self.__version__:
+    def to_sdf(self, version: str | None = None) -> ET.Element:
+        if self.__version__ is None and version is not None:
+            self.__version__ = version
+        elif version is not None and version != self.__version__:
             return self.to_version(version).to_sdf()
-        version = version or self.__version__
+        version = self.__version__ or version
         el = ET.Element("min_height")
         if self.min_height is not None:
             el.text = str(self.min_height)
@@ -298,7 +353,7 @@ class MinHeight(BaseModel):
 
 
 class Normal(BaseModel):
-    def __init__(self, sdf_version: str, normal: str = "__default__"):
+    def __init__(self, sdf_version: str | None = None, normal: str = "__default__"):
         self.__version__ = sdf_version
         self.normal = normal
 
@@ -308,10 +363,12 @@ class Normal(BaseModel):
         new_obj = self.__class__(**kwargs)
         return new_obj
 
-    def to_sdf(self, version: str = None) -> ET.Element:
-        if version is not None and version != self.__version__:
+    def to_sdf(self, version: str | None = None) -> ET.Element:
+        if self.__version__ is None and version is not None:
+            self.__version__ = version
+        elif version is not None and version != self.__version__:
             return self.to_version(version).to_sdf()
-        version = version or self.__version__
+        version = self.__version__ or version
         el = ET.Element("normal")
         if self.normal is not None:
             el.text = self.normal
@@ -327,10 +384,10 @@ class Normal(BaseModel):
 
 
 class Pos(BaseModel):
-    def __init__(self, sdf_version: str, pos: _SDFVector3 = None):
+    def __init__(self, sdf_version: str | None = None, pos: _SDFVector3 = None):
         self.__version__ = sdf_version
         if pos is None:
-            pos = _SDFVector3.from_sdf("0 0 0")
+            pos = _SDFVector3.from_sdf("0 0 0", version=sdf_version)
         self.pos = pos
 
     def to_version(self, target_version: str) -> "Pos":
@@ -339,13 +396,15 @@ class Pos(BaseModel):
         new_obj = self.__class__(**kwargs)
         return new_obj
 
-    def to_sdf(self, version: str = None) -> ET.Element:
-        if version is not None and version != self.__version__:
+    def to_sdf(self, version: str | None = None) -> ET.Element:
+        if self.__version__ is None and version is not None:
+            self.__version__ = version
+        elif version is not None and version != self.__version__:
             return self.to_version(version).to_sdf()
-        version = version or self.__version__
+        version = self.__version__ or version
         el = ET.Element("pos")
         if self.pos is not None:
-            el.text = self.pos.to_sdf()
+            el.text = self.pos.to_sdf(version)
         return el
 
     @classmethod
@@ -358,7 +417,7 @@ class Pos(BaseModel):
 
 
 class Sampling(BaseModel):
-    def __init__(self, sdf_version: str, sampling: int = 2):
+    def __init__(self, sdf_version: str | None = None, sampling: int = 2):
         self.__version__ = sdf_version
         self.sampling = sampling
 
@@ -370,10 +429,12 @@ class Sampling(BaseModel):
         new_obj = self.__class__(**kwargs)
         return new_obj
 
-    def to_sdf(self, version: str = None) -> ET.Element:
-        if version is not None and version != self.__version__:
+    def to_sdf(self, version: str | None = None) -> ET.Element:
+        if self.__version__ is None and version is not None:
+            self.__version__ = version
+        elif version is not None and version != self.__version__:
             return self.to_version(version).to_sdf()
-        version = version or self.__version__
+        version = self.__version__ or version
         el = ET.Element("sampling")
         if self.sampling is not None:
             el.text = str(self.sampling)
@@ -392,10 +453,10 @@ class Sampling(BaseModel):
 
 
 class Size(BaseModel):
-    def __init__(self, sdf_version: str, size: _SDFVector3 = None):
+    def __init__(self, sdf_version: str | None = None, size: _SDFVector3 = None):
         self.__version__ = sdf_version
         if size is None:
-            size = _SDFVector3.from_sdf("1 1 1")
+            size = _SDFVector3.from_sdf("1 1 1", version=sdf_version)
         self.size = size
 
     def to_version(self, target_version: str) -> "Size":
@@ -404,13 +465,15 @@ class Size(BaseModel):
         new_obj = self.__class__(**kwargs)
         return new_obj
 
-    def to_sdf(self, version: str = None) -> ET.Element:
-        if version is not None and version != self.__version__:
+    def to_sdf(self, version: str | None = None) -> ET.Element:
+        if self.__version__ is None and version is not None:
+            self.__version__ = version
+        elif version is not None and version != self.__version__:
             return self.to_version(version).to_sdf()
-        version = version or self.__version__
+        version = self.__version__ or version
         el = ET.Element("size")
         if self.size is not None:
-            el.text = self.size.to_sdf()
+            el.text = self.size.to_sdf(version)
         return el
 
     @classmethod
@@ -425,7 +488,7 @@ class Size(BaseModel):
 class Texture(BaseModel):
     def __init__(
         self,
-        sdf_version: str,
+        sdf_version: str | None = None,
         diffuse: "Diffuse" = None,
         normal: "Normal" = None,
         size: "TextureSize" = None
@@ -434,6 +497,21 @@ class Texture(BaseModel):
         self.diffuse = diffuse
         self.normal = normal
         self.size = size
+        if self.diffuse is not None:
+            if getattr(self.diffuse, '__version__', None) is None:
+                self.diffuse.__version__ = self.__version__
+            elif getattr(self.diffuse, '__version__', None) != self.__version__ and self.__version__ is not None:
+                self.diffuse = self.diffuse.to_version(self.__version__)
+        if self.normal is not None:
+            if getattr(self.normal, '__version__', None) is None:
+                self.normal.__version__ = self.__version__
+            elif getattr(self.normal, '__version__', None) != self.__version__ and self.__version__ is not None:
+                self.normal = self.normal.to_version(self.__version__)
+        if self.size is not None:
+            if getattr(self.size, '__version__', None) is None:
+                self.size.__version__ = self.__version__
+            elif getattr(self.size, '__version__', None) != self.__version__ and self.__version__ is not None:
+                self.size = self.size.to_version(self.__version__)
 
     def to_version(self, target_version: str) -> "Texture":
         kwargs = {"sdf_version": target_version}
@@ -443,10 +521,12 @@ class Texture(BaseModel):
         new_obj = self.__class__(**kwargs)
         return new_obj
 
-    def to_sdf(self, version: str = None) -> ET.Element:
-        if version is not None and version != self.__version__:
+    def to_sdf(self, version: str | None = None) -> ET.Element:
+        if self.__version__ is None and version is not None:
+            self.__version__ = version
+        elif version is not None and version != self.__version__:
             return self.to_version(version).to_sdf()
-        version = version or self.__version__
+        version = self.__version__ or version
         el = ET.Element("texture")
         if self.diffuse is not None:
             el.append(self.diffuse.to_sdf(version))
@@ -486,7 +566,7 @@ class Texture(BaseModel):
 
 
 class TextureSize(BaseModel):
-    def __init__(self, sdf_version: str, size: float = 10):
+    def __init__(self, sdf_version: str | None = None, size: float = 10):
         self.__version__ = sdf_version
         self.size = size
 
@@ -496,10 +576,12 @@ class TextureSize(BaseModel):
         new_obj = self.__class__(**kwargs)
         return new_obj
 
-    def to_sdf(self, version: str = None) -> ET.Element:
-        if version is not None and version != self.__version__:
+    def to_sdf(self, version: str | None = None) -> ET.Element:
+        if self.__version__ is None and version is not None:
+            self.__version__ = version
+        elif version is not None and version != self.__version__:
             return self.to_version(version).to_sdf()
-        version = version or self.__version__
+        version = self.__version__ or version
         el = ET.Element("size")
         if self.size is not None:
             el.text = str(self.size)
@@ -515,7 +597,7 @@ class TextureSize(BaseModel):
 
 
 class Uri(BaseModel):
-    def __init__(self, sdf_version: str, uri: str = "__default__"):
+    def __init__(self, sdf_version: str | None = None, uri: str = "__default__"):
         self.__version__ = sdf_version
         self.uri = uri
 
@@ -525,10 +607,12 @@ class Uri(BaseModel):
         new_obj = self.__class__(**kwargs)
         return new_obj
 
-    def to_sdf(self, version: str = None) -> ET.Element:
-        if version is not None and version != self.__version__:
+    def to_sdf(self, version: str | None = None) -> ET.Element:
+        if self.__version__ is None and version is not None:
+            self.__version__ = version
+        elif version is not None and version != self.__version__:
             return self.to_version(version).to_sdf()
-        version = version or self.__version__
+        version = self.__version__ or version
         el = ET.Element("uri")
         if self.uri is not None:
             el.text = self.uri
@@ -544,7 +628,7 @@ class Uri(BaseModel):
 
 
 class UseTerrainPaging(BaseModel):
-    def __init__(self, sdf_version: str, use_terrain_paging: bool = False):
+    def __init__(self, sdf_version: str | None = None, use_terrain_paging: bool = False):
         self.__version__ = sdf_version
         self.use_terrain_paging = use_terrain_paging
 
@@ -554,10 +638,12 @@ class UseTerrainPaging(BaseModel):
         new_obj = self.__class__(**kwargs)
         return new_obj
 
-    def to_sdf(self, version: str = None) -> ET.Element:
-        if version is not None and version != self.__version__:
+    def to_sdf(self, version: str | None = None) -> ET.Element:
+        if self.__version__ is None and version is not None:
+            self.__version__ = version
+        elif version is not None and version != self.__version__:
             return self.to_version(version).to_sdf()
-        version = version or self.__version__
+        version = self.__version__ or version
         el = ET.Element("use_terrain_paging")
         if self.use_terrain_paging is not None:
             el.text = str(self.use_terrain_paging).lower()

@@ -43,7 +43,7 @@ def _parse_double(raw: str) -> float | SDFError:
 
 
 class Elevation(BaseModel):
-    def __init__(self, sdf_version: str, elevation: float = 0.0):
+    def __init__(self, sdf_version: str | None = None, elevation: float = 0.0):
         self.__version__ = sdf_version
         self.elevation = elevation
 
@@ -53,10 +53,12 @@ class Elevation(BaseModel):
         new_obj = self.__class__(**kwargs)
         return new_obj
 
-    def to_sdf(self, version: str = None) -> ET.Element:
-        if version is not None and version != self.__version__:
+    def to_sdf(self, version: str | None = None) -> ET.Element:
+        if self.__version__ is None and version is not None:
+            self.__version__ = version
+        elif version is not None and version != self.__version__:
             return self.to_version(version).to_sdf()
-        version = version or self.__version__
+        version = self.__version__ or version
         el = ET.Element("elevation")
         if self.elevation is not None:
             el.text = str(self.elevation)
@@ -72,7 +74,7 @@ class Elevation(BaseModel):
 
 
 class HeadingDeg(BaseModel):
-    def __init__(self, sdf_version: str, heading_deg: float = 0.0):
+    def __init__(self, sdf_version: str | None = None, heading_deg: float = 0.0):
         self.__version__ = sdf_version
         self.heading_deg = heading_deg
 
@@ -82,10 +84,12 @@ class HeadingDeg(BaseModel):
         new_obj = self.__class__(**kwargs)
         return new_obj
 
-    def to_sdf(self, version: str = None) -> ET.Element:
-        if version is not None and version != self.__version__:
+    def to_sdf(self, version: str | None = None) -> ET.Element:
+        if self.__version__ is None and version is not None:
+            self.__version__ = version
+        elif version is not None and version != self.__version__:
             return self.to_version(version).to_sdf()
-        version = version or self.__version__
+        version = self.__version__ or version
         el = ET.Element("heading_deg")
         if self.heading_deg is not None:
             el.text = str(self.heading_deg)
@@ -101,7 +105,7 @@ class HeadingDeg(BaseModel):
 
 
 class LatitudeDeg(BaseModel):
-    def __init__(self, sdf_version: str, latitude_deg: float = 0.0):
+    def __init__(self, sdf_version: str | None = None, latitude_deg: float = 0.0):
         self.__version__ = sdf_version
         self.latitude_deg = latitude_deg
 
@@ -111,10 +115,12 @@ class LatitudeDeg(BaseModel):
         new_obj = self.__class__(**kwargs)
         return new_obj
 
-    def to_sdf(self, version: str = None) -> ET.Element:
-        if version is not None and version != self.__version__:
+    def to_sdf(self, version: str | None = None) -> ET.Element:
+        if self.__version__ is None and version is not None:
+            self.__version__ = version
+        elif version is not None and version != self.__version__:
             return self.to_version(version).to_sdf()
-        version = version or self.__version__
+        version = self.__version__ or version
         el = ET.Element("latitude_deg")
         if self.latitude_deg is not None:
             el.text = str(self.latitude_deg)
@@ -130,7 +136,7 @@ class LatitudeDeg(BaseModel):
 
 
 class LongitudeDeg(BaseModel):
-    def __init__(self, sdf_version: str, longitude_deg: float = 0.0):
+    def __init__(self, sdf_version: str | None = None, longitude_deg: float = 0.0):
         self.__version__ = sdf_version
         self.longitude_deg = longitude_deg
 
@@ -140,10 +146,12 @@ class LongitudeDeg(BaseModel):
         new_obj = self.__class__(**kwargs)
         return new_obj
 
-    def to_sdf(self, version: str = None) -> ET.Element:
-        if version is not None and version != self.__version__:
+    def to_sdf(self, version: str | None = None) -> ET.Element:
+        if self.__version__ is None and version is not None:
+            self.__version__ = version
+        elif version is not None and version != self.__version__:
             return self.to_version(version).to_sdf()
-        version = version or self.__version__
+        version = self.__version__ or version
         el = ET.Element("longitude_deg")
         if self.longitude_deg is not None:
             el.text = str(self.longitude_deg)
@@ -161,7 +169,7 @@ class LongitudeDeg(BaseModel):
 class SphericalCoordinates(BaseModel):
     def __init__(
         self,
-        sdf_version: str,
+        sdf_version: str | None = None,
         elevation: "Elevation" = None,
         heading_deg: "HeadingDeg" = None,
         latitude_deg: "LatitudeDeg" = None,
@@ -180,6 +188,46 @@ class SphericalCoordinates(BaseModel):
         self.surface_axis_polar = surface_axis_polar
         self.surface_model = surface_model
         self.world_frame_orientation = world_frame_orientation
+        if self.elevation is not None:
+            if getattr(self.elevation, '__version__', None) is None:
+                self.elevation.__version__ = self.__version__
+            elif getattr(self.elevation, '__version__', None) != self.__version__ and self.__version__ is not None:
+                self.elevation = self.elevation.to_version(self.__version__)
+        if self.heading_deg is not None:
+            if getattr(self.heading_deg, '__version__', None) is None:
+                self.heading_deg.__version__ = self.__version__
+            elif getattr(self.heading_deg, '__version__', None) != self.__version__ and self.__version__ is not None:
+                self.heading_deg = self.heading_deg.to_version(self.__version__)
+        if self.latitude_deg is not None:
+            if getattr(self.latitude_deg, '__version__', None) is None:
+                self.latitude_deg.__version__ = self.__version__
+            elif getattr(self.latitude_deg, '__version__', None) != self.__version__ and self.__version__ is not None:
+                self.latitude_deg = self.latitude_deg.to_version(self.__version__)
+        if self.longitude_deg is not None:
+            if getattr(self.longitude_deg, '__version__', None) is None:
+                self.longitude_deg.__version__ = self.__version__
+            elif getattr(self.longitude_deg, '__version__', None) != self.__version__ and self.__version__ is not None:
+                self.longitude_deg = self.longitude_deg.to_version(self.__version__)
+        if self.surface_axis_equatorial is not None:
+            if getattr(self.surface_axis_equatorial, '__version__', None) is None:
+                self.surface_axis_equatorial.__version__ = self.__version__
+            elif getattr(self.surface_axis_equatorial, '__version__', None) != self.__version__ and self.__version__ is not None:
+                self.surface_axis_equatorial = self.surface_axis_equatorial.to_version(self.__version__)
+        if self.surface_axis_polar is not None:
+            if getattr(self.surface_axis_polar, '__version__', None) is None:
+                self.surface_axis_polar.__version__ = self.__version__
+            elif getattr(self.surface_axis_polar, '__version__', None) != self.__version__ and self.__version__ is not None:
+                self.surface_axis_polar = self.surface_axis_polar.to_version(self.__version__)
+        if self.surface_model is not None:
+            if getattr(self.surface_model, '__version__', None) is None:
+                self.surface_model.__version__ = self.__version__
+            elif getattr(self.surface_model, '__version__', None) != self.__version__ and self.__version__ is not None:
+                self.surface_model = self.surface_model.to_version(self.__version__)
+        if self.world_frame_orientation is not None:
+            if getattr(self.world_frame_orientation, '__version__', None) is None:
+                self.world_frame_orientation.__version__ = self.__version__
+            elif getattr(self.world_frame_orientation, '__version__', None) != self.__version__ and self.__version__ is not None:
+                self.world_frame_orientation = self.world_frame_orientation.to_version(self.__version__)
 
     def to_version(self, target_version: str) -> "SphericalCoordinates":
         if self.surface_axis_equatorial is not None and cmp_version(target_version, "1.10") < 0:
@@ -200,10 +248,12 @@ class SphericalCoordinates(BaseModel):
         new_obj = self.__class__(**kwargs)
         return new_obj
 
-    def to_sdf(self, version: str = None) -> ET.Element:
-        if version is not None and version != self.__version__:
+    def to_sdf(self, version: str | None = None) -> ET.Element:
+        if self.__version__ is None and version is not None:
+            self.__version__ = version
+        elif version is not None and version != self.__version__:
             return self.to_version(version).to_sdf()
-        version = version or self.__version__
+        version = self.__version__ or version
         el = ET.Element("spherical_coordinates")
         if self.elevation is not None:
             el.append(self.elevation.to_sdf(version))
@@ -299,7 +349,7 @@ class SphericalCoordinates(BaseModel):
 
 
 class SurfaceAxisEquatorial(BaseModel):
-    def __init__(self, sdf_version: str, surface_axis_equatorial: float = 0.0):
+    def __init__(self, sdf_version: str | None = None, surface_axis_equatorial: float = 0.0):
         self.__version__ = sdf_version
         self.surface_axis_equatorial = surface_axis_equatorial
 
@@ -311,10 +361,12 @@ class SurfaceAxisEquatorial(BaseModel):
         new_obj = self.__class__(**kwargs)
         return new_obj
 
-    def to_sdf(self, version: str = None) -> ET.Element:
-        if version is not None and version != self.__version__:
+    def to_sdf(self, version: str | None = None) -> ET.Element:
+        if self.__version__ is None and version is not None:
+            self.__version__ = version
+        elif version is not None and version != self.__version__:
             return self.to_version(version).to_sdf()
-        version = version or self.__version__
+        version = self.__version__ or version
         el = ET.Element("surface_axis_equatorial")
         if self.surface_axis_equatorial is not None:
             el.text = str(self.surface_axis_equatorial)
@@ -333,7 +385,7 @@ class SurfaceAxisEquatorial(BaseModel):
 
 
 class SurfaceAxisPolar(BaseModel):
-    def __init__(self, sdf_version: str, surface_axis_polar: float = 0.0):
+    def __init__(self, sdf_version: str | None = None, surface_axis_polar: float = 0.0):
         self.__version__ = sdf_version
         self.surface_axis_polar = surface_axis_polar
 
@@ -345,10 +397,12 @@ class SurfaceAxisPolar(BaseModel):
         new_obj = self.__class__(**kwargs)
         return new_obj
 
-    def to_sdf(self, version: str = None) -> ET.Element:
-        if version is not None and version != self.__version__:
+    def to_sdf(self, version: str | None = None) -> ET.Element:
+        if self.__version__ is None and version is not None:
+            self.__version__ = version
+        elif version is not None and version != self.__version__:
             return self.to_version(version).to_sdf()
-        version = version or self.__version__
+        version = self.__version__ or version
         el = ET.Element("surface_axis_polar")
         if self.surface_axis_polar is not None:
             el.text = str(self.surface_axis_polar)
@@ -367,7 +421,7 @@ class SurfaceAxisPolar(BaseModel):
 
 
 class SurfaceModel(BaseModel):
-    def __init__(self, sdf_version: str, surface_model: str = "EARTH_WGS84"):
+    def __init__(self, sdf_version: str | None = None, surface_model: str = "EARTH_WGS84"):
         self.__version__ = sdf_version
         self.surface_model = surface_model
 
@@ -377,10 +431,12 @@ class SurfaceModel(BaseModel):
         new_obj = self.__class__(**kwargs)
         return new_obj
 
-    def to_sdf(self, version: str = None) -> ET.Element:
-        if version is not None and version != self.__version__:
+    def to_sdf(self, version: str | None = None) -> ET.Element:
+        if self.__version__ is None and version is not None:
+            self.__version__ = version
+        elif version is not None and version != self.__version__:
             return self.to_version(version).to_sdf()
-        version = version or self.__version__
+        version = self.__version__ or version
         el = ET.Element("surface_model")
         if self.surface_model is not None:
             el.text = self.surface_model
@@ -396,7 +452,7 @@ class SurfaceModel(BaseModel):
 
 
 class WorldFrameOrientation(BaseModel):
-    def __init__(self, sdf_version: str, world_frame_orientation: str = "ENU"):
+    def __init__(self, sdf_version: str | None = None, world_frame_orientation: str = "ENU"):
         self.__version__ = sdf_version
         self.world_frame_orientation = world_frame_orientation
 
@@ -408,10 +464,12 @@ class WorldFrameOrientation(BaseModel):
         new_obj = self.__class__(**kwargs)
         return new_obj
 
-    def to_sdf(self, version: str = None) -> ET.Element:
-        if version is not None and version != self.__version__:
+    def to_sdf(self, version: str | None = None) -> ET.Element:
+        if self.__version__ is None and version is not None:
+            self.__version__ = version
+        elif version is not None and version != self.__version__:
             return self.to_version(version).to_sdf()
-        version = version or self.__version__
+        version = self.__version__ or version
         el = ET.Element("world_frame_orientation")
         if self.world_frame_orientation is not None:
             el.text = self.world_frame_orientation

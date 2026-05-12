@@ -23,7 +23,7 @@ if typing.TYPE_CHECKING:
 
 
 class Empty(BaseModel):
-    def __init__(self, sdf_version: str):
+    def __init__(self, sdf_version: str | None = None):
         self.__version__ = sdf_version
 
     def to_version(self, target_version: str) -> "Empty":
@@ -31,10 +31,12 @@ class Empty(BaseModel):
         new_obj = self.__class__(**kwargs)
         return new_obj
 
-    def to_sdf(self, version: str = None) -> ET.Element:
-        if version is not None and version != self.__version__:
+    def to_sdf(self, version: str | None = None) -> ET.Element:
+        if self.__version__ is None and version is not None:
+            self.__version__ = version
+        elif version is not None and version != self.__version__:
             return self.to_version(version).to_sdf()
-        version = version or self.__version__
+        version = self.__version__ or version
         el = ET.Element("empty")
         return el
 
@@ -46,7 +48,7 @@ class Empty(BaseModel):
 class Geometry(BaseModel):
     def __init__(
         self,
-        sdf_version: str,
+        sdf_version: str | None = None,
         box: "Box" = None,
         capsule: "Capsule" = None,
         cone: "Cone" = None,
@@ -73,6 +75,66 @@ class Geometry(BaseModel):
         self.plane = plane
         self.polyline = polyline
         self.sphere = sphere
+        if self.box is not None:
+            if getattr(self.box, '__version__', None) is None:
+                self.box.__version__ = self.__version__
+            elif getattr(self.box, '__version__', None) != self.__version__ and self.__version__ is not None:
+                self.box = self.box.to_version(self.__version__)
+        if self.capsule is not None:
+            if getattr(self.capsule, '__version__', None) is None:
+                self.capsule.__version__ = self.__version__
+            elif getattr(self.capsule, '__version__', None) != self.__version__ and self.__version__ is not None:
+                self.capsule = self.capsule.to_version(self.__version__)
+        if self.cone is not None:
+            if getattr(self.cone, '__version__', None) is None:
+                self.cone.__version__ = self.__version__
+            elif getattr(self.cone, '__version__', None) != self.__version__ and self.__version__ is not None:
+                self.cone = self.cone.to_version(self.__version__)
+        if self.cylinder is not None:
+            if getattr(self.cylinder, '__version__', None) is None:
+                self.cylinder.__version__ = self.__version__
+            elif getattr(self.cylinder, '__version__', None) != self.__version__ and self.__version__ is not None:
+                self.cylinder = self.cylinder.to_version(self.__version__)
+        if self.ellipsoid is not None:
+            if getattr(self.ellipsoid, '__version__', None) is None:
+                self.ellipsoid.__version__ = self.__version__
+            elif getattr(self.ellipsoid, '__version__', None) != self.__version__ and self.__version__ is not None:
+                self.ellipsoid = self.ellipsoid.to_version(self.__version__)
+        if self.empty is not None:
+            if getattr(self.empty, '__version__', None) is None:
+                self.empty.__version__ = self.__version__
+            elif getattr(self.empty, '__version__', None) != self.__version__ and self.__version__ is not None:
+                self.empty = self.empty.to_version(self.__version__)
+        if self.heightmap is not None:
+            if getattr(self.heightmap, '__version__', None) is None:
+                self.heightmap.__version__ = self.__version__
+            elif getattr(self.heightmap, '__version__', None) != self.__version__ and self.__version__ is not None:
+                self.heightmap = self.heightmap.to_version(self.__version__)
+        if self.image is not None:
+            if getattr(self.image, '__version__', None) is None:
+                self.image.__version__ = self.__version__
+            elif getattr(self.image, '__version__', None) != self.__version__ and self.__version__ is not None:
+                self.image = self.image.to_version(self.__version__)
+        if self.mesh is not None:
+            if getattr(self.mesh, '__version__', None) is None:
+                self.mesh.__version__ = self.__version__
+            elif getattr(self.mesh, '__version__', None) != self.__version__ and self.__version__ is not None:
+                self.mesh = self.mesh.to_version(self.__version__)
+        if self.plane is not None:
+            if getattr(self.plane, '__version__', None) is None:
+                self.plane.__version__ = self.__version__
+            elif getattr(self.plane, '__version__', None) != self.__version__ and self.__version__ is not None:
+                self.plane = self.plane.to_version(self.__version__)
+        if self.polyline is not None:
+            if getattr(self.polyline, '__version__', None) is None:
+                self.polyline.__version__ = self.__version__
+            elif getattr(self.polyline, '__version__', None) != self.__version__ and self.__version__ is not None:
+                self.polyline = self.polyline.to_version(self.__version__)
+        if self.sphere is not None:
+            if getattr(self.sphere, '__version__', None) is None:
+                self.sphere.__version__ = self.__version__
+            elif getattr(self.sphere, '__version__', None) != self.__version__ and self.__version__ is not None:
+                self.sphere = self.sphere.to_version(self.__version__)
 
     def to_version(self, target_version: str) -> "Geometry":
         from ..elements.box import Box
@@ -112,7 +174,7 @@ class Geometry(BaseModel):
         new_obj = self.__class__(**kwargs)
         return new_obj
 
-    def to_sdf(self, version: str = None) -> ET.Element:
+    def to_sdf(self, version: str | None = None) -> ET.Element:
         from ..elements.box import Box
         from ..elements.capsule import Capsule
         from ..elements.cone import Cone
@@ -124,9 +186,11 @@ class Geometry(BaseModel):
         from ..elements.plane import Plane
         from ..elements.polyline import Polyline
         from ..elements.sphere import Sphere
-        if version is not None and version != self.__version__:
+        if self.__version__ is None and version is not None:
+            self.__version__ = version
+        elif version is not None and version != self.__version__:
             return self.to_version(version).to_sdf()
-        version = version or self.__version__
+        version = self.__version__ or version
         el = ET.Element("geometry")
         if self.box is not None:
             el.append(self.box.to_sdf(version))

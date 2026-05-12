@@ -45,7 +45,7 @@ def _parse_double(raw: str) -> float | SDFError:
 
 
 class AttachSteps(BaseModel):
-    def __init__(self, sdf_version: str, attach_steps: int = 20):
+    def __init__(self, sdf_version: str | None = None, attach_steps: int = 20):
         self.__version__ = sdf_version
         self.attach_steps = attach_steps
 
@@ -57,10 +57,12 @@ class AttachSteps(BaseModel):
         new_obj = self.__class__(**kwargs)
         return new_obj
 
-    def to_sdf(self, version: str = None) -> ET.Element:
-        if version is not None and version != self.__version__:
+    def to_sdf(self, version: str | None = None) -> ET.Element:
+        if self.__version__ is None and version is not None:
+            self.__version__ = version
+        elif version is not None and version != self.__version__:
             return self.to_version(version).to_sdf()
-        version = version or self.__version__
+        version = self.__version__ or version
         el = ET.Element("attach_steps")
         if self.attach_steps is not None:
             el.text = str(self.attach_steps)
@@ -79,7 +81,7 @@ class AttachSteps(BaseModel):
 
 
 class DetachSteps(BaseModel):
-    def __init__(self, sdf_version: str, detach_steps: int = 40):
+    def __init__(self, sdf_version: str | None = None, detach_steps: int = 40):
         self.__version__ = sdf_version
         self.detach_steps = detach_steps
 
@@ -91,10 +93,12 @@ class DetachSteps(BaseModel):
         new_obj = self.__class__(**kwargs)
         return new_obj
 
-    def to_sdf(self, version: str = None) -> ET.Element:
-        if version is not None and version != self.__version__:
+    def to_sdf(self, version: str | None = None) -> ET.Element:
+        if self.__version__ is None and version is not None:
+            self.__version__ = version
+        elif version is not None and version != self.__version__:
             return self.to_version(version).to_sdf()
-        version = version or self.__version__
+        version = self.__version__ or version
         el = ET.Element("detach_steps")
         if self.detach_steps is not None:
             el.text = str(self.detach_steps)
@@ -115,7 +119,7 @@ class DetachSteps(BaseModel):
 class GraspCheck(BaseModel):
     def __init__(
         self,
-        sdf_version: str,
+        sdf_version: str | None = None,
         attach_steps: int = 20,
         detach_steps: int = 40,
         min_contact_count: int = 2
@@ -139,10 +143,12 @@ class GraspCheck(BaseModel):
         new_obj = self.__class__(**kwargs)
         return new_obj
 
-    def to_sdf(self, version: str = None) -> ET.Element:
-        if version is not None and version != self.__version__:
+    def to_sdf(self, version: str | None = None) -> ET.Element:
+        if self.__version__ is None and version is not None:
+            self.__version__ = version
+        elif version is not None and version != self.__version__:
             return self.to_version(version).to_sdf()
-        version = version or self.__version__
+        version = self.__version__ or version
         el = ET.Element("grasp_check")
         if self.attach_steps is not None:
             el.set("attach_steps", str(self.attach_steps))
@@ -169,7 +175,7 @@ class GraspCheck(BaseModel):
 class Gripper(BaseModel):
     def __init__(
         self,
-        sdf_version: str,
+        sdf_version: str | None = None,
         grasp_check: "GraspCheck" = None,
         gripper_link: List["GripperLink"] = None,
         name: str = "__default__",
@@ -180,6 +186,21 @@ class Gripper(BaseModel):
         self.gripper_link = gripper_link or []
         self.name = name
         self.palm_link = palm_link
+        if self.grasp_check is not None:
+            if getattr(self.grasp_check, '__version__', None) is None:
+                self.grasp_check.__version__ = self.__version__
+            elif getattr(self.grasp_check, '__version__', None) != self.__version__ and self.__version__ is not None:
+                self.grasp_check = self.grasp_check.to_version(self.__version__)
+        for _i, _c in enumerate(self.gripper_link):
+            if getattr(_c, '__version__', None) is None:
+                _c.__version__ = self.__version__
+            elif getattr(_c, '__version__', None) != self.__version__ and self.__version__ is not None:
+                self.gripper_link[_i] = _c.to_version(self.__version__)
+        if self.palm_link is not None:
+            if getattr(self.palm_link, '__version__', None) is None:
+                self.palm_link.__version__ = self.__version__
+            elif getattr(self.palm_link, '__version__', None) != self.__version__ and self.__version__ is not None:
+                self.palm_link = self.palm_link.to_version(self.__version__)
 
     def to_version(self, target_version: str) -> "Gripper":
         kwargs = {"sdf_version": target_version}
@@ -190,10 +211,12 @@ class Gripper(BaseModel):
         new_obj = self.__class__(**kwargs)
         return new_obj
 
-    def to_sdf(self, version: str = None) -> ET.Element:
-        if version is not None and version != self.__version__:
+    def to_sdf(self, version: str | None = None) -> ET.Element:
+        if self.__version__ is None and version is not None:
+            self.__version__ = version
+        elif version is not None and version != self.__version__:
             return self.to_version(version).to_sdf()
-        version = version or self.__version__
+        version = self.__version__ or version
         el = ET.Element("gripper")
         if self.grasp_check is not None:
             el.append(self.grasp_check.to_sdf(version))
@@ -236,7 +259,7 @@ class Gripper(BaseModel):
 
 
 class GripperLink(BaseModel):
-    def __init__(self, sdf_version: str, gripper_link: str = "__default__"):
+    def __init__(self, sdf_version: str | None = None, gripper_link: str = "__default__"):
         self.__version__ = sdf_version
         self.gripper_link = gripper_link
 
@@ -246,10 +269,12 @@ class GripperLink(BaseModel):
         new_obj = self.__class__(**kwargs)
         return new_obj
 
-    def to_sdf(self, version: str = None) -> ET.Element:
-        if version is not None and version != self.__version__:
+    def to_sdf(self, version: str | None = None) -> ET.Element:
+        if self.__version__ is None and version is not None:
+            self.__version__ = version
+        elif version is not None and version != self.__version__:
             return self.to_version(version).to_sdf()
-        version = version or self.__version__
+        version = self.__version__ or version
         el = ET.Element("gripper_link")
         if self.gripper_link is not None:
             el.text = self.gripper_link
@@ -265,7 +290,7 @@ class GripperLink(BaseModel):
 
 
 class MinContactCount(BaseModel):
-    def __init__(self, sdf_version: str, min_contact_count: int = 2):
+    def __init__(self, sdf_version: str | None = None, min_contact_count: int = 2):
         self.__version__ = sdf_version
         self.min_contact_count = min_contact_count
 
@@ -277,10 +302,12 @@ class MinContactCount(BaseModel):
         new_obj = self.__class__(**kwargs)
         return new_obj
 
-    def to_sdf(self, version: str = None) -> ET.Element:
-        if version is not None and version != self.__version__:
+    def to_sdf(self, version: str | None = None) -> ET.Element:
+        if self.__version__ is None and version is not None:
+            self.__version__ = version
+        elif version is not None and version != self.__version__:
             return self.to_version(version).to_sdf()
-        version = version or self.__version__
+        version = self.__version__ or version
         el = ET.Element("min_contact_count")
         if self.min_contact_count is not None:
             el.text = str(self.min_contact_count)
@@ -299,7 +326,7 @@ class MinContactCount(BaseModel):
 
 
 class PalmLink(BaseModel):
-    def __init__(self, sdf_version: str, palm_link: str = "__default__"):
+    def __init__(self, sdf_version: str | None = None, palm_link: str = "__default__"):
         self.__version__ = sdf_version
         self.palm_link = palm_link
 
@@ -309,10 +336,12 @@ class PalmLink(BaseModel):
         new_obj = self.__class__(**kwargs)
         return new_obj
 
-    def to_sdf(self, version: str = None) -> ET.Element:
-        if version is not None and version != self.__version__:
+    def to_sdf(self, version: str | None = None) -> ET.Element:
+        if self.__version__ is None and version is not None:
+            self.__version__ = version
+        elif version is not None and version != self.__version__:
             return self.to_version(version).to_sdf()
-        version = version or self.__version__
+        version = self.__version__ or version
         el = ET.Element("palm_link")
         if self.palm_link is not None:
             el.text = self.palm_link

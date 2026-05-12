@@ -53,7 +53,7 @@ def _parse_double(raw: str) -> float | SDFError:
 
 
 class CastShadows(BaseModel):
-    def __init__(self, sdf_version: str, cast_shadows: bool = True):
+    def __init__(self, sdf_version: str | None = None, cast_shadows: bool = True):
         self.__version__ = sdf_version
         self.cast_shadows = cast_shadows
 
@@ -65,10 +65,12 @@ class CastShadows(BaseModel):
         new_obj = self.__class__(**kwargs)
         return new_obj
 
-    def to_sdf(self, version: str = None) -> ET.Element:
-        if version is not None and version != self.__version__:
+    def to_sdf(self, version: str | None = None) -> ET.Element:
+        if self.__version__ is None and version is not None:
+            self.__version__ = version
+        elif version is not None and version != self.__version__:
             return self.to_version(version).to_sdf()
-        version = version or self.__version__
+        version = self.__version__ or version
         el = ET.Element("cast_shadows")
         if self.cast_shadows is not None:
             el.text = str(self.cast_shadows).lower()
@@ -87,7 +89,7 @@ class CastShadows(BaseModel):
 
 
 class LaserRetro(BaseModel):
-    def __init__(self, sdf_version: str, laser_retro: float = 0.0):
+    def __init__(self, sdf_version: str | None = None, laser_retro: float = 0.0):
         self.__version__ = sdf_version
         self.laser_retro = laser_retro
 
@@ -99,10 +101,12 @@ class LaserRetro(BaseModel):
         new_obj = self.__class__(**kwargs)
         return new_obj
 
-    def to_sdf(self, version: str = None) -> ET.Element:
-        if version is not None and version != self.__version__:
+    def to_sdf(self, version: str | None = None) -> ET.Element:
+        if self.__version__ is None and version is not None:
+            self.__version__ = version
+        elif version is not None and version != self.__version__:
             return self.to_version(version).to_sdf()
-        version = version or self.__version__
+        version = self.__version__ or version
         el = ET.Element("laser_retro")
         if self.laser_retro is not None:
             el.text = str(self.laser_retro)
@@ -121,7 +125,7 @@ class LaserRetro(BaseModel):
 
 
 class Layer(BaseModel):
-    def __init__(self, sdf_version: str, layer: int = 0):
+    def __init__(self, sdf_version: str | None = None, layer: int = 0):
         self.__version__ = sdf_version
         self.layer = layer
 
@@ -131,10 +135,12 @@ class Layer(BaseModel):
         new_obj = self.__class__(**kwargs)
         return new_obj
 
-    def to_sdf(self, version: str = None) -> ET.Element:
-        if version is not None and version != self.__version__:
+    def to_sdf(self, version: str | None = None) -> ET.Element:
+        if self.__version__ is None and version is not None:
+            self.__version__ = version
+        elif version is not None and version != self.__version__:
             return self.to_version(version).to_sdf()
-        version = version or self.__version__
+        version = self.__version__ or version
         el = ET.Element("layer")
         if self.layer is not None:
             el.text = str(self.layer)
@@ -150,9 +156,14 @@ class Layer(BaseModel):
 
 
 class Meta(BaseModel):
-    def __init__(self, sdf_version: str, layer: "Layer" = None):
+    def __init__(self, sdf_version: str | None = None, layer: "Layer" = None):
         self.__version__ = sdf_version
         self.layer = layer
+        if self.layer is not None:
+            if getattr(self.layer, '__version__', None) is None:
+                self.layer.__version__ = self.__version__
+            elif getattr(self.layer, '__version__', None) != self.__version__ and self.__version__ is not None:
+                self.layer = self.layer.to_version(self.__version__)
 
     def to_version(self, target_version: str) -> "Meta":
         kwargs = {"sdf_version": target_version}
@@ -160,10 +171,12 @@ class Meta(BaseModel):
         new_obj = self.__class__(**kwargs)
         return new_obj
 
-    def to_sdf(self, version: str = None) -> ET.Element:
-        if version is not None and version != self.__version__:
+    def to_sdf(self, version: str | None = None) -> ET.Element:
+        if self.__version__ is None and version is not None:
+            self.__version__ = version
+        elif version is not None and version != self.__version__:
             return self.to_version(version).to_sdf()
-        version = version or self.__version__
+        version = self.__version__ or version
         el = ET.Element("meta")
         if self.layer is not None:
             el.append(self.layer.to_sdf(version))
@@ -183,10 +196,10 @@ class Meta(BaseModel):
 
 
 class Origin(BaseModel):
-    def __init__(self, sdf_version: str, pose: _SDFPose = None):
+    def __init__(self, sdf_version: str | None = None, pose: _SDFPose = None):
         self.__version__ = sdf_version
         if pose is None:
-            pose = _SDFPose.from_sdf("0 0 0 0 0 0")
+            pose = _SDFPose.from_sdf("0 0 0 0 0 0", version=sdf_version)
         self.pose = pose
 
     def to_version(self, target_version: str) -> "Origin":
@@ -195,13 +208,15 @@ class Origin(BaseModel):
         new_obj = self.__class__(**kwargs)
         return new_obj
 
-    def to_sdf(self, version: str = None) -> ET.Element:
-        if version is not None and version != self.__version__:
+    def to_sdf(self, version: str | None = None) -> ET.Element:
+        if self.__version__ is None and version is not None:
+            self.__version__ = version
+        elif version is not None and version != self.__version__:
             return self.to_version(version).to_sdf()
-        version = version or self.__version__
+        version = self.__version__ or version
         el = ET.Element("origin")
         if self.pose is not None:
-            el.set("pose", self.pose.to_sdf())
+            el.set("pose", self.pose.to_sdf(version))
         return el
 
     @classmethod
@@ -213,7 +228,7 @@ class Origin(BaseModel):
 
 
 class Transparency(BaseModel):
-    def __init__(self, sdf_version: str, transparency: float = 0.0):
+    def __init__(self, sdf_version: str | None = None, transparency: float = 0.0):
         self.__version__ = sdf_version
         self.transparency = transparency
 
@@ -225,10 +240,12 @@ class Transparency(BaseModel):
         new_obj = self.__class__(**kwargs)
         return new_obj
 
-    def to_sdf(self, version: str = None) -> ET.Element:
-        if version is not None and version != self.__version__:
+    def to_sdf(self, version: str | None = None) -> ET.Element:
+        if self.__version__ is None and version is not None:
+            self.__version__ = version
+        elif version is not None and version != self.__version__:
             return self.to_version(version).to_sdf()
-        version = version or self.__version__
+        version = self.__version__ or version
         el = ET.Element("transparency")
         if self.transparency is not None:
             el.text = str(self.transparency)
@@ -247,7 +264,7 @@ class Transparency(BaseModel):
 
 
 class VisibilityFlags(BaseModel):
-    def __init__(self, sdf_version: str, visibility_flags: int = 4294967295):
+    def __init__(self, sdf_version: str | None = None, visibility_flags: int = 4294967295):
         self.__version__ = sdf_version
         self.visibility_flags = visibility_flags
 
@@ -259,10 +276,12 @@ class VisibilityFlags(BaseModel):
         new_obj = self.__class__(**kwargs)
         return new_obj
 
-    def to_sdf(self, version: str = None) -> ET.Element:
-        if version is not None and version != self.__version__:
+    def to_sdf(self, version: str | None = None) -> ET.Element:
+        if self.__version__ is None and version is not None:
+            self.__version__ = version
+        elif version is not None and version != self.__version__:
             return self.to_version(version).to_sdf()
-        version = version or self.__version__
+        version = self.__version__ or version
         el = ET.Element("visibility_flags")
         if self.visibility_flags is not None:
             el.text = str(self.visibility_flags)
@@ -283,7 +302,7 @@ class VisibilityFlags(BaseModel):
 class Visual(BaseModel):
     def __init__(
         self,
-        sdf_version: str,
+        sdf_version: str | None = None,
         cast_shadows: bool = True,
         frame: List["Frame"] = None,
         geometry: "Geometry" = None,
@@ -310,6 +329,46 @@ class Visual(BaseModel):
         self.pose = pose
         self.transparency = transparency
         self.visibility_flags = visibility_flags
+        for _i, _c in enumerate(self.frame):
+            if getattr(_c, '__version__', None) is None:
+                _c.__version__ = self.__version__
+            elif getattr(_c, '__version__', None) != self.__version__ and self.__version__ is not None:
+                self.frame[_i] = _c.to_version(self.__version__)
+        if self.geometry is not None:
+            if getattr(self.geometry, '__version__', None) is None:
+                self.geometry.__version__ = self.__version__
+            elif getattr(self.geometry, '__version__', None) != self.__version__ and self.__version__ is not None:
+                self.geometry = self.geometry.to_version(self.__version__)
+        if self.material is not None:
+            if getattr(self.material, '__version__', None) is None:
+                self.material.__version__ = self.__version__
+            elif getattr(self.material, '__version__', None) != self.__version__ and self.__version__ is not None:
+                self.material = self.material.to_version(self.__version__)
+        if self.meta is not None:
+            if getattr(self.meta, '__version__', None) is None:
+                self.meta.__version__ = self.__version__
+            elif getattr(self.meta, '__version__', None) != self.__version__ and self.__version__ is not None:
+                self.meta = self.meta.to_version(self.__version__)
+        if self.origin is not None:
+            if getattr(self.origin, '__version__', None) is None:
+                self.origin.__version__ = self.__version__
+            elif getattr(self.origin, '__version__', None) != self.__version__ and self.__version__ is not None:
+                self.origin = self.origin.to_version(self.__version__)
+        for _i, _c in enumerate(self.plugin):
+            if getattr(_c, '__version__', None) is None:
+                _c.__version__ = self.__version__
+            elif getattr(_c, '__version__', None) != self.__version__ and self.__version__ is not None:
+                self.plugin[_i] = _c.to_version(self.__version__)
+        if self.pose is not None:
+            if getattr(self.pose, '__version__', None) is None:
+                self.pose.__version__ = self.__version__
+            elif getattr(self.pose, '__version__', None) != self.__version__ and self.__version__ is not None:
+                self.pose = self.pose.to_version(self.__version__)
+        if self.visibility_flags is not None:
+            if getattr(self.visibility_flags, '__version__', None) is None:
+                self.visibility_flags.__version__ = self.__version__
+            elif getattr(self.visibility_flags, '__version__', None) != self.__version__ and self.__version__ is not None:
+                self.visibility_flags = self.visibility_flags.to_version(self.__version__)
 
     def to_version(self, target_version: str) -> "Visual":
         from ..elements.frame import Frame
@@ -353,15 +412,17 @@ class Visual(BaseModel):
         new_obj = self.__class__(**kwargs)
         return new_obj
 
-    def to_sdf(self, version: str = None) -> ET.Element:
+    def to_sdf(self, version: str | None = None) -> ET.Element:
         from ..elements.frame import Frame
         from ..elements.geometry import Geometry
         from ..elements.material import Material
         from ..elements.plugin import Plugin
         from ..elements.pose import Pose
-        if version is not None and version != self.__version__:
+        if self.__version__ is None and version is not None:
+            self.__version__ = version
+        elif version is not None and version != self.__version__:
             return self.to_version(version).to_sdf()
-        version = version or self.__version__
+        version = self.__version__ or version
         el = ET.Element("visual")
         if self.cast_shadows is not None:
             el.set("cast_shadows", str(self.cast_shadows).lower())

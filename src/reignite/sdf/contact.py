@@ -9,7 +9,12 @@ from ..utils.errors import SDFError
 
 
 class Collision(BaseModel):
-    def __init__(self, sdf_version: str, collision: str = "__default__", name: str = "__default__"):
+    def __init__(
+        self,
+        sdf_version: str | None = None,
+        collision: str = "__default__",
+        name: str = "__default__"
+    ):
         self.__version__ = sdf_version
         self.collision = collision
         self.name = name
@@ -23,10 +28,12 @@ class Collision(BaseModel):
         new_obj = self.__class__(**kwargs)
         return new_obj
 
-    def to_sdf(self, version: str = None) -> ET.Element:
-        if version is not None and version != self.__version__:
+    def to_sdf(self, version: str | None = None) -> ET.Element:
+        if self.__version__ is None and version is not None:
+            self.__version__ = version
+        elif version is not None and version != self.__version__:
             return self.to_version(version).to_sdf()
-        version = version or self.__version__
+        version = self.__version__ or version
         el = ET.Element("collision")
         if self.collision is not None:
             el.text = self.collision
@@ -47,10 +54,25 @@ class Collision(BaseModel):
 
 
 class Contact(BaseModel):
-    def __init__(self, sdf_version: str, collision: "Collision" = None, topic: "Topic" = None):
+    def __init__(
+        self,
+        sdf_version: str | None = None,
+        collision: "Collision" = None,
+        topic: "Topic" = None
+    ):
         self.__version__ = sdf_version
         self.collision = collision
         self.topic = topic
+        if self.collision is not None:
+            if getattr(self.collision, '__version__', None) is None:
+                self.collision.__version__ = self.__version__
+            elif getattr(self.collision, '__version__', None) != self.__version__ and self.__version__ is not None:
+                self.collision = self.collision.to_version(self.__version__)
+        if self.topic is not None:
+            if getattr(self.topic, '__version__', None) is None:
+                self.topic.__version__ = self.__version__
+            elif getattr(self.topic, '__version__', None) != self.__version__ and self.__version__ is not None:
+                self.topic = self.topic.to_version(self.__version__)
 
     def to_version(self, target_version: str) -> "Contact":
         kwargs = {"sdf_version": target_version}
@@ -59,10 +81,12 @@ class Contact(BaseModel):
         new_obj = self.__class__(**kwargs)
         return new_obj
 
-    def to_sdf(self, version: str = None) -> ET.Element:
-        if version is not None and version != self.__version__:
+    def to_sdf(self, version: str | None = None) -> ET.Element:
+        if self.__version__ is None and version is not None:
+            self.__version__ = version
+        elif version is not None and version != self.__version__:
             return self.to_version(version).to_sdf()
-        version = version or self.__version__
+        version = self.__version__ or version
         el = ET.Element("contact")
         if self.collision is not None:
             el.append(self.collision.to_sdf(version))
@@ -92,7 +116,7 @@ class Contact(BaseModel):
 
 
 class Topic(BaseModel):
-    def __init__(self, sdf_version: str, topic: str = "__default_topic__"):
+    def __init__(self, sdf_version: str | None = None, topic: str = "__default_topic__"):
         self.__version__ = sdf_version
         self.topic = topic
 
@@ -102,10 +126,12 @@ class Topic(BaseModel):
         new_obj = self.__class__(**kwargs)
         return new_obj
 
-    def to_sdf(self, version: str = None) -> ET.Element:
-        if version is not None and version != self.__version__:
+    def to_sdf(self, version: str | None = None) -> ET.Element:
+        if self.__version__ is None and version is not None:
+            self.__version__ = version
+        elif version is not None and version != self.__version__:
             return self.to_version(version).to_sdf()
-        version = version or self.__version__
+        version = self.__version__ or version
         el = ET.Element("topic")
         if self.topic is not None:
             el.text = self.topic

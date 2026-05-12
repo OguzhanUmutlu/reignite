@@ -42,10 +42,20 @@ def _parse_double(raw: str) -> float | SDFError:
 
 
 class Battery(BaseModel):
-    def __init__(self, sdf_version: str, name: str = "__default__", voltage: "Voltage" = None):
+    def __init__(
+        self,
+        sdf_version: str | None = None,
+        name: str = "__default__",
+        voltage: "Voltage" = None
+    ):
         self.__version__ = sdf_version
         self.name = name
         self.voltage = voltage
+        if self.voltage is not None:
+            if getattr(self.voltage, '__version__', None) is None:
+                self.voltage.__version__ = self.__version__
+            elif getattr(self.voltage, '__version__', None) != self.__version__ and self.__version__ is not None:
+                self.voltage = self.voltage.to_version(self.__version__)
 
     def to_version(self, target_version: str) -> "Battery":
         kwargs = {"sdf_version": target_version}
@@ -54,10 +64,12 @@ class Battery(BaseModel):
         new_obj = self.__class__(**kwargs)
         return new_obj
 
-    def to_sdf(self, version: str = None) -> ET.Element:
-        if version is not None and version != self.__version__:
+    def to_sdf(self, version: str | None = None) -> ET.Element:
+        if self.__version__ is None and version is not None:
+            self.__version__ = version
+        elif version is not None and version != self.__version__:
             return self.to_version(version).to_sdf()
-        version = version or self.__version__
+        version = self.__version__ or version
         el = ET.Element("battery")
         if self.name is not None:
             el.set("name", self.name)
@@ -82,7 +94,7 @@ class Battery(BaseModel):
 
 
 class Voltage(BaseModel):
-    def __init__(self, sdf_version: str, voltage: float = 0.0):
+    def __init__(self, sdf_version: str | None = None, voltage: float = 0.0):
         self.__version__ = sdf_version
         self.voltage = voltage
 
@@ -92,10 +104,12 @@ class Voltage(BaseModel):
         new_obj = self.__class__(**kwargs)
         return new_obj
 
-    def to_sdf(self, version: str = None) -> ET.Element:
-        if version is not None and version != self.__version__:
+    def to_sdf(self, version: str | None = None) -> ET.Element:
+        if self.__version__ is None and version is not None:
+            self.__version__ = version
+        elif version is not None and version != self.__version__:
             return self.to_version(version).to_sdf()
-        version = version or self.__version__
+        version = self.__version__ or version
         el = ET.Element("voltage")
         if self.voltage is not None:
             el.text = str(self.voltage)

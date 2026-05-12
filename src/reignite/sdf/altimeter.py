@@ -14,13 +14,23 @@ if typing.TYPE_CHECKING:
 class Altimeter(BaseModel):
     def __init__(
         self,
-        sdf_version: str,
+        sdf_version: str | None = None,
         vertical_position: "VerticalPosition" = None,
         vertical_velocity: "VerticalVelocity" = None
     ):
         self.__version__ = sdf_version
         self.vertical_position = vertical_position
         self.vertical_velocity = vertical_velocity
+        if self.vertical_position is not None:
+            if getattr(self.vertical_position, '__version__', None) is None:
+                self.vertical_position.__version__ = self.__version__
+            elif getattr(self.vertical_position, '__version__', None) != self.__version__ and self.__version__ is not None:
+                self.vertical_position = self.vertical_position.to_version(self.__version__)
+        if self.vertical_velocity is not None:
+            if getattr(self.vertical_velocity, '__version__', None) is None:
+                self.vertical_velocity.__version__ = self.__version__
+            elif getattr(self.vertical_velocity, '__version__', None) != self.__version__ and self.__version__ is not None:
+                self.vertical_velocity = self.vertical_velocity.to_version(self.__version__)
 
     def to_version(self, target_version: str) -> "Altimeter":
         kwargs = {"sdf_version": target_version}
@@ -29,10 +39,12 @@ class Altimeter(BaseModel):
         new_obj = self.__class__(**kwargs)
         return new_obj
 
-    def to_sdf(self, version: str = None) -> ET.Element:
-        if version is not None and version != self.__version__:
+    def to_sdf(self, version: str | None = None) -> ET.Element:
+        if self.__version__ is None and version is not None:
+            self.__version__ = version
+        elif version is not None and version != self.__version__:
             return self.to_version(version).to_sdf()
-        version = version or self.__version__
+        version = self.__version__ or version
         el = ET.Element("altimeter")
         if self.vertical_position is not None:
             el.append(self.vertical_position.to_sdf(version))
@@ -62,9 +74,14 @@ class Altimeter(BaseModel):
 
 
 class VerticalPosition(BaseModel):
-    def __init__(self, sdf_version: str, noise: "Noise" = None):
+    def __init__(self, sdf_version: str | None = None, noise: "Noise" = None):
         self.__version__ = sdf_version
         self.noise = noise
+        if self.noise is not None:
+            if getattr(self.noise, '__version__', None) is None:
+                self.noise.__version__ = self.__version__
+            elif getattr(self.noise, '__version__', None) != self.__version__ and self.__version__ is not None:
+                self.noise = self.noise.to_version(self.__version__)
 
     def to_version(self, target_version: str) -> "VerticalPosition":
         from ..elements.noise import Noise
@@ -73,11 +90,13 @@ class VerticalPosition(BaseModel):
         new_obj = self.__class__(**kwargs)
         return new_obj
 
-    def to_sdf(self, version: str = None) -> ET.Element:
+    def to_sdf(self, version: str | None = None) -> ET.Element:
         from ..elements.noise import Noise
-        if version is not None and version != self.__version__:
+        if self.__version__ is None and version is not None:
+            self.__version__ = version
+        elif version is not None and version != self.__version__:
             return self.to_version(version).to_sdf()
-        version = version or self.__version__
+        version = self.__version__ or version
         el = ET.Element("vertical_position")
         if self.noise is None:
             self.noise = Noise(sdf_version=version)
@@ -103,9 +122,14 @@ class VerticalPosition(BaseModel):
 
 
 class VerticalVelocity(BaseModel):
-    def __init__(self, sdf_version: str, noise: "Noise" = None):
+    def __init__(self, sdf_version: str | None = None, noise: "Noise" = None):
         self.__version__ = sdf_version
         self.noise = noise
+        if self.noise is not None:
+            if getattr(self.noise, '__version__', None) is None:
+                self.noise.__version__ = self.__version__
+            elif getattr(self.noise, '__version__', None) != self.__version__ and self.__version__ is not None:
+                self.noise = self.noise.to_version(self.__version__)
 
     def to_version(self, target_version: str) -> "VerticalVelocity":
         from ..elements.noise import Noise
@@ -114,11 +138,13 @@ class VerticalVelocity(BaseModel):
         new_obj = self.__class__(**kwargs)
         return new_obj
 
-    def to_sdf(self, version: str = None) -> ET.Element:
+    def to_sdf(self, version: str | None = None) -> ET.Element:
         from ..elements.noise import Noise
-        if version is not None and version != self.__version__:
+        if self.__version__ is None and version is not None:
+            self.__version__ = version
+        elif version is not None and version != self.__version__:
             return self.to_version(version).to_sdf()
-        version = version or self.__version__
+        version = self.__version__ or version
         el = ET.Element("vertical_velocity")
         if self.noise is None:
             self.noise = Noise(sdf_version=version)

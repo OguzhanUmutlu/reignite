@@ -48,10 +48,10 @@ def _parse_double(raw: str) -> float | SDFError:
 
 
 class ColorEnd(BaseModel):
-    def __init__(self, sdf_version: str, color_end: _SDFColor = None):
+    def __init__(self, sdf_version: str | None = None, color_end: _SDFColor = None):
         self.__version__ = sdf_version
         if color_end is None:
-            color_end = _SDFColor.from_sdf("1 1 1 1")
+            color_end = _SDFColor.from_sdf("1 1 1 1", version=sdf_version)
         self.color_end = color_end
 
     def to_version(self, target_version: str) -> "ColorEnd":
@@ -60,13 +60,15 @@ class ColorEnd(BaseModel):
         new_obj = self.__class__(**kwargs)
         return new_obj
 
-    def to_sdf(self, version: str = None) -> ET.Element:
-        if version is not None and version != self.__version__:
+    def to_sdf(self, version: str | None = None) -> ET.Element:
+        if self.__version__ is None and version is not None:
+            self.__version__ = version
+        elif version is not None and version != self.__version__:
             return self.to_version(version).to_sdf()
-        version = version or self.__version__
+        version = self.__version__ or version
         el = ET.Element("color_end")
         if self.color_end is not None:
-            el.text = self.color_end.to_sdf()
+            el.text = self.color_end.to_sdf(version)
         return el
 
     @classmethod
@@ -79,7 +81,7 @@ class ColorEnd(BaseModel):
 
 
 class ColorRangeImage(BaseModel):
-    def __init__(self, sdf_version: str, color_range_image: str = ""):
+    def __init__(self, sdf_version: str | None = None, color_range_image: str = ""):
         self.__version__ = sdf_version
         self.color_range_image = color_range_image
 
@@ -89,10 +91,12 @@ class ColorRangeImage(BaseModel):
         new_obj = self.__class__(**kwargs)
         return new_obj
 
-    def to_sdf(self, version: str = None) -> ET.Element:
-        if version is not None and version != self.__version__:
+    def to_sdf(self, version: str | None = None) -> ET.Element:
+        if self.__version__ is None and version is not None:
+            self.__version__ = version
+        elif version is not None and version != self.__version__:
             return self.to_version(version).to_sdf()
-        version = version or self.__version__
+        version = self.__version__ or version
         el = ET.Element("color_range_image")
         if self.color_range_image is not None:
             el.text = self.color_range_image
@@ -108,10 +112,10 @@ class ColorRangeImage(BaseModel):
 
 
 class ColorStart(BaseModel):
-    def __init__(self, sdf_version: str, color_start: _SDFColor = None):
+    def __init__(self, sdf_version: str | None = None, color_start: _SDFColor = None):
         self.__version__ = sdf_version
         if color_start is None:
-            color_start = _SDFColor.from_sdf("1 1 1 1")
+            color_start = _SDFColor.from_sdf("1 1 1 1", version=sdf_version)
         self.color_start = color_start
 
     def to_version(self, target_version: str) -> "ColorStart":
@@ -120,13 +124,15 @@ class ColorStart(BaseModel):
         new_obj = self.__class__(**kwargs)
         return new_obj
 
-    def to_sdf(self, version: str = None) -> ET.Element:
-        if version is not None and version != self.__version__:
+    def to_sdf(self, version: str | None = None) -> ET.Element:
+        if self.__version__ is None and version is not None:
+            self.__version__ = version
+        elif version is not None and version != self.__version__:
             return self.to_version(version).to_sdf()
-        version = version or self.__version__
+        version = self.__version__ or version
         el = ET.Element("color_start")
         if self.color_start is not None:
-            el.text = self.color_start.to_sdf()
+            el.text = self.color_start.to_sdf(version)
         return el
 
     @classmethod
@@ -139,7 +145,7 @@ class ColorStart(BaseModel):
 
 
 class Duration(BaseModel):
-    def __init__(self, sdf_version: str, duration: float = 0):
+    def __init__(self, sdf_version: str | None = None, duration: float = 0):
         self.__version__ = sdf_version
         self.duration = duration
 
@@ -149,10 +155,12 @@ class Duration(BaseModel):
         new_obj = self.__class__(**kwargs)
         return new_obj
 
-    def to_sdf(self, version: str = None) -> ET.Element:
-        if version is not None and version != self.__version__:
+    def to_sdf(self, version: str | None = None) -> ET.Element:
+        if self.__version__ is None and version is not None:
+            self.__version__ = version
+        elif version is not None and version != self.__version__:
             return self.to_version(version).to_sdf()
-        version = version or self.__version__
+        version = self.__version__ or version
         el = ET.Element("duration")
         if self.duration is not None:
             el.text = str(self.duration)
@@ -168,7 +176,7 @@ class Duration(BaseModel):
 
 
 class Emitting(BaseModel):
-    def __init__(self, sdf_version: str, emitting: bool = True):
+    def __init__(self, sdf_version: str | None = None, emitting: bool = True):
         self.__version__ = sdf_version
         self.emitting = emitting
 
@@ -178,10 +186,12 @@ class Emitting(BaseModel):
         new_obj = self.__class__(**kwargs)
         return new_obj
 
-    def to_sdf(self, version: str = None) -> ET.Element:
-        if version is not None and version != self.__version__:
+    def to_sdf(self, version: str | None = None) -> ET.Element:
+        if self.__version__ is None and version is not None:
+            self.__version__ = version
+        elif version is not None and version != self.__version__:
             return self.to_version(version).to_sdf()
-        version = version or self.__version__
+        version = self.__version__ or version
         el = ET.Element("emitting")
         if self.emitting is not None:
             el.text = str(self.emitting).lower()
@@ -197,7 +207,7 @@ class Emitting(BaseModel):
 
 
 class Lifetime(BaseModel):
-    def __init__(self, sdf_version: str, lifetime: float = 5):
+    def __init__(self, sdf_version: str | None = None, lifetime: float = 5):
         self.__version__ = sdf_version
         self.lifetime = lifetime
 
@@ -207,10 +217,12 @@ class Lifetime(BaseModel):
         new_obj = self.__class__(**kwargs)
         return new_obj
 
-    def to_sdf(self, version: str = None) -> ET.Element:
-        if version is not None and version != self.__version__:
+    def to_sdf(self, version: str | None = None) -> ET.Element:
+        if self.__version__ is None and version is not None:
+            self.__version__ = version
+        elif version is not None and version != self.__version__:
             return self.to_version(version).to_sdf()
-        version = version or self.__version__
+        version = self.__version__ or version
         el = ET.Element("lifetime")
         if self.lifetime is not None:
             el.text = str(self.lifetime)
@@ -226,7 +238,7 @@ class Lifetime(BaseModel):
 
 
 class MaxVelocity(BaseModel):
-    def __init__(self, sdf_version: str, max_velocity: float = 1):
+    def __init__(self, sdf_version: str | None = None, max_velocity: float = 1):
         self.__version__ = sdf_version
         self.max_velocity = max_velocity
 
@@ -236,10 +248,12 @@ class MaxVelocity(BaseModel):
         new_obj = self.__class__(**kwargs)
         return new_obj
 
-    def to_sdf(self, version: str = None) -> ET.Element:
-        if version is not None and version != self.__version__:
+    def to_sdf(self, version: str | None = None) -> ET.Element:
+        if self.__version__ is None and version is not None:
+            self.__version__ = version
+        elif version is not None and version != self.__version__:
             return self.to_version(version).to_sdf()
-        version = version or self.__version__
+        version = self.__version__ or version
         el = ET.Element("max_velocity")
         if self.max_velocity is not None:
             el.text = str(self.max_velocity)
@@ -255,7 +269,7 @@ class MaxVelocity(BaseModel):
 
 
 class MinVelocity(BaseModel):
-    def __init__(self, sdf_version: str, min_velocity: float = 1):
+    def __init__(self, sdf_version: str | None = None, min_velocity: float = 1):
         self.__version__ = sdf_version
         self.min_velocity = min_velocity
 
@@ -265,10 +279,12 @@ class MinVelocity(BaseModel):
         new_obj = self.__class__(**kwargs)
         return new_obj
 
-    def to_sdf(self, version: str = None) -> ET.Element:
-        if version is not None and version != self.__version__:
+    def to_sdf(self, version: str | None = None) -> ET.Element:
+        if self.__version__ is None and version is not None:
+            self.__version__ = version
+        elif version is not None and version != self.__version__:
             return self.to_version(version).to_sdf()
-        version = version or self.__version__
+        version = self.__version__ or version
         el = ET.Element("min_velocity")
         if self.min_velocity is not None:
             el.text = str(self.min_velocity)
@@ -286,7 +302,7 @@ class MinVelocity(BaseModel):
 class ParticleEmitter(BaseModel):
     def __init__(
         self,
-        sdf_version: str,
+        sdf_version: str | None = None,
         color_end: "ColorEnd" = None,
         color_range_image: "ColorRangeImage" = None,
         color_start: "ColorStart" = None,
@@ -325,6 +341,86 @@ class ParticleEmitter(BaseModel):
         self.size = size
         self.topic = topic
         self.type = type
+        if self.color_end is not None:
+            if getattr(self.color_end, '__version__', None) is None:
+                self.color_end.__version__ = self.__version__
+            elif getattr(self.color_end, '__version__', None) != self.__version__ and self.__version__ is not None:
+                self.color_end = self.color_end.to_version(self.__version__)
+        if self.color_range_image is not None:
+            if getattr(self.color_range_image, '__version__', None) is None:
+                self.color_range_image.__version__ = self.__version__
+            elif getattr(self.color_range_image, '__version__', None) != self.__version__ and self.__version__ is not None:
+                self.color_range_image = self.color_range_image.to_version(self.__version__)
+        if self.color_start is not None:
+            if getattr(self.color_start, '__version__', None) is None:
+                self.color_start.__version__ = self.__version__
+            elif getattr(self.color_start, '__version__', None) != self.__version__ and self.__version__ is not None:
+                self.color_start = self.color_start.to_version(self.__version__)
+        if self.duration is not None:
+            if getattr(self.duration, '__version__', None) is None:
+                self.duration.__version__ = self.__version__
+            elif getattr(self.duration, '__version__', None) != self.__version__ and self.__version__ is not None:
+                self.duration = self.duration.to_version(self.__version__)
+        if self.emitting is not None:
+            if getattr(self.emitting, '__version__', None) is None:
+                self.emitting.__version__ = self.__version__
+            elif getattr(self.emitting, '__version__', None) != self.__version__ and self.__version__ is not None:
+                self.emitting = self.emitting.to_version(self.__version__)
+        if self.lifetime is not None:
+            if getattr(self.lifetime, '__version__', None) is None:
+                self.lifetime.__version__ = self.__version__
+            elif getattr(self.lifetime, '__version__', None) != self.__version__ and self.__version__ is not None:
+                self.lifetime = self.lifetime.to_version(self.__version__)
+        if self.material is not None:
+            if getattr(self.material, '__version__', None) is None:
+                self.material.__version__ = self.__version__
+            elif getattr(self.material, '__version__', None) != self.__version__ and self.__version__ is not None:
+                self.material = self.material.to_version(self.__version__)
+        if self.max_velocity is not None:
+            if getattr(self.max_velocity, '__version__', None) is None:
+                self.max_velocity.__version__ = self.__version__
+            elif getattr(self.max_velocity, '__version__', None) != self.__version__ and self.__version__ is not None:
+                self.max_velocity = self.max_velocity.to_version(self.__version__)
+        if self.min_velocity is not None:
+            if getattr(self.min_velocity, '__version__', None) is None:
+                self.min_velocity.__version__ = self.__version__
+            elif getattr(self.min_velocity, '__version__', None) != self.__version__ and self.__version__ is not None:
+                self.min_velocity = self.min_velocity.to_version(self.__version__)
+        if self.particle_scatter_ratio is not None:
+            if getattr(self.particle_scatter_ratio, '__version__', None) is None:
+                self.particle_scatter_ratio.__version__ = self.__version__
+            elif getattr(self.particle_scatter_ratio, '__version__', None) != self.__version__ and self.__version__ is not None:
+                self.particle_scatter_ratio = self.particle_scatter_ratio.to_version(self.__version__)
+        if self.particle_size is not None:
+            if getattr(self.particle_size, '__version__', None) is None:
+                self.particle_size.__version__ = self.__version__
+            elif getattr(self.particle_size, '__version__', None) != self.__version__ and self.__version__ is not None:
+                self.particle_size = self.particle_size.to_version(self.__version__)
+        if self.pose is not None:
+            if getattr(self.pose, '__version__', None) is None:
+                self.pose.__version__ = self.__version__
+            elif getattr(self.pose, '__version__', None) != self.__version__ and self.__version__ is not None:
+                self.pose = self.pose.to_version(self.__version__)
+        if self.rate is not None:
+            if getattr(self.rate, '__version__', None) is None:
+                self.rate.__version__ = self.__version__
+            elif getattr(self.rate, '__version__', None) != self.__version__ and self.__version__ is not None:
+                self.rate = self.rate.to_version(self.__version__)
+        if self.scale_rate is not None:
+            if getattr(self.scale_rate, '__version__', None) is None:
+                self.scale_rate.__version__ = self.__version__
+            elif getattr(self.scale_rate, '__version__', None) != self.__version__ and self.__version__ is not None:
+                self.scale_rate = self.scale_rate.to_version(self.__version__)
+        if self.size is not None:
+            if getattr(self.size, '__version__', None) is None:
+                self.size.__version__ = self.__version__
+            elif getattr(self.size, '__version__', None) != self.__version__ and self.__version__ is not None:
+                self.size = self.size.to_version(self.__version__)
+        if self.topic is not None:
+            if getattr(self.topic, '__version__', None) is None:
+                self.topic.__version__ = self.__version__
+            elif getattr(self.topic, '__version__', None) != self.__version__ and self.__version__ is not None:
+                self.topic = self.topic.to_version(self.__version__)
 
     def to_version(self, target_version: str) -> "ParticleEmitter":
         from ..elements.material import Material
@@ -351,12 +447,14 @@ class ParticleEmitter(BaseModel):
         new_obj = self.__class__(**kwargs)
         return new_obj
 
-    def to_sdf(self, version: str = None) -> ET.Element:
+    def to_sdf(self, version: str | None = None) -> ET.Element:
         from ..elements.material import Material
         from ..elements.pose import Pose
-        if version is not None and version != self.__version__:
+        if self.__version__ is None and version is not None:
+            self.__version__ = version
+        elif version is not None and version != self.__version__:
             return self.to_version(version).to_sdf()
-        version = version or self.__version__
+        version = self.__version__ or version
         el = ET.Element("particle_emitter")
         if self.color_end is not None:
             el.append(self.color_end.to_sdf(version))
@@ -538,7 +636,7 @@ class ParticleEmitter(BaseModel):
 
 
 class ParticleScatterRatio(BaseModel):
-    def __init__(self, sdf_version: str, particle_scatter_ratio: float = 0.65):
+    def __init__(self, sdf_version: str | None = None, particle_scatter_ratio: float = 0.65):
         self.__version__ = sdf_version
         self.particle_scatter_ratio = particle_scatter_ratio
 
@@ -548,10 +646,12 @@ class ParticleScatterRatio(BaseModel):
         new_obj = self.__class__(**kwargs)
         return new_obj
 
-    def to_sdf(self, version: str = None) -> ET.Element:
-        if version is not None and version != self.__version__:
+    def to_sdf(self, version: str | None = None) -> ET.Element:
+        if self.__version__ is None and version is not None:
+            self.__version__ = version
+        elif version is not None and version != self.__version__:
             return self.to_version(version).to_sdf()
-        version = version or self.__version__
+        version = self.__version__ or version
         el = ET.Element("particle_scatter_ratio")
         if self.particle_scatter_ratio is not None:
             el.text = str(self.particle_scatter_ratio)
@@ -567,10 +667,10 @@ class ParticleScatterRatio(BaseModel):
 
 
 class ParticleSize(BaseModel):
-    def __init__(self, sdf_version: str, particle_size: _SDFVector3 = None):
+    def __init__(self, sdf_version: str | None = None, particle_size: _SDFVector3 = None):
         self.__version__ = sdf_version
         if particle_size is None:
-            particle_size = _SDFVector3.from_sdf("1 1 1")
+            particle_size = _SDFVector3.from_sdf("1 1 1", version=sdf_version)
         self.particle_size = particle_size
 
     def to_version(self, target_version: str) -> "ParticleSize":
@@ -579,13 +679,15 @@ class ParticleSize(BaseModel):
         new_obj = self.__class__(**kwargs)
         return new_obj
 
-    def to_sdf(self, version: str = None) -> ET.Element:
-        if version is not None and version != self.__version__:
+    def to_sdf(self, version: str | None = None) -> ET.Element:
+        if self.__version__ is None and version is not None:
+            self.__version__ = version
+        elif version is not None and version != self.__version__:
             return self.to_version(version).to_sdf()
-        version = version or self.__version__
+        version = self.__version__ or version
         el = ET.Element("particle_size")
         if self.particle_size is not None:
-            el.text = self.particle_size.to_sdf()
+            el.text = self.particle_size.to_sdf(version)
         return el
 
     @classmethod
@@ -598,7 +700,7 @@ class ParticleSize(BaseModel):
 
 
 class Rate(BaseModel):
-    def __init__(self, sdf_version: str, rate: float = 10):
+    def __init__(self, sdf_version: str | None = None, rate: float = 10):
         self.__version__ = sdf_version
         self.rate = rate
 
@@ -608,10 +710,12 @@ class Rate(BaseModel):
         new_obj = self.__class__(**kwargs)
         return new_obj
 
-    def to_sdf(self, version: str = None) -> ET.Element:
-        if version is not None and version != self.__version__:
+    def to_sdf(self, version: str | None = None) -> ET.Element:
+        if self.__version__ is None and version is not None:
+            self.__version__ = version
+        elif version is not None and version != self.__version__:
             return self.to_version(version).to_sdf()
-        version = version or self.__version__
+        version = self.__version__ or version
         el = ET.Element("rate")
         if self.rate is not None:
             el.text = str(self.rate)
@@ -627,7 +731,7 @@ class Rate(BaseModel):
 
 
 class ScaleRate(BaseModel):
-    def __init__(self, sdf_version: str, scale_rate: float = 0):
+    def __init__(self, sdf_version: str | None = None, scale_rate: float = 0):
         self.__version__ = sdf_version
         self.scale_rate = scale_rate
 
@@ -637,10 +741,12 @@ class ScaleRate(BaseModel):
         new_obj = self.__class__(**kwargs)
         return new_obj
 
-    def to_sdf(self, version: str = None) -> ET.Element:
-        if version is not None and version != self.__version__:
+    def to_sdf(self, version: str | None = None) -> ET.Element:
+        if self.__version__ is None and version is not None:
+            self.__version__ = version
+        elif version is not None and version != self.__version__:
             return self.to_version(version).to_sdf()
-        version = version or self.__version__
+        version = self.__version__ or version
         el = ET.Element("scale_rate")
         if self.scale_rate is not None:
             el.text = str(self.scale_rate)
@@ -656,10 +762,10 @@ class ScaleRate(BaseModel):
 
 
 class Size(BaseModel):
-    def __init__(self, sdf_version: str, size: _SDFVector3 = None):
+    def __init__(self, sdf_version: str | None = None, size: _SDFVector3 = None):
         self.__version__ = sdf_version
         if size is None:
-            size = _SDFVector3.from_sdf("1 1 1")
+            size = _SDFVector3.from_sdf("1 1 1", version=sdf_version)
         self.size = size
 
     def to_version(self, target_version: str) -> "Size":
@@ -668,13 +774,15 @@ class Size(BaseModel):
         new_obj = self.__class__(**kwargs)
         return new_obj
 
-    def to_sdf(self, version: str = None) -> ET.Element:
-        if version is not None and version != self.__version__:
+    def to_sdf(self, version: str | None = None) -> ET.Element:
+        if self.__version__ is None and version is not None:
+            self.__version__ = version
+        elif version is not None and version != self.__version__:
             return self.to_version(version).to_sdf()
-        version = version or self.__version__
+        version = self.__version__ or version
         el = ET.Element("size")
         if self.size is not None:
-            el.text = self.size.to_sdf()
+            el.text = self.size.to_sdf(version)
         return el
 
     @classmethod
@@ -687,7 +795,7 @@ class Size(BaseModel):
 
 
 class Topic(BaseModel):
-    def __init__(self, sdf_version: str, topic: str = ""):
+    def __init__(self, sdf_version: str | None = None, topic: str = ""):
         self.__version__ = sdf_version
         self.topic = topic
 
@@ -697,10 +805,12 @@ class Topic(BaseModel):
         new_obj = self.__class__(**kwargs)
         return new_obj
 
-    def to_sdf(self, version: str = None) -> ET.Element:
-        if version is not None and version != self.__version__:
+    def to_sdf(self, version: str | None = None) -> ET.Element:
+        if self.__version__ is None and version is not None:
+            self.__version__ = version
+        elif version is not None and version != self.__version__:
             return self.to_version(version).to_sdf()
-        version = version or self.__version__
+        version = self.__version__ or version
         el = ET.Element("topic")
         if self.topic is not None:
             el.text = self.topic

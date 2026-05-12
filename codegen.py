@@ -93,7 +93,7 @@ def resolve_type(sdf_type: Optional[str]) -> tuple[str, str, str, str, Optional[
     return (
         alias,
         f"{alias}()",
-        "{val}.to_sdf()",
+        "{val}.to_sdf(version)",
         f"{alias}._from_sdf({{raw}}, version)",
         t,
     )
@@ -543,7 +543,7 @@ def _collect_classes(
             raw_default = _format_default(hint, schema_default)
             if mod:
                 default = "None"
-                init_default_expr = f"{hint}.from_sdf({raw_default})"
+                init_default_expr = f"{hint}.from_sdf({raw_default}, version=sdf_version)"
             else:
                 default = raw_default
         renames = {}
@@ -625,7 +625,7 @@ def _collect_classes(
                 raw_default = _format_default(hint, schema_default)
                 if mod:
                     default = "None"
-                    init_default_expr = f"{hint}.from_sdf({raw_default})"
+                    init_default_expr = f"{hint}.from_sdf({raw_default}, version=sdf_version)"
                 else:
                     default = raw_default
             renames = {}
@@ -712,14 +712,14 @@ def _render_class(spec: dict, file_external_imports: set[str]) -> str:
         block.append(f"    _MIGRATIONS = {migs}")
         block.append("")
 
-    init_params = ["self", "sdf_version: str"] + [
+    init_params = ["self", "sdf_version: str | None = None"] + [
         f"{p[0]}: {p[1]} = {p[2]}" for p in params
     ]
     sig = ", ".join(init_params)
     if len(f"    def __init__({sig}):") > 100:
         block.append("    def __init__(")
         block.append("        self,")
-        block.append("        sdf_version: str,")
+        block.append("        sdf_version: str | None = None,")
         for i, p in enumerate(params):
             comma = "," if i < len(params) - 1 else ""
             block.append(f"        {p[0]}: {p[1]} = {p[2]}{comma}")
@@ -727,22 +727,35 @@ def _render_class(spec: dict, file_external_imports: set[str]) -> str:
     else:
         block.append(f"    def __init__({sig}):")
 
-    if not params:
-        block.append("        self.__version__ = sdf_version")
-    else:
-        block.append("        self.__version__ = sdf_version")
-        for p in params:
-            py_name = p[0]
-            init_default_expr = p[10]
-            if init_default_expr:
-                block.append(f"        if {py_name} is None:")
-                block.append(f"            {py_name} = {init_default_expr}")
+    block.append("        self.__version__ = sdf_version")
+    for p in params:
+        py_name = p[0]
+        init_default_expr = p[10]
+        if init_default_expr:
+            block.append(f"        if {py_name} is None:")
+            block.append(f"            {py_name} = {init_default_expr}")
 
-        for p in params:
-            py_name, _, _, _, _, _, _, is_list, _, _, _, _, _, _, _, _ = p
-            block.append(
-                f"        self.{py_name} = {py_name}" + (" or []" if is_list else "")
-            )
+    for p in params:
+        py_name, _, _, _, _, _, _, is_list, _, _, _, _, _, _, _, _ = p
+        block.append(
+            f"        self.{py_name} = {py_name}" + (" or []" if is_list else "")
+        )
+
+    for p in params:
+        py_name, _, _, _, _, _, _, is_list, xml_kind, _, _, _, _, _, _, _ = p
+        if xml_kind == "child":
+            if is_list:
+                block.append(f"        for _i, _c in enumerate(self.{py_name}):")
+                block.append(f"            if getattr(_c, '__version__', None) is None:")
+                block.append(f"                _c.__version__ = self.__version__")
+                block.append(f"            elif getattr(_c, '__version__', None) != self.__version__ and self.__version__ is not None:")
+                block.append(f"                self.{py_name}[_i] = _c.to_version(self.__version__)")
+            else:
+                block.append(f"        if self.{py_name} is not None:")
+                block.append(f"            if getattr(self.{py_name}, '__version__', None) is None:")
+                block.append(f"                self.{py_name}.__version__ = self.__version__")
+                block.append(f"            elif getattr(self.{py_name}, '__version__', None) != self.__version__ and self.__version__ is not None:")
+                block.append(f"                self.{py_name} = self.{py_name}.to_version(self.__version__)")
 
     block.append("")
     block.append(f'    def to_version(self, target_version: str) -> "{class_name}":')
@@ -778,12 +791,14 @@ def _render_class(spec: dict, file_external_imports: set[str]) -> str:
     block.append("        return new_obj")
 
     block.append("")
-    block.append("    def to_sdf(self, version: str = None) -> ET.Element:")
+    block.append("    def to_sdf(self, version: str | None = None) -> ET.Element:")
     if local_import_lines:
         block.extend(local_import_lines)
-    block.append("        if version is not None and version != self.__version__:")
+    block.append("        if self.__version__ is None and version is not None:")
+    block.append("            self.__version__ = version")
+    block.append("        elif version is not None and version != self.__version__:")
     block.append("            return self.to_version(version).to_sdf()")
-    block.append("        version = version or self.__version__")
+    block.append("        version = self.__version__ or version")
     block.append(f'        el = ET.Element("{name}")')
     for p in params:
         py_name, _, _, _, to_expr, _, _, is_list, xml_kind, xml_name, _, renames, added_in, removed_in, is_required, required_history = p

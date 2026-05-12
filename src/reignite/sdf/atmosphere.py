@@ -44,7 +44,7 @@ def _parse_double(raw: str) -> float | SDFError:
 class Atmosphere(BaseModel):
     def __init__(
         self,
-        sdf_version: str,
+        sdf_version: str | None = None,
         pressure: "Pressure" = None,
         temperature: "Temperature" = None,
         temperature_gradient: "TemperatureGradient" = None,
@@ -55,6 +55,21 @@ class Atmosphere(BaseModel):
         self.temperature = temperature
         self.temperature_gradient = temperature_gradient
         self.type = type
+        if self.pressure is not None:
+            if getattr(self.pressure, '__version__', None) is None:
+                self.pressure.__version__ = self.__version__
+            elif getattr(self.pressure, '__version__', None) != self.__version__ and self.__version__ is not None:
+                self.pressure = self.pressure.to_version(self.__version__)
+        if self.temperature is not None:
+            if getattr(self.temperature, '__version__', None) is None:
+                self.temperature.__version__ = self.__version__
+            elif getattr(self.temperature, '__version__', None) != self.__version__ and self.__version__ is not None:
+                self.temperature = self.temperature.to_version(self.__version__)
+        if self.temperature_gradient is not None:
+            if getattr(self.temperature_gradient, '__version__', None) is None:
+                self.temperature_gradient.__version__ = self.__version__
+            elif getattr(self.temperature_gradient, '__version__', None) != self.__version__ and self.__version__ is not None:
+                self.temperature_gradient = self.temperature_gradient.to_version(self.__version__)
 
     def to_version(self, target_version: str) -> "Atmosphere":
         kwargs = {"sdf_version": target_version}
@@ -65,10 +80,12 @@ class Atmosphere(BaseModel):
         new_obj = self.__class__(**kwargs)
         return new_obj
 
-    def to_sdf(self, version: str = None) -> ET.Element:
-        if version is not None and version != self.__version__:
+    def to_sdf(self, version: str | None = None) -> ET.Element:
+        if self.__version__ is None and version is not None:
+            self.__version__ = version
+        elif version is not None and version != self.__version__:
             return self.to_version(version).to_sdf()
-        version = version or self.__version__
+        version = self.__version__ or version
         el = ET.Element("atmosphere")
         if self.pressure is not None:
             el.append(self.pressure.to_sdf(version))
@@ -113,7 +130,7 @@ class Atmosphere(BaseModel):
 
 
 class Pressure(BaseModel):
-    def __init__(self, sdf_version: str, pressure: float = 101325):
+    def __init__(self, sdf_version: str | None = None, pressure: float = 101325):
         self.__version__ = sdf_version
         self.pressure = pressure
 
@@ -123,10 +140,12 @@ class Pressure(BaseModel):
         new_obj = self.__class__(**kwargs)
         return new_obj
 
-    def to_sdf(self, version: str = None) -> ET.Element:
-        if version is not None and version != self.__version__:
+    def to_sdf(self, version: str | None = None) -> ET.Element:
+        if self.__version__ is None and version is not None:
+            self.__version__ = version
+        elif version is not None and version != self.__version__:
             return self.to_version(version).to_sdf()
-        version = version or self.__version__
+        version = self.__version__ or version
         el = ET.Element("pressure")
         if self.pressure is not None:
             el.text = str(self.pressure)
@@ -142,7 +161,7 @@ class Pressure(BaseModel):
 
 
 class Temperature(BaseModel):
-    def __init__(self, sdf_version: str, temperature: float = 288.15):
+    def __init__(self, sdf_version: str | None = None, temperature: float = 288.15):
         self.__version__ = sdf_version
         self.temperature = temperature
 
@@ -152,10 +171,12 @@ class Temperature(BaseModel):
         new_obj = self.__class__(**kwargs)
         return new_obj
 
-    def to_sdf(self, version: str = None) -> ET.Element:
-        if version is not None and version != self.__version__:
+    def to_sdf(self, version: str | None = None) -> ET.Element:
+        if self.__version__ is None and version is not None:
+            self.__version__ = version
+        elif version is not None and version != self.__version__:
             return self.to_version(version).to_sdf()
-        version = version or self.__version__
+        version = self.__version__ or version
         el = ET.Element("temperature")
         if self.temperature is not None:
             el.text = str(self.temperature)
@@ -171,7 +192,7 @@ class Temperature(BaseModel):
 
 
 class TemperatureGradient(BaseModel):
-    def __init__(self, sdf_version: str, temperature_gradient: float = -0.0065):
+    def __init__(self, sdf_version: str | None = None, temperature_gradient: float = -0.0065):
         self.__version__ = sdf_version
         self.temperature_gradient = temperature_gradient
 
@@ -181,10 +202,12 @@ class TemperatureGradient(BaseModel):
         new_obj = self.__class__(**kwargs)
         return new_obj
 
-    def to_sdf(self, version: str = None) -> ET.Element:
-        if version is not None and version != self.__version__:
+    def to_sdf(self, version: str | None = None) -> ET.Element:
+        if self.__version__ is None and version is not None:
+            self.__version__ = version
+        elif version is not None and version != self.__version__:
             return self.to_version(version).to_sdf()
-        version = version or self.__version__
+        version = self.__version__ or version
         el = ET.Element("temperature_gradient")
         if self.temperature_gradient is not None:
             el.text = str(self.temperature_gradient)
