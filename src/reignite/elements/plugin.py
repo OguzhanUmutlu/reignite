@@ -2,7 +2,7 @@ import os
 import xml.etree.ElementTree as ET
 from copy import deepcopy
 from pathlib import Path
-from typing import Optional, List, Union
+from typing import Optional, List
 
 from ..sdf.plugin import Plugin as _Base
 from ..utils.model import BaseModel
@@ -33,16 +33,16 @@ plugin_classes: dict[str, type] = {}
 
 
 class TextElement(BaseModel):
-    def __init__(self, name: str, text: str, **attributes):
+    def __init__(self, name: str, text: str, attributes: Optional[dict] = None):
         super().__init__(sdf_version=None)
         self.name = name
         self.text = text
-        self.attributes = attributes
+        self.attributes = attributes or dict()
 
     @classmethod
     def _from_sdf(cls, el: ET.Element, version: str):
         text = el.text.strip() if el.text else ""
-        return cls(name=el.tag, text=text, **el.attrib)
+        return cls(el.tag, text, el.attrib)
 
     def to_sdf(self, version: str = None) -> ET.Element:
         e = ET.Element(self.name, **self.attributes)
@@ -55,20 +55,20 @@ class TextElement(BaseModel):
 
 
 class ParentElement(BaseModel):
-    def __init__(self, name: str, *children: BaseModel, **attributes):
+    def __init__(self, name: str, children: List[BaseModel], attributes: Optional[dict] = None):
         super().__init__(sdf_version=None)
         self.name = name
-        self.attributes = attributes
-        self.children = list(children)
+        self.attributes = attributes or dict()
+        self.children = children
 
     @classmethod
     def _from_sdf(cls, el: ET.Element, version: str):
         children = [TextElement._from_sdf(c, version) if len(c) == 0 else ParentElement._from_sdf(c, version) for c in
                     el]
-        return cls(name=el.tag, *children, **el.attrib)
+        return cls(el.tag, children, el.attrib)
 
     def to_sdf(self, version: str = None) -> ET.Element:
-        e = ET.Element(self.name, **self.attributes)
+        e = ET.Element(self.name, self.attributes)
         for child in self.children:
             e.append(child.to_sdf(version))
         return e
