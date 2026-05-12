@@ -111,10 +111,10 @@ class Plugin(_Base):
         def _parse_et(e: ET.Element) -> BaseModel:
             if len(e) > 0:
                 children = [_parse_et(c) for c in e]
-                return ParentElement(e.tag, *children, **e.attrib)
+                return ParentElement(e.tag, children, e.attrib)
 
             text = e.text.strip() if e.text else ""
-            return TextElement(e.tag, text, **e.attrib)
+            return TextElement(e.tag, text, e.attrib)
 
         for c in el:
             if c.tag not in ("name", "filename"):
