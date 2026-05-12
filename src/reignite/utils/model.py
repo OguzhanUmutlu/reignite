@@ -4,7 +4,7 @@ from .errors import SDFError
 
 
 class BaseModel:
-    def __init__(self, sdf_version: str):
+    def __init__(self, sdf_version: str = None):
         self.__version__ = sdf_version
 
     @classmethod

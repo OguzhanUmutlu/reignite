@@ -5,6 +5,7 @@ from pathlib import Path
 from typing import Optional, List, Union
 
 from ..sdf.plugin import Plugin as _Base
+from ..utils.model import BaseModel
 
 
 def get_plugin_paths():
@@ -31,44 +32,56 @@ def find_plugin_binary(filename):
 plugin_classes: dict[str, type] = {}
 
 
-class PluginElement:
-    def __init__(self, name: str, **attributes):
+class TextElement(BaseModel):
+    def __init__(self, name: str, text: str, **attributes):
+        super().__init__(sdf_version=None)
         self.name = name
+        self.text = text
         self.attributes = attributes
 
-    def to_sdf(self) -> ET.Element:
-        raise NotImplementedError
+    @classmethod
+    def _from_sdf(cls, el: ET.Element, version: str):
+        text = el.text.strip() if el.text else ""
+        return cls(name=el.tag, text=text, **el.attrib)
 
-
-class TextElement(PluginElement):
-    def __init__(self, name: str, text: str, **attributes):
-        super().__init__(name, **attributes)
-        self.text = text
-
-    def to_sdf(self) -> ET.Element:
+    def to_sdf(self, version: str = None) -> ET.Element:
         e = ET.Element(self.name, **self.attributes)
         if self.text is not None:
             e.text = str(self.text)
         return e
 
+    def to_version(self, target_version: str) -> "BaseModel":
+        return self
 
-class ParentElement(PluginElement):
-    def __init__(self, name: str, *children: PluginElement, **attributes):
-        super().__init__(name, **attributes)
+
+class ParentElement(BaseModel):
+    def __init__(self, name: str, *children: BaseModel, **attributes):
+        super().__init__(sdf_version=None)
+        self.name = name
+        self.attributes = attributes
         self.children = list(children)
 
-    def to_sdf(self) -> ET.Element:
+    @classmethod
+    def _from_sdf(cls, el: ET.Element, version: str):
+        children = [TextElement._from_sdf(c, version) if len(c) == 0 else ParentElement._from_sdf(c, version) for c in
+                    el]
+        return cls(name=el.tag, *children, **el.attrib)
+
+    def to_sdf(self, version: str = None) -> ET.Element:
         e = ET.Element(self.name, **self.attributes)
         for child in self.children:
-            e.append(child.to_sdf())
+            e.append(child.to_sdf(version))
         return e
+
+    def to_version(self, target_version: str) -> "BaseModel":
+        return self
 
 
 class Plugin(_Base):
     def __init__(
             self,
             sdf_version: Optional[str] = None,
-            elements: Optional[List[Union[TextElement, ParentElement]]] = None,
+            elements: Optional[List[BaseModel]] = None,
             filename: str = "__default__",
             name: str = "__default__"
     ):
@@ -95,7 +108,7 @@ class Plugin(_Base):
     def _from_sdf(cls, el: ET.Element, version: str):
         elements = []
 
-        def _parse_et(e: ET.Element) -> PluginElement:
+        def _parse_et(e: ET.Element) -> BaseModel:
             if len(e) > 0:
                 children = [_parse_et(c) for c in e]
                 return ParentElement(e.tag, *children, **e.attrib)
