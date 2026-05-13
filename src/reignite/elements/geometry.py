@@ -9,14 +9,14 @@ from .mesh import Mesh
 from .plane import Plane
 from .polyline import Polyline
 from .sphere import Sphere
-from .._sdf.geometry import Geometry  # noqa: F401
+from .._sdf.geometry import Geometry
 from ..utils import Vector3, Vector2d
 
 
 class BoxGeometry(Geometry):
-    def __init__(self, size: Union[Vector3, float]):
+    def __init__(self, size: Union[Vector3, float], y: float = None, z: float = None):
         if isinstance(size, (int, float)):
-            size = Vector3(size, size, size)
+            size = Vector3(size, y if y is not None else size, z if z is not None else size)
         super().__init__(box=Box(size=size))
 
 
@@ -36,7 +36,9 @@ class CylinderGeometry(Geometry):
 
 
 class EllipsoidGeometry(Geometry):
-    def __init__(self, radii: Vector3):
+    def __init__(self, radii: Union[Vector3, float], y: float = None, z: float = None):
+        if isinstance(radii, (int, float)):
+            radii = Vector3(radii, y if y is not None else radii, z if z is not None else radii)
         super().__init__(ellipsoid=Ellipsoid(radii=radii))
 
 
