@@ -15,7 +15,7 @@ class Vector3:
         return f"{self.x} {self.y} {self.z}"
 
     @classmethod
-    def _from_sdf(cls, source: str | ET.Element, version: str) -> Vector3 | SDFError:
+    def _from_sdf(cls, source: str | ET.Element, version: str = None) -> Vector3 | SDFError:
         text = source.text if isinstance(source, ET.Element) else source
         if text is None:
             return cls()
@@ -31,7 +31,7 @@ class Vector3:
             return SDFError(f"Invalid float in Vector3: {text}")
 
     @classmethod
-    def from_sdf(cls, source: str | ET.Element, version: str) -> Vector3:
+    def from_sdf(cls, source: str | ET.Element, version: str = None) -> Vector3:
         res = cls._from_sdf(source, version)
         if isinstance(res, SDFError):
             raise ValueError(str(res))

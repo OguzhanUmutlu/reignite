@@ -16,7 +16,7 @@ class Color:
         return f"{self.r / 255.0} {self.g / 255.0} {self.b / 255.0} {self.a / 255.0}"
 
     @classmethod
-    def _from_sdf(cls, source: str | ET.Element, _version: str) -> Color | SDFError:
+    def _from_sdf(cls, source: str | ET.Element, _version: str = None) -> Color | SDFError:
         text = source.text if isinstance(source, ET.Element) else source
         if text is None:
             return cls(0, 0, 0, 255)
@@ -34,7 +34,7 @@ class Color:
             return SDFError(f"Invalid Color value: {text}")
 
     @classmethod
-    def from_sdf(cls, source: str | ET.Element, version: str) -> Color:
+    def from_sdf(cls, source: str | ET.Element, version: str = None) -> Color:
         res = cls._from_sdf(source, version)
         if isinstance(res, SDFError):
             raise ValueError(str(res))

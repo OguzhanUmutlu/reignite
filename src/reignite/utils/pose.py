@@ -19,7 +19,7 @@ class Pose:
         return f"{self.x} {self.y} {self.z} {self.roll} {self.pitch} {self.yaw}"
 
     @classmethod
-    def _from_sdf(cls, source: str | ET.Element, version: str) -> Pose | SDFError:
+    def _from_sdf(cls, source: str | ET.Element, version: str = None) -> Pose | SDFError:
         text = source.text if isinstance(source, ET.Element) else source
         if text is None:
             return cls()
@@ -35,7 +35,7 @@ class Pose:
             return SDFError(f"Invalid float in Pose: {text}")
 
     @classmethod
-    def from_sdf(cls, source: str | ET.Element, version: str) -> Pose:
+    def from_sdf(cls, source: str | ET.Element, version: str = None) -> Pose:
         res = cls._from_sdf(source, version)
         if isinstance(res, SDFError):
             raise ValueError(str(res))

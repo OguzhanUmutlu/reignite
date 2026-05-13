@@ -33,11 +33,11 @@ plugin_classes: dict[str, type] = {}
 
 
 class TextElement(BaseModel):
-    def __init__(self, name: str, text: str, attributes: Optional[dict] = None):
+    def __init__(self, name: str, text, attributes: Optional[dict] = None, **extra: str):
         super().__init__(sdf_version=None)
         self.name = name
-        self.text = text
-        self.attributes = attributes or dict()
+        self.text = str(text)
+        self.attributes = {**(attributes or dict()), **extra}
 
     @classmethod
     def _from_sdf(cls, el: ET.Element, version: str):
@@ -55,10 +55,11 @@ class TextElement(BaseModel):
 
 
 class ParentElement(BaseModel):
-    def __init__(self, name: str, children: List[BaseModel], attributes: Optional[dict] = None):
+    def __init__(self, name: str, children: List[BaseModel], attributes: Optional[dict] = None,
+                 **extra: str):
         super().__init__(sdf_version=None)
         self.name = name
-        self.attributes = attributes or dict()
+        self.attributes = {**(attributes or dict()), **extra}
         self.children = children
 
     @classmethod
