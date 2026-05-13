@@ -20,11 +20,6 @@ class WorldControlPlugin(Plugin):
                      "anchor": "3D View", "anchors": [
                     GzGui.Anchor("left", "left"),
                     GzGui.Anchor("bottom", "bottom")
-                ], **gui_kwargs}),
-            TextElement("play_pause", str(play_pause).lower()),
-            TextElement("step", str(step).lower()),
-            TextElement("start_paused", str(start_paused).lower()),
-            TextElement("use_event", str(use_event).lower())
-        ])
-        if stats_topic is not None:
-            self.elements.append(TextElement("stats_topic", stats_topic))
+                ], **gui_kwargs})
+        ], play_pause=str(play_pause).lower(), step=str(step).lower(), start_paused=str(start_paused).lower(),
+                         use_event=str(use_event).lower(), stats_topic=stats_topic)

@@ -18,13 +18,9 @@ class MinimalScenePlugin(Plugin):
                  name="3D View", **gui_kwargs):
         super().__init__(name=name, filename="MinimalScene", elements=[
             GzGui(**{"title": "3D View", "show_title_bar": False, "state": "docked", **gui_kwargs}),
-            TextElement("engine", engine),
-            TextElement("scene", scene),
-            TextElement("ambient_light", ambient_light.to_sdf()),
-            TextElement("background_color", background_color.to_sdf()),
-            TextElement("camera_pose", camera_pose.to_sdf()),
             ParentElement("camera_clip", [
                 TextElement("near", near),
                 TextElement("far", far)
             ])
-        ])
+        ], engine=engine, scene=scene, ambient_light=ambient_light.to_sdf(), background_color=background_color.to_sdf(),
+                         camera_pose=camera_pose.to_sdf())

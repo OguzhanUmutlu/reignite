@@ -85,11 +85,13 @@ class Plugin(_Base):
             elements: Optional[List[BaseModel]] = None,
             filename: str = "__default__",
             name: str = "__default__",
-            **extra: str
+            **extra: Optional[str]
     ):
         super().__init__(sdf_version=sdf_version, filename=filename, name=name)
         self.elements = elements or []
         for k, v in extra.items():
+            if v is None:
+                continue
             self.elements.append(TextElement(k, v))
 
     def to_version(self, target_version: str) -> "Plugin":
