@@ -12,6 +12,26 @@ def cmp_version(v1: str, v2: str) -> int:
     return 0
 
 
+def gt_version(v1: str, v2: str) -> bool:
+    return cmp_version(v1, v2) > 0
+
+
+def ge_version(v1: str, v2: str) -> bool:
+    return cmp_version(v1, v2) >= 0
+
+
+def lt_version(v1: str, v2: str) -> bool:
+    return cmp_version(v1, v2) < 0
+
+
+def le_version(v1: str, v2: str) -> bool:
+    return cmp_version(v1, v2) <= 0
+
+
+def eq_version(v1: str, v2: str) -> bool:
+    return cmp_version(v1, v2) == 0
+
+
 def _get_path(obj, path: str):
     parts = path.split("::")
     current = obj
@@ -64,7 +84,6 @@ def _set_path(obj, path: str, value):
 
 
 def apply_migrations(obj, target_version: str):
-    from .version import cmp_version
     current_version = getattr(obj, "__version__", "1.0")
     if current_version == target_version:
         return
@@ -73,7 +92,7 @@ def apply_migrations(obj, target_version: str):
     if not migrations:
         return
 
-    forward = cmp_version(target_version, current_version) > 0
+    forward = gt_version(target_version, current_version)
 
     sorted_migrations = sorted(
         migrations,
@@ -84,7 +103,7 @@ def apply_migrations(obj, target_version: str):
     for mig in sorted_migrations:
         v = mig["version"]
         if forward:
-            if cmp_version(target_version, v) >= 0 and cmp_version(current_version, v) < 0:
+            if ge_version(target_version, v) and lt_version(current_version, v):
                 for op in mig["ops"]:
                     if op["type"] == "move":
                         val = _get_path(obj, op["from"])
@@ -100,7 +119,7 @@ def apply_migrations(obj, target_version: str):
                         if val in op["from_values"]:
                             _set_path(obj, op["to"], op["to_value"])
         else:
-            if cmp_version(target_version, v) < 0 and cmp_version(current_version, v) >= 0:
+            if lt_version(target_version, v) and ge_version(current_version, v):
                 for op in reversed(mig["ops"]):
                     if op["type"] == "move":
                         val = _get_path(obj, op["to"])
