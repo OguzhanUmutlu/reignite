@@ -24,7 +24,7 @@ class Frame(BaseModel):
         self.attached_to = attached_to
         self.name = name
         self.pose = pose
-        if self.pose is not None:
+        if self.pose is not None and hasattr(self.pose, 'to_version'):
             if getattr(self.pose, '__version__', None) is None:
                 self.pose.__version__ = self.__version__
             elif getattr(self.pose, '__version__', None) != self.__version__ and self.__version__ is not None:
@@ -37,7 +37,7 @@ class Frame(BaseModel):
         kwargs = {"sdf_version": target_version}
         kwargs["attached_to"] = self.attached_to
         kwargs["name"] = self.name
-        kwargs["pose"] = self.pose.to_version(target_version) if self.pose is not None else None
+        kwargs["pose"] = self.pose.to_version(target_version) if hasattr(self.pose, "to_version") else self.pose
         new_obj = self.__class__(**kwargs)
         return new_obj
 
@@ -56,7 +56,16 @@ class Frame(BaseModel):
         if self.name is not None:
             el.set("name", self.name)
         if self.pose is not None:
-            el.append(self.pose.to_sdf(version))
+            if hasattr(self.pose, 'to_sdf'):
+                _child_res = self.pose.to_sdf(version)
+            else:
+                _child_res = str(self.pose)
+            if isinstance(_child_res, str):
+                _item_el = ET.Element('pose')
+                _item_el.text = _child_res
+            else:
+                _item_el = _child_res
+            el.append(_item_el)
         return el
 
     @classmethod

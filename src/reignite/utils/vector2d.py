@@ -10,7 +10,7 @@ class Vector2d:
         self.x = x
         self.y = y
 
-    def to_sdf(self) -> str:
+    def to_sdf(self, version: str = None) -> str:
         return f"{self.x} {self.y}"
 
     @classmethod

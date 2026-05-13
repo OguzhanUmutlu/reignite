@@ -48,10 +48,10 @@ class GzGui(BaseModel):
             el.append(ET.Element("property", text=self.state, key="state", type="string"))
         if self.anchor is not None:
             anchors_el = ET.Element("anchors", target=self.anchor)
-            for own, target in self.anchors or []:
+            for anchor in self.anchors or []:
                 line_el = ET.Element("line")
-                line_el.append(ET.Element("own", text=own))
-                line_el.append(ET.Element("target", text=target))
+                line_el.append(ET.Element("own", text=anchor.own))
+                line_el.append(ET.Element("target", text=anchor.target))
                 anchors_el.append(line_el)
             el.append(anchors_el)
         return el

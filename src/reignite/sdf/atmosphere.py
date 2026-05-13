@@ -42,102 +42,12 @@ def _parse_double(raw: str) -> float | SDFError:
 
 
 class Atmosphere(BaseModel):
-    class Pressure(BaseModel):
-        def __init__(self, sdf_version: str | None = None, pressure: float = 101325):
-            super().__init__(sdf_version)
-            self.pressure = pressure
-
-        def to_version(self, target_version: str) -> "Atmosphere.Pressure":
-            kwargs = {"sdf_version": target_version}
-            kwargs["pressure"] = self.pressure
-            new_obj = self.__class__(**kwargs)
-            return new_obj
-
-        def to_sdf(self, version: str | None = None) -> ET.Element:
-            if self.__version__ is None and version is not None:
-                self.__version__ = version
-            elif version is not None and version != self.__version__:
-                return self.to_version(version).to_sdf()
-            version = self.__version__ or version
-            el = ET.Element("pressure")
-            if self.pressure is not None:
-                el.text = str(self.pressure)
-            return el
-
-        @classmethod
-        def _from_sdf(cls, el: ET.Element, version: str) -> "Atmosphere.Pressure | SDFError":
-            _text = el.text or 101325
-            _pressure = _parse_double(_text)
-            if isinstance(_pressure, SDFError):
-                return _pressure
-            return cls(sdf_version=version, pressure=_pressure)
-
-    class Temperature(BaseModel):
-        def __init__(self, sdf_version: str | None = None, temperature: float = 288.15):
-            super().__init__(sdf_version)
-            self.temperature = temperature
-
-        def to_version(self, target_version: str) -> "Atmosphere.Temperature":
-            kwargs = {"sdf_version": target_version}
-            kwargs["temperature"] = self.temperature
-            new_obj = self.__class__(**kwargs)
-            return new_obj
-
-        def to_sdf(self, version: str | None = None) -> ET.Element:
-            if self.__version__ is None and version is not None:
-                self.__version__ = version
-            elif version is not None and version != self.__version__:
-                return self.to_version(version).to_sdf()
-            version = self.__version__ or version
-            el = ET.Element("temperature")
-            if self.temperature is not None:
-                el.text = str(self.temperature)
-            return el
-
-        @classmethod
-        def _from_sdf(cls, el: ET.Element, version: str) -> "Atmosphere.Temperature | SDFError":
-            _text = el.text or 288.15
-            _temperature = _parse_double(_text)
-            if isinstance(_temperature, SDFError):
-                return _temperature
-            return cls(sdf_version=version, temperature=_temperature)
-
-    class TemperatureGradient(BaseModel):
-        def __init__(self, sdf_version: str | None = None, temperature_gradient: float = -0.0065):
-            super().__init__(sdf_version)
-            self.temperature_gradient = temperature_gradient
-
-        def to_version(self, target_version: str) -> "Atmosphere.TemperatureGradient":
-            kwargs = {"sdf_version": target_version}
-            kwargs["temperature_gradient"] = self.temperature_gradient
-            new_obj = self.__class__(**kwargs)
-            return new_obj
-
-        def to_sdf(self, version: str | None = None) -> ET.Element:
-            if self.__version__ is None and version is not None:
-                self.__version__ = version
-            elif version is not None and version != self.__version__:
-                return self.to_version(version).to_sdf()
-            version = self.__version__ or version
-            el = ET.Element("temperature_gradient")
-            if self.temperature_gradient is not None:
-                el.text = str(self.temperature_gradient)
-            return el
-
-        @classmethod
-        def _from_sdf(cls, el: ET.Element, version: str) -> "Atmosphere.TemperatureGradient | SDFError":
-            _text = el.text or -0.0065
-            _temperature_gradient = _parse_double(_text)
-            if isinstance(_temperature_gradient, SDFError):
-                return _temperature_gradient
-            return cls(sdf_version=version, temperature_gradient=_temperature_gradient)
-
     def __init__(
         self,
         sdf_version: str | None = None,
-        pressure: "Atmosphere.Pressure" = None,
-        temperature: "Atmosphere.Temperature" = None,
-        temperature_gradient: "Atmosphere.TemperatureGradient" = None,
+        pressure: float = 101325,
+        temperature: float = 288.15,
+        temperature_gradient: float = -0.0065,
         type: str = "adiabatic"
     ):
         super().__init__(sdf_version)
@@ -145,27 +55,12 @@ class Atmosphere(BaseModel):
         self.temperature = temperature
         self.temperature_gradient = temperature_gradient
         self.type = type
-        if self.pressure is not None:
-            if getattr(self.pressure, '__version__', None) is None:
-                self.pressure.__version__ = self.__version__
-            elif getattr(self.pressure, '__version__', None) != self.__version__ and self.__version__ is not None:
-                self.pressure = self.pressure.to_version(self.__version__)
-        if self.temperature is not None:
-            if getattr(self.temperature, '__version__', None) is None:
-                self.temperature.__version__ = self.__version__
-            elif getattr(self.temperature, '__version__', None) != self.__version__ and self.__version__ is not None:
-                self.temperature = self.temperature.to_version(self.__version__)
-        if self.temperature_gradient is not None:
-            if getattr(self.temperature_gradient, '__version__', None) is None:
-                self.temperature_gradient.__version__ = self.__version__
-            elif getattr(self.temperature_gradient, '__version__', None) != self.__version__ and self.__version__ is not None:
-                self.temperature_gradient = self.temperature_gradient.to_version(self.__version__)
 
     def to_version(self, target_version: str) -> "Atmosphere":
         kwargs = {"sdf_version": target_version}
-        kwargs["pressure"] = self.pressure.to_version(target_version) if self.pressure is not None else None
-        kwargs["temperature"] = self.temperature.to_version(target_version) if self.temperature is not None else None
-        kwargs["temperature_gradient"] = self.temperature_gradient.to_version(target_version) if self.temperature_gradient is not None else None
+        kwargs["pressure"] = self.pressure
+        kwargs["temperature"] = self.temperature
+        kwargs["temperature_gradient"] = self.temperature_gradient
         kwargs["type"] = self.type
         new_obj = self.__class__(**kwargs)
         return new_obj
@@ -178,39 +73,48 @@ class Atmosphere(BaseModel):
         version = self.__version__ or version
         el = ET.Element("atmosphere")
         if self.pressure is not None:
-            el.append(self.pressure.to_sdf(version))
+            _c_tmp = ET.Element("pressure")
+            _c_tmp.text = str(self.pressure)
+            el.append(_c_tmp)
         if self.temperature is not None:
-            el.append(self.temperature.to_sdf(version))
+            _c_tmp = ET.Element("temperature")
+            _c_tmp.text = str(self.temperature)
+            el.append(_c_tmp)
         if self.temperature_gradient is not None:
-            el.append(self.temperature_gradient.to_sdf(version))
+            _c_tmp = ET.Element("temperature_gradient")
+            _c_tmp.text = str(self.temperature_gradient)
+            el.append(_c_tmp)
         if self.type is not None:
             el.set("type", self.type)
         return el
 
     @classmethod
     def _from_sdf(cls, el: ET.Element, version: str) -> "Atmosphere | SDFError":
-        _c_pressure = el.find("pressure")
-        if _c_pressure is not None:
-            _res = cls.Pressure._from_sdf(_c_pressure, version)
-            if isinstance(_res, SDFError):
-                return _res.extend("pressure")
-            _pressure = _res
+        _c_tmp = el.find("pressure")
+        if _c_tmp is not None:
+            _text = _c_tmp.text if _c_tmp.text is not None else 101325
+            _val = _parse_double(_text)
+            if isinstance(_val, SDFError):
+                return _val.extend("pressure")
+            _pressure = _val
         else:
             _pressure = None
-        _c_temperature = el.find("temperature")
-        if _c_temperature is not None:
-            _res = cls.Temperature._from_sdf(_c_temperature, version)
-            if isinstance(_res, SDFError):
-                return _res.extend("temperature")
-            _temperature = _res
+        _c_tmp = el.find("temperature")
+        if _c_tmp is not None:
+            _text = _c_tmp.text if _c_tmp.text is not None else 288.15
+            _val = _parse_double(_text)
+            if isinstance(_val, SDFError):
+                return _val.extend("temperature")
+            _temperature = _val
         else:
             _temperature = None
-        _c_temperature_gradient = el.find("temperature_gradient")
-        if _c_temperature_gradient is not None:
-            _res = cls.TemperatureGradient._from_sdf(_c_temperature_gradient, version)
-            if isinstance(_res, SDFError):
-                return _res.extend("temperature_gradient")
-            _temperature_gradient = _res
+        _c_tmp = el.find("temperature_gradient")
+        if _c_tmp is not None:
+            _text = _c_tmp.text if _c_tmp.text is not None else -0.0065
+            _val = _parse_double(_text)
+            if isinstance(_val, SDFError):
+                return _val.extend("temperature_gradient")
+            _temperature_gradient = _val
         else:
             _temperature_gradient = None
         _type = el.get("type", "adiabatic")

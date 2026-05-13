@@ -42,90 +42,15 @@ def _parse_double(raw: str) -> float | SDFError:
 
 
 class Cylinder(BaseModel):
-    class Length(BaseModel):
-        def __init__(self, sdf_version: str | None = None, length: float = 1):
-            super().__init__(sdf_version)
-            self.length = length
-
-        def to_version(self, target_version: str) -> "Cylinder.Length":
-            kwargs = {"sdf_version": target_version}
-            kwargs["length"] = self.length
-            new_obj = self.__class__(**kwargs)
-            return new_obj
-
-        def to_sdf(self, version: str | None = None) -> ET.Element:
-            if self.__version__ is None and version is not None:
-                self.__version__ = version
-            elif version is not None and version != self.__version__:
-                return self.to_version(version).to_sdf()
-            version = self.__version__ or version
-            el = ET.Element("length")
-            if self.length is not None:
-                el.text = str(self.length)
-            return el
-
-        @classmethod
-        def _from_sdf(cls, el: ET.Element, version: str) -> "Cylinder.Length | SDFError":
-            _text = el.text or 1
-            _length = _parse_double(_text)
-            if isinstance(_length, SDFError):
-                return _length
-            return cls(sdf_version=version, length=_length)
-
-    class Radius(BaseModel):
-        def __init__(self, sdf_version: str | None = None, radius: float = 1):
-            super().__init__(sdf_version)
-            self.radius = radius
-
-        def to_version(self, target_version: str) -> "Cylinder.Radius":
-            kwargs = {"sdf_version": target_version}
-            kwargs["radius"] = self.radius
-            new_obj = self.__class__(**kwargs)
-            return new_obj
-
-        def to_sdf(self, version: str | None = None) -> ET.Element:
-            if self.__version__ is None and version is not None:
-                self.__version__ = version
-            elif version is not None and version != self.__version__:
-                return self.to_version(version).to_sdf()
-            version = self.__version__ or version
-            el = ET.Element("radius")
-            if self.radius is not None:
-                el.text = str(self.radius)
-            return el
-
-        @classmethod
-        def _from_sdf(cls, el: ET.Element, version: str) -> "Cylinder.Radius | SDFError":
-            _text = el.text or 1
-            _radius = _parse_double(_text)
-            if isinstance(_radius, SDFError):
-                return _radius
-            return cls(sdf_version=version, radius=_radius)
-
-    def __init__(
-        self,
-        sdf_version: str | None = None,
-        length: "Cylinder.Length" = None,
-        radius: "Cylinder.Radius" = None
-    ):
+    def __init__(self, sdf_version: str | None = None, length: float = 1, radius: float = 1):
         super().__init__(sdf_version)
         self.length = length
         self.radius = radius
-        if self.length is not None:
-            if getattr(self.length, '__version__', None) is None:
-                self.length.__version__ = self.__version__
-            elif getattr(self.length, '__version__', None) != self.__version__ and self.__version__ is not None:
-                self.length = self.length.to_version(self.__version__)
-        if self.radius is not None:
-            if getattr(self.radius, '__version__', None) is None:
-                self.radius.__version__ = self.__version__
-            elif getattr(self.radius, '__version__', None) != self.__version__ and self.__version__ is not None:
-                self.radius = self.radius.to_version(self.__version__)
 
     def to_version(self, target_version: str) -> "Cylinder":
         kwargs = {"sdf_version": target_version}
-        kwargs["length"] = self.length.to_version(target_version) if self.length is not None else None
-        kwargs["radius"] = self.radius.to_version(target_version) if self.radius is not None else None
+        kwargs["length"] = self.length
+        kwargs["radius"] = self.radius
         new_obj = self.__class__(**kwargs)
         return new_obj
 
@@ -137,27 +62,33 @@ class Cylinder(BaseModel):
         version = self.__version__ or version
         el = ET.Element("cylinder")
         if self.length is not None:
-            el.append(self.length.to_sdf(version))
+            _c_tmp = ET.Element("length")
+            _c_tmp.text = str(self.length)
+            el.append(_c_tmp)
         if self.radius is not None:
-            el.append(self.radius.to_sdf(version))
+            _c_tmp = ET.Element("radius")
+            _c_tmp.text = str(self.radius)
+            el.append(_c_tmp)
         return el
 
     @classmethod
     def _from_sdf(cls, el: ET.Element, version: str) -> "Cylinder | SDFError":
-        _c_length = el.find("length")
-        if _c_length is not None:
-            _res = cls.Length._from_sdf(_c_length, version)
-            if isinstance(_res, SDFError):
-                return _res.extend("length")
-            _length = _res
+        _c_tmp = el.find("length")
+        if _c_tmp is not None:
+            _text = _c_tmp.text if _c_tmp.text is not None else 1
+            _val = _parse_double(_text)
+            if isinstance(_val, SDFError):
+                return _val.extend("length")
+            _length = _val
         else:
             _length = None
-        _c_radius = el.find("radius")
-        if _c_radius is not None:
-            _res = cls.Radius._from_sdf(_c_radius, version)
-            if isinstance(_res, SDFError):
-                return _res.extend("radius")
-            _radius = _res
+        _c_tmp = el.find("radius")
+        if _c_tmp is not None:
+            _text = _c_tmp.text if _c_tmp.text is not None else 1
+            _val = _parse_double(_text)
+            if isinstance(_val, SDFError):
+                return _val.extend("radius")
+            _radius = _val
         else:
             _radius = None
         return cls(sdf_version=version, length=_length, radius=_radius)

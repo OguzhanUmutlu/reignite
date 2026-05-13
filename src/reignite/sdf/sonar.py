@@ -43,173 +43,28 @@ def _parse_double(raw: str) -> float | SDFError:
 
 
 class Sonar(BaseModel):
-    class Geometry(BaseModel):
-        def __init__(self, sdf_version: str | None = None, geometry: str = "cone"):
-            super().__init__(sdf_version)
-            self.geometry = geometry
-
-        def to_version(self, target_version: str) -> "Sonar.Geometry":
-            if self.geometry is not None and cmp_version(target_version, "1.6") < 0:
-                raise ValueError(f"'geometry' is not supported in SDF version {target_version} (added in 1.6)")
-            kwargs = {"sdf_version": target_version}
-            kwargs["geometry"] = self.geometry
-            new_obj = self.__class__(**kwargs)
-            return new_obj
-
-        def to_sdf(self, version: str | None = None) -> ET.Element:
-            if self.__version__ is None and version is not None:
-                self.__version__ = version
-            elif version is not None and version != self.__version__:
-                return self.to_version(version).to_sdf()
-            version = self.__version__ or version
-            el = ET.Element("geometry")
-            if self.geometry is not None:
-                el.text = self.geometry
-            return el
-
-        @classmethod
-        def _from_sdf(cls, el: ET.Element, version: str) -> "Sonar.Geometry | SDFError":
-            _text = el.text or "cone"
-            _geometry = _text
-            if isinstance(_geometry, SDFError):
-                return _geometry
-            if _geometry is not None and cmp_version(version, "1.6") < 0:
-                if _geometry != "cone":
-                    return SDFError(f"'geometry' is not supported in SDF version {version} (added in 1.6)")
-            return cls(sdf_version=version, geometry=_geometry)
-
-    class Max(BaseModel):
-        def __init__(self, sdf_version: str | None = None, max: float = 1.0):
-            super().__init__(sdf_version)
-            self.max = max
-
-        def to_version(self, target_version: str) -> "Sonar.Max":
-            kwargs = {"sdf_version": target_version}
-            kwargs["max"] = self.max
-            new_obj = self.__class__(**kwargs)
-            return new_obj
-
-        def to_sdf(self, version: str | None = None) -> ET.Element:
-            if self.__version__ is None and version is not None:
-                self.__version__ = version
-            elif version is not None and version != self.__version__:
-                return self.to_version(version).to_sdf()
-            version = self.__version__ or version
-            el = ET.Element("max")
-            if self.max is not None:
-                el.text = str(self.max)
-            return el
-
-        @classmethod
-        def _from_sdf(cls, el: ET.Element, version: str) -> "Sonar.Max | SDFError":
-            _text = el.text or 1.0
-            _max = _parse_double(_text)
-            if isinstance(_max, SDFError):
-                return _max
-            return cls(sdf_version=version, max=_max)
-
-    class Min(BaseModel):
-        def __init__(self, sdf_version: str | None = None, min: float = 0):
-            super().__init__(sdf_version)
-            self.min = min
-
-        def to_version(self, target_version: str) -> "Sonar.Min":
-            kwargs = {"sdf_version": target_version}
-            kwargs["min"] = self.min
-            new_obj = self.__class__(**kwargs)
-            return new_obj
-
-        def to_sdf(self, version: str | None = None) -> ET.Element:
-            if self.__version__ is None and version is not None:
-                self.__version__ = version
-            elif version is not None and version != self.__version__:
-                return self.to_version(version).to_sdf()
-            version = self.__version__ or version
-            el = ET.Element("min")
-            if self.min is not None:
-                el.text = str(self.min)
-            return el
-
-        @classmethod
-        def _from_sdf(cls, el: ET.Element, version: str) -> "Sonar.Min | SDFError":
-            _text = el.text or 0
-            _min = _parse_double(_text)
-            if isinstance(_min, SDFError):
-                return _min
-            return cls(sdf_version=version, min=_min)
-
-    class Radius(BaseModel):
-        def __init__(self, sdf_version: str | None = None, radius: float = 0.5):
-            super().__init__(sdf_version)
-            self.radius = radius
-
-        def to_version(self, target_version: str) -> "Sonar.Radius":
-            kwargs = {"sdf_version": target_version}
-            kwargs["radius"] = self.radius
-            new_obj = self.__class__(**kwargs)
-            return new_obj
-
-        def to_sdf(self, version: str | None = None) -> ET.Element:
-            if self.__version__ is None and version is not None:
-                self.__version__ = version
-            elif version is not None and version != self.__version__:
-                return self.to_version(version).to_sdf()
-            version = self.__version__ or version
-            el = ET.Element("radius")
-            if self.radius is not None:
-                el.text = str(self.radius)
-            return el
-
-        @classmethod
-        def _from_sdf(cls, el: ET.Element, version: str) -> "Sonar.Radius | SDFError":
-            _text = el.text or 0.5
-            _radius = _parse_double(_text)
-            if isinstance(_radius, SDFError):
-                return _radius
-            return cls(sdf_version=version, radius=_radius)
-
     def __init__(
         self,
         sdf_version: str | None = None,
-        geometry: "Sonar.Geometry" = None,
-        max: "Sonar.Max" = None,
-        min: "Sonar.Min" = None,
-        radius: "Sonar.Radius" = None
+        geometry: str = "cone",
+        max: float = 1.0,
+        min: float = 0,
+        radius: float = 0.5
     ):
         super().__init__(sdf_version)
         self.geometry = geometry
         self.max = max
         self.min = min
         self.radius = radius
-        if self.geometry is not None:
-            if getattr(self.geometry, '__version__', None) is None:
-                self.geometry.__version__ = self.__version__
-            elif getattr(self.geometry, '__version__', None) != self.__version__ and self.__version__ is not None:
-                self.geometry = self.geometry.to_version(self.__version__)
-        if self.max is not None:
-            if getattr(self.max, '__version__', None) is None:
-                self.max.__version__ = self.__version__
-            elif getattr(self.max, '__version__', None) != self.__version__ and self.__version__ is not None:
-                self.max = self.max.to_version(self.__version__)
-        if self.min is not None:
-            if getattr(self.min, '__version__', None) is None:
-                self.min.__version__ = self.__version__
-            elif getattr(self.min, '__version__', None) != self.__version__ and self.__version__ is not None:
-                self.min = self.min.to_version(self.__version__)
-        if self.radius is not None:
-            if getattr(self.radius, '__version__', None) is None:
-                self.radius.__version__ = self.__version__
-            elif getattr(self.radius, '__version__', None) != self.__version__ and self.__version__ is not None:
-                self.radius = self.radius.to_version(self.__version__)
 
     def to_version(self, target_version: str) -> "Sonar":
         if self.geometry is not None and cmp_version(target_version, "1.6") < 0:
             raise ValueError(f"'geometry' is not supported in SDF version {target_version} (added in 1.6)")
         kwargs = {"sdf_version": target_version}
-        kwargs["geometry"] = self.geometry.to_version(target_version) if self.geometry is not None else None
-        kwargs["max"] = self.max.to_version(target_version) if self.max is not None else None
-        kwargs["min"] = self.min.to_version(target_version) if self.min is not None else None
-        kwargs["radius"] = self.radius.to_version(target_version) if self.radius is not None else None
+        kwargs["geometry"] = self.geometry
+        kwargs["max"] = self.max
+        kwargs["min"] = self.min
+        kwargs["radius"] = self.radius
         new_obj = self.__class__(**kwargs)
         return new_obj
 
@@ -221,49 +76,61 @@ class Sonar(BaseModel):
         version = self.__version__ or version
         el = ET.Element("sonar")
         if self.geometry is not None:
-            el.append(self.geometry.to_sdf(version))
+            _c_tmp = ET.Element("geometry")
+            _c_tmp.text = self.geometry
+            el.append(_c_tmp)
         if self.max is not None:
-            el.append(self.max.to_sdf(version))
+            _c_tmp = ET.Element("max")
+            _c_tmp.text = str(self.max)
+            el.append(_c_tmp)
         if self.min is not None:
-            el.append(self.min.to_sdf(version))
+            _c_tmp = ET.Element("min")
+            _c_tmp.text = str(self.min)
+            el.append(_c_tmp)
         if self.radius is not None:
-            el.append(self.radius.to_sdf(version))
+            _c_tmp = ET.Element("radius")
+            _c_tmp.text = str(self.radius)
+            el.append(_c_tmp)
         return el
 
     @classmethod
     def _from_sdf(cls, el: ET.Element, version: str) -> "Sonar | SDFError":
-        _c_geometry = el.find("geometry")
-        if _c_geometry is not None:
-            _res = cls.Geometry._from_sdf(_c_geometry, version)
-            if isinstance(_res, SDFError):
-                return _res.extend("geometry")
-            _geometry = _res
+        _c_tmp = el.find("geometry")
+        if _c_tmp is not None:
+            _text = _c_tmp.text if _c_tmp.text is not None else "cone"
+            _val = _text
+            if isinstance(_val, SDFError):
+                return _val.extend("geometry")
+            _geometry = _val
         else:
             _geometry = None
         if _geometry is not None and cmp_version(version, "1.6") < 0:
             return SDFError(f"'geometry' is not supported in SDF version {version} (added in 1.6)")
-        _c_max = el.find("max")
-        if _c_max is not None:
-            _res = cls.Max._from_sdf(_c_max, version)
-            if isinstance(_res, SDFError):
-                return _res.extend("max")
-            _max = _res
+        _c_tmp = el.find("max")
+        if _c_tmp is not None:
+            _text = _c_tmp.text if _c_tmp.text is not None else 1.0
+            _val = _parse_double(_text)
+            if isinstance(_val, SDFError):
+                return _val.extend("max")
+            _max = _val
         else:
             _max = None
-        _c_min = el.find("min")
-        if _c_min is not None:
-            _res = cls.Min._from_sdf(_c_min, version)
-            if isinstance(_res, SDFError):
-                return _res.extend("min")
-            _min = _res
+        _c_tmp = el.find("min")
+        if _c_tmp is not None:
+            _text = _c_tmp.text if _c_tmp.text is not None else 0
+            _val = _parse_double(_text)
+            if isinstance(_val, SDFError):
+                return _val.extend("min")
+            _min = _val
         else:
             _min = None
-        _c_radius = el.find("radius")
-        if _c_radius is not None:
-            _res = cls.Radius._from_sdf(_c_radius, version)
-            if isinstance(_res, SDFError):
-                return _res.extend("radius")
-            _radius = _res
+        _c_tmp = el.find("radius")
+        if _c_tmp is not None:
+            _text = _c_tmp.text if _c_tmp.text is not None else 0.5
+            _val = _parse_double(_text)
+            if isinstance(_val, SDFError):
+                return _val.extend("radius")
+            _radius = _val
         else:
             _radius = None
         return cls(sdf_version=version, geometry=_geometry, max=_max, min=_min, radius=_radius)

@@ -47,90 +47,15 @@ def _parse_double(raw: str) -> float | SDFError:
 
 class Heightmap(BaseModel):
     class Blend(BaseModel):
-        class FadeDist(BaseModel):
-            def __init__(self, sdf_version: str | None = None, fade_dist: float = 0):
-                super().__init__(sdf_version)
-                self.fade_dist = fade_dist
-
-            def to_version(self, target_version: str) -> "Heightmap.Blend.FadeDist":
-                kwargs = {"sdf_version": target_version}
-                kwargs["fade_dist"] = self.fade_dist
-                new_obj = self.__class__(**kwargs)
-                return new_obj
-
-            def to_sdf(self, version: str | None = None) -> ET.Element:
-                if self.__version__ is None and version is not None:
-                    self.__version__ = version
-                elif version is not None and version != self.__version__:
-                    return self.to_version(version).to_sdf()
-                version = self.__version__ or version
-                el = ET.Element("fade_dist")
-                if self.fade_dist is not None:
-                    el.text = str(self.fade_dist)
-                return el
-
-            @classmethod
-            def _from_sdf(cls, el: ET.Element, version: str) -> "Heightmap.Blend.FadeDist | SDFError":
-                _text = el.text or 0
-                _fade_dist = _parse_double(_text)
-                if isinstance(_fade_dist, SDFError):
-                    return _fade_dist
-                return cls(sdf_version=version, fade_dist=_fade_dist)
-
-        class MinHeight(BaseModel):
-            def __init__(self, sdf_version: str | None = None, min_height: float = 0):
-                super().__init__(sdf_version)
-                self.min_height = min_height
-
-            def to_version(self, target_version: str) -> "Heightmap.Blend.MinHeight":
-                kwargs = {"sdf_version": target_version}
-                kwargs["min_height"] = self.min_height
-                new_obj = self.__class__(**kwargs)
-                return new_obj
-
-            def to_sdf(self, version: str | None = None) -> ET.Element:
-                if self.__version__ is None and version is not None:
-                    self.__version__ = version
-                elif version is not None and version != self.__version__:
-                    return self.to_version(version).to_sdf()
-                version = self.__version__ or version
-                el = ET.Element("min_height")
-                if self.min_height is not None:
-                    el.text = str(self.min_height)
-                return el
-
-            @classmethod
-            def _from_sdf(cls, el: ET.Element, version: str) -> "Heightmap.Blend.MinHeight | SDFError":
-                _text = el.text or 0
-                _min_height = _parse_double(_text)
-                if isinstance(_min_height, SDFError):
-                    return _min_height
-                return cls(sdf_version=version, min_height=_min_height)
-
-        def __init__(
-            self,
-            sdf_version: str | None = None,
-            fade_dist: "Heightmap.Blend.FadeDist" = None,
-            min_height: "Heightmap.Blend.MinHeight" = None
-        ):
+        def __init__(self, sdf_version: str | None = None, fade_dist: float = 0, min_height: float = 0):
             super().__init__(sdf_version)
             self.fade_dist = fade_dist
             self.min_height = min_height
-            if self.fade_dist is not None:
-                if getattr(self.fade_dist, '__version__', None) is None:
-                    self.fade_dist.__version__ = self.__version__
-                elif getattr(self.fade_dist, '__version__', None) != self.__version__ and self.__version__ is not None:
-                    self.fade_dist = self.fade_dist.to_version(self.__version__)
-            if self.min_height is not None:
-                if getattr(self.min_height, '__version__', None) is None:
-                    self.min_height.__version__ = self.__version__
-                elif getattr(self.min_height, '__version__', None) != self.__version__ and self.__version__ is not None:
-                    self.min_height = self.min_height.to_version(self.__version__)
 
         def to_version(self, target_version: str) -> "Heightmap.Blend":
             kwargs = {"sdf_version": target_version}
-            kwargs["fade_dist"] = self.fade_dist.to_version(target_version) if self.fade_dist is not None else None
-            kwargs["min_height"] = self.min_height.to_version(target_version) if self.min_height is not None else None
+            kwargs["fade_dist"] = self.fade_dist
+            kwargs["min_height"] = self.min_height
             new_obj = self.__class__(**kwargs)
             return new_obj
 
@@ -142,253 +67,55 @@ class Heightmap(BaseModel):
             version = self.__version__ or version
             el = ET.Element("blend")
             if self.fade_dist is not None:
-                el.append(self.fade_dist.to_sdf(version))
+                _c_tmp = ET.Element("fade_dist")
+                _c_tmp.text = str(self.fade_dist)
+                el.append(_c_tmp)
             if self.min_height is not None:
-                el.append(self.min_height.to_sdf(version))
+                _c_tmp = ET.Element("min_height")
+                _c_tmp.text = str(self.min_height)
+                el.append(_c_tmp)
             return el
 
         @classmethod
         def _from_sdf(cls, el: ET.Element, version: str) -> "Heightmap.Blend | SDFError":
-            _c_fade_dist = el.find("fade_dist")
-            if _c_fade_dist is not None:
-                _res = cls.FadeDist._from_sdf(_c_fade_dist, version)
-                if isinstance(_res, SDFError):
-                    return _res.extend("fade_dist")
-                _fade_dist = _res
+            _c_tmp = el.find("fade_dist")
+            if _c_tmp is not None:
+                _text = _c_tmp.text if _c_tmp.text is not None else 0
+                _val = _parse_double(_text)
+                if isinstance(_val, SDFError):
+                    return _val.extend("fade_dist")
+                _fade_dist = _val
             else:
                 _fade_dist = None
-            _c_min_height = el.find("min_height")
-            if _c_min_height is not None:
-                _res = cls.MinHeight._from_sdf(_c_min_height, version)
-                if isinstance(_res, SDFError):
-                    return _res.extend("min_height")
-                _min_height = _res
+            _c_tmp = el.find("min_height")
+            if _c_tmp is not None:
+                _text = _c_tmp.text if _c_tmp.text is not None else 0
+                _val = _parse_double(_text)
+                if isinstance(_val, SDFError):
+                    return _val.extend("min_height")
+                _min_height = _val
             else:
                 _min_height = None
             return cls(sdf_version=version, fade_dist=_fade_dist, min_height=_min_height)
 
-    class Pos(BaseModel):
-        def __init__(self, sdf_version: str | None = None, pos: _SDFVector3 = None):
-            super().__init__(sdf_version)
-            if pos is None:
-                pos = _SDFVector3.from_sdf("0 0 0", version=sdf_version)
-            self.pos = pos
-
-        def to_version(self, target_version: str) -> "Heightmap.Pos":
-            kwargs = {"sdf_version": target_version}
-            kwargs["pos"] = self.pos
-            new_obj = self.__class__(**kwargs)
-            return new_obj
-
-        def to_sdf(self, version: str | None = None) -> ET.Element:
-            if self.__version__ is None and version is not None:
-                self.__version__ = version
-            elif version is not None and version != self.__version__:
-                return self.to_version(version).to_sdf()
-            version = self.__version__ or version
-            el = ET.Element("pos")
-            if self.pos is not None:
-                el.text = self.pos.to_sdf(version)
-            return el
-
-        @classmethod
-        def _from_sdf(cls, el: ET.Element, version: str) -> "Heightmap.Pos | SDFError":
-            _text = el.text or "0 0 0"
-            _pos = _SDFVector3._from_sdf(_text, version)
-            if isinstance(_pos, SDFError):
-                return _pos
-            return cls(sdf_version=version, pos=_pos)
-
-    class Sampling(BaseModel):
-        def __init__(self, sdf_version: str | None = None, sampling: int = 2):
-            super().__init__(sdf_version)
-            self.sampling = sampling
-
-        def to_version(self, target_version: str) -> "Heightmap.Sampling":
-            if self.sampling is not None and cmp_version(target_version, "1.6") < 0:
-                raise ValueError(f"'sampling' is not supported in SDF version {target_version} (added in 1.6)")
-            kwargs = {"sdf_version": target_version}
-            kwargs["sampling"] = self.sampling
-            new_obj = self.__class__(**kwargs)
-            return new_obj
-
-        def to_sdf(self, version: str | None = None) -> ET.Element:
-            if self.__version__ is None and version is not None:
-                self.__version__ = version
-            elif version is not None and version != self.__version__:
-                return self.to_version(version).to_sdf()
-            version = self.__version__ or version
-            el = ET.Element("sampling")
-            if self.sampling is not None:
-                el.text = str(self.sampling)
-            return el
-
-        @classmethod
-        def _from_sdf(cls, el: ET.Element, version: str) -> "Heightmap.Sampling | SDFError":
-            _text = el.text or 2
-            _sampling = _parse_uint32(_text)
-            if isinstance(_sampling, SDFError):
-                return _sampling
-            if _sampling is not None and cmp_version(version, "1.6") < 0:
-                if _sampling != 2:
-                    return SDFError(f"'sampling' is not supported in SDF version {version} (added in 1.6)")
-            return cls(sdf_version=version, sampling=_sampling)
-
-    class Size(BaseModel):
-        def __init__(self, sdf_version: str | None = None, size: _SDFVector3 = None):
-            super().__init__(sdf_version)
-            if size is None:
-                size = _SDFVector3.from_sdf("1 1 1", version=sdf_version)
-            self.size = size
-
-        def to_version(self, target_version: str) -> "Heightmap.Size":
-            kwargs = {"sdf_version": target_version}
-            kwargs["size"] = self.size
-            new_obj = self.__class__(**kwargs)
-            return new_obj
-
-        def to_sdf(self, version: str | None = None) -> ET.Element:
-            if self.__version__ is None and version is not None:
-                self.__version__ = version
-            elif version is not None and version != self.__version__:
-                return self.to_version(version).to_sdf()
-            version = self.__version__ or version
-            el = ET.Element("size")
-            if self.size is not None:
-                el.text = self.size.to_sdf(version)
-            return el
-
-        @classmethod
-        def _from_sdf(cls, el: ET.Element, version: str) -> "Heightmap.Size | SDFError":
-            _text = el.text or "1 1 1"
-            _size = _SDFVector3._from_sdf(_text, version)
-            if isinstance(_size, SDFError):
-                return _size
-            return cls(sdf_version=version, size=_size)
-
     class Texture(BaseModel):
-        class Diffuse(BaseModel):
-            def __init__(self, sdf_version: str | None = None, diffuse: str = "__default__"):
-                super().__init__(sdf_version)
-                self.diffuse = diffuse
-
-            def to_version(self, target_version: str) -> "Heightmap.Texture.Diffuse":
-                kwargs = {"sdf_version": target_version}
-                kwargs["diffuse"] = self.diffuse
-                new_obj = self.__class__(**kwargs)
-                return new_obj
-
-            def to_sdf(self, version: str | None = None) -> ET.Element:
-                if self.__version__ is None and version is not None:
-                    self.__version__ = version
-                elif version is not None and version != self.__version__:
-                    return self.to_version(version).to_sdf()
-                version = self.__version__ or version
-                el = ET.Element("diffuse")
-                if self.diffuse is not None:
-                    el.text = self.diffuse
-                return el
-
-            @classmethod
-            def _from_sdf(cls, el: ET.Element, version: str) -> "Heightmap.Texture.Diffuse | SDFError":
-                _text = el.text or "__default__"
-                _diffuse = _text
-                if isinstance(_diffuse, SDFError):
-                    return _diffuse
-                return cls(sdf_version=version, diffuse=_diffuse)
-
-        class Normal(BaseModel):
-            def __init__(self, sdf_version: str | None = None, normal: str = "__default__"):
-                super().__init__(sdf_version)
-                self.normal = normal
-
-            def to_version(self, target_version: str) -> "Heightmap.Texture.Normal":
-                kwargs = {"sdf_version": target_version}
-                kwargs["normal"] = self.normal
-                new_obj = self.__class__(**kwargs)
-                return new_obj
-
-            def to_sdf(self, version: str | None = None) -> ET.Element:
-                if self.__version__ is None and version is not None:
-                    self.__version__ = version
-                elif version is not None and version != self.__version__:
-                    return self.to_version(version).to_sdf()
-                version = self.__version__ or version
-                el = ET.Element("normal")
-                if self.normal is not None:
-                    el.text = self.normal
-                return el
-
-            @classmethod
-            def _from_sdf(cls, el: ET.Element, version: str) -> "Heightmap.Texture.Normal | SDFError":
-                _text = el.text or "__default__"
-                _normal = _text
-                if isinstance(_normal, SDFError):
-                    return _normal
-                return cls(sdf_version=version, normal=_normal)
-
-        class TextureSize(BaseModel):
-            def __init__(self, sdf_version: str | None = None, size: float = 10):
-                super().__init__(sdf_version)
-                self.size = size
-
-            def to_version(self, target_version: str) -> "Heightmap.Texture.TextureSize":
-                kwargs = {"sdf_version": target_version}
-                kwargs["size"] = self.size
-                new_obj = self.__class__(**kwargs)
-                return new_obj
-
-            def to_sdf(self, version: str | None = None) -> ET.Element:
-                if self.__version__ is None and version is not None:
-                    self.__version__ = version
-                elif version is not None and version != self.__version__:
-                    return self.to_version(version).to_sdf()
-                version = self.__version__ or version
-                el = ET.Element("size")
-                if self.size is not None:
-                    el.text = str(self.size)
-                return el
-
-            @classmethod
-            def _from_sdf(cls, el: ET.Element, version: str) -> "Heightmap.Texture.TextureSize | SDFError":
-                _text = el.text or 10
-                _size = _parse_double(_text)
-                if isinstance(_size, SDFError):
-                    return _size
-                return cls(sdf_version=version, size=_size)
-
         def __init__(
             self,
             sdf_version: str | None = None,
-            diffuse: "Heightmap.Texture.Diffuse" = None,
-            normal: "Heightmap.Texture.Normal" = None,
-            size: "Heightmap.Texture.TextureSize" = None
+            diffuse: str = "__default__",
+            normal: str = "__default__",
+            size: float = 10
         ):
             super().__init__(sdf_version)
             self.diffuse = diffuse
             self.normal = normal
             self.size = size
-            if self.diffuse is not None:
-                if getattr(self.diffuse, '__version__', None) is None:
-                    self.diffuse.__version__ = self.__version__
-                elif getattr(self.diffuse, '__version__', None) != self.__version__ and self.__version__ is not None:
-                    self.diffuse = self.diffuse.to_version(self.__version__)
-            if self.normal is not None:
-                if getattr(self.normal, '__version__', None) is None:
-                    self.normal.__version__ = self.__version__
-                elif getattr(self.normal, '__version__', None) != self.__version__ and self.__version__ is not None:
-                    self.normal = self.normal.to_version(self.__version__)
-            if self.size is not None:
-                if getattr(self.size, '__version__', None) is None:
-                    self.size.__version__ = self.__version__
-                elif getattr(self.size, '__version__', None) != self.__version__ and self.__version__ is not None:
-                    self.size = self.size.to_version(self.__version__)
 
         def to_version(self, target_version: str) -> "Heightmap.Texture":
             kwargs = {"sdf_version": target_version}
-            kwargs["diffuse"] = self.diffuse.to_version(target_version) if self.diffuse is not None else None
-            kwargs["normal"] = self.normal.to_version(target_version) if self.normal is not None else None
-            kwargs["size"] = self.size.to_version(target_version) if self.size is not None else None
+            kwargs["diffuse"] = self.diffuse
+            kwargs["normal"] = self.normal
+            kwargs["size"] = self.size
             new_obj = self.__class__(**kwargs)
             return new_obj
 
@@ -400,113 +127,66 @@ class Heightmap(BaseModel):
             version = self.__version__ or version
             el = ET.Element("texture")
             if self.diffuse is not None:
-                el.append(self.diffuse.to_sdf(version))
+                _c_tmp = ET.Element("diffuse")
+                _c_tmp.text = self.diffuse
+                el.append(_c_tmp)
             if self.normal is not None:
-                el.append(self.normal.to_sdf(version))
+                _c_tmp = ET.Element("normal")
+                _c_tmp.text = self.normal
+                el.append(_c_tmp)
             if self.size is not None:
-                el.append(self.size.to_sdf(version))
+                _c_tmp = ET.Element("size")
+                _c_tmp.text = str(self.size)
+                el.append(_c_tmp)
             return el
 
         @classmethod
         def _from_sdf(cls, el: ET.Element, version: str) -> "Heightmap.Texture | SDFError":
-            _c_diffuse = el.find("diffuse")
-            if _c_diffuse is not None:
-                _res = cls.Diffuse._from_sdf(_c_diffuse, version)
-                if isinstance(_res, SDFError):
-                    return _res.extend("diffuse")
-                _diffuse = _res
+            _c_tmp = el.find("diffuse")
+            if _c_tmp is not None:
+                _text = _c_tmp.text if _c_tmp.text is not None else "__default__"
+                _val = _text
+                if isinstance(_val, SDFError):
+                    return _val.extend("diffuse")
+                _diffuse = _val
             else:
                 _diffuse = None
-            _c_normal = el.find("normal")
-            if _c_normal is not None:
-                _res = cls.Normal._from_sdf(_c_normal, version)
-                if isinstance(_res, SDFError):
-                    return _res.extend("normal")
-                _normal = _res
+            _c_tmp = el.find("normal")
+            if _c_tmp is not None:
+                _text = _c_tmp.text if _c_tmp.text is not None else "__default__"
+                _val = _text
+                if isinstance(_val, SDFError):
+                    return _val.extend("normal")
+                _normal = _val
             else:
                 _normal = None
-            _c_size = el.find("size")
-            if _c_size is not None:
-                _res = cls.TextureSize._from_sdf(_c_size, version)
-                if isinstance(_res, SDFError):
-                    return _res.extend("size")
-                _size = _res
+            _c_tmp = el.find("size")
+            if _c_tmp is not None:
+                _text = _c_tmp.text if _c_tmp.text is not None else 10
+                _val = _parse_double(_text)
+                if isinstance(_val, SDFError):
+                    return _val.extend("size")
+                _size = _val
             else:
                 _size = None
             return cls(sdf_version=version, diffuse=_diffuse, normal=_normal, size=_size)
-
-    class Uri(BaseModel):
-        def __init__(self, sdf_version: str | None = None, uri: str = "__default__"):
-            super().__init__(sdf_version)
-            self.uri = uri
-
-        def to_version(self, target_version: str) -> "Heightmap.Uri":
-            kwargs = {"sdf_version": target_version}
-            kwargs["uri"] = self.uri
-            new_obj = self.__class__(**kwargs)
-            return new_obj
-
-        def to_sdf(self, version: str | None = None) -> ET.Element:
-            if self.__version__ is None and version is not None:
-                self.__version__ = version
-            elif version is not None and version != self.__version__:
-                return self.to_version(version).to_sdf()
-            version = self.__version__ or version
-            el = ET.Element("uri")
-            if self.uri is not None:
-                el.text = self.uri
-            return el
-
-        @classmethod
-        def _from_sdf(cls, el: ET.Element, version: str) -> "Heightmap.Uri | SDFError":
-            _text = el.text or "__default__"
-            _uri = _text
-            if isinstance(_uri, SDFError):
-                return _uri
-            return cls(sdf_version=version, uri=_uri)
-
-    class UseTerrainPaging(BaseModel):
-        def __init__(self, sdf_version: str | None = None, use_terrain_paging: bool = False):
-            super().__init__(sdf_version)
-            self.use_terrain_paging = use_terrain_paging
-
-        def to_version(self, target_version: str) -> "Heightmap.UseTerrainPaging":
-            kwargs = {"sdf_version": target_version}
-            kwargs["use_terrain_paging"] = self.use_terrain_paging
-            new_obj = self.__class__(**kwargs)
-            return new_obj
-
-        def to_sdf(self, version: str | None = None) -> ET.Element:
-            if self.__version__ is None and version is not None:
-                self.__version__ = version
-            elif version is not None and version != self.__version__:
-                return self.to_version(version).to_sdf()
-            version = self.__version__ or version
-            el = ET.Element("use_terrain_paging")
-            if self.use_terrain_paging is not None:
-                el.text = str(self.use_terrain_paging).lower()
-            return el
-
-        @classmethod
-        def _from_sdf(cls, el: ET.Element, version: str) -> "Heightmap.UseTerrainPaging | SDFError":
-            _text = el.text or False
-            _use_terrain_paging = str(_text).strip().lower() == 'true'
-            if isinstance(_use_terrain_paging, SDFError):
-                return _use_terrain_paging
-            return cls(sdf_version=version, use_terrain_paging=_use_terrain_paging)
 
     def __init__(
         self,
         sdf_version: str | None = None,
         blends: List["Heightmap.Blend"] = None,
-        pos: "Heightmap.Pos" = None,
-        sampling: "Heightmap.Sampling" = None,
-        size: "Heightmap.Size" = None,
+        pos: _SDFVector3 = None,
+        sampling: int = 2,
+        size: _SDFVector3 = None,
         textures: List["Heightmap.Texture"] = None,
-        uri: "Heightmap.Uri" = None,
-        use_terrain_paging: "Heightmap.UseTerrainPaging" = None
+        uri: str = "__default__",
+        use_terrain_paging: bool = False
     ):
         super().__init__(sdf_version)
+        if pos is None:
+            pos = _SDFVector3.from_sdf("0 0 0", version=sdf_version)
+        if size is None:
+            size = _SDFVector3.from_sdf("1 1 1", version=sdf_version)
         self.blends = blends or []
         self.pos = pos
         self.sampling = sampling
@@ -515,52 +195,39 @@ class Heightmap(BaseModel):
         self.uri = uri
         self.use_terrain_paging = use_terrain_paging
         for _i, _c in enumerate(self.blends):
+            if not hasattr(_c, 'to_version'): continue
             if getattr(_c, '__version__', None) is None:
                 _c.__version__ = self.__version__
             elif getattr(_c, '__version__', None) != self.__version__ and self.__version__ is not None:
                 self.blends[_i] = _c.to_version(self.__version__)
-        if self.pos is not None:
-            if getattr(self.pos, '__version__', None) is None:
-                self.pos.__version__ = self.__version__
-            elif getattr(self.pos, '__version__', None) != self.__version__ and self.__version__ is not None:
-                self.pos = self.pos.to_version(self.__version__)
-        if self.sampling is not None:
-            if getattr(self.sampling, '__version__', None) is None:
-                self.sampling.__version__ = self.__version__
-            elif getattr(self.sampling, '__version__', None) != self.__version__ and self.__version__ is not None:
-                self.sampling = self.sampling.to_version(self.__version__)
-        if self.size is not None:
-            if getattr(self.size, '__version__', None) is None:
-                self.size.__version__ = self.__version__
-            elif getattr(self.size, '__version__', None) != self.__version__ and self.__version__ is not None:
-                self.size = self.size.to_version(self.__version__)
         for _i, _c in enumerate(self.textures):
+            if not hasattr(_c, 'to_version'): continue
             if getattr(_c, '__version__', None) is None:
                 _c.__version__ = self.__version__
             elif getattr(_c, '__version__', None) != self.__version__ and self.__version__ is not None:
                 self.textures[_i] = _c.to_version(self.__version__)
-        if self.uri is not None:
-            if getattr(self.uri, '__version__', None) is None:
-                self.uri.__version__ = self.__version__
-            elif getattr(self.uri, '__version__', None) != self.__version__ and self.__version__ is not None:
-                self.uri = self.uri.to_version(self.__version__)
-        if self.use_terrain_paging is not None:
-            if getattr(self.use_terrain_paging, '__version__', None) is None:
-                self.use_terrain_paging.__version__ = self.__version__
-            elif getattr(self.use_terrain_paging, '__version__', None) != self.__version__ and self.__version__ is not None:
-                self.use_terrain_paging = self.use_terrain_paging.to_version(self.__version__)
+
+    def add_blend(self, *items: "Heightmap.Blend"):
+        if self.blends is None:
+            self.blends = []
+        self.blends.extend(items)
+
+    def add_texture(self, *items: "Heightmap.Texture"):
+        if self.textures is None:
+            self.textures = []
+        self.textures.extend(items)
 
     def to_version(self, target_version: str) -> "Heightmap":
         if self.sampling is not None and cmp_version(target_version, "1.6") < 0:
             raise ValueError(f"'sampling' is not supported in SDF version {target_version} (added in 1.6)")
         kwargs = {"sdf_version": target_version}
-        kwargs["blends"] = [c.to_version(target_version) for c in (self.blends or [])]
-        kwargs["pos"] = self.pos.to_version(target_version) if self.pos is not None else None
-        kwargs["sampling"] = self.sampling.to_version(target_version) if self.sampling is not None else None
-        kwargs["size"] = self.size.to_version(target_version) if self.size is not None else None
-        kwargs["textures"] = [c.to_version(target_version) for c in (self.textures or [])]
-        kwargs["uri"] = self.uri.to_version(target_version) if self.uri is not None else None
-        kwargs["use_terrain_paging"] = self.use_terrain_paging.to_version(target_version) if self.use_terrain_paging is not None else None
+        kwargs["blends"] = [c.to_version(target_version) if hasattr(c, "to_version") else c for c in (self.blends or [])]
+        kwargs["pos"] = self.pos
+        kwargs["sampling"] = self.sampling
+        kwargs["size"] = self.size
+        kwargs["textures"] = [c.to_version(target_version) if hasattr(c, "to_version") else c for c in (self.textures or [])]
+        kwargs["uri"] = self.uri
+        kwargs["use_terrain_paging"] = self.use_terrain_paging
         new_obj = self.__class__(**kwargs)
         return new_obj
 
@@ -572,19 +239,47 @@ class Heightmap(BaseModel):
         version = self.__version__ or version
         el = ET.Element("heightmap")
         for item in (self.blends or []):
-            el.append(item.to_sdf(version))
+            if hasattr(item, 'to_sdf'):
+                _child_res = item.to_sdf(version)
+            else:
+                _child_res = str(item)
+            if isinstance(_child_res, str):
+                _item_el = ET.Element('blend')
+                _item_el.text = _child_res
+            else:
+                _item_el = _child_res
+            el.append(_item_el)
         if self.pos is not None:
-            el.append(self.pos.to_sdf(version))
+            _c_tmp = ET.Element("pos")
+            _c_tmp.text = self.pos.to_sdf(version)
+            el.append(_c_tmp)
         if self.sampling is not None:
-            el.append(self.sampling.to_sdf(version))
+            _c_tmp = ET.Element("sampling")
+            _c_tmp.text = str(self.sampling)
+            el.append(_c_tmp)
         if self.size is not None:
-            el.append(self.size.to_sdf(version))
+            _c_tmp = ET.Element("size")
+            _c_tmp.text = self.size.to_sdf(version)
+            el.append(_c_tmp)
         for item in (self.textures or []):
-            el.append(item.to_sdf(version))
+            if hasattr(item, 'to_sdf'):
+                _child_res = item.to_sdf(version)
+            else:
+                _child_res = str(item)
+            if isinstance(_child_res, str):
+                _item_el = ET.Element('texture')
+                _item_el.text = _child_res
+            else:
+                _item_el = _child_res
+            el.append(_item_el)
         if self.uri is not None:
-            el.append(self.uri.to_sdf(version))
+            _c_tmp = ET.Element("uri")
+            _c_tmp.text = self.uri
+            el.append(_c_tmp)
         if self.use_terrain_paging is not None:
-            el.append(self.use_terrain_paging.to_sdf(version))
+            _c_tmp = ET.Element("use_terrain_paging")
+            _c_tmp.text = str(self.use_terrain_paging).lower()
+            el.append(_c_tmp)
         return el
 
     @classmethod
@@ -595,30 +290,33 @@ class Heightmap(BaseModel):
             if isinstance(_res, SDFError):
                 return _res.extend("blend")
             _blends.append(_res)
-        _c_pos = el.find("pos")
-        if _c_pos is not None:
-            _res = cls.Pos._from_sdf(_c_pos, version)
-            if isinstance(_res, SDFError):
-                return _res.extend("pos")
-            _pos = _res
+        _c_tmp = el.find("pos")
+        if _c_tmp is not None:
+            _text = _c_tmp.text if _c_tmp.text is not None else "0 0 0"
+            _val = _SDFVector3._from_sdf(_text, version)
+            if isinstance(_val, SDFError):
+                return _val.extend("pos")
+            _pos = _val
         else:
             _pos = None
-        _c_sampling = el.find("sampling")
-        if _c_sampling is not None:
-            _res = cls.Sampling._from_sdf(_c_sampling, version)
-            if isinstance(_res, SDFError):
-                return _res.extend("sampling")
-            _sampling = _res
+        _c_tmp = el.find("sampling")
+        if _c_tmp is not None:
+            _text = _c_tmp.text if _c_tmp.text is not None else 2
+            _val = _parse_uint32(_text)
+            if isinstance(_val, SDFError):
+                return _val.extend("sampling")
+            _sampling = _val
         else:
             _sampling = None
         if _sampling is not None and cmp_version(version, "1.6") < 0:
             return SDFError(f"'sampling' is not supported in SDF version {version} (added in 1.6)")
-        _c_size = el.find("size")
-        if _c_size is not None:
-            _res = cls.Size._from_sdf(_c_size, version)
-            if isinstance(_res, SDFError):
-                return _res.extend("size")
-            _size = _res
+        _c_tmp = el.find("size")
+        if _c_tmp is not None:
+            _text = _c_tmp.text if _c_tmp.text is not None else "1 1 1"
+            _val = _SDFVector3._from_sdf(_text, version)
+            if isinstance(_val, SDFError):
+                return _val.extend("size")
+            _size = _val
         else:
             _size = None
         _textures = []
@@ -627,20 +325,22 @@ class Heightmap(BaseModel):
             if isinstance(_res, SDFError):
                 return _res.extend("texture")
             _textures.append(_res)
-        _c_uri = el.find("uri")
-        if _c_uri is not None:
-            _res = cls.Uri._from_sdf(_c_uri, version)
-            if isinstance(_res, SDFError):
-                return _res.extend("uri")
-            _uri = _res
+        _c_tmp = el.find("uri")
+        if _c_tmp is not None:
+            _text = _c_tmp.text if _c_tmp.text is not None else "__default__"
+            _val = _text
+            if isinstance(_val, SDFError):
+                return _val.extend("uri")
+            _uri = _val
         else:
             _uri = None
-        _c_use_terrain_paging = el.find("use_terrain_paging")
-        if _c_use_terrain_paging is not None:
-            _res = cls.UseTerrainPaging._from_sdf(_c_use_terrain_paging, version)
-            if isinstance(_res, SDFError):
-                return _res.extend("use_terrain_paging")
-            _use_terrain_paging = _res
+        _c_tmp = el.find("use_terrain_paging")
+        if _c_tmp is not None:
+            _text = _c_tmp.text if _c_tmp.text is not None else False
+            _val = str(_text).strip().lower() == 'true'
+            if isinstance(_val, SDFError):
+                return _val.extend("use_terrain_paging")
+            _use_terrain_paging = _val
         else:
             _use_terrain_paging = None
         return cls(sdf_version=version, blends=_blends, pos=_pos, sampling=_sampling, size=_size, textures=_textures, uri=_uri, use_terrain_paging=_use_terrain_paging)

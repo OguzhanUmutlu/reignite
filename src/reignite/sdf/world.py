@@ -33,48 +33,13 @@ if typing.TYPE_CHECKING:
 
 class World(BaseModel):
     class Audio(BaseModel):
-        class Device(BaseModel):
-            def __init__(self, sdf_version: str | None = None, device: str = "default"):
-                super().__init__(sdf_version)
-                self.device = device
-
-            def to_version(self, target_version: str) -> "World.Audio.Device":
-                kwargs = {"sdf_version": target_version}
-                kwargs["device"] = self.device
-                new_obj = self.__class__(**kwargs)
-                return new_obj
-
-            def to_sdf(self, version: str | None = None) -> ET.Element:
-                if self.__version__ is None and version is not None:
-                    self.__version__ = version
-                elif version is not None and version != self.__version__:
-                    return self.to_version(version).to_sdf()
-                version = self.__version__ or version
-                el = ET.Element("device")
-                if self.device is not None:
-                    el.text = self.device
-                return el
-
-            @classmethod
-            def _from_sdf(cls, el: ET.Element, version: str) -> "World.Audio.Device | SDFError":
-                _text = el.text or "default"
-                _device = _text
-                if isinstance(_device, SDFError):
-                    return _device
-                return cls(sdf_version=version, device=_device)
-
-        def __init__(self, sdf_version: str | None = None, device: "World.Audio.Device" = None):
+        def __init__(self, sdf_version: str | None = None, device: str = "default"):
             super().__init__(sdf_version)
             self.device = device
-            if self.device is not None:
-                if getattr(self.device, '__version__', None) is None:
-                    self.device.__version__ = self.__version__
-                elif getattr(self.device, '__version__', None) != self.__version__ and self.__version__ is not None:
-                    self.device = self.device.to_version(self.__version__)
 
         def to_version(self, target_version: str) -> "World.Audio":
             kwargs = {"sdf_version": target_version}
-            kwargs["device"] = self.device.to_version(target_version) if self.device is not None else None
+            kwargs["device"] = self.device
             new_obj = self.__class__(**kwargs)
             return new_obj
 
@@ -86,205 +51,36 @@ class World(BaseModel):
             version = self.__version__ or version
             el = ET.Element("audio")
             if self.device is not None:
-                el.append(self.device.to_sdf(version))
+                _c_tmp = ET.Element("device")
+                _c_tmp.text = self.device
+                el.append(_c_tmp)
             return el
 
         @classmethod
         def _from_sdf(cls, el: ET.Element, version: str) -> "World.Audio | SDFError":
-            _c_device = el.find("device")
-            if _c_device is not None:
-                _res = cls.Device._from_sdf(_c_device, version)
-                if isinstance(_res, SDFError):
-                    return _res.extend("device")
-                _device = _res
+            _c_tmp = el.find("device")
+            if _c_tmp is not None:
+                _text = _c_tmp.text if _c_tmp.text is not None else "default"
+                _val = _text
+                if isinstance(_val, SDFError):
+                    return _val.extend("device")
+                _device = _val
             else:
                 _device = None
             return cls(sdf_version=version, device=_device)
 
-    class Gravity(BaseModel):
-        def __init__(self, sdf_version: str | None = None, gravity: _SDFVector3 = None):
-            super().__init__(sdf_version)
-            if gravity is None:
-                gravity = _SDFVector3.from_sdf("0 0 -9.8", version=sdf_version)
-            self.gravity = gravity
-
-        def to_version(self, target_version: str) -> "World.Gravity":
-            if self.gravity is not None and cmp_version(target_version, "1.6") < 0:
-                raise ValueError(f"'gravity' is not supported in SDF version {target_version} (added in 1.6)")
-            kwargs = {"sdf_version": target_version}
-            kwargs["gravity"] = self.gravity
-            new_obj = self.__class__(**kwargs)
-            return new_obj
-
-        def to_sdf(self, version: str | None = None) -> ET.Element:
-            if self.__version__ is None and version is not None:
-                self.__version__ = version
-            elif version is not None and version != self.__version__:
-                return self.to_version(version).to_sdf()
-            version = self.__version__ or version
-            el = ET.Element("gravity")
-            if self.gravity is not None:
-                el.text = self.gravity.to_sdf(version)
-            return el
-
-        @classmethod
-        def _from_sdf(cls, el: ET.Element, version: str) -> "World.Gravity | SDFError":
-            _text = el.text or "0 0 -9.8"
-            _gravity = _SDFVector3._from_sdf(_text, version)
-            if isinstance(_gravity, SDFError):
-                return _gravity
-            if _gravity is not None and cmp_version(version, "1.6") < 0:
-                if _gravity != "0 0 -9.8":
-                    return SDFError(f"'gravity' is not supported in SDF version {version} (added in 1.6)")
-            return cls(sdf_version=version, gravity=_gravity)
-
     class Include(BaseModel):
-        class Name(BaseModel):
-            def __init__(self, sdf_version: str | None = None, name: str = ""):
-                super().__init__(sdf_version)
-                self.name = name
-
-            def to_version(self, target_version: str) -> "World.Include.Name":
-                if self.name is not None and cmp_version(target_version, "1.5") < 0:
-                    raise ValueError(f"'name' is not supported in SDF version {target_version} (added in 1.5)")
-                kwargs = {"sdf_version": target_version}
-                kwargs["name"] = self.name
-                new_obj = self.__class__(**kwargs)
-                return new_obj
-
-            def to_sdf(self, version: str | None = None) -> ET.Element:
-                if self.__version__ is None and version is not None:
-                    self.__version__ = version
-                elif version is not None and version != self.__version__:
-                    return self.to_version(version).to_sdf()
-                version = self.__version__ or version
-                el = ET.Element("name")
-                if self.name is not None:
-                    el.text = self.name
-                return el
-
-            @classmethod
-            def _from_sdf(cls, el: ET.Element, version: str) -> "World.Include.Name | SDFError":
-                _text = el.text or ""
-                _name = _text
-                if isinstance(_name, SDFError):
-                    return _name
-                if _name is not None and cmp_version(version, "1.5") < 0:
-                    if _name != "":
-                        return SDFError(f"'name' is not supported in SDF version {version} (added in 1.5)")
-                return cls(sdf_version=version, name=_name)
-
-        class PlacementFrame(BaseModel):
-            def __init__(self, sdf_version: str | None = None, placement_frame: str = ""):
-                super().__init__(sdf_version)
-                self.placement_frame = placement_frame
-
-            def to_version(self, target_version: str) -> "World.Include.PlacementFrame":
-                if self.placement_frame is not None and cmp_version(target_version, "1.8") < 0:
-                    raise ValueError(f"'placement_frame' is not supported in SDF version {target_version} (added in 1.8)")
-                kwargs = {"sdf_version": target_version}
-                kwargs["placement_frame"] = self.placement_frame
-                new_obj = self.__class__(**kwargs)
-                return new_obj
-
-            def to_sdf(self, version: str | None = None) -> ET.Element:
-                if self.__version__ is None and version is not None:
-                    self.__version__ = version
-                elif version is not None and version != self.__version__:
-                    return self.to_version(version).to_sdf()
-                version = self.__version__ or version
-                el = ET.Element("placement_frame")
-                if self.placement_frame is not None:
-                    el.text = self.placement_frame
-                return el
-
-            @classmethod
-            def _from_sdf(cls, el: ET.Element, version: str) -> "World.Include.PlacementFrame | SDFError":
-                _text = el.text or ""
-                _placement_frame = _text
-                if isinstance(_placement_frame, SDFError):
-                    return _placement_frame
-                if _placement_frame is not None and cmp_version(version, "1.8") < 0:
-                    if _placement_frame != "":
-                        return SDFError(f"'placement_frame' is not supported in SDF version {version} (added in 1.8)")
-                return cls(sdf_version=version, placement_frame=_placement_frame)
-
-        class Static(BaseModel):
-            def __init__(self, sdf_version: str | None = None, static: bool = False):
-                super().__init__(sdf_version)
-                self.static = static
-
-            def to_version(self, target_version: str) -> "World.Include.Static":
-                if self.static is not None and cmp_version(target_version, "1.5") < 0:
-                    raise ValueError(f"'static' is not supported in SDF version {target_version} (added in 1.5)")
-                kwargs = {"sdf_version": target_version}
-                kwargs["static"] = self.static
-                new_obj = self.__class__(**kwargs)
-                return new_obj
-
-            def to_sdf(self, version: str | None = None) -> ET.Element:
-                if self.__version__ is None and version is not None:
-                    self.__version__ = version
-                elif version is not None and version != self.__version__:
-                    return self.to_version(version).to_sdf()
-                version = self.__version__ or version
-                el = ET.Element("static")
-                if self.static is not None:
-                    el.text = str(self.static).lower()
-                return el
-
-            @classmethod
-            def _from_sdf(cls, el: ET.Element, version: str) -> "World.Include.Static | SDFError":
-                _text = el.text or False
-                _static = str(_text).strip().lower() == 'true'
-                if isinstance(_static, SDFError):
-                    return _static
-                if _static is not None and cmp_version(version, "1.5") < 0:
-                    if _static != False:
-                        return SDFError(f"'static' is not supported in SDF version {version} (added in 1.5)")
-                return cls(sdf_version=version, static=_static)
-
-        class Uri(BaseModel):
-            def __init__(self, sdf_version: str | None = None, uri: str = "__default__"):
-                super().__init__(sdf_version)
-                self.uri = uri
-
-            def to_version(self, target_version: str) -> "World.Include.Uri":
-                kwargs = {"sdf_version": target_version}
-                kwargs["uri"] = self.uri
-                new_obj = self.__class__(**kwargs)
-                return new_obj
-
-            def to_sdf(self, version: str | None = None) -> ET.Element:
-                if self.__version__ is None and version is not None:
-                    self.__version__ = version
-                elif version is not None and version != self.__version__:
-                    return self.to_version(version).to_sdf()
-                version = self.__version__ or version
-                el = ET.Element("uri")
-                if self.uri is not None:
-                    el.text = self.uri
-                return el
-
-            @classmethod
-            def _from_sdf(cls, el: ET.Element, version: str) -> "World.Include.Uri | SDFError":
-                _text = el.text or "__default__"
-                _uri = _text
-                if isinstance(_uri, SDFError):
-                    return _uri
-                return cls(sdf_version=version, uri=_uri)
-
         def __init__(
             self,
             sdf_version: str | None = None,
             merge: bool = False,
             model_states: List["ModelState"] = None,
-            name: "World.Include.Name" = None,
-            placement_frame: "World.Include.PlacementFrame" = None,
+            name: str = "",
+            placement_frame: str = "",
             plugins: List["Plugin"] = None,
             pose: "Pose" = None,
-            static: "World.Include.Static" = None,
-            uri: "World.Include.Uri" = None
+            static: bool = False,
+            uri: str = "__default__"
         ):
             super().__init__(sdf_version)
             self.merge = merge
@@ -296,40 +92,32 @@ class World(BaseModel):
             self.static = static
             self.uri = uri
             for _i, _c in enumerate(self.model_states):
+                if not hasattr(_c, 'to_version'): continue
                 if getattr(_c, '__version__', None) is None:
                     _c.__version__ = self.__version__
                 elif getattr(_c, '__version__', None) != self.__version__ and self.__version__ is not None:
                     self.model_states[_i] = _c.to_version(self.__version__)
-            if self.name is not None:
-                if getattr(self.name, '__version__', None) is None:
-                    self.name.__version__ = self.__version__
-                elif getattr(self.name, '__version__', None) != self.__version__ and self.__version__ is not None:
-                    self.name = self.name.to_version(self.__version__)
-            if self.placement_frame is not None:
-                if getattr(self.placement_frame, '__version__', None) is None:
-                    self.placement_frame.__version__ = self.__version__
-                elif getattr(self.placement_frame, '__version__', None) != self.__version__ and self.__version__ is not None:
-                    self.placement_frame = self.placement_frame.to_version(self.__version__)
             for _i, _c in enumerate(self.plugins):
+                if not hasattr(_c, 'to_version'): continue
                 if getattr(_c, '__version__', None) is None:
                     _c.__version__ = self.__version__
                 elif getattr(_c, '__version__', None) != self.__version__ and self.__version__ is not None:
                     self.plugins[_i] = _c.to_version(self.__version__)
-            if self.pose is not None:
+            if self.pose is not None and hasattr(self.pose, 'to_version'):
                 if getattr(self.pose, '__version__', None) is None:
                     self.pose.__version__ = self.__version__
                 elif getattr(self.pose, '__version__', None) != self.__version__ and self.__version__ is not None:
                     self.pose = self.pose.to_version(self.__version__)
-            if self.static is not None:
-                if getattr(self.static, '__version__', None) is None:
-                    self.static.__version__ = self.__version__
-                elif getattr(self.static, '__version__', None) != self.__version__ and self.__version__ is not None:
-                    self.static = self.static.to_version(self.__version__)
-            if self.uri is not None:
-                if getattr(self.uri, '__version__', None) is None:
-                    self.uri.__version__ = self.__version__
-                elif getattr(self.uri, '__version__', None) != self.__version__ and self.__version__ is not None:
-                    self.uri = self.uri.to_version(self.__version__)
+
+        def add_model_state(self, *items: "ModelState"):
+            if self.model_states is None:
+                self.model_states = []
+            self.model_states.extend(items)
+
+        def add_plugin(self, *items: "Plugin"):
+            if self.plugins is None:
+                self.plugins = []
+            self.plugins.extend(items)
 
         def to_version(self, target_version: str) -> "World.Include":
             from ..elements.model_state import ModelState
@@ -351,13 +139,13 @@ class World(BaseModel):
                 raise ValueError(f"'static' is not supported in SDF version {target_version} (added in 1.5)")
             kwargs = {"sdf_version": target_version}
             kwargs["merge"] = self.merge
-            kwargs["model_states"] = [c.to_version(target_version) for c in (self.model_states or [])]
-            kwargs["name"] = self.name.to_version(target_version) if self.name is not None else None
-            kwargs["placement_frame"] = self.placement_frame.to_version(target_version) if self.placement_frame is not None else None
-            kwargs["plugins"] = [c.to_version(target_version) for c in (self.plugins or [])]
-            kwargs["pose"] = self.pose.to_version(target_version) if self.pose is not None else None
-            kwargs["static"] = self.static.to_version(target_version) if self.static is not None else None
-            kwargs["uri"] = self.uri.to_version(target_version) if self.uri is not None else None
+            kwargs["model_states"] = [c.to_version(target_version) if hasattr(c, "to_version") else c for c in (self.model_states or [])]
+            kwargs["name"] = self.name
+            kwargs["placement_frame"] = self.placement_frame
+            kwargs["plugins"] = [c.to_version(target_version) if hasattr(c, "to_version") else c for c in (self.plugins or [])]
+            kwargs["pose"] = self.pose.to_version(target_version) if hasattr(self.pose, "to_version") else self.pose
+            kwargs["static"] = self.static
+            kwargs["uri"] = self.uri
             new_obj = self.__class__(**kwargs)
             return new_obj
 
@@ -374,19 +162,54 @@ class World(BaseModel):
             if self.merge is not None:
                 el.set("merge", str(self.merge).lower())
             for item in (self.model_states or []):
-                el.append(item.to_sdf(version))
+                if hasattr(item, 'to_sdf'):
+                    _child_res = item.to_sdf(version)
+                else:
+                    _child_res = str(item)
+                if isinstance(_child_res, str):
+                    _item_el = ET.Element('model_state')
+                    _item_el.text = _child_res
+                else:
+                    _item_el = _child_res
+                el.append(_item_el)
             if self.name is not None:
-                el.append(self.name.to_sdf(version))
+                _c_tmp = ET.Element("name")
+                _c_tmp.text = self.name
+                el.append(_c_tmp)
             if self.placement_frame is not None:
-                el.append(self.placement_frame.to_sdf(version))
+                _c_tmp = ET.Element("placement_frame")
+                _c_tmp.text = self.placement_frame
+                el.append(_c_tmp)
             for item in (self.plugins or []):
-                el.append(item.to_sdf(version))
+                if hasattr(item, 'to_sdf'):
+                    _child_res = item.to_sdf(version)
+                else:
+                    _child_res = str(item)
+                if isinstance(_child_res, str):
+                    _item_el = ET.Element('plugin')
+                    _item_el.text = _child_res
+                else:
+                    _item_el = _child_res
+                el.append(_item_el)
             if self.pose is not None:
-                el.append(self.pose.to_sdf(version))
+                if hasattr(self.pose, 'to_sdf'):
+                    _child_res = self.pose.to_sdf(version)
+                else:
+                    _child_res = str(self.pose)
+                if isinstance(_child_res, str):
+                    _item_el = ET.Element('pose')
+                    _item_el.text = _child_res
+                else:
+                    _item_el = _child_res
+                el.append(_item_el)
             if self.static is not None:
-                el.append(self.static.to_sdf(version))
+                _c_tmp = ET.Element("static")
+                _c_tmp.text = str(self.static).lower()
+                el.append(_c_tmp)
             if self.uri is not None:
-                el.append(self.uri.to_sdf(version))
+                _c_tmp = ET.Element("uri")
+                _c_tmp.text = self.uri
+                el.append(_c_tmp)
             return el
 
         @classmethod
@@ -408,22 +231,24 @@ class World(BaseModel):
                 _model_states.append(_res)
             if _model_states and cmp_version(version, "1.12") < 0:
                 return SDFError(f"'model_states' is not supported in SDF version {version} (added in 1.12)")
-            _c_name = el.find("name")
-            if _c_name is not None:
-                _res = cls.Name._from_sdf(_c_name, version)
-                if isinstance(_res, SDFError):
-                    return _res.extend("name")
-                _name = _res
+            _c_tmp = el.find("name")
+            if _c_tmp is not None:
+                _text = _c_tmp.text if _c_tmp.text is not None else ""
+                _val = _text
+                if isinstance(_val, SDFError):
+                    return _val.extend("name")
+                _name = _val
             else:
                 _name = None
             if _name is not None and cmp_version(version, "1.5") < 0:
                 return SDFError(f"'name' is not supported in SDF version {version} (added in 1.5)")
-            _c_placement_frame = el.find("placement_frame")
-            if _c_placement_frame is not None:
-                _res = cls.PlacementFrame._from_sdf(_c_placement_frame, version)
-                if isinstance(_res, SDFError):
-                    return _res.extend("placement_frame")
-                _placement_frame = _res
+            _c_tmp = el.find("placement_frame")
+            if _c_tmp is not None:
+                _text = _c_tmp.text if _c_tmp.text is not None else ""
+                _val = _text
+                if isinstance(_val, SDFError):
+                    return _val.extend("placement_frame")
+                _placement_frame = _val
             else:
                 _placement_frame = None
             if _placement_frame is not None and cmp_version(version, "1.8") < 0:
@@ -446,112 +271,38 @@ class World(BaseModel):
                 _pose = None
             if _pose is not None and cmp_version(version, "1.5") < 0:
                 return SDFError(f"'pose' is not supported in SDF version {version} (added in 1.5)")
-            _c_static = el.find("static")
-            if _c_static is not None:
-                _res = cls.Static._from_sdf(_c_static, version)
-                if isinstance(_res, SDFError):
-                    return _res.extend("static")
-                _static = _res
+            _c_tmp = el.find("static")
+            if _c_tmp is not None:
+                _text = _c_tmp.text if _c_tmp.text is not None else False
+                _val = str(_text).strip().lower() == 'true'
+                if isinstance(_val, SDFError):
+                    return _val.extend("static")
+                _static = _val
             else:
                 _static = None
             if _static is not None and cmp_version(version, "1.5") < 0:
                 return SDFError(f"'static' is not supported in SDF version {version} (added in 1.5)")
-            _c_uri = el.find("uri")
-            if _c_uri is not None:
-                _res = cls.Uri._from_sdf(_c_uri, version)
-                if isinstance(_res, SDFError):
-                    return _res.extend("uri")
-                _uri = _res
+            _c_tmp = el.find("uri")
+            if _c_tmp is not None:
+                _text = _c_tmp.text if _c_tmp.text is not None else "__default__"
+                _val = _text
+                if isinstance(_val, SDFError):
+                    return _val.extend("uri")
+                _uri = _val
             else:
                 _uri = None
             return cls(sdf_version=version, merge=_merge, model_states=_model_states, name=_name, placement_frame=_placement_frame, plugins=_plugins, pose=_pose, static=_static, uri=_uri)
 
-    class MagneticField(BaseModel):
-        def __init__(self, sdf_version: str | None = None, magnetic_field: _SDFVector3 = None):
-            super().__init__(sdf_version)
-            if magnetic_field is None:
-                magnetic_field = _SDFVector3.from_sdf("5.5645e-6 22.8758e-6 -42.3884e-6", version=sdf_version)
-            self.magnetic_field = magnetic_field
-
-        def to_version(self, target_version: str) -> "World.MagneticField":
-            if self.magnetic_field is not None and cmp_version(target_version, "1.6") < 0:
-                raise ValueError(f"'magnetic_field' is not supported in SDF version {target_version} (added in 1.6)")
-            kwargs = {"sdf_version": target_version}
-            kwargs["magnetic_field"] = self.magnetic_field
-            new_obj = self.__class__(**kwargs)
-            return new_obj
-
-        def to_sdf(self, version: str | None = None) -> ET.Element:
-            if self.__version__ is None and version is not None:
-                self.__version__ = version
-            elif version is not None and version != self.__version__:
-                return self.to_version(version).to_sdf()
-            version = self.__version__ or version
-            el = ET.Element("magnetic_field")
-            if self.magnetic_field is not None:
-                el.text = self.magnetic_field.to_sdf(version)
-            return el
-
-        @classmethod
-        def _from_sdf(cls, el: ET.Element, version: str) -> "World.MagneticField | SDFError":
-            _text = el.text or "5.5645e-6 22.8758e-6 -42.3884e-6"
-            _magnetic_field = _SDFVector3._from_sdf(_text, version)
-            if isinstance(_magnetic_field, SDFError):
-                return _magnetic_field
-            if _magnetic_field is not None and cmp_version(version, "1.6") < 0:
-                if _magnetic_field != "5.5645e-6 22.8758e-6 -42.3884e-6":
-                    return SDFError(f"'magnetic_field' is not supported in SDF version {version} (added in 1.6)")
-            return cls(sdf_version=version, magnetic_field=_magnetic_field)
-
     class Wind(BaseModel):
-        class LinearVelocity(BaseModel):
-            def __init__(self, sdf_version: str | None = None, linear_velocity: _SDFVector3 = None):
-                super().__init__(sdf_version)
-                if linear_velocity is None:
-                    linear_velocity = _SDFVector3.from_sdf("0 0 0", version=sdf_version)
-                self.linear_velocity = linear_velocity
-
-            def to_version(self, target_version: str) -> "World.Wind.LinearVelocity":
-                kwargs = {"sdf_version": target_version}
-                kwargs["linear_velocity"] = self.linear_velocity
-                new_obj = self.__class__(**kwargs)
-                return new_obj
-
-            def to_sdf(self, version: str | None = None) -> ET.Element:
-                if self.__version__ is None and version is not None:
-                    self.__version__ = version
-                elif version is not None and version != self.__version__:
-                    return self.to_version(version).to_sdf()
-                version = self.__version__ or version
-                el = ET.Element("linear_velocity")
-                if self.linear_velocity is not None:
-                    el.text = self.linear_velocity.to_sdf(version)
-                return el
-
-            @classmethod
-            def _from_sdf(cls, el: ET.Element, version: str) -> "World.Wind.LinearVelocity | SDFError":
-                _text = el.text or "0 0 0"
-                _linear_velocity = _SDFVector3._from_sdf(_text, version)
-                if isinstance(_linear_velocity, SDFError):
-                    return _linear_velocity
-                return cls(sdf_version=version, linear_velocity=_linear_velocity)
-
-        def __init__(
-            self,
-            sdf_version: str | None = None,
-            linear_velocity: "World.Wind.LinearVelocity" = None
-        ):
+        def __init__(self, sdf_version: str | None = None, linear_velocity: _SDFVector3 = None):
             super().__init__(sdf_version)
+            if linear_velocity is None:
+                linear_velocity = _SDFVector3.from_sdf("0 0 0", version=sdf_version)
             self.linear_velocity = linear_velocity
-            if self.linear_velocity is not None:
-                if getattr(self.linear_velocity, '__version__', None) is None:
-                    self.linear_velocity.__version__ = self.__version__
-                elif getattr(self.linear_velocity, '__version__', None) != self.__version__ and self.__version__ is not None:
-                    self.linear_velocity = self.linear_velocity.to_version(self.__version__)
 
         def to_version(self, target_version: str) -> "World.Wind":
             kwargs = {"sdf_version": target_version}
-            kwargs["linear_velocity"] = self.linear_velocity.to_version(target_version) if self.linear_velocity is not None else None
+            kwargs["linear_velocity"] = self.linear_velocity
             new_obj = self.__class__(**kwargs)
             return new_obj
 
@@ -563,17 +314,20 @@ class World(BaseModel):
             version = self.__version__ or version
             el = ET.Element("wind")
             if self.linear_velocity is not None:
-                el.append(self.linear_velocity.to_sdf(version))
+                _c_tmp = ET.Element("linear_velocity")
+                _c_tmp.text = self.linear_velocity.to_sdf(version)
+                el.append(_c_tmp)
             return el
 
         @classmethod
         def _from_sdf(cls, el: ET.Element, version: str) -> "World.Wind | SDFError":
-            _c_linear_velocity = el.find("linear_velocity")
-            if _c_linear_velocity is not None:
-                _res = cls.LinearVelocity._from_sdf(_c_linear_velocity, version)
-                if isinstance(_res, SDFError):
-                    return _res.extend("linear_velocity")
-                _linear_velocity = _res
+            _c_tmp = el.find("linear_velocity")
+            if _c_tmp is not None:
+                _text = _c_tmp.text if _c_tmp.text is not None else "0 0 0"
+                _val = _SDFVector3._from_sdf(_text, version)
+                if isinstance(_val, SDFError):
+                    return _val.extend("linear_velocity")
+                _linear_velocity = _val
             else:
                 _linear_velocity = None
             return cls(sdf_version=version, linear_velocity=_linear_velocity)
@@ -587,12 +341,12 @@ class World(BaseModel):
         atmosphere: "Atmosphere" = None,
         audio: "World.Audio" = None,
         frames: List["Frame"] = None,
-        gravity: "World.Gravity" = None,
+        gravity: _SDFVector3 = None,
         gui: "Gui" = None,
         includes: List["World.Include"] = None,
         joints: List["Joint"] = None,
         lights: List["Light"] = None,
-        magnetic_field: "World.MagneticField" = None,
+        magnetic_field: _SDFVector3 = None,
         models: List["Model"] = None,
         name: str = "__default__",
         physics: "Physics" = None,
@@ -605,6 +359,10 @@ class World(BaseModel):
         wind: "World.Wind" = None
     ):
         super().__init__(sdf_version)
+        if gravity is None:
+            gravity = _SDFVector3.from_sdf("0 0 -9.8", version=sdf_version)
+        if magnetic_field is None:
+            magnetic_field = _SDFVector3.from_sdf("5.5645e-6 22.8758e-6 -42.3884e-6", version=sdf_version)
         self.actors = actors or []
         self.atmosphere = atmosphere
         self.audio = audio
@@ -626,100 +384,150 @@ class World(BaseModel):
         self.states = states or []
         self.wind = wind
         for _i, _c in enumerate(self.actors):
+            if not hasattr(_c, 'to_version'): continue
             if getattr(_c, '__version__', None) is None:
                 _c.__version__ = self.__version__
             elif getattr(_c, '__version__', None) != self.__version__ and self.__version__ is not None:
                 self.actors[_i] = _c.to_version(self.__version__)
-        if self.atmosphere is not None:
+        if self.atmosphere is not None and hasattr(self.atmosphere, 'to_version'):
             if getattr(self.atmosphere, '__version__', None) is None:
                 self.atmosphere.__version__ = self.__version__
             elif getattr(self.atmosphere, '__version__', None) != self.__version__ and self.__version__ is not None:
                 self.atmosphere = self.atmosphere.to_version(self.__version__)
-        if self.audio is not None:
+        if self.audio is not None and hasattr(self.audio, 'to_version'):
             if getattr(self.audio, '__version__', None) is None:
                 self.audio.__version__ = self.__version__
             elif getattr(self.audio, '__version__', None) != self.__version__ and self.__version__ is not None:
                 self.audio = self.audio.to_version(self.__version__)
         for _i, _c in enumerate(self.frames):
+            if not hasattr(_c, 'to_version'): continue
             if getattr(_c, '__version__', None) is None:
                 _c.__version__ = self.__version__
             elif getattr(_c, '__version__', None) != self.__version__ and self.__version__ is not None:
                 self.frames[_i] = _c.to_version(self.__version__)
-        if self.gravity is not None:
-            if getattr(self.gravity, '__version__', None) is None:
-                self.gravity.__version__ = self.__version__
-            elif getattr(self.gravity, '__version__', None) != self.__version__ and self.__version__ is not None:
-                self.gravity = self.gravity.to_version(self.__version__)
-        if self.gui is not None:
+        if self.gui is not None and hasattr(self.gui, 'to_version'):
             if getattr(self.gui, '__version__', None) is None:
                 self.gui.__version__ = self.__version__
             elif getattr(self.gui, '__version__', None) != self.__version__ and self.__version__ is not None:
                 self.gui = self.gui.to_version(self.__version__)
         for _i, _c in enumerate(self.includes):
+            if not hasattr(_c, 'to_version'): continue
             if getattr(_c, '__version__', None) is None:
                 _c.__version__ = self.__version__
             elif getattr(_c, '__version__', None) != self.__version__ and self.__version__ is not None:
                 self.includes[_i] = _c.to_version(self.__version__)
         for _i, _c in enumerate(self.joints):
+            if not hasattr(_c, 'to_version'): continue
             if getattr(_c, '__version__', None) is None:
                 _c.__version__ = self.__version__
             elif getattr(_c, '__version__', None) != self.__version__ and self.__version__ is not None:
                 self.joints[_i] = _c.to_version(self.__version__)
         for _i, _c in enumerate(self.lights):
+            if not hasattr(_c, 'to_version'): continue
             if getattr(_c, '__version__', None) is None:
                 _c.__version__ = self.__version__
             elif getattr(_c, '__version__', None) != self.__version__ and self.__version__ is not None:
                 self.lights[_i] = _c.to_version(self.__version__)
-        if self.magnetic_field is not None:
-            if getattr(self.magnetic_field, '__version__', None) is None:
-                self.magnetic_field.__version__ = self.__version__
-            elif getattr(self.magnetic_field, '__version__', None) != self.__version__ and self.__version__ is not None:
-                self.magnetic_field = self.magnetic_field.to_version(self.__version__)
         for _i, _c in enumerate(self.models):
+            if not hasattr(_c, 'to_version'): continue
             if getattr(_c, '__version__', None) is None:
                 _c.__version__ = self.__version__
             elif getattr(_c, '__version__', None) != self.__version__ and self.__version__ is not None:
                 self.models[_i] = _c.to_version(self.__version__)
-        if self.physics is not None:
+        if self.physics is not None and hasattr(self.physics, 'to_version'):
             if getattr(self.physics, '__version__', None) is None:
                 self.physics.__version__ = self.__version__
             elif getattr(self.physics, '__version__', None) != self.__version__ and self.__version__ is not None:
                 self.physics = self.physics.to_version(self.__version__)
         for _i, _c in enumerate(self.plugins):
+            if not hasattr(_c, 'to_version'): continue
             if getattr(_c, '__version__', None) is None:
                 _c.__version__ = self.__version__
             elif getattr(_c, '__version__', None) != self.__version__ and self.__version__ is not None:
                 self.plugins[_i] = _c.to_version(self.__version__)
         for _i, _c in enumerate(self.populations):
+            if not hasattr(_c, 'to_version'): continue
             if getattr(_c, '__version__', None) is None:
                 _c.__version__ = self.__version__
             elif getattr(_c, '__version__', None) != self.__version__ and self.__version__ is not None:
                 self.populations[_i] = _c.to_version(self.__version__)
         for _i, _c in enumerate(self.roads):
+            if not hasattr(_c, 'to_version'): continue
             if getattr(_c, '__version__', None) is None:
                 _c.__version__ = self.__version__
             elif getattr(_c, '__version__', None) != self.__version__ and self.__version__ is not None:
                 self.roads[_i] = _c.to_version(self.__version__)
-        if self.scene is not None:
+        if self.scene is not None and hasattr(self.scene, 'to_version'):
             if getattr(self.scene, '__version__', None) is None:
                 self.scene.__version__ = self.__version__
             elif getattr(self.scene, '__version__', None) != self.__version__ and self.__version__ is not None:
                 self.scene = self.scene.to_version(self.__version__)
-        if self.spherical_coordinates is not None:
+        if self.spherical_coordinates is not None and hasattr(self.spherical_coordinates, 'to_version'):
             if getattr(self.spherical_coordinates, '__version__', None) is None:
                 self.spherical_coordinates.__version__ = self.__version__
             elif getattr(self.spherical_coordinates, '__version__', None) != self.__version__ and self.__version__ is not None:
                 self.spherical_coordinates = self.spherical_coordinates.to_version(self.__version__)
         for _i, _c in enumerate(self.states):
+            if not hasattr(_c, 'to_version'): continue
             if getattr(_c, '__version__', None) is None:
                 _c.__version__ = self.__version__
             elif getattr(_c, '__version__', None) != self.__version__ and self.__version__ is not None:
                 self.states[_i] = _c.to_version(self.__version__)
-        if self.wind is not None:
+        if self.wind is not None and hasattr(self.wind, 'to_version'):
             if getattr(self.wind, '__version__', None) is None:
                 self.wind.__version__ = self.__version__
             elif getattr(self.wind, '__version__', None) != self.__version__ and self.__version__ is not None:
                 self.wind = self.wind.to_version(self.__version__)
+
+    def add_actor(self, *items: "Actor"):
+        if self.actors is None:
+            self.actors = []
+        self.actors.extend(items)
+
+    def add_frame(self, *items: "Frame"):
+        if self.frames is None:
+            self.frames = []
+        self.frames.extend(items)
+
+    def add_include(self, *items: "World.Include"):
+        if self.includes is None:
+            self.includes = []
+        self.includes.extend(items)
+
+    def add_joint(self, *items: "Joint"):
+        if self.joints is None:
+            self.joints = []
+        self.joints.extend(items)
+
+    def add_light(self, *items: "Light"):
+        if self.lights is None:
+            self.lights = []
+        self.lights.extend(items)
+
+    def add_model(self, *items: "Model"):
+        if self.models is None:
+            self.models = []
+        self.models.extend(items)
+
+    def add_plugin(self, *items: "Plugin"):
+        if self.plugins is None:
+            self.plugins = []
+        self.plugins.extend(items)
+
+    def add_population(self, *items: "Population"):
+        if self.populations is None:
+            self.populations = []
+        self.populations.extend(items)
+
+    def add_road(self, *items: "Road"):
+        if self.roads is None:
+            self.roads = []
+        self.roads.extend(items)
+
+    def add_state(self, *items: "State"):
+        if self.states is None:
+            self.states = []
+        self.states.extend(items)
 
     def to_version(self, target_version: str) -> "World":
         from ..elements.actor import Actor
@@ -757,26 +565,26 @@ class World(BaseModel):
         if self.wind is not None and cmp_version(target_version, "1.6") < 0:
             raise ValueError(f"'wind' is not supported in SDF version {target_version} (added in 1.6)")
         kwargs = {"sdf_version": target_version}
-        kwargs["actors"] = [c.to_version(target_version) for c in (self.actors or [])]
-        kwargs["atmosphere"] = self.atmosphere.to_version(target_version) if self.atmosphere is not None else None
-        kwargs["audio"] = self.audio.to_version(target_version) if self.audio is not None else None
-        kwargs["frames"] = [c.to_version(target_version) for c in (self.frames or [])]
-        kwargs["gravity"] = self.gravity.to_version(target_version) if self.gravity is not None else None
-        kwargs["gui"] = self.gui.to_version(target_version) if self.gui is not None else None
-        kwargs["includes"] = [c.to_version(target_version) for c in (self.includes or [])]
-        kwargs["joints"] = [c.to_version(target_version) for c in (self.joints or [])]
-        kwargs["lights"] = [c.to_version(target_version) for c in (self.lights or [])]
-        kwargs["magnetic_field"] = self.magnetic_field.to_version(target_version) if self.magnetic_field is not None else None
-        kwargs["models"] = [c.to_version(target_version) for c in (self.models or [])]
+        kwargs["actors"] = [c.to_version(target_version) if hasattr(c, "to_version") else c for c in (self.actors or [])]
+        kwargs["atmosphere"] = self.atmosphere.to_version(target_version) if hasattr(self.atmosphere, "to_version") else self.atmosphere
+        kwargs["audio"] = self.audio.to_version(target_version) if hasattr(self.audio, "to_version") else self.audio
+        kwargs["frames"] = [c.to_version(target_version) if hasattr(c, "to_version") else c for c in (self.frames or [])]
+        kwargs["gravity"] = self.gravity
+        kwargs["gui"] = self.gui.to_version(target_version) if hasattr(self.gui, "to_version") else self.gui
+        kwargs["includes"] = [c.to_version(target_version) if hasattr(c, "to_version") else c for c in (self.includes or [])]
+        kwargs["joints"] = [c.to_version(target_version) if hasattr(c, "to_version") else c for c in (self.joints or [])]
+        kwargs["lights"] = [c.to_version(target_version) if hasattr(c, "to_version") else c for c in (self.lights or [])]
+        kwargs["magnetic_field"] = self.magnetic_field
+        kwargs["models"] = [c.to_version(target_version) if hasattr(c, "to_version") else c for c in (self.models or [])]
         kwargs["name"] = self.name
-        kwargs["physics"] = self.physics.to_version(target_version) if self.physics is not None else None
-        kwargs["plugins"] = [c.to_version(target_version) for c in (self.plugins or [])]
-        kwargs["populations"] = [c.to_version(target_version) for c in (self.populations or [])]
-        kwargs["roads"] = [c.to_version(target_version) for c in (self.roads or [])]
-        kwargs["scene"] = self.scene.to_version(target_version) if self.scene is not None else None
-        kwargs["spherical_coordinates"] = self.spherical_coordinates.to_version(target_version) if self.spherical_coordinates is not None else None
-        kwargs["states"] = [c.to_version(target_version) for c in (self.states or [])]
-        kwargs["wind"] = self.wind.to_version(target_version) if self.wind is not None else None
+        kwargs["physics"] = self.physics.to_version(target_version) if hasattr(self.physics, "to_version") else self.physics
+        kwargs["plugins"] = [c.to_version(target_version) if hasattr(c, "to_version") else c for c in (self.plugins or [])]
+        kwargs["populations"] = [c.to_version(target_version) if hasattr(c, "to_version") else c for c in (self.populations or [])]
+        kwargs["roads"] = [c.to_version(target_version) if hasattr(c, "to_version") else c for c in (self.roads or [])]
+        kwargs["scene"] = self.scene.to_version(target_version) if hasattr(self.scene, "to_version") else self.scene
+        kwargs["spherical_coordinates"] = self.spherical_coordinates.to_version(target_version) if hasattr(self.spherical_coordinates, "to_version") else self.spherical_coordinates
+        kwargs["states"] = [c.to_version(target_version) if hasattr(c, "to_version") else c for c in (self.states or [])]
+        kwargs["wind"] = self.wind.to_version(target_version) if hasattr(self.wind, "to_version") else self.wind
         new_obj = self.__class__(**kwargs)
         apply_migrations(new_obj, target_version)
         return new_obj
@@ -803,52 +611,209 @@ class World(BaseModel):
         version = self.__version__ or version
         el = ET.Element("world")
         for item in (self.actors or []):
-            el.append(item.to_sdf(version))
+            if hasattr(item, 'to_sdf'):
+                _child_res = item.to_sdf(version)
+            else:
+                _child_res = str(item)
+            if isinstance(_child_res, str):
+                _item_el = ET.Element('actor')
+                _item_el.text = _child_res
+            else:
+                _item_el = _child_res
+            el.append(_item_el)
         if cmp_version(version, "1.6") >= 0:
             if self.atmosphere is None:
                 self.atmosphere = Atmosphere(sdf_version=version)
         if self.atmosphere is not None:
-            el.append(self.atmosphere.to_sdf(version))
+            if hasattr(self.atmosphere, 'to_sdf'):
+                _child_res = self.atmosphere.to_sdf(version)
+            else:
+                _child_res = str(self.atmosphere)
+            if isinstance(_child_res, str):
+                _item_el = ET.Element('atmosphere')
+                _item_el.text = _child_res
+            else:
+                _item_el = _child_res
+            el.append(_item_el)
         if self.audio is not None:
-            el.append(self.audio.to_sdf(version))
+            if hasattr(self.audio, 'to_sdf'):
+                _child_res = self.audio.to_sdf(version)
+            else:
+                _child_res = str(self.audio)
+            if isinstance(_child_res, str):
+                _item_el = ET.Element('audio')
+                _item_el.text = _child_res
+            else:
+                _item_el = _child_res
+            el.append(_item_el)
         for item in (self.frames or []):
-            el.append(item.to_sdf(version))
+            if hasattr(item, 'to_sdf'):
+                _child_res = item.to_sdf(version)
+            else:
+                _child_res = str(item)
+            if isinstance(_child_res, str):
+                _item_el = ET.Element('frame')
+                _item_el.text = _child_res
+            else:
+                _item_el = _child_res
+            el.append(_item_el)
         if self.gravity is not None:
-            el.append(self.gravity.to_sdf(version))
+            _c_tmp = ET.Element("gravity")
+            _c_tmp.text = self.gravity.to_sdf(version)
+            el.append(_c_tmp)
         if self.gui is not None:
-            el.append(self.gui.to_sdf(version))
+            if hasattr(self.gui, 'to_sdf'):
+                _child_res = self.gui.to_sdf(version)
+            else:
+                _child_res = str(self.gui)
+            if isinstance(_child_res, str):
+                _item_el = ET.Element('gui')
+                _item_el.text = _child_res
+            else:
+                _item_el = _child_res
+            el.append(_item_el)
         for item in (self.includes or []):
-            el.append(item.to_sdf(version))
+            if hasattr(item, 'to_sdf'):
+                _child_res = item.to_sdf(version)
+            else:
+                _child_res = str(item)
+            if isinstance(_child_res, str):
+                _item_el = ET.Element('include')
+                _item_el.text = _child_res
+            else:
+                _item_el = _child_res
+            el.append(_item_el)
         for item in (self.joints or []):
-            el.append(item.to_sdf(version))
+            if hasattr(item, 'to_sdf'):
+                _child_res = item.to_sdf(version)
+            else:
+                _child_res = str(item)
+            if isinstance(_child_res, str):
+                _item_el = ET.Element('joint')
+                _item_el.text = _child_res
+            else:
+                _item_el = _child_res
+            el.append(_item_el)
         for item in (self.lights or []):
-            el.append(item.to_sdf(version))
+            if hasattr(item, 'to_sdf'):
+                _child_res = item.to_sdf(version)
+            else:
+                _child_res = str(item)
+            if isinstance(_child_res, str):
+                _item_el = ET.Element('light')
+                _item_el.text = _child_res
+            else:
+                _item_el = _child_res
+            el.append(_item_el)
         if self.magnetic_field is not None:
-            el.append(self.magnetic_field.to_sdf(version))
+            _c_tmp = ET.Element("magnetic_field")
+            _c_tmp.text = self.magnetic_field.to_sdf(version)
+            el.append(_c_tmp)
         for item in (self.models or []):
-            el.append(item.to_sdf(version))
+            if hasattr(item, 'to_sdf'):
+                _child_res = item.to_sdf(version)
+            else:
+                _child_res = str(item)
+            if isinstance(_child_res, str):
+                _item_el = ET.Element('model')
+                _item_el.text = _child_res
+            else:
+                _item_el = _child_res
+            el.append(_item_el)
         if self.name is not None:
             el.set("name", self.name)
         if self.physics is None:
             self.physics = Physics(sdf_version=version)
         if self.physics is not None:
-            el.append(self.physics.to_sdf(version))
+            if hasattr(self.physics, 'to_sdf'):
+                _child_res = self.physics.to_sdf(version)
+            else:
+                _child_res = str(self.physics)
+            if isinstance(_child_res, str):
+                _item_el = ET.Element('physics')
+                _item_el.text = _child_res
+            else:
+                _item_el = _child_res
+            el.append(_item_el)
         for item in (self.plugins or []):
-            el.append(item.to_sdf(version))
+            if hasattr(item, 'to_sdf'):
+                _child_res = item.to_sdf(version)
+            else:
+                _child_res = str(item)
+            if isinstance(_child_res, str):
+                _item_el = ET.Element('plugin')
+                _item_el.text = _child_res
+            else:
+                _item_el = _child_res
+            el.append(_item_el)
         for item in (self.populations or []):
-            el.append(item.to_sdf(version))
+            if hasattr(item, 'to_sdf'):
+                _child_res = item.to_sdf(version)
+            else:
+                _child_res = str(item)
+            if isinstance(_child_res, str):
+                _item_el = ET.Element('population')
+                _item_el.text = _child_res
+            else:
+                _item_el = _child_res
+            el.append(_item_el)
         for item in (self.roads or []):
-            el.append(item.to_sdf(version))
+            if hasattr(item, 'to_sdf'):
+                _child_res = item.to_sdf(version)
+            else:
+                _child_res = str(item)
+            if isinstance(_child_res, str):
+                _item_el = ET.Element('road')
+                _item_el.text = _child_res
+            else:
+                _item_el = _child_res
+            el.append(_item_el)
         if self.scene is None:
             self.scene = Scene(sdf_version=version)
         if self.scene is not None:
-            el.append(self.scene.to_sdf(version))
+            if hasattr(self.scene, 'to_sdf'):
+                _child_res = self.scene.to_sdf(version)
+            else:
+                _child_res = str(self.scene)
+            if isinstance(_child_res, str):
+                _item_el = ET.Element('scene')
+                _item_el.text = _child_res
+            else:
+                _item_el = _child_res
+            el.append(_item_el)
         if self.spherical_coordinates is not None:
-            el.append(self.spherical_coordinates.to_sdf(version))
+            if hasattr(self.spherical_coordinates, 'to_sdf'):
+                _child_res = self.spherical_coordinates.to_sdf(version)
+            else:
+                _child_res = str(self.spherical_coordinates)
+            if isinstance(_child_res, str):
+                _item_el = ET.Element('spherical_coordinates')
+                _item_el.text = _child_res
+            else:
+                _item_el = _child_res
+            el.append(_item_el)
         for item in (self.states or []):
-            el.append(item.to_sdf(version))
+            if hasattr(item, 'to_sdf'):
+                _child_res = item.to_sdf(version)
+            else:
+                _child_res = str(item)
+            if isinstance(_child_res, str):
+                _item_el = ET.Element('state')
+                _item_el.text = _child_res
+            else:
+                _item_el = _child_res
+            el.append(_item_el)
         if self.wind is not None:
-            el.append(self.wind.to_sdf(version))
+            if hasattr(self.wind, 'to_sdf'):
+                _child_res = self.wind.to_sdf(version)
+            else:
+                _child_res = str(self.wind)
+            if isinstance(_child_res, str):
+                _item_el = ET.Element('wind')
+                _item_el.text = _child_res
+            else:
+                _item_el = _child_res
+            el.append(_item_el)
         return el
 
     @classmethod
@@ -904,12 +869,13 @@ class World(BaseModel):
             _frames.append(_res)
         if _frames and cmp_version(version, "1.7") < 0:
             return SDFError(f"'frames' is not supported in SDF version {version} (added in 1.7)")
-        _c_gravity = el.find("gravity")
-        if _c_gravity is not None:
-            _res = cls.Gravity._from_sdf(_c_gravity, version)
-            if isinstance(_res, SDFError):
-                return _res.extend("gravity")
-            _gravity = _res
+        _c_tmp = el.find("gravity")
+        if _c_tmp is not None:
+            _text = _c_tmp.text if _c_tmp.text is not None else "0 0 -9.8"
+            _val = _SDFVector3._from_sdf(_text, version)
+            if isinstance(_val, SDFError):
+                return _val.extend("gravity")
+            _gravity = _val
         else:
             _gravity = None
         if _gravity is not None and cmp_version(version, "1.6") < 0:
@@ -942,12 +908,13 @@ class World(BaseModel):
             if isinstance(_res, SDFError):
                 return _res.extend("light")
             _lights.append(_res)
-        _c_magnetic_field = el.find("magnetic_field")
-        if _c_magnetic_field is not None:
-            _res = cls.MagneticField._from_sdf(_c_magnetic_field, version)
-            if isinstance(_res, SDFError):
-                return _res.extend("magnetic_field")
-            _magnetic_field = _res
+        _c_tmp = el.find("magnetic_field")
+        if _c_tmp is not None:
+            _text = _c_tmp.text if _c_tmp.text is not None else "5.5645e-6 22.8758e-6 -42.3884e-6"
+            _val = _SDFVector3._from_sdf(_text, version)
+            if isinstance(_val, SDFError):
+                return _val.extend("magnetic_field")
+            _magnetic_field = _val
         else:
             _magnetic_field = None
         if _magnetic_field is not None and cmp_version(version, "1.6") < 0:

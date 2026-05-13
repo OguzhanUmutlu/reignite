@@ -16,7 +16,7 @@ class Magnetometer(BaseModel):
         def __init__(self, sdf_version: str | None = None, noise: "Noise" = None):
             super().__init__(sdf_version)
             self.noise = noise
-            if self.noise is not None:
+            if self.noise is not None and hasattr(self.noise, 'to_version'):
                 if getattr(self.noise, '__version__', None) is None:
                     self.noise.__version__ = self.__version__
                 elif getattr(self.noise, '__version__', None) != self.__version__ and self.__version__ is not None:
@@ -25,7 +25,7 @@ class Magnetometer(BaseModel):
         def to_version(self, target_version: str) -> "Magnetometer.X":
             from ..elements.noise import Noise
             kwargs = {"sdf_version": target_version}
-            kwargs["noise"] = self.noise.to_version(target_version) if self.noise is not None else None
+            kwargs["noise"] = self.noise.to_version(target_version) if hasattr(self.noise, "to_version") else self.noise
             new_obj = self.__class__(**kwargs)
             return new_obj
 
@@ -40,7 +40,16 @@ class Magnetometer(BaseModel):
             if self.noise is None:
                 self.noise = Noise(sdf_version=version)
             if self.noise is not None:
-                el.append(self.noise.to_sdf(version))
+                if hasattr(self.noise, 'to_sdf'):
+                    _child_res = self.noise.to_sdf(version)
+                else:
+                    _child_res = str(self.noise)
+                if isinstance(_child_res, str):
+                    _item_el = ET.Element('noise')
+                    _item_el.text = _child_res
+                else:
+                    _item_el = _child_res
+                el.append(_item_el)
             return el
 
         @classmethod
@@ -63,7 +72,7 @@ class Magnetometer(BaseModel):
         def __init__(self, sdf_version: str | None = None, noise: "Noise" = None):
             super().__init__(sdf_version)
             self.noise = noise
-            if self.noise is not None:
+            if self.noise is not None and hasattr(self.noise, 'to_version'):
                 if getattr(self.noise, '__version__', None) is None:
                     self.noise.__version__ = self.__version__
                 elif getattr(self.noise, '__version__', None) != self.__version__ and self.__version__ is not None:
@@ -72,7 +81,7 @@ class Magnetometer(BaseModel):
         def to_version(self, target_version: str) -> "Magnetometer.Y":
             from ..elements.noise import Noise
             kwargs = {"sdf_version": target_version}
-            kwargs["noise"] = self.noise.to_version(target_version) if self.noise is not None else None
+            kwargs["noise"] = self.noise.to_version(target_version) if hasattr(self.noise, "to_version") else self.noise
             new_obj = self.__class__(**kwargs)
             return new_obj
 
@@ -87,7 +96,16 @@ class Magnetometer(BaseModel):
             if self.noise is None:
                 self.noise = Noise(sdf_version=version)
             if self.noise is not None:
-                el.append(self.noise.to_sdf(version))
+                if hasattr(self.noise, 'to_sdf'):
+                    _child_res = self.noise.to_sdf(version)
+                else:
+                    _child_res = str(self.noise)
+                if isinstance(_child_res, str):
+                    _item_el = ET.Element('noise')
+                    _item_el.text = _child_res
+                else:
+                    _item_el = _child_res
+                el.append(_item_el)
             return el
 
         @classmethod
@@ -110,7 +128,7 @@ class Magnetometer(BaseModel):
         def __init__(self, sdf_version: str | None = None, noise: "Noise" = None):
             super().__init__(sdf_version)
             self.noise = noise
-            if self.noise is not None:
+            if self.noise is not None and hasattr(self.noise, 'to_version'):
                 if getattr(self.noise, '__version__', None) is None:
                     self.noise.__version__ = self.__version__
                 elif getattr(self.noise, '__version__', None) != self.__version__ and self.__version__ is not None:
@@ -119,7 +137,7 @@ class Magnetometer(BaseModel):
         def to_version(self, target_version: str) -> "Magnetometer.Z":
             from ..elements.noise import Noise
             kwargs = {"sdf_version": target_version}
-            kwargs["noise"] = self.noise.to_version(target_version) if self.noise is not None else None
+            kwargs["noise"] = self.noise.to_version(target_version) if hasattr(self.noise, "to_version") else self.noise
             new_obj = self.__class__(**kwargs)
             return new_obj
 
@@ -134,7 +152,16 @@ class Magnetometer(BaseModel):
             if self.noise is None:
                 self.noise = Noise(sdf_version=version)
             if self.noise is not None:
-                el.append(self.noise.to_sdf(version))
+                if hasattr(self.noise, 'to_sdf'):
+                    _child_res = self.noise.to_sdf(version)
+                else:
+                    _child_res = str(self.noise)
+                if isinstance(_child_res, str):
+                    _item_el = ET.Element('noise')
+                    _item_el.text = _child_res
+                else:
+                    _item_el = _child_res
+                el.append(_item_el)
             return el
 
         @classmethod
@@ -164,17 +191,17 @@ class Magnetometer(BaseModel):
         self.x = x
         self.y = y
         self.z = z
-        if self.x is not None:
+        if self.x is not None and hasattr(self.x, 'to_version'):
             if getattr(self.x, '__version__', None) is None:
                 self.x.__version__ = self.__version__
             elif getattr(self.x, '__version__', None) != self.__version__ and self.__version__ is not None:
                 self.x = self.x.to_version(self.__version__)
-        if self.y is not None:
+        if self.y is not None and hasattr(self.y, 'to_version'):
             if getattr(self.y, '__version__', None) is None:
                 self.y.__version__ = self.__version__
             elif getattr(self.y, '__version__', None) != self.__version__ and self.__version__ is not None:
                 self.y = self.y.to_version(self.__version__)
-        if self.z is not None:
+        if self.z is not None and hasattr(self.z, 'to_version'):
             if getattr(self.z, '__version__', None) is None:
                 self.z.__version__ = self.__version__
             elif getattr(self.z, '__version__', None) != self.__version__ and self.__version__ is not None:
@@ -182,9 +209,9 @@ class Magnetometer(BaseModel):
 
     def to_version(self, target_version: str) -> "Magnetometer":
         kwargs = {"sdf_version": target_version}
-        kwargs["x"] = self.x.to_version(target_version) if self.x is not None else None
-        kwargs["y"] = self.y.to_version(target_version) if self.y is not None else None
-        kwargs["z"] = self.z.to_version(target_version) if self.z is not None else None
+        kwargs["x"] = self.x.to_version(target_version) if hasattr(self.x, "to_version") else self.x
+        kwargs["y"] = self.y.to_version(target_version) if hasattr(self.y, "to_version") else self.y
+        kwargs["z"] = self.z.to_version(target_version) if hasattr(self.z, "to_version") else self.z
         new_obj = self.__class__(**kwargs)
         return new_obj
 
@@ -196,11 +223,38 @@ class Magnetometer(BaseModel):
         version = self.__version__ or version
         el = ET.Element("magnetometer")
         if self.x is not None:
-            el.append(self.x.to_sdf(version))
+            if hasattr(self.x, 'to_sdf'):
+                _child_res = self.x.to_sdf(version)
+            else:
+                _child_res = str(self.x)
+            if isinstance(_child_res, str):
+                _item_el = ET.Element('x')
+                _item_el.text = _child_res
+            else:
+                _item_el = _child_res
+            el.append(_item_el)
         if self.y is not None:
-            el.append(self.y.to_sdf(version))
+            if hasattr(self.y, 'to_sdf'):
+                _child_res = self.y.to_sdf(version)
+            else:
+                _child_res = str(self.y)
+            if isinstance(_child_res, str):
+                _item_el = ET.Element('y')
+                _item_el.text = _child_res
+            else:
+                _item_el = _child_res
+            el.append(_item_el)
         if self.z is not None:
-            el.append(self.z.to_sdf(version))
+            if hasattr(self.z, 'to_sdf'):
+                _child_res = self.z.to_sdf(version)
+            else:
+                _child_res = str(self.z)
+            if isinstance(_child_res, str):
+                _item_el = ET.Element('z')
+                _item_el.text = _child_res
+            else:
+                _item_el = _child_res
+            el.append(_item_el)
         return el
 
     @classmethod

@@ -44,128 +44,23 @@ def _parse_double(raw: str) -> float | SDFError:
 
 class Lidar(BaseModel):
     class Noise(BaseModel):
-        class Mean(BaseModel):
-            def __init__(self, sdf_version: str | None = None, mean: float = 0.0):
-                super().__init__(sdf_version)
-                self.mean = mean
-
-            def to_version(self, target_version: str) -> "Lidar.Noise.Mean":
-                kwargs = {"sdf_version": target_version}
-                kwargs["mean"] = self.mean
-                new_obj = self.__class__(**kwargs)
-                return new_obj
-
-            def to_sdf(self, version: str | None = None) -> ET.Element:
-                if self.__version__ is None and version is not None:
-                    self.__version__ = version
-                elif version is not None and version != self.__version__:
-                    return self.to_version(version).to_sdf()
-                version = self.__version__ or version
-                el = ET.Element("mean")
-                if self.mean is not None:
-                    el.text = str(self.mean)
-                return el
-
-            @classmethod
-            def _from_sdf(cls, el: ET.Element, version: str) -> "Lidar.Noise.Mean | SDFError":
-                _text = el.text or 0.0
-                _mean = _parse_double(_text)
-                if isinstance(_mean, SDFError):
-                    return _mean
-                return cls(sdf_version=version, mean=_mean)
-
-        class Stddev(BaseModel):
-            def __init__(self, sdf_version: str | None = None, stddev: float = 0.0):
-                super().__init__(sdf_version)
-                self.stddev = stddev
-
-            def to_version(self, target_version: str) -> "Lidar.Noise.Stddev":
-                kwargs = {"sdf_version": target_version}
-                kwargs["stddev"] = self.stddev
-                new_obj = self.__class__(**kwargs)
-                return new_obj
-
-            def to_sdf(self, version: str | None = None) -> ET.Element:
-                if self.__version__ is None and version is not None:
-                    self.__version__ = version
-                elif version is not None and version != self.__version__:
-                    return self.to_version(version).to_sdf()
-                version = self.__version__ or version
-                el = ET.Element("stddev")
-                if self.stddev is not None:
-                    el.text = str(self.stddev)
-                return el
-
-            @classmethod
-            def _from_sdf(cls, el: ET.Element, version: str) -> "Lidar.Noise.Stddev | SDFError":
-                _text = el.text or 0.0
-                _stddev = _parse_double(_text)
-                if isinstance(_stddev, SDFError):
-                    return _stddev
-                return cls(sdf_version=version, stddev=_stddev)
-
-        class Type(BaseModel):
-            def __init__(self, sdf_version: str | None = None, type: str = "gaussian"):
-                super().__init__(sdf_version)
-                self.type = type
-
-            def to_version(self, target_version: str) -> "Lidar.Noise.Type":
-                kwargs = {"sdf_version": target_version}
-                kwargs["type"] = self.type
-                new_obj = self.__class__(**kwargs)
-                return new_obj
-
-            def to_sdf(self, version: str | None = None) -> ET.Element:
-                if self.__version__ is None and version is not None:
-                    self.__version__ = version
-                elif version is not None and version != self.__version__:
-                    return self.to_version(version).to_sdf()
-                version = self.__version__ or version
-                el = ET.Element("type")
-                if self.type is not None:
-                    el.text = self.type
-                return el
-
-            @classmethod
-            def _from_sdf(cls, el: ET.Element, version: str) -> "Lidar.Noise.Type | SDFError":
-                _text = el.text or "gaussian"
-                _type = _text
-                if isinstance(_type, SDFError):
-                    return _type
-                return cls(sdf_version=version, type=_type)
-
         def __init__(
             self,
             sdf_version: str | None = None,
-            mean: "Lidar.Noise.Mean" = None,
-            stddev: "Lidar.Noise.Stddev" = None,
-            type: "Lidar.Noise.Type" = None
+            mean: float = 0.0,
+            stddev: float = 0.0,
+            type: str = "gaussian"
         ):
             super().__init__(sdf_version)
             self.mean = mean
             self.stddev = stddev
             self.type = type
-            if self.mean is not None:
-                if getattr(self.mean, '__version__', None) is None:
-                    self.mean.__version__ = self.__version__
-                elif getattr(self.mean, '__version__', None) != self.__version__ and self.__version__ is not None:
-                    self.mean = self.mean.to_version(self.__version__)
-            if self.stddev is not None:
-                if getattr(self.stddev, '__version__', None) is None:
-                    self.stddev.__version__ = self.__version__
-                elif getattr(self.stddev, '__version__', None) != self.__version__ and self.__version__ is not None:
-                    self.stddev = self.stddev.to_version(self.__version__)
-            if self.type is not None:
-                if getattr(self.type, '__version__', None) is None:
-                    self.type.__version__ = self.__version__
-                elif getattr(self.type, '__version__', None) != self.__version__ and self.__version__ is not None:
-                    self.type = self.type.to_version(self.__version__)
 
         def to_version(self, target_version: str) -> "Lidar.Noise":
             kwargs = {"sdf_version": target_version}
-            kwargs["mean"] = self.mean.to_version(target_version) if self.mean is not None else None
-            kwargs["stddev"] = self.stddev.to_version(target_version) if self.stddev is not None else None
-            kwargs["type"] = self.type.to_version(target_version) if self.type is not None else None
+            kwargs["mean"] = self.mean
+            kwargs["stddev"] = self.stddev
+            kwargs["type"] = self.type
             new_obj = self.__class__(**kwargs)
             return new_obj
 
@@ -177,164 +72,68 @@ class Lidar(BaseModel):
             version = self.__version__ or version
             el = ET.Element("noise")
             if self.mean is not None:
-                el.append(self.mean.to_sdf(version))
+                _c_tmp = ET.Element("mean")
+                _c_tmp.text = str(self.mean)
+                el.append(_c_tmp)
             if self.stddev is not None:
-                el.append(self.stddev.to_sdf(version))
+                _c_tmp = ET.Element("stddev")
+                _c_tmp.text = str(self.stddev)
+                el.append(_c_tmp)
             if self.type is not None:
-                el.append(self.type.to_sdf(version))
+                _c_tmp = ET.Element("type")
+                _c_tmp.text = self.type
+                el.append(_c_tmp)
             return el
 
         @classmethod
         def _from_sdf(cls, el: ET.Element, version: str) -> "Lidar.Noise | SDFError":
-            _c_mean = el.find("mean")
-            if _c_mean is not None:
-                _res = cls.Mean._from_sdf(_c_mean, version)
-                if isinstance(_res, SDFError):
-                    return _res.extend("mean")
-                _mean = _res
+            _c_tmp = el.find("mean")
+            if _c_tmp is not None:
+                _text = _c_tmp.text if _c_tmp.text is not None else 0.0
+                _val = _parse_double(_text)
+                if isinstance(_val, SDFError):
+                    return _val.extend("mean")
+                _mean = _val
             else:
                 _mean = None
-            _c_stddev = el.find("stddev")
-            if _c_stddev is not None:
-                _res = cls.Stddev._from_sdf(_c_stddev, version)
-                if isinstance(_res, SDFError):
-                    return _res.extend("stddev")
-                _stddev = _res
+            _c_tmp = el.find("stddev")
+            if _c_tmp is not None:
+                _text = _c_tmp.text if _c_tmp.text is not None else 0.0
+                _val = _parse_double(_text)
+                if isinstance(_val, SDFError):
+                    return _val.extend("stddev")
+                _stddev = _val
             else:
                 _stddev = None
-            _c_type = el.find("type")
-            if _c_type is not None:
-                _res = cls.Type._from_sdf(_c_type, version)
-                if isinstance(_res, SDFError):
-                    return _res.extend("type")
-                _type = _res
+            _c_tmp = el.find("type")
+            if _c_tmp is not None:
+                _text = _c_tmp.text if _c_tmp.text is not None else "gaussian"
+                _val = _text
+                if isinstance(_val, SDFError):
+                    return _val.extend("type")
+                _type = _val
             else:
                 _type = None
             return cls(sdf_version=version, mean=_mean, stddev=_stddev, type=_type)
 
     class Range(BaseModel):
-        class Max(BaseModel):
-            def __init__(self, sdf_version: str | None = None, max: float = 0):
-                super().__init__(sdf_version)
-                self.max = max
-
-            def to_version(self, target_version: str) -> "Lidar.Range.Max":
-                kwargs = {"sdf_version": target_version}
-                kwargs["max"] = self.max
-                new_obj = self.__class__(**kwargs)
-                return new_obj
-
-            def to_sdf(self, version: str | None = None) -> ET.Element:
-                if self.__version__ is None and version is not None:
-                    self.__version__ = version
-                elif version is not None and version != self.__version__:
-                    return self.to_version(version).to_sdf()
-                version = self.__version__ or version
-                el = ET.Element("max")
-                if self.max is not None:
-                    el.text = str(self.max)
-                return el
-
-            @classmethod
-            def _from_sdf(cls, el: ET.Element, version: str) -> "Lidar.Range.Max | SDFError":
-                _text = el.text or 0
-                _max = _parse_double(_text)
-                if isinstance(_max, SDFError):
-                    return _max
-                return cls(sdf_version=version, max=_max)
-
-        class Min(BaseModel):
-            def __init__(self, sdf_version: str | None = None, min: float = 0):
-                super().__init__(sdf_version)
-                self.min = min
-
-            def to_version(self, target_version: str) -> "Lidar.Range.Min":
-                kwargs = {"sdf_version": target_version}
-                kwargs["min"] = self.min
-                new_obj = self.__class__(**kwargs)
-                return new_obj
-
-            def to_sdf(self, version: str | None = None) -> ET.Element:
-                if self.__version__ is None and version is not None:
-                    self.__version__ = version
-                elif version is not None and version != self.__version__:
-                    return self.to_version(version).to_sdf()
-                version = self.__version__ or version
-                el = ET.Element("min")
-                if self.min is not None:
-                    el.text = str(self.min)
-                return el
-
-            @classmethod
-            def _from_sdf(cls, el: ET.Element, version: str) -> "Lidar.Range.Min | SDFError":
-                _text = el.text or 0
-                _min = _parse_double(_text)
-                if isinstance(_min, SDFError):
-                    return _min
-                return cls(sdf_version=version, min=_min)
-
-        class Resolution(BaseModel):
-            def __init__(self, sdf_version: str | None = None, resolution: float = 0):
-                super().__init__(sdf_version)
-                self.resolution = resolution
-
-            def to_version(self, target_version: str) -> "Lidar.Range.Resolution":
-                kwargs = {"sdf_version": target_version}
-                kwargs["resolution"] = self.resolution
-                new_obj = self.__class__(**kwargs)
-                return new_obj
-
-            def to_sdf(self, version: str | None = None) -> ET.Element:
-                if self.__version__ is None and version is not None:
-                    self.__version__ = version
-                elif version is not None and version != self.__version__:
-                    return self.to_version(version).to_sdf()
-                version = self.__version__ or version
-                el = ET.Element("resolution")
-                if self.resolution is not None:
-                    el.text = str(self.resolution)
-                return el
-
-            @classmethod
-            def _from_sdf(cls, el: ET.Element, version: str) -> "Lidar.Range.Resolution | SDFError":
-                _text = el.text or 0
-                _resolution = _parse_double(_text)
-                if isinstance(_resolution, SDFError):
-                    return _resolution
-                return cls(sdf_version=version, resolution=_resolution)
-
         def __init__(
             self,
             sdf_version: str | None = None,
-            max: "Lidar.Range.Max" = None,
-            min: "Lidar.Range.Min" = None,
-            resolution: "Lidar.Range.Resolution" = None
+            max: float = 0,
+            min: float = 0,
+            resolution: float = 0
         ):
             super().__init__(sdf_version)
             self.max = max
             self.min = min
             self.resolution = resolution
-            if self.max is not None:
-                if getattr(self.max, '__version__', None) is None:
-                    self.max.__version__ = self.__version__
-                elif getattr(self.max, '__version__', None) != self.__version__ and self.__version__ is not None:
-                    self.max = self.max.to_version(self.__version__)
-            if self.min is not None:
-                if getattr(self.min, '__version__', None) is None:
-                    self.min.__version__ = self.__version__
-                elif getattr(self.min, '__version__', None) != self.__version__ and self.__version__ is not None:
-                    self.min = self.min.to_version(self.__version__)
-            if self.resolution is not None:
-                if getattr(self.resolution, '__version__', None) is None:
-                    self.resolution.__version__ = self.__version__
-                elif getattr(self.resolution, '__version__', None) != self.__version__ and self.__version__ is not None:
-                    self.resolution = self.resolution.to_version(self.__version__)
 
         def to_version(self, target_version: str) -> "Lidar.Range":
             kwargs = {"sdf_version": target_version}
-            kwargs["max"] = self.max.to_version(target_version) if self.max is not None else None
-            kwargs["min"] = self.min.to_version(target_version) if self.min is not None else None
-            kwargs["resolution"] = self.resolution.to_version(target_version) if self.resolution is not None else None
+            kwargs["max"] = self.max
+            kwargs["min"] = self.min
+            kwargs["resolution"] = self.resolution
             new_obj = self.__class__(**kwargs)
             return new_obj
 
@@ -346,203 +145,72 @@ class Lidar(BaseModel):
             version = self.__version__ or version
             el = ET.Element("range")
             if self.max is not None:
-                el.append(self.max.to_sdf(version))
+                _c_tmp = ET.Element("max")
+                _c_tmp.text = str(self.max)
+                el.append(_c_tmp)
             if self.min is not None:
-                el.append(self.min.to_sdf(version))
+                _c_tmp = ET.Element("min")
+                _c_tmp.text = str(self.min)
+                el.append(_c_tmp)
             if self.resolution is not None:
-                el.append(self.resolution.to_sdf(version))
+                _c_tmp = ET.Element("resolution")
+                _c_tmp.text = str(self.resolution)
+                el.append(_c_tmp)
             return el
 
         @classmethod
         def _from_sdf(cls, el: ET.Element, version: str) -> "Lidar.Range | SDFError":
-            _c_max = el.find("max")
-            if _c_max is not None:
-                _res = cls.Max._from_sdf(_c_max, version)
-                if isinstance(_res, SDFError):
-                    return _res.extend("max")
-                _max = _res
+            _c_tmp = el.find("max")
+            if _c_tmp is not None:
+                _text = _c_tmp.text if _c_tmp.text is not None else 0
+                _val = _parse_double(_text)
+                if isinstance(_val, SDFError):
+                    return _val.extend("max")
+                _max = _val
             else:
                 _max = None
-            _c_min = el.find("min")
-            if _c_min is not None:
-                _res = cls.Min._from_sdf(_c_min, version)
-                if isinstance(_res, SDFError):
-                    return _res.extend("min")
-                _min = _res
+            _c_tmp = el.find("min")
+            if _c_tmp is not None:
+                _text = _c_tmp.text if _c_tmp.text is not None else 0
+                _val = _parse_double(_text)
+                if isinstance(_val, SDFError):
+                    return _val.extend("min")
+                _min = _val
             else:
                 _min = None
-            _c_resolution = el.find("resolution")
-            if _c_resolution is not None:
-                _res = cls.Resolution._from_sdf(_c_resolution, version)
-                if isinstance(_res, SDFError):
-                    return _res.extend("resolution")
-                _resolution = _res
+            _c_tmp = el.find("resolution")
+            if _c_tmp is not None:
+                _text = _c_tmp.text if _c_tmp.text is not None else 0
+                _val = _parse_double(_text)
+                if isinstance(_val, SDFError):
+                    return _val.extend("resolution")
+                _resolution = _val
             else:
                 _resolution = None
             return cls(sdf_version=version, max=_max, min=_min, resolution=_resolution)
 
     class Scan(BaseModel):
         class Horizontal(BaseModel):
-            class HorizontalResolution(BaseModel):
-                def __init__(self, sdf_version: str | None = None, resolution: float = 1):
-                    super().__init__(sdf_version)
-                    self.resolution = resolution
-
-                def to_version(self, target_version: str) -> "Lidar.Scan.Horizontal.HorizontalResolution":
-                    kwargs = {"sdf_version": target_version}
-                    kwargs["resolution"] = self.resolution
-                    new_obj = self.__class__(**kwargs)
-                    return new_obj
-
-                def to_sdf(self, version: str | None = None) -> ET.Element:
-                    if self.__version__ is None and version is not None:
-                        self.__version__ = version
-                    elif version is not None and version != self.__version__:
-                        return self.to_version(version).to_sdf()
-                    version = self.__version__ or version
-                    el = ET.Element("resolution")
-                    if self.resolution is not None:
-                        el.text = str(self.resolution)
-                    return el
-
-                @classmethod
-                def _from_sdf(cls, el: ET.Element, version: str) -> "Lidar.Scan.Horizontal.HorizontalResolution | SDFError":
-                    _text = el.text or 1
-                    _resolution = _parse_double(_text)
-                    if isinstance(_resolution, SDFError):
-                        return _resolution
-                    return cls(sdf_version=version, resolution=_resolution)
-
-            class MaxAngle(BaseModel):
-                def __init__(self, sdf_version: str | None = None, max_angle: float = 0):
-                    super().__init__(sdf_version)
-                    self.max_angle = max_angle
-
-                def to_version(self, target_version: str) -> "Lidar.Scan.Horizontal.MaxAngle":
-                    kwargs = {"sdf_version": target_version}
-                    kwargs["max_angle"] = self.max_angle
-                    new_obj = self.__class__(**kwargs)
-                    return new_obj
-
-                def to_sdf(self, version: str | None = None) -> ET.Element:
-                    if self.__version__ is None and version is not None:
-                        self.__version__ = version
-                    elif version is not None and version != self.__version__:
-                        return self.to_version(version).to_sdf()
-                    version = self.__version__ or version
-                    el = ET.Element("max_angle")
-                    if self.max_angle is not None:
-                        el.text = str(self.max_angle)
-                    return el
-
-                @classmethod
-                def _from_sdf(cls, el: ET.Element, version: str) -> "Lidar.Scan.Horizontal.MaxAngle | SDFError":
-                    _text = el.text or 0
-                    _max_angle = _parse_double(_text)
-                    if isinstance(_max_angle, SDFError):
-                        return _max_angle
-                    return cls(sdf_version=version, max_angle=_max_angle)
-
-            class MinAngle(BaseModel):
-                def __init__(self, sdf_version: str | None = None, min_angle: float = 0):
-                    super().__init__(sdf_version)
-                    self.min_angle = min_angle
-
-                def to_version(self, target_version: str) -> "Lidar.Scan.Horizontal.MinAngle":
-                    kwargs = {"sdf_version": target_version}
-                    kwargs["min_angle"] = self.min_angle
-                    new_obj = self.__class__(**kwargs)
-                    return new_obj
-
-                def to_sdf(self, version: str | None = None) -> ET.Element:
-                    if self.__version__ is None and version is not None:
-                        self.__version__ = version
-                    elif version is not None and version != self.__version__:
-                        return self.to_version(version).to_sdf()
-                    version = self.__version__ or version
-                    el = ET.Element("min_angle")
-                    if self.min_angle is not None:
-                        el.text = str(self.min_angle)
-                    return el
-
-                @classmethod
-                def _from_sdf(cls, el: ET.Element, version: str) -> "Lidar.Scan.Horizontal.MinAngle | SDFError":
-                    _text = el.text or 0
-                    _min_angle = _parse_double(_text)
-                    if isinstance(_min_angle, SDFError):
-                        return _min_angle
-                    return cls(sdf_version=version, min_angle=_min_angle)
-
-            class Samples(BaseModel):
-                def __init__(self, sdf_version: str | None = None, samples: int = 640):
-                    super().__init__(sdf_version)
-                    self.samples = samples
-
-                def to_version(self, target_version: str) -> "Lidar.Scan.Horizontal.Samples":
-                    kwargs = {"sdf_version": target_version}
-                    kwargs["samples"] = self.samples
-                    new_obj = self.__class__(**kwargs)
-                    return new_obj
-
-                def to_sdf(self, version: str | None = None) -> ET.Element:
-                    if self.__version__ is None and version is not None:
-                        self.__version__ = version
-                    elif version is not None and version != self.__version__:
-                        return self.to_version(version).to_sdf()
-                    version = self.__version__ or version
-                    el = ET.Element("samples")
-                    if self.samples is not None:
-                        el.text = str(self.samples)
-                    return el
-
-                @classmethod
-                def _from_sdf(cls, el: ET.Element, version: str) -> "Lidar.Scan.Horizontal.Samples | SDFError":
-                    _text = el.text or 640
-                    _samples = _parse_uint32(_text)
-                    if isinstance(_samples, SDFError):
-                        return _samples
-                    return cls(sdf_version=version, samples=_samples)
-
             def __init__(
                 self,
                 sdf_version: str | None = None,
-                max_angle: "Lidar.Scan.Horizontal.MaxAngle" = None,
-                min_angle: "Lidar.Scan.Horizontal.MinAngle" = None,
-                resolution: "Lidar.Scan.Horizontal.HorizontalResolution" = None,
-                samples: "Lidar.Scan.Horizontal.Samples" = None
+                max_angle: float = 0,
+                min_angle: float = 0,
+                resolution: float = 1,
+                samples: int = 640
             ):
                 super().__init__(sdf_version)
                 self.max_angle = max_angle
                 self.min_angle = min_angle
                 self.resolution = resolution
                 self.samples = samples
-                if self.max_angle is not None:
-                    if getattr(self.max_angle, '__version__', None) is None:
-                        self.max_angle.__version__ = self.__version__
-                    elif getattr(self.max_angle, '__version__', None) != self.__version__ and self.__version__ is not None:
-                        self.max_angle = self.max_angle.to_version(self.__version__)
-                if self.min_angle is not None:
-                    if getattr(self.min_angle, '__version__', None) is None:
-                        self.min_angle.__version__ = self.__version__
-                    elif getattr(self.min_angle, '__version__', None) != self.__version__ and self.__version__ is not None:
-                        self.min_angle = self.min_angle.to_version(self.__version__)
-                if self.resolution is not None:
-                    if getattr(self.resolution, '__version__', None) is None:
-                        self.resolution.__version__ = self.__version__
-                    elif getattr(self.resolution, '__version__', None) != self.__version__ and self.__version__ is not None:
-                        self.resolution = self.resolution.to_version(self.__version__)
-                if self.samples is not None:
-                    if getattr(self.samples, '__version__', None) is None:
-                        self.samples.__version__ = self.__version__
-                    elif getattr(self.samples, '__version__', None) != self.__version__ and self.__version__ is not None:
-                        self.samples = self.samples.to_version(self.__version__)
 
             def to_version(self, target_version: str) -> "Lidar.Scan.Horizontal":
                 kwargs = {"sdf_version": target_version}
-                kwargs["max_angle"] = self.max_angle.to_version(target_version) if self.max_angle is not None else None
-                kwargs["min_angle"] = self.min_angle.to_version(target_version) if self.min_angle is not None else None
-                kwargs["resolution"] = self.resolution.to_version(target_version) if self.resolution is not None else None
-                kwargs["samples"] = self.samples.to_version(target_version) if self.samples is not None else None
+                kwargs["max_angle"] = self.max_angle
+                kwargs["min_angle"] = self.min_angle
+                kwargs["resolution"] = self.resolution
+                kwargs["samples"] = self.samples
                 new_obj = self.__class__(**kwargs)
                 return new_obj
 
@@ -554,152 +222,84 @@ class Lidar(BaseModel):
                 version = self.__version__ or version
                 el = ET.Element("horizontal")
                 if self.max_angle is not None:
-                    el.append(self.max_angle.to_sdf(version))
+                    _c_tmp = ET.Element("max_angle")
+                    _c_tmp.text = str(self.max_angle)
+                    el.append(_c_tmp)
                 if self.min_angle is not None:
-                    el.append(self.min_angle.to_sdf(version))
+                    _c_tmp = ET.Element("min_angle")
+                    _c_tmp.text = str(self.min_angle)
+                    el.append(_c_tmp)
                 if self.resolution is not None:
-                    el.append(self.resolution.to_sdf(version))
+                    _c_tmp = ET.Element("resolution")
+                    _c_tmp.text = str(self.resolution)
+                    el.append(_c_tmp)
                 if self.samples is not None:
-                    el.append(self.samples.to_sdf(version))
+                    _c_tmp = ET.Element("samples")
+                    _c_tmp.text = str(self.samples)
+                    el.append(_c_tmp)
                 return el
 
             @classmethod
             def _from_sdf(cls, el: ET.Element, version: str) -> "Lidar.Scan.Horizontal | SDFError":
-                _c_max_angle = el.find("max_angle")
-                if _c_max_angle is not None:
-                    _res = cls.MaxAngle._from_sdf(_c_max_angle, version)
-                    if isinstance(_res, SDFError):
-                        return _res.extend("max_angle")
-                    _max_angle = _res
+                _c_tmp = el.find("max_angle")
+                if _c_tmp is not None:
+                    _text = _c_tmp.text if _c_tmp.text is not None else 0
+                    _val = _parse_double(_text)
+                    if isinstance(_val, SDFError):
+                        return _val.extend("max_angle")
+                    _max_angle = _val
                 else:
                     _max_angle = None
-                _c_min_angle = el.find("min_angle")
-                if _c_min_angle is not None:
-                    _res = cls.MinAngle._from_sdf(_c_min_angle, version)
-                    if isinstance(_res, SDFError):
-                        return _res.extend("min_angle")
-                    _min_angle = _res
+                _c_tmp = el.find("min_angle")
+                if _c_tmp is not None:
+                    _text = _c_tmp.text if _c_tmp.text is not None else 0
+                    _val = _parse_double(_text)
+                    if isinstance(_val, SDFError):
+                        return _val.extend("min_angle")
+                    _min_angle = _val
                 else:
                     _min_angle = None
-                _c_resolution = el.find("resolution")
-                if _c_resolution is not None:
-                    _res = cls.HorizontalResolution._from_sdf(_c_resolution, version)
-                    if isinstance(_res, SDFError):
-                        return _res.extend("resolution")
-                    _resolution = _res
+                _c_tmp = el.find("resolution")
+                if _c_tmp is not None:
+                    _text = _c_tmp.text if _c_tmp.text is not None else 1
+                    _val = _parse_double(_text)
+                    if isinstance(_val, SDFError):
+                        return _val.extend("resolution")
+                    _resolution = _val
                 else:
                     _resolution = None
-                _c_samples = el.find("samples")
-                if _c_samples is not None:
-                    _res = cls.Samples._from_sdf(_c_samples, version)
-                    if isinstance(_res, SDFError):
-                        return _res.extend("samples")
-                    _samples = _res
+                _c_tmp = el.find("samples")
+                if _c_tmp is not None:
+                    _text = _c_tmp.text if _c_tmp.text is not None else 640
+                    _val = _parse_uint32(_text)
+                    if isinstance(_val, SDFError):
+                        return _val.extend("samples")
+                    _samples = _val
                 else:
                     _samples = None
                 return cls(sdf_version=version, max_angle=_max_angle, min_angle=_min_angle, resolution=_resolution, samples=_samples)
 
         class Vertical(BaseModel):
-            class VerticalResolution(BaseModel):
-                def __init__(self, sdf_version: str | None = None, resolution: float = 1):
-                    super().__init__(sdf_version)
-                    self.resolution = resolution
-
-                def to_version(self, target_version: str) -> "Lidar.Scan.Vertical.VerticalResolution":
-                    kwargs = {"sdf_version": target_version}
-                    kwargs["resolution"] = self.resolution
-                    new_obj = self.__class__(**kwargs)
-                    return new_obj
-
-                def to_sdf(self, version: str | None = None) -> ET.Element:
-                    if self.__version__ is None and version is not None:
-                        self.__version__ = version
-                    elif version is not None and version != self.__version__:
-                        return self.to_version(version).to_sdf()
-                    version = self.__version__ or version
-                    el = ET.Element("resolution")
-                    if self.resolution is not None:
-                        el.text = str(self.resolution)
-                    return el
-
-                @classmethod
-                def _from_sdf(cls, el: ET.Element, version: str) -> "Lidar.Scan.Vertical.VerticalResolution | SDFError":
-                    _text = el.text or 1
-                    _resolution = _parse_double(_text)
-                    if isinstance(_resolution, SDFError):
-                        return _resolution
-                    return cls(sdf_version=version, resolution=_resolution)
-
-            class VerticalSamples(BaseModel):
-                def __init__(self, sdf_version: str | None = None, samples: int = 1):
-                    super().__init__(sdf_version)
-                    self.samples = samples
-
-                def to_version(self, target_version: str) -> "Lidar.Scan.Vertical.VerticalSamples":
-                    kwargs = {"sdf_version": target_version}
-                    kwargs["samples"] = self.samples
-                    new_obj = self.__class__(**kwargs)
-                    return new_obj
-
-                def to_sdf(self, version: str | None = None) -> ET.Element:
-                    if self.__version__ is None and version is not None:
-                        self.__version__ = version
-                    elif version is not None and version != self.__version__:
-                        return self.to_version(version).to_sdf()
-                    version = self.__version__ or version
-                    el = ET.Element("samples")
-                    if self.samples is not None:
-                        el.text = str(self.samples)
-                    return el
-
-                @classmethod
-                def _from_sdf(cls, el: ET.Element, version: str) -> "Lidar.Scan.Vertical.VerticalSamples | SDFError":
-                    _text = el.text or 1
-                    _samples = _parse_uint32(_text)
-                    if isinstance(_samples, SDFError):
-                        return _samples
-                    return cls(sdf_version=version, samples=_samples)
-
             def __init__(
                 self,
                 sdf_version: str | None = None,
-                max_angle: "MaxAngle" = None,
-                min_angle: "MinAngle" = None,
-                resolution: "Lidar.Scan.Vertical.VerticalResolution" = None,
-                samples: "Lidar.Scan.Vertical.VerticalSamples" = None
+                max_angle: float = 0,
+                min_angle: float = 0,
+                resolution: float = 1,
+                samples: int = 1
             ):
                 super().__init__(sdf_version)
                 self.max_angle = max_angle
                 self.min_angle = min_angle
                 self.resolution = resolution
                 self.samples = samples
-                if self.max_angle is not None:
-                    if getattr(self.max_angle, '__version__', None) is None:
-                        self.max_angle.__version__ = self.__version__
-                    elif getattr(self.max_angle, '__version__', None) != self.__version__ and self.__version__ is not None:
-                        self.max_angle = self.max_angle.to_version(self.__version__)
-                if self.min_angle is not None:
-                    if getattr(self.min_angle, '__version__', None) is None:
-                        self.min_angle.__version__ = self.__version__
-                    elif getattr(self.min_angle, '__version__', None) != self.__version__ and self.__version__ is not None:
-                        self.min_angle = self.min_angle.to_version(self.__version__)
-                if self.resolution is not None:
-                    if getattr(self.resolution, '__version__', None) is None:
-                        self.resolution.__version__ = self.__version__
-                    elif getattr(self.resolution, '__version__', None) != self.__version__ and self.__version__ is not None:
-                        self.resolution = self.resolution.to_version(self.__version__)
-                if self.samples is not None:
-                    if getattr(self.samples, '__version__', None) is None:
-                        self.samples.__version__ = self.__version__
-                    elif getattr(self.samples, '__version__', None) != self.__version__ and self.__version__ is not None:
-                        self.samples = self.samples.to_version(self.__version__)
 
             def to_version(self, target_version: str) -> "Lidar.Scan.Vertical":
                 kwargs = {"sdf_version": target_version}
-                kwargs["max_angle"] = self.max_angle.to_version(target_version) if self.max_angle is not None else None
-                kwargs["min_angle"] = self.min_angle.to_version(target_version) if self.min_angle is not None else None
-                kwargs["resolution"] = self.resolution.to_version(target_version) if self.resolution is not None else None
-                kwargs["samples"] = self.samples.to_version(target_version) if self.samples is not None else None
+                kwargs["max_angle"] = self.max_angle
+                kwargs["min_angle"] = self.min_angle
+                kwargs["resolution"] = self.resolution
+                kwargs["samples"] = self.samples
                 new_obj = self.__class__(**kwargs)
                 return new_obj
 
@@ -711,47 +311,59 @@ class Lidar(BaseModel):
                 version = self.__version__ or version
                 el = ET.Element("vertical")
                 if self.max_angle is not None:
-                    el.append(self.max_angle.to_sdf(version))
+                    _c_tmp = ET.Element("max_angle")
+                    _c_tmp.text = str(self.max_angle)
+                    el.append(_c_tmp)
                 if self.min_angle is not None:
-                    el.append(self.min_angle.to_sdf(version))
+                    _c_tmp = ET.Element("min_angle")
+                    _c_tmp.text = str(self.min_angle)
+                    el.append(_c_tmp)
                 if self.resolution is not None:
-                    el.append(self.resolution.to_sdf(version))
+                    _c_tmp = ET.Element("resolution")
+                    _c_tmp.text = str(self.resolution)
+                    el.append(_c_tmp)
                 if self.samples is not None:
-                    el.append(self.samples.to_sdf(version))
+                    _c_tmp = ET.Element("samples")
+                    _c_tmp.text = str(self.samples)
+                    el.append(_c_tmp)
                 return el
 
             @classmethod
             def _from_sdf(cls, el: ET.Element, version: str) -> "Lidar.Scan.Vertical | SDFError":
-                _c_max_angle = el.find("max_angle")
-                if _c_max_angle is not None:
-                    _res = MaxAngle._from_sdf(_c_max_angle, version)
-                    if isinstance(_res, SDFError):
-                        return _res.extend("max_angle")
-                    _max_angle = _res
+                _c_tmp = el.find("max_angle")
+                if _c_tmp is not None:
+                    _text = _c_tmp.text if _c_tmp.text is not None else 0
+                    _val = _parse_double(_text)
+                    if isinstance(_val, SDFError):
+                        return _val.extend("max_angle")
+                    _max_angle = _val
                 else:
                     _max_angle = None
-                _c_min_angle = el.find("min_angle")
-                if _c_min_angle is not None:
-                    _res = MinAngle._from_sdf(_c_min_angle, version)
-                    if isinstance(_res, SDFError):
-                        return _res.extend("min_angle")
-                    _min_angle = _res
+                _c_tmp = el.find("min_angle")
+                if _c_tmp is not None:
+                    _text = _c_tmp.text if _c_tmp.text is not None else 0
+                    _val = _parse_double(_text)
+                    if isinstance(_val, SDFError):
+                        return _val.extend("min_angle")
+                    _min_angle = _val
                 else:
                     _min_angle = None
-                _c_resolution = el.find("resolution")
-                if _c_resolution is not None:
-                    _res = cls.VerticalResolution._from_sdf(_c_resolution, version)
-                    if isinstance(_res, SDFError):
-                        return _res.extend("resolution")
-                    _resolution = _res
+                _c_tmp = el.find("resolution")
+                if _c_tmp is not None:
+                    _text = _c_tmp.text if _c_tmp.text is not None else 1
+                    _val = _parse_double(_text)
+                    if isinstance(_val, SDFError):
+                        return _val.extend("resolution")
+                    _resolution = _val
                 else:
                     _resolution = None
-                _c_samples = el.find("samples")
-                if _c_samples is not None:
-                    _res = cls.VerticalSamples._from_sdf(_c_samples, version)
-                    if isinstance(_res, SDFError):
-                        return _res.extend("samples")
-                    _samples = _res
+                _c_tmp = el.find("samples")
+                if _c_tmp is not None:
+                    _text = _c_tmp.text if _c_tmp.text is not None else 1
+                    _val = _parse_uint32(_text)
+                    if isinstance(_val, SDFError):
+                        return _val.extend("samples")
+                    _samples = _val
                 else:
                     _samples = None
                 return cls(sdf_version=version, max_angle=_max_angle, min_angle=_min_angle, resolution=_resolution, samples=_samples)
@@ -765,12 +377,12 @@ class Lidar(BaseModel):
             super().__init__(sdf_version)
             self.horizontal = horizontal
             self.vertical = vertical
-            if self.horizontal is not None:
+            if self.horizontal is not None and hasattr(self.horizontal, 'to_version'):
                 if getattr(self.horizontal, '__version__', None) is None:
                     self.horizontal.__version__ = self.__version__
                 elif getattr(self.horizontal, '__version__', None) != self.__version__ and self.__version__ is not None:
                     self.horizontal = self.horizontal.to_version(self.__version__)
-            if self.vertical is not None:
+            if self.vertical is not None and hasattr(self.vertical, 'to_version'):
                 if getattr(self.vertical, '__version__', None) is None:
                     self.vertical.__version__ = self.__version__
                 elif getattr(self.vertical, '__version__', None) != self.__version__ and self.__version__ is not None:
@@ -778,8 +390,8 @@ class Lidar(BaseModel):
 
         def to_version(self, target_version: str) -> "Lidar.Scan":
             kwargs = {"sdf_version": target_version}
-            kwargs["horizontal"] = self.horizontal.to_version(target_version) if self.horizontal is not None else None
-            kwargs["vertical"] = self.vertical.to_version(target_version) if self.vertical is not None else None
+            kwargs["horizontal"] = self.horizontal.to_version(target_version) if hasattr(self.horizontal, "to_version") else self.horizontal
+            kwargs["vertical"] = self.vertical.to_version(target_version) if hasattr(self.vertical, "to_version") else self.vertical
             new_obj = self.__class__(**kwargs)
             return new_obj
 
@@ -793,9 +405,27 @@ class Lidar(BaseModel):
             if self.horizontal is None:
                 self.horizontal = self.__class__.Horizontal(sdf_version=version)
             if self.horizontal is not None:
-                el.append(self.horizontal.to_sdf(version))
+                if hasattr(self.horizontal, 'to_sdf'):
+                    _child_res = self.horizontal.to_sdf(version)
+                else:
+                    _child_res = str(self.horizontal)
+                if isinstance(_child_res, str):
+                    _item_el = ET.Element('horizontal')
+                    _item_el.text = _child_res
+                else:
+                    _item_el = _child_res
+                el.append(_item_el)
             if self.vertical is not None:
-                el.append(self.vertical.to_sdf(version))
+                if hasattr(self.vertical, 'to_sdf'):
+                    _child_res = self.vertical.to_sdf(version)
+                else:
+                    _child_res = str(self.vertical)
+                if isinstance(_child_res, str):
+                    _item_el = ET.Element('vertical')
+                    _item_el.text = _child_res
+                else:
+                    _item_el = _child_res
+                el.append(_item_el)
             return el
 
         @classmethod
@@ -821,83 +451,43 @@ class Lidar(BaseModel):
                 _vertical = None
             return cls(sdf_version=version, horizontal=_horizontal, vertical=_vertical)
 
-    class VisibilityMask(BaseModel):
-        def __init__(self, sdf_version: str | None = None, visibility_mask: int = 4294967295):
-            super().__init__(sdf_version)
-            self.visibility_mask = visibility_mask
-
-        def to_version(self, target_version: str) -> "Lidar.VisibilityMask":
-            if self.visibility_mask is not None and cmp_version(target_version, "1.9") < 0:
-                raise ValueError(f"'visibility_mask' is not supported in SDF version {target_version} (added in 1.9)")
-            kwargs = {"sdf_version": target_version}
-            kwargs["visibility_mask"] = self.visibility_mask
-            new_obj = self.__class__(**kwargs)
-            return new_obj
-
-        def to_sdf(self, version: str | None = None) -> ET.Element:
-            if self.__version__ is None and version is not None:
-                self.__version__ = version
-            elif version is not None and version != self.__version__:
-                return self.to_version(version).to_sdf()
-            version = self.__version__ or version
-            el = ET.Element("visibility_mask")
-            if self.visibility_mask is not None:
-                el.text = str(self.visibility_mask)
-            return el
-
-        @classmethod
-        def _from_sdf(cls, el: ET.Element, version: str) -> "Lidar.VisibilityMask | SDFError":
-            _text = el.text or 4294967295
-            _visibility_mask = _parse_uint32(_text)
-            if isinstance(_visibility_mask, SDFError):
-                return _visibility_mask
-            if _visibility_mask is not None and cmp_version(version, "1.9") < 0:
-                if _visibility_mask != 4294967295:
-                    return SDFError(f"'visibility_mask' is not supported in SDF version {version} (added in 1.9)")
-            return cls(sdf_version=version, visibility_mask=_visibility_mask)
-
     def __init__(
         self,
         sdf_version: str | None = None,
         noise: "Lidar.Noise" = None,
         range: "Lidar.Range" = None,
         scan: "Lidar.Scan" = None,
-        visibility_mask: "Lidar.VisibilityMask" = None
+        visibility_mask: int = 4294967295
     ):
         super().__init__(sdf_version)
         self.noise = noise
         self.range = range
         self.scan = scan
         self.visibility_mask = visibility_mask
-        if self.noise is not None:
+        if self.noise is not None and hasattr(self.noise, 'to_version'):
             if getattr(self.noise, '__version__', None) is None:
                 self.noise.__version__ = self.__version__
             elif getattr(self.noise, '__version__', None) != self.__version__ and self.__version__ is not None:
                 self.noise = self.noise.to_version(self.__version__)
-        if self.range is not None:
+        if self.range is not None and hasattr(self.range, 'to_version'):
             if getattr(self.range, '__version__', None) is None:
                 self.range.__version__ = self.__version__
             elif getattr(self.range, '__version__', None) != self.__version__ and self.__version__ is not None:
                 self.range = self.range.to_version(self.__version__)
-        if self.scan is not None:
+        if self.scan is not None and hasattr(self.scan, 'to_version'):
             if getattr(self.scan, '__version__', None) is None:
                 self.scan.__version__ = self.__version__
             elif getattr(self.scan, '__version__', None) != self.__version__ and self.__version__ is not None:
                 self.scan = self.scan.to_version(self.__version__)
-        if self.visibility_mask is not None:
-            if getattr(self.visibility_mask, '__version__', None) is None:
-                self.visibility_mask.__version__ = self.__version__
-            elif getattr(self.visibility_mask, '__version__', None) != self.__version__ and self.__version__ is not None:
-                self.visibility_mask = self.visibility_mask.to_version(self.__version__)
 
     def to_version(self, target_version: str) -> "Lidar":
         if self.visibility_mask is not None and cmp_version(target_version, "1.9") < 0:
             raise ValueError(f"'visibility_mask' is not supported in SDF version {target_version} (added in 1.9)")
         kwargs = {"sdf_version": target_version}
-        kwargs["noise"] = self.noise.to_version(target_version) if self.noise is not None else None
-        kwargs["range"] = self.range.to_version(target_version) if self.range is not None else None
-        kwargs["scan"] = self.scan.to_version(target_version) if self.scan is not None else None
-        kwargs["visibility_mask"] = self.visibility_mask.to_version(target_version) if self.visibility_mask is not None else None
+        kwargs["noise"] = self.noise.to_version(target_version) if hasattr(self.noise, "to_version") else self.noise
+        kwargs["range"] = self.range.to_version(target_version) if hasattr(self.range, "to_version") else self.range
+        kwargs["scan"] = self.scan.to_version(target_version) if hasattr(self.scan, "to_version") else self.scan
+        kwargs["visibility_mask"] = self.visibility_mask
         new_obj = self.__class__(**kwargs)
         return new_obj
 
@@ -909,17 +499,46 @@ class Lidar(BaseModel):
         version = self.__version__ or version
         el = ET.Element("lidar")
         if self.noise is not None:
-            el.append(self.noise.to_sdf(version))
+            if hasattr(self.noise, 'to_sdf'):
+                _child_res = self.noise.to_sdf(version)
+            else:
+                _child_res = str(self.noise)
+            if isinstance(_child_res, str):
+                _item_el = ET.Element('noise')
+                _item_el.text = _child_res
+            else:
+                _item_el = _child_res
+            el.append(_item_el)
         if self.range is None:
             self.range = self.__class__.Range(sdf_version=version)
         if self.range is not None:
-            el.append(self.range.to_sdf(version))
+            if hasattr(self.range, 'to_sdf'):
+                _child_res = self.range.to_sdf(version)
+            else:
+                _child_res = str(self.range)
+            if isinstance(_child_res, str):
+                _item_el = ET.Element('range')
+                _item_el.text = _child_res
+            else:
+                _item_el = _child_res
+            el.append(_item_el)
         if self.scan is None:
             self.scan = self.__class__.Scan(sdf_version=version)
         if self.scan is not None:
-            el.append(self.scan.to_sdf(version))
+            if hasattr(self.scan, 'to_sdf'):
+                _child_res = self.scan.to_sdf(version)
+            else:
+                _child_res = str(self.scan)
+            if isinstance(_child_res, str):
+                _item_el = ET.Element('scan')
+                _item_el.text = _child_res
+            else:
+                _item_el = _child_res
+            el.append(_item_el)
         if self.visibility_mask is not None:
-            el.append(self.visibility_mask.to_sdf(version))
+            _c_tmp = ET.Element("visibility_mask")
+            _c_tmp.text = str(self.visibility_mask)
+            el.append(_c_tmp)
         return el
 
     @classmethod
@@ -954,12 +573,13 @@ class Lidar(BaseModel):
             if isinstance(_res, SDFError):
                 return _res.extend("scan")
             _scan = _res
-        _c_visibility_mask = el.find("visibility_mask")
-        if _c_visibility_mask is not None:
-            _res = cls.VisibilityMask._from_sdf(_c_visibility_mask, version)
-            if isinstance(_res, SDFError):
-                return _res.extend("visibility_mask")
-            _visibility_mask = _res
+        _c_tmp = el.find("visibility_mask")
+        if _c_tmp is not None:
+            _text = _c_tmp.text if _c_tmp.text is not None else 4294967295
+            _val = _parse_uint32(_text)
+            if isinstance(_val, SDFError):
+                return _val.extend("visibility_mask")
+            _visibility_mask = _val
         else:
             _visibility_mask = None
         if _visibility_mask is not None and cmp_version(version, "1.9") < 0:

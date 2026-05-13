@@ -53,7 +53,7 @@ class Imu(BaseModel):
             def __init__(self, sdf_version: str | None = None, noise: "Noise" = None):
                 super().__init__(sdf_version)
                 self.noise = noise
-                if self.noise is not None:
+                if self.noise is not None and hasattr(self.noise, 'to_version'):
                     if getattr(self.noise, '__version__', None) is None:
                         self.noise.__version__ = self.__version__
                     elif getattr(self.noise, '__version__', None) != self.__version__ and self.__version__ is not None:
@@ -62,7 +62,7 @@ class Imu(BaseModel):
             def to_version(self, target_version: str) -> "Imu.AngularVelocity.X":
                 from ..elements.noise import Noise
                 kwargs = {"sdf_version": target_version}
-                kwargs["noise"] = self.noise.to_version(target_version) if self.noise is not None else None
+                kwargs["noise"] = self.noise.to_version(target_version) if hasattr(self.noise, "to_version") else self.noise
                 new_obj = self.__class__(**kwargs)
                 return new_obj
 
@@ -77,7 +77,16 @@ class Imu(BaseModel):
                 if self.noise is None:
                     self.noise = Noise(sdf_version=version)
                 if self.noise is not None:
-                    el.append(self.noise.to_sdf(version))
+                    if hasattr(self.noise, 'to_sdf'):
+                        _child_res = self.noise.to_sdf(version)
+                    else:
+                        _child_res = str(self.noise)
+                    if isinstance(_child_res, str):
+                        _item_el = ET.Element('noise')
+                        _item_el.text = _child_res
+                    else:
+                        _item_el = _child_res
+                    el.append(_item_el)
                 return el
 
             @classmethod
@@ -100,7 +109,7 @@ class Imu(BaseModel):
             def __init__(self, sdf_version: str | None = None, noise: "Noise" = None):
                 super().__init__(sdf_version)
                 self.noise = noise
-                if self.noise is not None:
+                if self.noise is not None and hasattr(self.noise, 'to_version'):
                     if getattr(self.noise, '__version__', None) is None:
                         self.noise.__version__ = self.__version__
                     elif getattr(self.noise, '__version__', None) != self.__version__ and self.__version__ is not None:
@@ -109,7 +118,7 @@ class Imu(BaseModel):
             def to_version(self, target_version: str) -> "Imu.AngularVelocity.Y":
                 from ..elements.noise import Noise
                 kwargs = {"sdf_version": target_version}
-                kwargs["noise"] = self.noise.to_version(target_version) if self.noise is not None else None
+                kwargs["noise"] = self.noise.to_version(target_version) if hasattr(self.noise, "to_version") else self.noise
                 new_obj = self.__class__(**kwargs)
                 return new_obj
 
@@ -124,7 +133,16 @@ class Imu(BaseModel):
                 if self.noise is None:
                     self.noise = Noise(sdf_version=version)
                 if self.noise is not None:
-                    el.append(self.noise.to_sdf(version))
+                    if hasattr(self.noise, 'to_sdf'):
+                        _child_res = self.noise.to_sdf(version)
+                    else:
+                        _child_res = str(self.noise)
+                    if isinstance(_child_res, str):
+                        _item_el = ET.Element('noise')
+                        _item_el.text = _child_res
+                    else:
+                        _item_el = _child_res
+                    el.append(_item_el)
                 return el
 
             @classmethod
@@ -147,7 +165,7 @@ class Imu(BaseModel):
             def __init__(self, sdf_version: str | None = None, noise: "Noise" = None):
                 super().__init__(sdf_version)
                 self.noise = noise
-                if self.noise is not None:
+                if self.noise is not None and hasattr(self.noise, 'to_version'):
                     if getattr(self.noise, '__version__', None) is None:
                         self.noise.__version__ = self.__version__
                     elif getattr(self.noise, '__version__', None) != self.__version__ and self.__version__ is not None:
@@ -156,7 +174,7 @@ class Imu(BaseModel):
             def to_version(self, target_version: str) -> "Imu.AngularVelocity.Z":
                 from ..elements.noise import Noise
                 kwargs = {"sdf_version": target_version}
-                kwargs["noise"] = self.noise.to_version(target_version) if self.noise is not None else None
+                kwargs["noise"] = self.noise.to_version(target_version) if hasattr(self.noise, "to_version") else self.noise
                 new_obj = self.__class__(**kwargs)
                 return new_obj
 
@@ -171,7 +189,16 @@ class Imu(BaseModel):
                 if self.noise is None:
                     self.noise = Noise(sdf_version=version)
                 if self.noise is not None:
-                    el.append(self.noise.to_sdf(version))
+                    if hasattr(self.noise, 'to_sdf'):
+                        _child_res = self.noise.to_sdf(version)
+                    else:
+                        _child_res = str(self.noise)
+                    if isinstance(_child_res, str):
+                        _item_el = ET.Element('noise')
+                        _item_el.text = _child_res
+                    else:
+                        _item_el = _child_res
+                    el.append(_item_el)
                 return el
 
             @classmethod
@@ -201,17 +228,17 @@ class Imu(BaseModel):
             self.x = x
             self.y = y
             self.z = z
-            if self.x is not None:
+            if self.x is not None and hasattr(self.x, 'to_version'):
                 if getattr(self.x, '__version__', None) is None:
                     self.x.__version__ = self.__version__
                 elif getattr(self.x, '__version__', None) != self.__version__ and self.__version__ is not None:
                     self.x = self.x.to_version(self.__version__)
-            if self.y is not None:
+            if self.y is not None and hasattr(self.y, 'to_version'):
                 if getattr(self.y, '__version__', None) is None:
                     self.y.__version__ = self.__version__
                 elif getattr(self.y, '__version__', None) != self.__version__ and self.__version__ is not None:
                     self.y = self.y.to_version(self.__version__)
-            if self.z is not None:
+            if self.z is not None and hasattr(self.z, 'to_version'):
                 if getattr(self.z, '__version__', None) is None:
                     self.z.__version__ = self.__version__
                 elif getattr(self.z, '__version__', None) != self.__version__ and self.__version__ is not None:
@@ -219,9 +246,9 @@ class Imu(BaseModel):
 
         def to_version(self, target_version: str) -> "Imu.AngularVelocity":
             kwargs = {"sdf_version": target_version}
-            kwargs["x"] = self.x.to_version(target_version) if self.x is not None else None
-            kwargs["y"] = self.y.to_version(target_version) if self.y is not None else None
-            kwargs["z"] = self.z.to_version(target_version) if self.z is not None else None
+            kwargs["x"] = self.x.to_version(target_version) if hasattr(self.x, "to_version") else self.x
+            kwargs["y"] = self.y.to_version(target_version) if hasattr(self.y, "to_version") else self.y
+            kwargs["z"] = self.z.to_version(target_version) if hasattr(self.z, "to_version") else self.z
             new_obj = self.__class__(**kwargs)
             return new_obj
 
@@ -233,11 +260,38 @@ class Imu(BaseModel):
             version = self.__version__ or version
             el = ET.Element("angular_velocity")
             if self.x is not None:
-                el.append(self.x.to_sdf(version))
+                if hasattr(self.x, 'to_sdf'):
+                    _child_res = self.x.to_sdf(version)
+                else:
+                    _child_res = str(self.x)
+                if isinstance(_child_res, str):
+                    _item_el = ET.Element('x')
+                    _item_el.text = _child_res
+                else:
+                    _item_el = _child_res
+                el.append(_item_el)
             if self.y is not None:
-                el.append(self.y.to_sdf(version))
+                if hasattr(self.y, 'to_sdf'):
+                    _child_res = self.y.to_sdf(version)
+                else:
+                    _child_res = str(self.y)
+                if isinstance(_child_res, str):
+                    _item_el = ET.Element('y')
+                    _item_el.text = _child_res
+                else:
+                    _item_el = _child_res
+                el.append(_item_el)
             if self.z is not None:
-                el.append(self.z.to_sdf(version))
+                if hasattr(self.z, 'to_sdf'):
+                    _child_res = self.z.to_sdf(version)
+                else:
+                    _child_res = str(self.z)
+                if isinstance(_child_res, str):
+                    _item_el = ET.Element('z')
+                    _item_el.text = _child_res
+                else:
+                    _item_el = _child_res
+                el.append(_item_el)
             return el
 
         @classmethod
@@ -268,58 +322,23 @@ class Imu(BaseModel):
                 _z = None
             return cls(sdf_version=version, x=_x, y=_y, z=_z)
 
-    class EnableOrientation(BaseModel):
-        def __init__(self, sdf_version: str | None = None, enable_orientation: bool = True):
-            super().__init__(sdf_version)
-            self.enable_orientation = enable_orientation
-
-        def to_version(self, target_version: str) -> "Imu.EnableOrientation":
-            if self.enable_orientation is not None and cmp_version(target_version, "1.6") < 0:
-                raise ValueError(f"'enable_orientation' is not supported in SDF version {target_version} (added in 1.6)")
-            kwargs = {"sdf_version": target_version}
-            kwargs["enable_orientation"] = self.enable_orientation
-            new_obj = self.__class__(**kwargs)
-            return new_obj
-
-        def to_sdf(self, version: str | None = None) -> ET.Element:
-            if self.__version__ is None and version is not None:
-                self.__version__ = version
-            elif version is not None and version != self.__version__:
-                return self.to_version(version).to_sdf()
-            version = self.__version__ or version
-            el = ET.Element("enable_orientation")
-            if self.enable_orientation is not None:
-                el.text = str(self.enable_orientation).lower()
-            return el
-
-        @classmethod
-        def _from_sdf(cls, el: ET.Element, version: str) -> "Imu.EnableOrientation | SDFError":
-            _text = el.text or True
-            _enable_orientation = str(_text).strip().lower() == 'true'
-            if isinstance(_enable_orientation, SDFError):
-                return _enable_orientation
-            if _enable_orientation is not None and cmp_version(version, "1.6") < 0:
-                if _enable_orientation != True:
-                    return SDFError(f"'enable_orientation' is not supported in SDF version {version} (added in 1.6)")
-            return cls(sdf_version=version, enable_orientation=_enable_orientation)
-
     class LinearAcceleration(BaseModel):
         def __init__(self, sdf_version: str | None = None, x: "X" = None, y: "Y" = None, z: "Z" = None):
             super().__init__(sdf_version)
             self.x = x
             self.y = y
             self.z = z
-            if self.x is not None:
+            if self.x is not None and hasattr(self.x, 'to_version'):
                 if getattr(self.x, '__version__', None) is None:
                     self.x.__version__ = self.__version__
                 elif getattr(self.x, '__version__', None) != self.__version__ and self.__version__ is not None:
                     self.x = self.x.to_version(self.__version__)
-            if self.y is not None:
+            if self.y is not None and hasattr(self.y, 'to_version'):
                 if getattr(self.y, '__version__', None) is None:
                     self.y.__version__ = self.__version__
                 elif getattr(self.y, '__version__', None) != self.__version__ and self.__version__ is not None:
                     self.y = self.y.to_version(self.__version__)
-            if self.z is not None:
+            if self.z is not None and hasattr(self.z, 'to_version'):
                 if getattr(self.z, '__version__', None) is None:
                     self.z.__version__ = self.__version__
                 elif getattr(self.z, '__version__', None) != self.__version__ and self.__version__ is not None:
@@ -327,9 +346,9 @@ class Imu(BaseModel):
 
         def to_version(self, target_version: str) -> "Imu.LinearAcceleration":
             kwargs = {"sdf_version": target_version}
-            kwargs["x"] = self.x.to_version(target_version) if self.x is not None else None
-            kwargs["y"] = self.y.to_version(target_version) if self.y is not None else None
-            kwargs["z"] = self.z.to_version(target_version) if self.z is not None else None
+            kwargs["x"] = self.x.to_version(target_version) if hasattr(self.x, "to_version") else self.x
+            kwargs["y"] = self.y.to_version(target_version) if hasattr(self.y, "to_version") else self.y
+            kwargs["z"] = self.z.to_version(target_version) if hasattr(self.z, "to_version") else self.z
             new_obj = self.__class__(**kwargs)
             return new_obj
 
@@ -341,11 +360,38 @@ class Imu(BaseModel):
             version = self.__version__ or version
             el = ET.Element("linear_acceleration")
             if self.x is not None:
-                el.append(self.x.to_sdf(version))
+                if hasattr(self.x, 'to_sdf'):
+                    _child_res = self.x.to_sdf(version)
+                else:
+                    _child_res = str(self.x)
+                if isinstance(_child_res, str):
+                    _item_el = ET.Element('x')
+                    _item_el.text = _child_res
+                else:
+                    _item_el = _child_res
+                el.append(_item_el)
             if self.y is not None:
-                el.append(self.y.to_sdf(version))
+                if hasattr(self.y, 'to_sdf'):
+                    _child_res = self.y.to_sdf(version)
+                else:
+                    _child_res = str(self.y)
+                if isinstance(_child_res, str):
+                    _item_el = ET.Element('y')
+                    _item_el.text = _child_res
+                else:
+                    _item_el = _child_res
+                el.append(_item_el)
             if self.z is not None:
-                el.append(self.z.to_sdf(version))
+                if hasattr(self.z, 'to_sdf'):
+                    _child_res = self.z.to_sdf(version)
+                else:
+                    _child_res = str(self.z)
+                if isinstance(_child_res, str):
+                    _item_el = ET.Element('z')
+                    _item_el.text = _child_res
+                else:
+                    _item_el = _child_res
+                el.append(_item_el)
             return el
 
         @classmethod
@@ -378,166 +424,26 @@ class Imu(BaseModel):
 
     class Noise(BaseModel):
         class Accel(BaseModel):
-            class BiasMean(BaseModel):
-                def __init__(self, sdf_version: str | None = None, bias_mean: float = 0.0):
-                    super().__init__(sdf_version)
-                    self.bias_mean = bias_mean
-
-                def to_version(self, target_version: str) -> "Imu.Noise.Accel.BiasMean":
-                    kwargs = {"sdf_version": target_version}
-                    kwargs["bias_mean"] = self.bias_mean
-                    new_obj = self.__class__(**kwargs)
-                    return new_obj
-
-                def to_sdf(self, version: str | None = None) -> ET.Element:
-                    if self.__version__ is None and version is not None:
-                        self.__version__ = version
-                    elif version is not None and version != self.__version__:
-                        return self.to_version(version).to_sdf()
-                    version = self.__version__ or version
-                    el = ET.Element("bias_mean")
-                    if self.bias_mean is not None:
-                        el.text = str(self.bias_mean)
-                    return el
-
-                @classmethod
-                def _from_sdf(cls, el: ET.Element, version: str) -> "Imu.Noise.Accel.BiasMean | SDFError":
-                    _text = el.text or 0.0
-                    _bias_mean = _parse_double(_text)
-                    if isinstance(_bias_mean, SDFError):
-                        return _bias_mean
-                    return cls(sdf_version=version, bias_mean=_bias_mean)
-
-            class BiasStddev(BaseModel):
-                def __init__(self, sdf_version: str | None = None, bias_stddev: float = 0.0):
-                    super().__init__(sdf_version)
-                    self.bias_stddev = bias_stddev
-
-                def to_version(self, target_version: str) -> "Imu.Noise.Accel.BiasStddev":
-                    kwargs = {"sdf_version": target_version}
-                    kwargs["bias_stddev"] = self.bias_stddev
-                    new_obj = self.__class__(**kwargs)
-                    return new_obj
-
-                def to_sdf(self, version: str | None = None) -> ET.Element:
-                    if self.__version__ is None and version is not None:
-                        self.__version__ = version
-                    elif version is not None and version != self.__version__:
-                        return self.to_version(version).to_sdf()
-                    version = self.__version__ or version
-                    el = ET.Element("bias_stddev")
-                    if self.bias_stddev is not None:
-                        el.text = str(self.bias_stddev)
-                    return el
-
-                @classmethod
-                def _from_sdf(cls, el: ET.Element, version: str) -> "Imu.Noise.Accel.BiasStddev | SDFError":
-                    _text = el.text or 0.0
-                    _bias_stddev = _parse_double(_text)
-                    if isinstance(_bias_stddev, SDFError):
-                        return _bias_stddev
-                    return cls(sdf_version=version, bias_stddev=_bias_stddev)
-
-            class Mean(BaseModel):
-                def __init__(self, sdf_version: str | None = None, mean: float = 0.0):
-                    super().__init__(sdf_version)
-                    self.mean = mean
-
-                def to_version(self, target_version: str) -> "Imu.Noise.Accel.Mean":
-                    kwargs = {"sdf_version": target_version}
-                    kwargs["mean"] = self.mean
-                    new_obj = self.__class__(**kwargs)
-                    return new_obj
-
-                def to_sdf(self, version: str | None = None) -> ET.Element:
-                    if self.__version__ is None and version is not None:
-                        self.__version__ = version
-                    elif version is not None and version != self.__version__:
-                        return self.to_version(version).to_sdf()
-                    version = self.__version__ or version
-                    el = ET.Element("mean")
-                    if self.mean is not None:
-                        el.text = str(self.mean)
-                    return el
-
-                @classmethod
-                def _from_sdf(cls, el: ET.Element, version: str) -> "Imu.Noise.Accel.Mean | SDFError":
-                    _text = el.text or 0.0
-                    _mean = _parse_double(_text)
-                    if isinstance(_mean, SDFError):
-                        return _mean
-                    return cls(sdf_version=version, mean=_mean)
-
-            class Stddev(BaseModel):
-                def __init__(self, sdf_version: str | None = None, stddev: float = 0.0):
-                    super().__init__(sdf_version)
-                    self.stddev = stddev
-
-                def to_version(self, target_version: str) -> "Imu.Noise.Accel.Stddev":
-                    kwargs = {"sdf_version": target_version}
-                    kwargs["stddev"] = self.stddev
-                    new_obj = self.__class__(**kwargs)
-                    return new_obj
-
-                def to_sdf(self, version: str | None = None) -> ET.Element:
-                    if self.__version__ is None and version is not None:
-                        self.__version__ = version
-                    elif version is not None and version != self.__version__:
-                        return self.to_version(version).to_sdf()
-                    version = self.__version__ or version
-                    el = ET.Element("stddev")
-                    if self.stddev is not None:
-                        el.text = str(self.stddev)
-                    return el
-
-                @classmethod
-                def _from_sdf(cls, el: ET.Element, version: str) -> "Imu.Noise.Accel.Stddev | SDFError":
-                    _text = el.text or 0.0
-                    _stddev = _parse_double(_text)
-                    if isinstance(_stddev, SDFError):
-                        return _stddev
-                    return cls(sdf_version=version, stddev=_stddev)
-
             def __init__(
                 self,
                 sdf_version: str | None = None,
-                bias_mean: "Imu.Noise.Accel.BiasMean" = None,
-                bias_stddev: "Imu.Noise.Accel.BiasStddev" = None,
-                mean: "Imu.Noise.Accel.Mean" = None,
-                stddev: "Imu.Noise.Accel.Stddev" = None
+                bias_mean: float = 0.0,
+                bias_stddev: float = 0.0,
+                mean: float = 0.0,
+                stddev: float = 0.0
             ):
                 super().__init__(sdf_version)
                 self.bias_mean = bias_mean
                 self.bias_stddev = bias_stddev
                 self.mean = mean
                 self.stddev = stddev
-                if self.bias_mean is not None:
-                    if getattr(self.bias_mean, '__version__', None) is None:
-                        self.bias_mean.__version__ = self.__version__
-                    elif getattr(self.bias_mean, '__version__', None) != self.__version__ and self.__version__ is not None:
-                        self.bias_mean = self.bias_mean.to_version(self.__version__)
-                if self.bias_stddev is not None:
-                    if getattr(self.bias_stddev, '__version__', None) is None:
-                        self.bias_stddev.__version__ = self.__version__
-                    elif getattr(self.bias_stddev, '__version__', None) != self.__version__ and self.__version__ is not None:
-                        self.bias_stddev = self.bias_stddev.to_version(self.__version__)
-                if self.mean is not None:
-                    if getattr(self.mean, '__version__', None) is None:
-                        self.mean.__version__ = self.__version__
-                    elif getattr(self.mean, '__version__', None) != self.__version__ and self.__version__ is not None:
-                        self.mean = self.mean.to_version(self.__version__)
-                if self.stddev is not None:
-                    if getattr(self.stddev, '__version__', None) is None:
-                        self.stddev.__version__ = self.__version__
-                    elif getattr(self.stddev, '__version__', None) != self.__version__ and self.__version__ is not None:
-                        self.stddev = self.stddev.to_version(self.__version__)
 
             def to_version(self, target_version: str) -> "Imu.Noise.Accel":
                 kwargs = {"sdf_version": target_version}
-                kwargs["bias_mean"] = self.bias_mean.to_version(target_version) if self.bias_mean is not None else None
-                kwargs["bias_stddev"] = self.bias_stddev.to_version(target_version) if self.bias_stddev is not None else None
-                kwargs["mean"] = self.mean.to_version(target_version) if self.mean is not None else None
-                kwargs["stddev"] = self.stddev.to_version(target_version) if self.stddev is not None else None
+                kwargs["bias_mean"] = self.bias_mean
+                kwargs["bias_stddev"] = self.bias_stddev
+                kwargs["mean"] = self.mean
+                kwargs["stddev"] = self.stddev
                 new_obj = self.__class__(**kwargs)
                 return new_obj
 
@@ -549,47 +455,59 @@ class Imu(BaseModel):
                 version = self.__version__ or version
                 el = ET.Element("accel")
                 if self.bias_mean is not None:
-                    el.append(self.bias_mean.to_sdf(version))
+                    _c_tmp = ET.Element("bias_mean")
+                    _c_tmp.text = str(self.bias_mean)
+                    el.append(_c_tmp)
                 if self.bias_stddev is not None:
-                    el.append(self.bias_stddev.to_sdf(version))
+                    _c_tmp = ET.Element("bias_stddev")
+                    _c_tmp.text = str(self.bias_stddev)
+                    el.append(_c_tmp)
                 if self.mean is not None:
-                    el.append(self.mean.to_sdf(version))
+                    _c_tmp = ET.Element("mean")
+                    _c_tmp.text = str(self.mean)
+                    el.append(_c_tmp)
                 if self.stddev is not None:
-                    el.append(self.stddev.to_sdf(version))
+                    _c_tmp = ET.Element("stddev")
+                    _c_tmp.text = str(self.stddev)
+                    el.append(_c_tmp)
                 return el
 
             @classmethod
             def _from_sdf(cls, el: ET.Element, version: str) -> "Imu.Noise.Accel | SDFError":
-                _c_bias_mean = el.find("bias_mean")
-                if _c_bias_mean is not None:
-                    _res = cls.BiasMean._from_sdf(_c_bias_mean, version)
-                    if isinstance(_res, SDFError):
-                        return _res.extend("bias_mean")
-                    _bias_mean = _res
+                _c_tmp = el.find("bias_mean")
+                if _c_tmp is not None:
+                    _text = _c_tmp.text if _c_tmp.text is not None else 0.0
+                    _val = _parse_double(_text)
+                    if isinstance(_val, SDFError):
+                        return _val.extend("bias_mean")
+                    _bias_mean = _val
                 else:
                     _bias_mean = None
-                _c_bias_stddev = el.find("bias_stddev")
-                if _c_bias_stddev is not None:
-                    _res = cls.BiasStddev._from_sdf(_c_bias_stddev, version)
-                    if isinstance(_res, SDFError):
-                        return _res.extend("bias_stddev")
-                    _bias_stddev = _res
+                _c_tmp = el.find("bias_stddev")
+                if _c_tmp is not None:
+                    _text = _c_tmp.text if _c_tmp.text is not None else 0.0
+                    _val = _parse_double(_text)
+                    if isinstance(_val, SDFError):
+                        return _val.extend("bias_stddev")
+                    _bias_stddev = _val
                 else:
                     _bias_stddev = None
-                _c_mean = el.find("mean")
-                if _c_mean is not None:
-                    _res = cls.Mean._from_sdf(_c_mean, version)
-                    if isinstance(_res, SDFError):
-                        return _res.extend("mean")
-                    _mean = _res
+                _c_tmp = el.find("mean")
+                if _c_tmp is not None:
+                    _text = _c_tmp.text if _c_tmp.text is not None else 0.0
+                    _val = _parse_double(_text)
+                    if isinstance(_val, SDFError):
+                        return _val.extend("mean")
+                    _mean = _val
                 else:
                     _mean = None
-                _c_stddev = el.find("stddev")
-                if _c_stddev is not None:
-                    _res = cls.Stddev._from_sdf(_c_stddev, version)
-                    if isinstance(_res, SDFError):
-                        return _res.extend("stddev")
-                    _stddev = _res
+                _c_tmp = el.find("stddev")
+                if _c_tmp is not None:
+                    _text = _c_tmp.text if _c_tmp.text is not None else 0.0
+                    _val = _parse_double(_text)
+                    if isinstance(_val, SDFError):
+                        return _val.extend("stddev")
+                    _stddev = _val
                 else:
                     _stddev = None
                 return cls(sdf_version=version, bias_mean=_bias_mean, bias_stddev=_bias_stddev, mean=_mean, stddev=_stddev)
@@ -598,43 +516,23 @@ class Imu(BaseModel):
             def __init__(
                 self,
                 sdf_version: str | None = None,
-                bias_mean: "BiasMean" = None,
-                bias_stddev: "BiasStddev" = None,
-                mean: "Mean" = None,
-                stddev: "Stddev" = None
+                bias_mean: float = 0.0,
+                bias_stddev: float = 0.0,
+                mean: float = 0.0,
+                stddev: float = 0.0
             ):
                 super().__init__(sdf_version)
                 self.bias_mean = bias_mean
                 self.bias_stddev = bias_stddev
                 self.mean = mean
                 self.stddev = stddev
-                if self.bias_mean is not None:
-                    if getattr(self.bias_mean, '__version__', None) is None:
-                        self.bias_mean.__version__ = self.__version__
-                    elif getattr(self.bias_mean, '__version__', None) != self.__version__ and self.__version__ is not None:
-                        self.bias_mean = self.bias_mean.to_version(self.__version__)
-                if self.bias_stddev is not None:
-                    if getattr(self.bias_stddev, '__version__', None) is None:
-                        self.bias_stddev.__version__ = self.__version__
-                    elif getattr(self.bias_stddev, '__version__', None) != self.__version__ and self.__version__ is not None:
-                        self.bias_stddev = self.bias_stddev.to_version(self.__version__)
-                if self.mean is not None:
-                    if getattr(self.mean, '__version__', None) is None:
-                        self.mean.__version__ = self.__version__
-                    elif getattr(self.mean, '__version__', None) != self.__version__ and self.__version__ is not None:
-                        self.mean = self.mean.to_version(self.__version__)
-                if self.stddev is not None:
-                    if getattr(self.stddev, '__version__', None) is None:
-                        self.stddev.__version__ = self.__version__
-                    elif getattr(self.stddev, '__version__', None) != self.__version__ and self.__version__ is not None:
-                        self.stddev = self.stddev.to_version(self.__version__)
 
             def to_version(self, target_version: str) -> "Imu.Noise.Rate":
                 kwargs = {"sdf_version": target_version}
-                kwargs["bias_mean"] = self.bias_mean.to_version(target_version) if self.bias_mean is not None else None
-                kwargs["bias_stddev"] = self.bias_stddev.to_version(target_version) if self.bias_stddev is not None else None
-                kwargs["mean"] = self.mean.to_version(target_version) if self.mean is not None else None
-                kwargs["stddev"] = self.stddev.to_version(target_version) if self.stddev is not None else None
+                kwargs["bias_mean"] = self.bias_mean
+                kwargs["bias_stddev"] = self.bias_stddev
+                kwargs["mean"] = self.mean
+                kwargs["stddev"] = self.stddev
                 new_obj = self.__class__(**kwargs)
                 return new_obj
 
@@ -646,113 +544,90 @@ class Imu(BaseModel):
                 version = self.__version__ or version
                 el = ET.Element("rate")
                 if self.bias_mean is not None:
-                    el.append(self.bias_mean.to_sdf(version))
+                    _c_tmp = ET.Element("bias_mean")
+                    _c_tmp.text = str(self.bias_mean)
+                    el.append(_c_tmp)
                 if self.bias_stddev is not None:
-                    el.append(self.bias_stddev.to_sdf(version))
+                    _c_tmp = ET.Element("bias_stddev")
+                    _c_tmp.text = str(self.bias_stddev)
+                    el.append(_c_tmp)
                 if self.mean is not None:
-                    el.append(self.mean.to_sdf(version))
+                    _c_tmp = ET.Element("mean")
+                    _c_tmp.text = str(self.mean)
+                    el.append(_c_tmp)
                 if self.stddev is not None:
-                    el.append(self.stddev.to_sdf(version))
+                    _c_tmp = ET.Element("stddev")
+                    _c_tmp.text = str(self.stddev)
+                    el.append(_c_tmp)
                 return el
 
             @classmethod
             def _from_sdf(cls, el: ET.Element, version: str) -> "Imu.Noise.Rate | SDFError":
-                _c_bias_mean = el.find("bias_mean")
-                if _c_bias_mean is not None:
-                    _res = BiasMean._from_sdf(_c_bias_mean, version)
-                    if isinstance(_res, SDFError):
-                        return _res.extend("bias_mean")
-                    _bias_mean = _res
+                _c_tmp = el.find("bias_mean")
+                if _c_tmp is not None:
+                    _text = _c_tmp.text if _c_tmp.text is not None else 0.0
+                    _val = _parse_double(_text)
+                    if isinstance(_val, SDFError):
+                        return _val.extend("bias_mean")
+                    _bias_mean = _val
                 else:
                     _bias_mean = None
-                _c_bias_stddev = el.find("bias_stddev")
-                if _c_bias_stddev is not None:
-                    _res = BiasStddev._from_sdf(_c_bias_stddev, version)
-                    if isinstance(_res, SDFError):
-                        return _res.extend("bias_stddev")
-                    _bias_stddev = _res
+                _c_tmp = el.find("bias_stddev")
+                if _c_tmp is not None:
+                    _text = _c_tmp.text if _c_tmp.text is not None else 0.0
+                    _val = _parse_double(_text)
+                    if isinstance(_val, SDFError):
+                        return _val.extend("bias_stddev")
+                    _bias_stddev = _val
                 else:
                     _bias_stddev = None
-                _c_mean = el.find("mean")
-                if _c_mean is not None:
-                    _res = Mean._from_sdf(_c_mean, version)
-                    if isinstance(_res, SDFError):
-                        return _res.extend("mean")
-                    _mean = _res
+                _c_tmp = el.find("mean")
+                if _c_tmp is not None:
+                    _text = _c_tmp.text if _c_tmp.text is not None else 0.0
+                    _val = _parse_double(_text)
+                    if isinstance(_val, SDFError):
+                        return _val.extend("mean")
+                    _mean = _val
                 else:
                     _mean = None
-                _c_stddev = el.find("stddev")
-                if _c_stddev is not None:
-                    _res = Stddev._from_sdf(_c_stddev, version)
-                    if isinstance(_res, SDFError):
-                        return _res.extend("stddev")
-                    _stddev = _res
+                _c_tmp = el.find("stddev")
+                if _c_tmp is not None:
+                    _text = _c_tmp.text if _c_tmp.text is not None else 0.0
+                    _val = _parse_double(_text)
+                    if isinstance(_val, SDFError):
+                        return _val.extend("stddev")
+                    _stddev = _val
                 else:
                     _stddev = None
                 return cls(sdf_version=version, bias_mean=_bias_mean, bias_stddev=_bias_stddev, mean=_mean, stddev=_stddev)
-
-        class Type(BaseModel):
-            def __init__(self, sdf_version: str | None = None, type: str = "gaussian"):
-                super().__init__(sdf_version)
-                self.type = type
-
-            def to_version(self, target_version: str) -> "Imu.Noise.Type":
-                kwargs = {"sdf_version": target_version}
-                kwargs["type"] = self.type
-                new_obj = self.__class__(**kwargs)
-                return new_obj
-
-            def to_sdf(self, version: str | None = None) -> ET.Element:
-                if self.__version__ is None and version is not None:
-                    self.__version__ = version
-                elif version is not None and version != self.__version__:
-                    return self.to_version(version).to_sdf()
-                version = self.__version__ or version
-                el = ET.Element("type")
-                if self.type is not None:
-                    el.text = self.type
-                return el
-
-            @classmethod
-            def _from_sdf(cls, el: ET.Element, version: str) -> "Imu.Noise.Type | SDFError":
-                _text = el.text or "gaussian"
-                _type = _text
-                if isinstance(_type, SDFError):
-                    return _type
-                return cls(sdf_version=version, type=_type)
 
         def __init__(
             self,
             sdf_version: str | None = None,
             accel: "Imu.Noise.Accel" = None,
             rate: "Imu.Noise.Rate" = None,
-            type: "Imu.Noise.Type" = None
+            type: str = "gaussian"
         ):
             super().__init__(sdf_version)
             self.accel = accel
             self.rate = rate
             self.type = type
-            if self.accel is not None:
+            if self.accel is not None and hasattr(self.accel, 'to_version'):
                 if getattr(self.accel, '__version__', None) is None:
                     self.accel.__version__ = self.__version__
                 elif getattr(self.accel, '__version__', None) != self.__version__ and self.__version__ is not None:
                     self.accel = self.accel.to_version(self.__version__)
-            if self.rate is not None:
+            if self.rate is not None and hasattr(self.rate, 'to_version'):
                 if getattr(self.rate, '__version__', None) is None:
                     self.rate.__version__ = self.__version__
                 elif getattr(self.rate, '__version__', None) != self.__version__ and self.__version__ is not None:
                     self.rate = self.rate.to_version(self.__version__)
-            if self.type is not None:
-                if getattr(self.type, '__version__', None) is None:
-                    self.type.__version__ = self.__version__
-                elif getattr(self.type, '__version__', None) != self.__version__ and self.__version__ is not None:
-                    self.type = self.type.to_version(self.__version__)
 
         def to_version(self, target_version: str) -> "Imu.Noise":
             kwargs = {"sdf_version": target_version}
-            kwargs["accel"] = self.accel.to_version(target_version) if self.accel is not None else None
-            kwargs["rate"] = self.rate.to_version(target_version) if self.rate is not None else None
-            kwargs["type"] = self.type.to_version(target_version) if self.type is not None else None
+            kwargs["accel"] = self.accel.to_version(target_version) if hasattr(self.accel, "to_version") else self.accel
+            kwargs["rate"] = self.rate.to_version(target_version) if hasattr(self.rate, "to_version") else self.rate
+            kwargs["type"] = self.type
             new_obj = self.__class__(**kwargs)
             return new_obj
 
@@ -766,13 +641,33 @@ class Imu(BaseModel):
             if self.accel is None:
                 self.accel = self.__class__.Accel(sdf_version=version)
             if self.accel is not None:
-                el.append(self.accel.to_sdf(version))
+                if hasattr(self.accel, 'to_sdf'):
+                    _child_res = self.accel.to_sdf(version)
+                else:
+                    _child_res = str(self.accel)
+                if isinstance(_child_res, str):
+                    _item_el = ET.Element('accel')
+                    _item_el.text = _child_res
+                else:
+                    _item_el = _child_res
+                el.append(_item_el)
             if self.rate is None:
                 self.rate = self.__class__.Rate(sdf_version=version)
             if self.rate is not None:
-                el.append(self.rate.to_sdf(version))
+                if hasattr(self.rate, 'to_sdf'):
+                    _child_res = self.rate.to_sdf(version)
+                else:
+                    _child_res = str(self.rate)
+                if isinstance(_child_res, str):
+                    _item_el = ET.Element('rate')
+                    _item_el.text = _child_res
+                else:
+                    _item_el = _child_res
+                el.append(_item_el)
             if self.type is not None:
-                el.append(self.type.to_sdf(version))
+                _c_tmp = ET.Element("type")
+                _c_tmp.text = self.type
+                el.append(_c_tmp)
             return el
 
         @classmethod
@@ -799,12 +694,13 @@ class Imu(BaseModel):
                 if isinstance(_res, SDFError):
                     return _res.extend("rate")
                 _rate = _res
-            _c_type = el.find("type")
-            if _c_type is not None:
-                _res = cls.Type._from_sdf(_c_type, version)
-                if isinstance(_res, SDFError):
-                    return _res.extend("type")
-                _type = _res
+            _c_tmp = el.find("type")
+            if _c_tmp is not None:
+                _text = _c_tmp.text if _c_tmp.text is not None else "gaussian"
+                _val = _text
+                if isinstance(_val, SDFError):
+                    return _val.extend("type")
+                _type = _val
             else:
                 _type = None
             return cls(sdf_version=version, accel=_accel, rate=_rate, type=_type)
@@ -898,68 +794,33 @@ class Imu(BaseModel):
                     return _parent_frame.extend("@parent_frame")
                 return cls(sdf_version=version, grav_dir_x=_grav_dir_x, parent_frame=_parent_frame)
 
-        class Localization(BaseModel):
-            def __init__(self, sdf_version: str | None = None, localization: str = "CUSTOM"):
-                super().__init__(sdf_version)
-                self.localization = localization
-
-            def to_version(self, target_version: str) -> "Imu.OrientationReferenceFrame.Localization":
-                kwargs = {"sdf_version": target_version}
-                kwargs["localization"] = self.localization
-                new_obj = self.__class__(**kwargs)
-                return new_obj
-
-            def to_sdf(self, version: str | None = None) -> ET.Element:
-                if self.__version__ is None and version is not None:
-                    self.__version__ = version
-                elif version is not None and version != self.__version__:
-                    return self.to_version(version).to_sdf()
-                version = self.__version__ or version
-                el = ET.Element("localization")
-                if self.localization is not None:
-                    el.text = self.localization
-                return el
-
-            @classmethod
-            def _from_sdf(cls, el: ET.Element, version: str) -> "Imu.OrientationReferenceFrame.Localization | SDFError":
-                _text = el.text or "CUSTOM"
-                _localization = _text
-                if isinstance(_localization, SDFError):
-                    return _localization
-                return cls(sdf_version=version, localization=_localization)
-
         def __init__(
             self,
             sdf_version: str | None = None,
             custom_rpy: "Imu.OrientationReferenceFrame.CustomRpy" = None,
             grav_dir_x: "Imu.OrientationReferenceFrame.GravDirX" = None,
-            localization: "Imu.OrientationReferenceFrame.Localization" = None
+            localization: str = "CUSTOM"
         ):
             super().__init__(sdf_version)
             self.custom_rpy = custom_rpy
             self.grav_dir_x = grav_dir_x
             self.localization = localization
-            if self.custom_rpy is not None:
+            if self.custom_rpy is not None and hasattr(self.custom_rpy, 'to_version'):
                 if getattr(self.custom_rpy, '__version__', None) is None:
                     self.custom_rpy.__version__ = self.__version__
                 elif getattr(self.custom_rpy, '__version__', None) != self.__version__ and self.__version__ is not None:
                     self.custom_rpy = self.custom_rpy.to_version(self.__version__)
-            if self.grav_dir_x is not None:
+            if self.grav_dir_x is not None and hasattr(self.grav_dir_x, 'to_version'):
                 if getattr(self.grav_dir_x, '__version__', None) is None:
                     self.grav_dir_x.__version__ = self.__version__
                 elif getattr(self.grav_dir_x, '__version__', None) != self.__version__ and self.__version__ is not None:
                     self.grav_dir_x = self.grav_dir_x.to_version(self.__version__)
-            if self.localization is not None:
-                if getattr(self.localization, '__version__', None) is None:
-                    self.localization.__version__ = self.__version__
-                elif getattr(self.localization, '__version__', None) != self.__version__ and self.__version__ is not None:
-                    self.localization = self.localization.to_version(self.__version__)
 
         def to_version(self, target_version: str) -> "Imu.OrientationReferenceFrame":
             kwargs = {"sdf_version": target_version}
-            kwargs["custom_rpy"] = self.custom_rpy.to_version(target_version) if self.custom_rpy is not None else None
-            kwargs["grav_dir_x"] = self.grav_dir_x.to_version(target_version) if self.grav_dir_x is not None else None
-            kwargs["localization"] = self.localization.to_version(target_version) if self.localization is not None else None
+            kwargs["custom_rpy"] = self.custom_rpy.to_version(target_version) if hasattr(self.custom_rpy, "to_version") else self.custom_rpy
+            kwargs["grav_dir_x"] = self.grav_dir_x.to_version(target_version) if hasattr(self.grav_dir_x, "to_version") else self.grav_dir_x
+            kwargs["localization"] = self.localization
             new_obj = self.__class__(**kwargs)
             return new_obj
 
@@ -971,11 +832,31 @@ class Imu(BaseModel):
             version = self.__version__ or version
             el = ET.Element("orientation_reference_frame")
             if self.custom_rpy is not None:
-                el.append(self.custom_rpy.to_sdf(version))
+                if hasattr(self.custom_rpy, 'to_sdf'):
+                    _child_res = self.custom_rpy.to_sdf(version)
+                else:
+                    _child_res = str(self.custom_rpy)
+                if isinstance(_child_res, str):
+                    _item_el = ET.Element('custom_rpy')
+                    _item_el.text = _child_res
+                else:
+                    _item_el = _child_res
+                el.append(_item_el)
             if self.grav_dir_x is not None:
-                el.append(self.grav_dir_x.to_sdf(version))
+                if hasattr(self.grav_dir_x, 'to_sdf'):
+                    _child_res = self.grav_dir_x.to_sdf(version)
+                else:
+                    _child_res = str(self.grav_dir_x)
+                if isinstance(_child_res, str):
+                    _item_el = ET.Element('grav_dir_x')
+                    _item_el.text = _child_res
+                else:
+                    _item_el = _child_res
+                el.append(_item_el)
             if self.localization is not None:
-                el.append(self.localization.to_sdf(version))
+                _c_tmp = ET.Element("localization")
+                _c_tmp.text = self.localization
+                el.append(_c_tmp)
             return el
 
         @classmethod
@@ -996,47 +877,16 @@ class Imu(BaseModel):
                 _grav_dir_x = _res
             else:
                 _grav_dir_x = None
-            _c_localization = el.find("localization")
-            if _c_localization is not None:
-                _res = cls.Localization._from_sdf(_c_localization, version)
-                if isinstance(_res, SDFError):
-                    return _res.extend("localization")
-                _localization = _res
+            _c_tmp = el.find("localization")
+            if _c_tmp is not None:
+                _text = _c_tmp.text if _c_tmp.text is not None else "CUSTOM"
+                _val = _text
+                if isinstance(_val, SDFError):
+                    return _val.extend("localization")
+                _localization = _val
             else:
                 _localization = None
             return cls(sdf_version=version, custom_rpy=_custom_rpy, grav_dir_x=_grav_dir_x, localization=_localization)
-
-    class Topic(BaseModel):
-        def __init__(self, sdf_version: str | None = None, topic: str = "__default_topic__"):
-            super().__init__(sdf_version)
-            self.topic = topic
-
-        def to_version(self, target_version: str) -> "Imu.Topic":
-            if self.topic is not None and cmp_version(target_version, "1.7") >= 0:
-                raise ValueError(f"'topic' is not supported in SDF version {target_version} (removed in 1.7)")
-            kwargs = {"sdf_version": target_version}
-            kwargs["topic"] = self.topic
-            new_obj = self.__class__(**kwargs)
-            return new_obj
-
-        def to_sdf(self, version: str | None = None) -> ET.Element:
-            if self.__version__ is None and version is not None:
-                self.__version__ = version
-            elif version is not None and version != self.__version__:
-                return self.to_version(version).to_sdf()
-            version = self.__version__ or version
-            el = ET.Element("topic")
-            if self.topic is not None:
-                el.text = self.topic
-            return el
-
-        @classmethod
-        def _from_sdf(cls, el: ET.Element, version: str) -> "Imu.Topic | SDFError":
-            _text = el.text or "__default_topic__"
-            _topic = _text
-            if isinstance(_topic, SDFError):
-                return _topic
-            return cls(sdf_version=version, topic=_topic)
 
     _MIGRATIONS = [{"version": "1.6", "ops": [{"type": "move", "from": "noise::type", "to": "linear_acceleration::z::noise::type"}, {"type": "move", "from": "noise::rate::mean", "to": "angular_velocity::z::noise::mean"}, {"type": "move", "from": "noise::rate::stddev", "to": "angular_velocity::z::noise::stddev"}, {"type": "move", "from": "noise::rate::bias_mean", "to": "angular_velocity::z::noise::bias_mean"}, {"type": "move", "from": "noise::rate::bias_stddev", "to": "angular_velocity::z::noise::bias_stddev"}, {"type": "move", "from": "noise::accel::mean", "to": "linear_acceleration::z::noise::mean"}, {"type": "move", "from": "noise::accel::stddev", "to": "linear_acceleration::z::noise::stddev"}, {"type": "move", "from": "noise::accel::bias_mean", "to": "linear_acceleration::z::noise::bias_mean"}, {"type": "move", "from": "noise::accel::bias_stddev", "to": "linear_acceleration::z::noise::bias_stddev"}, {"type": "copy", "from": "noise::type", "to": "angular_velocity::x::noise::type"}, {"type": "copy", "from": "noise::type", "to": "angular_velocity::y::noise::type"}, {"type": "copy", "from": "noise::type", "to": "angular_velocity::z::noise::type"}, {"type": "copy", "from": "noise::type", "to": "linear_acceleration::x::noise::type"}, {"type": "copy", "from": "noise::type", "to": "linear_acceleration::y::noise::type"}, {"type": "copy", "from": "noise::rate::mean", "to": "angular_velocity::x::noise::mean"}, {"type": "copy", "from": "noise::rate::mean", "to": "angular_velocity::y::noise::mean"}, {"type": "copy", "from": "noise::rate::stddev", "to": "angular_velocity::x::noise::stddev"}, {"type": "copy", "from": "noise::rate::stddev", "to": "angular_velocity::y::noise::stddev"}, {"type": "copy", "from": "noise::rate::bias_mean", "to": "angular_velocity::x::noise::bias_mean"}, {"type": "copy", "from": "noise::rate::bias_mean", "to": "angular_velocity::y::noise::bias_mean"}, {"type": "copy", "from": "noise::rate::bias_stddev", "to": "angular_velocity::x::noise::bias_stddev"}, {"type": "copy", "from": "noise::rate::bias_stddev", "to": "angular_velocity::y::noise::bias_stddev"}, {"type": "copy", "from": "noise::accel::mean", "to": "linear_acceleration::x::noise::mean"}, {"type": "copy", "from": "noise::accel::mean", "to": "linear_acceleration::y::noise::mean"}, {"type": "copy", "from": "noise::accel::stddev", "to": "linear_acceleration::x::noise::stddev"}, {"type": "copy", "from": "noise::accel::stddev", "to": "linear_acceleration::y::noise::stddev"}, {"type": "copy", "from": "noise::accel::bias_mean", "to": "linear_acceleration::x::noise::bias_mean"}, {"type": "copy", "from": "noise::accel::bias_mean", "to": "linear_acceleration::y::noise::bias_mean"}, {"type": "copy", "from": "noise::accel::bias_stddev", "to": "linear_acceleration::x::noise::bias_stddev"}, {"type": "copy", "from": "noise::accel::bias_stddev", "to": "linear_acceleration::y::noise::bias_stddev"}, {"type": "move", "from": "noise::type", "to": "linear_acceleration::z::noise::type"}, {"type": "move", "from": "noise::rate::mean", "to": "angular_velocity::z::noise::mean"}, {"type": "move", "from": "noise::rate::stddev", "to": "angular_velocity::z::noise::stddev"}, {"type": "move", "from": "noise::rate::bias_mean", "to": "angular_velocity::z::noise::bias_mean"}, {"type": "move", "from": "noise::rate::bias_stddev", "to": "angular_velocity::z::noise::bias_stddev"}, {"type": "move", "from": "noise::accel::mean", "to": "linear_acceleration::z::noise::mean"}, {"type": "move", "from": "noise::accel::stddev", "to": "linear_acceleration::z::noise::stddev"}, {"type": "move", "from": "noise::accel::bias_mean", "to": "linear_acceleration::z::noise::bias_mean"}, {"type": "move", "from": "noise::accel::bias_stddev", "to": "linear_acceleration::z::noise::bias_stddev"}, {"type": "copy", "from": "noise::type", "to": "angular_velocity::x::noise::type"}, {"type": "copy", "from": "noise::type", "to": "angular_velocity::y::noise::type"}, {"type": "copy", "from": "noise::type", "to": "angular_velocity::z::noise::type"}, {"type": "copy", "from": "noise::type", "to": "linear_acceleration::x::noise::type"}, {"type": "copy", "from": "noise::type", "to": "linear_acceleration::y::noise::type"}, {"type": "copy", "from": "noise::rate::mean", "to": "angular_velocity::x::noise::mean"}, {"type": "copy", "from": "noise::rate::mean", "to": "angular_velocity::y::noise::mean"}, {"type": "copy", "from": "noise::rate::stddev", "to": "angular_velocity::x::noise::stddev"}, {"type": "copy", "from": "noise::rate::stddev", "to": "angular_velocity::y::noise::stddev"}, {"type": "copy", "from": "noise::rate::bias_mean", "to": "angular_velocity::x::noise::bias_mean"}, {"type": "copy", "from": "noise::rate::bias_mean", "to": "angular_velocity::y::noise::bias_mean"}, {"type": "copy", "from": "noise::rate::bias_stddev", "to": "angular_velocity::x::noise::bias_stddev"}, {"type": "copy", "from": "noise::rate::bias_stddev", "to": "angular_velocity::y::noise::bias_stddev"}, {"type": "copy", "from": "noise::accel::mean", "to": "linear_acceleration::x::noise::mean"}, {"type": "copy", "from": "noise::accel::mean", "to": "linear_acceleration::y::noise::mean"}, {"type": "copy", "from": "noise::accel::stddev", "to": "linear_acceleration::x::noise::stddev"}, {"type": "copy", "from": "noise::accel::stddev", "to": "linear_acceleration::y::noise::stddev"}, {"type": "copy", "from": "noise::accel::bias_mean", "to": "linear_acceleration::x::noise::bias_mean"}, {"type": "copy", "from": "noise::accel::bias_mean", "to": "linear_acceleration::y::noise::bias_mean"}, {"type": "copy", "from": "noise::accel::bias_stddev", "to": "linear_acceleration::x::noise::bias_stddev"}, {"type": "copy", "from": "noise::accel::bias_stddev", "to": "linear_acceleration::y::noise::bias_stddev"}]}]
 
@@ -1044,11 +894,11 @@ class Imu(BaseModel):
         self,
         sdf_version: str | None = None,
         angular_velocity: "Imu.AngularVelocity" = None,
-        enable_orientation: "Imu.EnableOrientation" = None,
+        enable_orientation: bool = True,
         linear_acceleration: "Imu.LinearAcceleration" = None,
         noise: "Imu.Noise" = None,
         orientation_reference_frame: "Imu.OrientationReferenceFrame" = None,
-        topic: "Imu.Topic" = None
+        topic: str = "__default_topic__"
     ):
         super().__init__(sdf_version)
         self.angular_velocity = angular_velocity
@@ -1057,36 +907,26 @@ class Imu(BaseModel):
         self.noise = noise
         self.orientation_reference_frame = orientation_reference_frame
         self.topic = topic
-        if self.angular_velocity is not None:
+        if self.angular_velocity is not None and hasattr(self.angular_velocity, 'to_version'):
             if getattr(self.angular_velocity, '__version__', None) is None:
                 self.angular_velocity.__version__ = self.__version__
             elif getattr(self.angular_velocity, '__version__', None) != self.__version__ and self.__version__ is not None:
                 self.angular_velocity = self.angular_velocity.to_version(self.__version__)
-        if self.enable_orientation is not None:
-            if getattr(self.enable_orientation, '__version__', None) is None:
-                self.enable_orientation.__version__ = self.__version__
-            elif getattr(self.enable_orientation, '__version__', None) != self.__version__ and self.__version__ is not None:
-                self.enable_orientation = self.enable_orientation.to_version(self.__version__)
-        if self.linear_acceleration is not None:
+        if self.linear_acceleration is not None and hasattr(self.linear_acceleration, 'to_version'):
             if getattr(self.linear_acceleration, '__version__', None) is None:
                 self.linear_acceleration.__version__ = self.__version__
             elif getattr(self.linear_acceleration, '__version__', None) != self.__version__ and self.__version__ is not None:
                 self.linear_acceleration = self.linear_acceleration.to_version(self.__version__)
-        if self.noise is not None:
+        if self.noise is not None and hasattr(self.noise, 'to_version'):
             if getattr(self.noise, '__version__', None) is None:
                 self.noise.__version__ = self.__version__
             elif getattr(self.noise, '__version__', None) != self.__version__ and self.__version__ is not None:
                 self.noise = self.noise.to_version(self.__version__)
-        if self.orientation_reference_frame is not None:
+        if self.orientation_reference_frame is not None and hasattr(self.orientation_reference_frame, 'to_version'):
             if getattr(self.orientation_reference_frame, '__version__', None) is None:
                 self.orientation_reference_frame.__version__ = self.__version__
             elif getattr(self.orientation_reference_frame, '__version__', None) != self.__version__ and self.__version__ is not None:
                 self.orientation_reference_frame = self.orientation_reference_frame.to_version(self.__version__)
-        if self.topic is not None:
-            if getattr(self.topic, '__version__', None) is None:
-                self.topic.__version__ = self.__version__
-            elif getattr(self.topic, '__version__', None) != self.__version__ and self.__version__ is not None:
-                self.topic = self.topic.to_version(self.__version__)
 
     def to_version(self, target_version: str) -> "Imu":
         from ..elements.noise import Noise
@@ -1105,12 +945,12 @@ class Imu(BaseModel):
         if self.topic is not None and cmp_version(target_version, "1.7") >= 0:
             raise ValueError(f"'topic' is not supported in SDF version {target_version} (removed in 1.7)")
         kwargs = {"sdf_version": target_version}
-        kwargs["angular_velocity"] = self.angular_velocity.to_version(target_version) if self.angular_velocity is not None else None
-        kwargs["enable_orientation"] = self.enable_orientation.to_version(target_version) if self.enable_orientation is not None else None
-        kwargs["linear_acceleration"] = self.linear_acceleration.to_version(target_version) if self.linear_acceleration is not None else None
-        kwargs["noise"] = self.noise.to_version(target_version) if self.noise is not None else None
-        kwargs["orientation_reference_frame"] = self.orientation_reference_frame.to_version(target_version) if self.orientation_reference_frame is not None else None
-        kwargs["topic"] = self.topic.to_version(target_version) if self.topic is not None else None
+        kwargs["angular_velocity"] = self.angular_velocity.to_version(target_version) if hasattr(self.angular_velocity, "to_version") else self.angular_velocity
+        kwargs["enable_orientation"] = self.enable_orientation
+        kwargs["linear_acceleration"] = self.linear_acceleration.to_version(target_version) if hasattr(self.linear_acceleration, "to_version") else self.linear_acceleration
+        kwargs["noise"] = self.noise.to_version(target_version) if hasattr(self.noise, "to_version") else self.noise
+        kwargs["orientation_reference_frame"] = self.orientation_reference_frame.to_version(target_version) if hasattr(self.orientation_reference_frame, "to_version") else self.orientation_reference_frame
+        kwargs["topic"] = self.topic
         new_obj = self.__class__(**kwargs)
         apply_migrations(new_obj, target_version)
         return new_obj
@@ -1124,17 +964,57 @@ class Imu(BaseModel):
         version = self.__version__ or version
         el = ET.Element("imu")
         if self.angular_velocity is not None:
-            el.append(self.angular_velocity.to_sdf(version))
+            if hasattr(self.angular_velocity, 'to_sdf'):
+                _child_res = self.angular_velocity.to_sdf(version)
+            else:
+                _child_res = str(self.angular_velocity)
+            if isinstance(_child_res, str):
+                _item_el = ET.Element('angular_velocity')
+                _item_el.text = _child_res
+            else:
+                _item_el = _child_res
+            el.append(_item_el)
         if self.enable_orientation is not None:
-            el.append(self.enable_orientation.to_sdf(version))
+            _c_tmp = ET.Element("enable_orientation")
+            _c_tmp.text = str(self.enable_orientation).lower()
+            el.append(_c_tmp)
         if self.linear_acceleration is not None:
-            el.append(self.linear_acceleration.to_sdf(version))
+            if hasattr(self.linear_acceleration, 'to_sdf'):
+                _child_res = self.linear_acceleration.to_sdf(version)
+            else:
+                _child_res = str(self.linear_acceleration)
+            if isinstance(_child_res, str):
+                _item_el = ET.Element('linear_acceleration')
+                _item_el.text = _child_res
+            else:
+                _item_el = _child_res
+            el.append(_item_el)
         if self.noise is not None:
-            el.append(self.noise.to_sdf(version))
+            if hasattr(self.noise, 'to_sdf'):
+                _child_res = self.noise.to_sdf(version)
+            else:
+                _child_res = str(self.noise)
+            if isinstance(_child_res, str):
+                _item_el = ET.Element('noise')
+                _item_el.text = _child_res
+            else:
+                _item_el = _child_res
+            el.append(_item_el)
         if self.orientation_reference_frame is not None:
-            el.append(self.orientation_reference_frame.to_sdf(version))
+            if hasattr(self.orientation_reference_frame, 'to_sdf'):
+                _child_res = self.orientation_reference_frame.to_sdf(version)
+            else:
+                _child_res = str(self.orientation_reference_frame)
+            if isinstance(_child_res, str):
+                _item_el = ET.Element('orientation_reference_frame')
+                _item_el.text = _child_res
+            else:
+                _item_el = _child_res
+            el.append(_item_el)
         if self.topic is not None:
-            el.append(self.topic.to_sdf(version))
+            _c_tmp = ET.Element("topic")
+            _c_tmp.text = self.topic
+            el.append(_c_tmp)
         return el
 
     @classmethod
@@ -1150,12 +1030,13 @@ class Imu(BaseModel):
             _angular_velocity = None
         if _angular_velocity is not None and cmp_version(version, "1.5") < 0:
             return SDFError(f"'angular_velocity' is not supported in SDF version {version} (added in 1.5)")
-        _c_enable_orientation = el.find("enable_orientation")
-        if _c_enable_orientation is not None:
-            _res = cls.EnableOrientation._from_sdf(_c_enable_orientation, version)
-            if isinstance(_res, SDFError):
-                return _res.extend("enable_orientation")
-            _enable_orientation = _res
+        _c_tmp = el.find("enable_orientation")
+        if _c_tmp is not None:
+            _text = _c_tmp.text if _c_tmp.text is not None else True
+            _val = str(_text).strip().lower() == 'true'
+            if isinstance(_val, SDFError):
+                return _val.extend("enable_orientation")
+            _enable_orientation = _val
         else:
             _enable_orientation = None
         if _enable_orientation is not None and cmp_version(version, "1.6") < 0:
@@ -1190,12 +1071,13 @@ class Imu(BaseModel):
             _orientation_reference_frame = None
         if _orientation_reference_frame is not None and cmp_version(version, "1.6") < 0:
             return SDFError(f"'orientation_reference_frame' is not supported in SDF version {version} (added in 1.6)")
-        _c_topic = el.find("topic")
-        if _c_topic is not None:
-            _res = cls.Topic._from_sdf(_c_topic, version)
-            if isinstance(_res, SDFError):
-                return _res.extend("topic")
-            _topic = _res
+        _c_tmp = el.find("topic")
+        if _c_tmp is not None:
+            _text = _c_tmp.text if _c_tmp.text is not None else "__default_topic__"
+            _val = _text
+            if isinstance(_val, SDFError):
+                return _val.extend("topic")
+            _topic = _val
         else:
             _topic = None
         return cls(sdf_version=version, angular_velocity=_angular_velocity, enable_orientation=_enable_orientation, linear_acceleration=_linear_acceleration, noise=_noise, orientation_reference_frame=_orientation_reference_frame, topic=_topic)

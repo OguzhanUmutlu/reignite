@@ -17,7 +17,7 @@ class Navsat(BaseModel):
             def __init__(self, sdf_version: str | None = None, noise: "Noise" = None):
                 super().__init__(sdf_version)
                 self.noise = noise
-                if self.noise is not None:
+                if self.noise is not None and hasattr(self.noise, 'to_version'):
                     if getattr(self.noise, '__version__', None) is None:
                         self.noise.__version__ = self.__version__
                     elif getattr(self.noise, '__version__', None) != self.__version__ and self.__version__ is not None:
@@ -26,7 +26,7 @@ class Navsat(BaseModel):
             def to_version(self, target_version: str) -> "Navsat.PositionSensing.Horizontal":
                 from ..elements.noise import Noise
                 kwargs = {"sdf_version": target_version}
-                kwargs["noise"] = self.noise.to_version(target_version) if self.noise is not None else None
+                kwargs["noise"] = self.noise.to_version(target_version) if hasattr(self.noise, "to_version") else self.noise
                 new_obj = self.__class__(**kwargs)
                 return new_obj
 
@@ -41,7 +41,16 @@ class Navsat(BaseModel):
                 if self.noise is None:
                     self.noise = Noise(sdf_version=version)
                 if self.noise is not None:
-                    el.append(self.noise.to_sdf(version))
+                    if hasattr(self.noise, 'to_sdf'):
+                        _child_res = self.noise.to_sdf(version)
+                    else:
+                        _child_res = str(self.noise)
+                    if isinstance(_child_res, str):
+                        _item_el = ET.Element('noise')
+                        _item_el.text = _child_res
+                    else:
+                        _item_el = _child_res
+                    el.append(_item_el)
                 return el
 
             @classmethod
@@ -64,7 +73,7 @@ class Navsat(BaseModel):
             def __init__(self, sdf_version: str | None = None, noise: "Noise" = None):
                 super().__init__(sdf_version)
                 self.noise = noise
-                if self.noise is not None:
+                if self.noise is not None and hasattr(self.noise, 'to_version'):
                     if getattr(self.noise, '__version__', None) is None:
                         self.noise.__version__ = self.__version__
                     elif getattr(self.noise, '__version__', None) != self.__version__ and self.__version__ is not None:
@@ -73,7 +82,7 @@ class Navsat(BaseModel):
             def to_version(self, target_version: str) -> "Navsat.PositionSensing.Vertical":
                 from ..elements.noise import Noise
                 kwargs = {"sdf_version": target_version}
-                kwargs["noise"] = self.noise.to_version(target_version) if self.noise is not None else None
+                kwargs["noise"] = self.noise.to_version(target_version) if hasattr(self.noise, "to_version") else self.noise
                 new_obj = self.__class__(**kwargs)
                 return new_obj
 
@@ -88,7 +97,16 @@ class Navsat(BaseModel):
                 if self.noise is None:
                     self.noise = Noise(sdf_version=version)
                 if self.noise is not None:
-                    el.append(self.noise.to_sdf(version))
+                    if hasattr(self.noise, 'to_sdf'):
+                        _child_res = self.noise.to_sdf(version)
+                    else:
+                        _child_res = str(self.noise)
+                    if isinstance(_child_res, str):
+                        _item_el = ET.Element('noise')
+                        _item_el.text = _child_res
+                    else:
+                        _item_el = _child_res
+                    el.append(_item_el)
                 return el
 
             @classmethod
@@ -116,12 +134,12 @@ class Navsat(BaseModel):
             super().__init__(sdf_version)
             self.horizontal = horizontal
             self.vertical = vertical
-            if self.horizontal is not None:
+            if self.horizontal is not None and hasattr(self.horizontal, 'to_version'):
                 if getattr(self.horizontal, '__version__', None) is None:
                     self.horizontal.__version__ = self.__version__
                 elif getattr(self.horizontal, '__version__', None) != self.__version__ and self.__version__ is not None:
                     self.horizontal = self.horizontal.to_version(self.__version__)
-            if self.vertical is not None:
+            if self.vertical is not None and hasattr(self.vertical, 'to_version'):
                 if getattr(self.vertical, '__version__', None) is None:
                     self.vertical.__version__ = self.__version__
                 elif getattr(self.vertical, '__version__', None) != self.__version__ and self.__version__ is not None:
@@ -129,8 +147,8 @@ class Navsat(BaseModel):
 
         def to_version(self, target_version: str) -> "Navsat.PositionSensing":
             kwargs = {"sdf_version": target_version}
-            kwargs["horizontal"] = self.horizontal.to_version(target_version) if self.horizontal is not None else None
-            kwargs["vertical"] = self.vertical.to_version(target_version) if self.vertical is not None else None
+            kwargs["horizontal"] = self.horizontal.to_version(target_version) if hasattr(self.horizontal, "to_version") else self.horizontal
+            kwargs["vertical"] = self.vertical.to_version(target_version) if hasattr(self.vertical, "to_version") else self.vertical
             new_obj = self.__class__(**kwargs)
             return new_obj
 
@@ -142,9 +160,27 @@ class Navsat(BaseModel):
             version = self.__version__ or version
             el = ET.Element("position_sensing")
             if self.horizontal is not None:
-                el.append(self.horizontal.to_sdf(version))
+                if hasattr(self.horizontal, 'to_sdf'):
+                    _child_res = self.horizontal.to_sdf(version)
+                else:
+                    _child_res = str(self.horizontal)
+                if isinstance(_child_res, str):
+                    _item_el = ET.Element('horizontal')
+                    _item_el.text = _child_res
+                else:
+                    _item_el = _child_res
+                el.append(_item_el)
             if self.vertical is not None:
-                el.append(self.vertical.to_sdf(version))
+                if hasattr(self.vertical, 'to_sdf'):
+                    _child_res = self.vertical.to_sdf(version)
+                else:
+                    _child_res = str(self.vertical)
+                if isinstance(_child_res, str):
+                    _item_el = ET.Element('vertical')
+                    _item_el.text = _child_res
+                else:
+                    _item_el = _child_res
+                el.append(_item_el)
             return el
 
         @classmethod
@@ -177,12 +213,12 @@ class Navsat(BaseModel):
             super().__init__(sdf_version)
             self.horizontal = horizontal
             self.vertical = vertical
-            if self.horizontal is not None:
+            if self.horizontal is not None and hasattr(self.horizontal, 'to_version'):
                 if getattr(self.horizontal, '__version__', None) is None:
                     self.horizontal.__version__ = self.__version__
                 elif getattr(self.horizontal, '__version__', None) != self.__version__ and self.__version__ is not None:
                     self.horizontal = self.horizontal.to_version(self.__version__)
-            if self.vertical is not None:
+            if self.vertical is not None and hasattr(self.vertical, 'to_version'):
                 if getattr(self.vertical, '__version__', None) is None:
                     self.vertical.__version__ = self.__version__
                 elif getattr(self.vertical, '__version__', None) != self.__version__ and self.__version__ is not None:
@@ -190,8 +226,8 @@ class Navsat(BaseModel):
 
         def to_version(self, target_version: str) -> "Navsat.VelocitySensing":
             kwargs = {"sdf_version": target_version}
-            kwargs["horizontal"] = self.horizontal.to_version(target_version) if self.horizontal is not None else None
-            kwargs["vertical"] = self.vertical.to_version(target_version) if self.vertical is not None else None
+            kwargs["horizontal"] = self.horizontal.to_version(target_version) if hasattr(self.horizontal, "to_version") else self.horizontal
+            kwargs["vertical"] = self.vertical.to_version(target_version) if hasattr(self.vertical, "to_version") else self.vertical
             new_obj = self.__class__(**kwargs)
             return new_obj
 
@@ -203,9 +239,27 @@ class Navsat(BaseModel):
             version = self.__version__ or version
             el = ET.Element("velocity_sensing")
             if self.horizontal is not None:
-                el.append(self.horizontal.to_sdf(version))
+                if hasattr(self.horizontal, 'to_sdf'):
+                    _child_res = self.horizontal.to_sdf(version)
+                else:
+                    _child_res = str(self.horizontal)
+                if isinstance(_child_res, str):
+                    _item_el = ET.Element('horizontal')
+                    _item_el.text = _child_res
+                else:
+                    _item_el = _child_res
+                el.append(_item_el)
             if self.vertical is not None:
-                el.append(self.vertical.to_sdf(version))
+                if hasattr(self.vertical, 'to_sdf'):
+                    _child_res = self.vertical.to_sdf(version)
+                else:
+                    _child_res = str(self.vertical)
+                if isinstance(_child_res, str):
+                    _item_el = ET.Element('vertical')
+                    _item_el.text = _child_res
+                else:
+                    _item_el = _child_res
+                el.append(_item_el)
             return el
 
         @classmethod
@@ -237,12 +291,12 @@ class Navsat(BaseModel):
         super().__init__(sdf_version)
         self.position_sensing = position_sensing
         self.velocity_sensing = velocity_sensing
-        if self.position_sensing is not None:
+        if self.position_sensing is not None and hasattr(self.position_sensing, 'to_version'):
             if getattr(self.position_sensing, '__version__', None) is None:
                 self.position_sensing.__version__ = self.__version__
             elif getattr(self.position_sensing, '__version__', None) != self.__version__ and self.__version__ is not None:
                 self.position_sensing = self.position_sensing.to_version(self.__version__)
-        if self.velocity_sensing is not None:
+        if self.velocity_sensing is not None and hasattr(self.velocity_sensing, 'to_version'):
             if getattr(self.velocity_sensing, '__version__', None) is None:
                 self.velocity_sensing.__version__ = self.__version__
             elif getattr(self.velocity_sensing, '__version__', None) != self.__version__ and self.__version__ is not None:
@@ -250,8 +304,8 @@ class Navsat(BaseModel):
 
     def to_version(self, target_version: str) -> "Navsat":
         kwargs = {"sdf_version": target_version}
-        kwargs["position_sensing"] = self.position_sensing.to_version(target_version) if self.position_sensing is not None else None
-        kwargs["velocity_sensing"] = self.velocity_sensing.to_version(target_version) if self.velocity_sensing is not None else None
+        kwargs["position_sensing"] = self.position_sensing.to_version(target_version) if hasattr(self.position_sensing, "to_version") else self.position_sensing
+        kwargs["velocity_sensing"] = self.velocity_sensing.to_version(target_version) if hasattr(self.velocity_sensing, "to_version") else self.velocity_sensing
         new_obj = self.__class__(**kwargs)
         return new_obj
 
@@ -263,9 +317,27 @@ class Navsat(BaseModel):
         version = self.__version__ or version
         el = ET.Element("navsat")
         if self.position_sensing is not None:
-            el.append(self.position_sensing.to_sdf(version))
+            if hasattr(self.position_sensing, 'to_sdf'):
+                _child_res = self.position_sensing.to_sdf(version)
+            else:
+                _child_res = str(self.position_sensing)
+            if isinstance(_child_res, str):
+                _item_el = ET.Element('position_sensing')
+                _item_el.text = _child_res
+            else:
+                _item_el = _child_res
+            el.append(_item_el)
         if self.velocity_sensing is not None:
-            el.append(self.velocity_sensing.to_sdf(version))
+            if hasattr(self.velocity_sensing, 'to_sdf'):
+                _child_res = self.velocity_sensing.to_sdf(version)
+            else:
+                _child_res = str(self.velocity_sensing)
+            if isinstance(_child_res, str):
+                _item_el = ET.Element('velocity_sensing')
+                _item_el.text = _child_res
+            else:
+                _item_el = _child_res
+            el.append(_item_el)
         return el
 
     @classmethod

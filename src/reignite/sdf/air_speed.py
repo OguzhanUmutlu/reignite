@@ -16,7 +16,7 @@ class AirSpeed(BaseModel):
         def __init__(self, sdf_version: str | None = None, noise: "Noise" = None):
             super().__init__(sdf_version)
             self.noise = noise
-            if self.noise is not None:
+            if self.noise is not None and hasattr(self.noise, 'to_version'):
                 if getattr(self.noise, '__version__', None) is None:
                     self.noise.__version__ = self.__version__
                 elif getattr(self.noise, '__version__', None) != self.__version__ and self.__version__ is not None:
@@ -25,7 +25,7 @@ class AirSpeed(BaseModel):
         def to_version(self, target_version: str) -> "AirSpeed.Pressure":
             from ..elements.noise import Noise
             kwargs = {"sdf_version": target_version}
-            kwargs["noise"] = self.noise.to_version(target_version) if self.noise is not None else None
+            kwargs["noise"] = self.noise.to_version(target_version) if hasattr(self.noise, "to_version") else self.noise
             new_obj = self.__class__(**kwargs)
             return new_obj
 
@@ -40,7 +40,16 @@ class AirSpeed(BaseModel):
             if self.noise is None:
                 self.noise = Noise(sdf_version=version)
             if self.noise is not None:
-                el.append(self.noise.to_sdf(version))
+                if hasattr(self.noise, 'to_sdf'):
+                    _child_res = self.noise.to_sdf(version)
+                else:
+                    _child_res = str(self.noise)
+                if isinstance(_child_res, str):
+                    _item_el = ET.Element('noise')
+                    _item_el.text = _child_res
+                else:
+                    _item_el = _child_res
+                el.append(_item_el)
             return el
 
         @classmethod
@@ -62,7 +71,7 @@ class AirSpeed(BaseModel):
     def __init__(self, sdf_version: str | None = None, pressure: "AirSpeed.Pressure" = None):
         super().__init__(sdf_version)
         self.pressure = pressure
-        if self.pressure is not None:
+        if self.pressure is not None and hasattr(self.pressure, 'to_version'):
             if getattr(self.pressure, '__version__', None) is None:
                 self.pressure.__version__ = self.__version__
             elif getattr(self.pressure, '__version__', None) != self.__version__ and self.__version__ is not None:
@@ -70,7 +79,7 @@ class AirSpeed(BaseModel):
 
     def to_version(self, target_version: str) -> "AirSpeed":
         kwargs = {"sdf_version": target_version}
-        kwargs["pressure"] = self.pressure.to_version(target_version) if self.pressure is not None else None
+        kwargs["pressure"] = self.pressure.to_version(target_version) if hasattr(self.pressure, "to_version") else self.pressure
         new_obj = self.__class__(**kwargs)
         return new_obj
 
@@ -82,7 +91,16 @@ class AirSpeed(BaseModel):
         version = self.__version__ or version
         el = ET.Element("air_speed")
         if self.pressure is not None:
-            el.append(self.pressure.to_sdf(version))
+            if hasattr(self.pressure, 'to_sdf'):
+                _child_res = self.pressure.to_sdf(version)
+            else:
+                _child_res = str(self.pressure)
+            if isinstance(_child_res, str):
+                _item_el = ET.Element('pressure')
+                _item_el.text = _child_res
+            else:
+                _item_el = _child_res
+            el.append(_item_el)
         return el
 
     @classmethod

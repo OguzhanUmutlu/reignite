@@ -4,6 +4,8 @@ from .EntityContextMenu import EntityContextMenuPlugin
 from .EntityTree import EntityTreePlugin
 from .GzGui import GzGui
 from .GzSceneManager import GzSceneManagerPlugin
-from .MinimalScene import MinimalScene
+from .ImageDisplay import ImageDisplayPlugin
+from .InteractiveViewControl import InteractiveViewControlPlugin
+from .MinimalScene import MinimalScenePlugin
 from .WorldControl import WorldControlPlugin
 from .WorldStats import WorldStatsPlugin

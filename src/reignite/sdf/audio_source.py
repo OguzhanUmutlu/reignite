@@ -50,52 +50,18 @@ def _parse_double(raw: str) -> float | SDFError:
 
 class AudioSource(BaseModel):
     class Contact(BaseModel):
-        class Collision(BaseModel):
-            def __init__(self, sdf_version: str | None = None, collision: str = "__default__"):
-                super().__init__(sdf_version)
-                self.collision = collision
-
-            def to_version(self, target_version: str) -> "AudioSource.Contact.Collision":
-                kwargs = {"sdf_version": target_version}
-                kwargs["collision"] = self.collision
-                new_obj = self.__class__(**kwargs)
-                return new_obj
-
-            def to_sdf(self, version: str | None = None) -> ET.Element:
-                if self.__version__ is None and version is not None:
-                    self.__version__ = version
-                elif version is not None and version != self.__version__:
-                    return self.to_version(version).to_sdf()
-                version = self.__version__ or version
-                el = ET.Element("collision")
-                if self.collision is not None:
-                    el.text = self.collision
-                return el
-
-            @classmethod
-            def _from_sdf(cls, el: ET.Element, version: str) -> "AudioSource.Contact.Collision | SDFError":
-                _text = el.text or "__default__"
-                _collision = _text
-                if isinstance(_collision, SDFError):
-                    return _collision
-                return cls(sdf_version=version, collision=_collision)
-
-        def __init__(
-            self,
-            sdf_version: str | None = None,
-            collisions: List["AudioSource.Contact.Collision"] = None
-        ):
+        def __init__(self, sdf_version: str | None = None, collisions: List[str] = None):
             super().__init__(sdf_version)
             self.collisions = collisions or []
-            for _i, _c in enumerate(self.collisions):
-                if getattr(_c, '__version__', None) is None:
-                    _c.__version__ = self.__version__
-                elif getattr(_c, '__version__', None) != self.__version__ and self.__version__ is not None:
-                    self.collisions[_i] = _c.to_version(self.__version__)
+
+        def add_collision(self, *items: str):
+            if self.collisions is None:
+                self.collisions = []
+            self.collisions.extend(items)
 
         def to_version(self, target_version: str) -> "AudioSource.Contact":
             kwargs = {"sdf_version": target_version}
-            kwargs["collisions"] = [c.to_version(target_version) for c in (self.collisions or [])]
+            kwargs["collisions"] = self.collisions
             new_obj = self.__class__(**kwargs)
             return new_obj
 
@@ -106,150 +72,33 @@ class AudioSource(BaseModel):
                 return self.to_version(version).to_sdf()
             version = self.__version__ or version
             el = ET.Element("contact")
-            for item in (self.collisions or []):
-                el.append(item.to_sdf(version))
+            for _v in (self.collisions or []):
+                _c_tmp = ET.Element("collision")
+                _c_tmp.text = _v
+                el.append(_c_tmp)
             return el
 
         @classmethod
         def _from_sdf(cls, el: ET.Element, version: str) -> "AudioSource.Contact | SDFError":
             _collisions = []
             for c in el.findall("collision"):
-                _res = cls.Collision._from_sdf(c, version)
-                if isinstance(_res, SDFError):
-                    return _res.extend("collision")
-                _collisions.append(_res)
+                _text = c.text if c.text is not None else "__default__"
+                _val = _text
+                if isinstance(_val, SDFError):
+                    return _val.extend("collision")
+                _collisions.append(_val)
             return cls(sdf_version=version, collisions=_collisions)
-
-    class Gain(BaseModel):
-        def __init__(self, sdf_version: str | None = None, gain: float = 1.0):
-            super().__init__(sdf_version)
-            self.gain = gain
-
-        def to_version(self, target_version: str) -> "AudioSource.Gain":
-            kwargs = {"sdf_version": target_version}
-            kwargs["gain"] = self.gain
-            new_obj = self.__class__(**kwargs)
-            return new_obj
-
-        def to_sdf(self, version: str | None = None) -> ET.Element:
-            if self.__version__ is None and version is not None:
-                self.__version__ = version
-            elif version is not None and version != self.__version__:
-                return self.to_version(version).to_sdf()
-            version = self.__version__ or version
-            el = ET.Element("gain")
-            if self.gain is not None:
-                el.text = str(self.gain)
-            return el
-
-        @classmethod
-        def _from_sdf(cls, el: ET.Element, version: str) -> "AudioSource.Gain | SDFError":
-            _text = el.text or 1.0
-            _gain = _parse_double(_text)
-            if isinstance(_gain, SDFError):
-                return _gain
-            return cls(sdf_version=version, gain=_gain)
-
-    class Loop(BaseModel):
-        def __init__(self, sdf_version: str | None = None, loop: bool = False):
-            super().__init__(sdf_version)
-            self.loop = loop
-
-        def to_version(self, target_version: str) -> "AudioSource.Loop":
-            kwargs = {"sdf_version": target_version}
-            kwargs["loop"] = self.loop
-            new_obj = self.__class__(**kwargs)
-            return new_obj
-
-        def to_sdf(self, version: str | None = None) -> ET.Element:
-            if self.__version__ is None and version is not None:
-                self.__version__ = version
-            elif version is not None and version != self.__version__:
-                return self.to_version(version).to_sdf()
-            version = self.__version__ or version
-            el = ET.Element("loop")
-            if self.loop is not None:
-                el.text = str(self.loop).lower()
-            return el
-
-        @classmethod
-        def _from_sdf(cls, el: ET.Element, version: str) -> "AudioSource.Loop | SDFError":
-            _text = el.text or False
-            _loop = str(_text).strip().lower() == 'true'
-            if isinstance(_loop, SDFError):
-                return _loop
-            return cls(sdf_version=version, loop=_loop)
-
-    class Pitch(BaseModel):
-        def __init__(self, sdf_version: str | None = None, pitch: float = 1.0):
-            super().__init__(sdf_version)
-            self.pitch = pitch
-
-        def to_version(self, target_version: str) -> "AudioSource.Pitch":
-            kwargs = {"sdf_version": target_version}
-            kwargs["pitch"] = self.pitch
-            new_obj = self.__class__(**kwargs)
-            return new_obj
-
-        def to_sdf(self, version: str | None = None) -> ET.Element:
-            if self.__version__ is None and version is not None:
-                self.__version__ = version
-            elif version is not None and version != self.__version__:
-                return self.to_version(version).to_sdf()
-            version = self.__version__ or version
-            el = ET.Element("pitch")
-            if self.pitch is not None:
-                el.text = str(self.pitch)
-            return el
-
-        @classmethod
-        def _from_sdf(cls, el: ET.Element, version: str) -> "AudioSource.Pitch | SDFError":
-            _text = el.text or 1.0
-            _pitch = _parse_double(_text)
-            if isinstance(_pitch, SDFError):
-                return _pitch
-            return cls(sdf_version=version, pitch=_pitch)
-
-    class Uri(BaseModel):
-        def __init__(self, sdf_version: str | None = None, uri: str = "__default__"):
-            super().__init__(sdf_version)
-            self.uri = uri
-
-        def to_version(self, target_version: str) -> "AudioSource.Uri":
-            kwargs = {"sdf_version": target_version}
-            kwargs["uri"] = self.uri
-            new_obj = self.__class__(**kwargs)
-            return new_obj
-
-        def to_sdf(self, version: str | None = None) -> ET.Element:
-            if self.__version__ is None and version is not None:
-                self.__version__ = version
-            elif version is not None and version != self.__version__:
-                return self.to_version(version).to_sdf()
-            version = self.__version__ or version
-            el = ET.Element("uri")
-            if self.uri is not None:
-                el.text = self.uri
-            return el
-
-        @classmethod
-        def _from_sdf(cls, el: ET.Element, version: str) -> "AudioSource.Uri | SDFError":
-            _text = el.text or "__default__"
-            _uri = _text
-            if isinstance(_uri, SDFError):
-                return _uri
-            return cls(sdf_version=version, uri=_uri)
 
     def __init__(
         self,
         sdf_version: str | None = None,
         contact: "AudioSource.Contact" = None,
         frames: List["Frame"] = None,
-        gain: "AudioSource.Gain" = None,
-        loop: "AudioSource.Loop" = None,
-        pitch: "AudioSource.Pitch" = None,
+        gain: float = 1.0,
+        loop: bool = False,
+        pitch: float = 1.0,
         pose: "Pose" = None,
-        uri: "AudioSource.Uri" = None
+        uri: str = "__default__"
     ):
         super().__init__(sdf_version)
         self.contact = contact
@@ -259,41 +108,27 @@ class AudioSource(BaseModel):
         self.pitch = pitch
         self.pose = pose
         self.uri = uri
-        if self.contact is not None:
+        if self.contact is not None and hasattr(self.contact, 'to_version'):
             if getattr(self.contact, '__version__', None) is None:
                 self.contact.__version__ = self.__version__
             elif getattr(self.contact, '__version__', None) != self.__version__ and self.__version__ is not None:
                 self.contact = self.contact.to_version(self.__version__)
         for _i, _c in enumerate(self.frames):
+            if not hasattr(_c, 'to_version'): continue
             if getattr(_c, '__version__', None) is None:
                 _c.__version__ = self.__version__
             elif getattr(_c, '__version__', None) != self.__version__ and self.__version__ is not None:
                 self.frames[_i] = _c.to_version(self.__version__)
-        if self.gain is not None:
-            if getattr(self.gain, '__version__', None) is None:
-                self.gain.__version__ = self.__version__
-            elif getattr(self.gain, '__version__', None) != self.__version__ and self.__version__ is not None:
-                self.gain = self.gain.to_version(self.__version__)
-        if self.loop is not None:
-            if getattr(self.loop, '__version__', None) is None:
-                self.loop.__version__ = self.__version__
-            elif getattr(self.loop, '__version__', None) != self.__version__ and self.__version__ is not None:
-                self.loop = self.loop.to_version(self.__version__)
-        if self.pitch is not None:
-            if getattr(self.pitch, '__version__', None) is None:
-                self.pitch.__version__ = self.__version__
-            elif getattr(self.pitch, '__version__', None) != self.__version__ and self.__version__ is not None:
-                self.pitch = self.pitch.to_version(self.__version__)
-        if self.pose is not None:
+        if self.pose is not None and hasattr(self.pose, 'to_version'):
             if getattr(self.pose, '__version__', None) is None:
                 self.pose.__version__ = self.__version__
             elif getattr(self.pose, '__version__', None) != self.__version__ and self.__version__ is not None:
                 self.pose = self.pose.to_version(self.__version__)
-        if self.uri is not None:
-            if getattr(self.uri, '__version__', None) is None:
-                self.uri.__version__ = self.__version__
-            elif getattr(self.uri, '__version__', None) != self.__version__ and self.__version__ is not None:
-                self.uri = self.uri.to_version(self.__version__)
+
+    def add_frame(self, *items: "Frame"):
+        if self.frames is None:
+            self.frames = []
+        self.frames.extend(items)
 
     def to_version(self, target_version: str) -> "AudioSource":
         from ..elements.frame import Frame
@@ -303,13 +138,13 @@ class AudioSource(BaseModel):
         if self.frames is not None and cmp_version(target_version, "1.7") >= 0:
             raise ValueError(f"'frames' is not supported in SDF version {target_version} (removed in 1.7)")
         kwargs = {"sdf_version": target_version}
-        kwargs["contact"] = self.contact.to_version(target_version) if self.contact is not None else None
-        kwargs["frames"] = [c.to_version(target_version) for c in (self.frames or [])]
-        kwargs["gain"] = self.gain.to_version(target_version) if self.gain is not None else None
-        kwargs["loop"] = self.loop.to_version(target_version) if self.loop is not None else None
-        kwargs["pitch"] = self.pitch.to_version(target_version) if self.pitch is not None else None
-        kwargs["pose"] = self.pose.to_version(target_version) if self.pose is not None else None
-        kwargs["uri"] = self.uri.to_version(target_version) if self.uri is not None else None
+        kwargs["contact"] = self.contact.to_version(target_version) if hasattr(self.contact, "to_version") else self.contact
+        kwargs["frames"] = [c.to_version(target_version) if hasattr(c, "to_version") else c for c in (self.frames or [])]
+        kwargs["gain"] = self.gain
+        kwargs["loop"] = self.loop
+        kwargs["pitch"] = self.pitch
+        kwargs["pose"] = self.pose.to_version(target_version) if hasattr(self.pose, "to_version") else self.pose
+        kwargs["uri"] = self.uri
         new_obj = self.__class__(**kwargs)
         return new_obj
 
@@ -323,19 +158,54 @@ class AudioSource(BaseModel):
         version = self.__version__ or version
         el = ET.Element("audio_source")
         if self.contact is not None:
-            el.append(self.contact.to_sdf(version))
+            if hasattr(self.contact, 'to_sdf'):
+                _child_res = self.contact.to_sdf(version)
+            else:
+                _child_res = str(self.contact)
+            if isinstance(_child_res, str):
+                _item_el = ET.Element('contact')
+                _item_el.text = _child_res
+            else:
+                _item_el = _child_res
+            el.append(_item_el)
         for item in (self.frames or []):
-            el.append(item.to_sdf(version))
+            if hasattr(item, 'to_sdf'):
+                _child_res = item.to_sdf(version)
+            else:
+                _child_res = str(item)
+            if isinstance(_child_res, str):
+                _item_el = ET.Element('frame')
+                _item_el.text = _child_res
+            else:
+                _item_el = _child_res
+            el.append(_item_el)
         if self.gain is not None:
-            el.append(self.gain.to_sdf(version))
+            _c_tmp = ET.Element("gain")
+            _c_tmp.text = str(self.gain)
+            el.append(_c_tmp)
         if self.loop is not None:
-            el.append(self.loop.to_sdf(version))
+            _c_tmp = ET.Element("loop")
+            _c_tmp.text = str(self.loop).lower()
+            el.append(_c_tmp)
         if self.pitch is not None:
-            el.append(self.pitch.to_sdf(version))
+            _c_tmp = ET.Element("pitch")
+            _c_tmp.text = str(self.pitch)
+            el.append(_c_tmp)
         if self.pose is not None:
-            el.append(self.pose.to_sdf(version))
+            if hasattr(self.pose, 'to_sdf'):
+                _child_res = self.pose.to_sdf(version)
+            else:
+                _child_res = str(self.pose)
+            if isinstance(_child_res, str):
+                _item_el = ET.Element('pose')
+                _item_el.text = _child_res
+            else:
+                _item_el = _child_res
+            el.append(_item_el)
         if self.uri is not None:
-            el.append(self.uri.to_sdf(version))
+            _c_tmp = ET.Element("uri")
+            _c_tmp.text = self.uri
+            el.append(_c_tmp)
         return el
 
     @classmethod
@@ -358,28 +228,31 @@ class AudioSource(BaseModel):
             _frames.append(_res)
         if _frames and cmp_version(version, "1.5") < 0:
             return SDFError(f"'frames' is not supported in SDF version {version} (added in 1.5)")
-        _c_gain = el.find("gain")
-        if _c_gain is not None:
-            _res = cls.Gain._from_sdf(_c_gain, version)
-            if isinstance(_res, SDFError):
-                return _res.extend("gain")
-            _gain = _res
+        _c_tmp = el.find("gain")
+        if _c_tmp is not None:
+            _text = _c_tmp.text if _c_tmp.text is not None else 1.0
+            _val = _parse_double(_text)
+            if isinstance(_val, SDFError):
+                return _val.extend("gain")
+            _gain = _val
         else:
             _gain = None
-        _c_loop = el.find("loop")
-        if _c_loop is not None:
-            _res = cls.Loop._from_sdf(_c_loop, version)
-            if isinstance(_res, SDFError):
-                return _res.extend("loop")
-            _loop = _res
+        _c_tmp = el.find("loop")
+        if _c_tmp is not None:
+            _text = _c_tmp.text if _c_tmp.text is not None else False
+            _val = str(_text).strip().lower() == 'true'
+            if isinstance(_val, SDFError):
+                return _val.extend("loop")
+            _loop = _val
         else:
             _loop = None
-        _c_pitch = el.find("pitch")
-        if _c_pitch is not None:
-            _res = cls.Pitch._from_sdf(_c_pitch, version)
-            if isinstance(_res, SDFError):
-                return _res.extend("pitch")
-            _pitch = _res
+        _c_tmp = el.find("pitch")
+        if _c_tmp is not None:
+            _text = _c_tmp.text if _c_tmp.text is not None else 1.0
+            _val = _parse_double(_text)
+            if isinstance(_val, SDFError):
+                return _val.extend("pitch")
+            _pitch = _val
         else:
             _pitch = None
         _c_pose = el.find("pose")
@@ -390,12 +263,13 @@ class AudioSource(BaseModel):
             _pose = _res
         else:
             _pose = None
-        _c_uri = el.find("uri")
-        if _c_uri is not None:
-            _res = cls.Uri._from_sdf(_c_uri, version)
-            if isinstance(_res, SDFError):
-                return _res.extend("uri")
-            _uri = _res
+        _c_tmp = el.find("uri")
+        if _c_tmp is not None:
+            _text = _c_tmp.text if _c_tmp.text is not None else "__default__"
+            _val = _text
+            if isinstance(_val, SDFError):
+                return _val.extend("uri")
+            _uri = _val
         else:
             _uri = None
         return cls(sdf_version=version, contact=_contact, frames=_frames, gain=_gain, loop=_loop, pitch=_pitch, pose=_pose, uri=_uri)

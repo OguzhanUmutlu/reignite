@@ -42,166 +42,26 @@ def _parse_double(raw: str) -> float | SDFError:
 
 
 class LogicalCamera(BaseModel):
-    class AspectRatio(BaseModel):
-        def __init__(self, sdf_version: str | None = None, aspect_ratio: float = 1):
-            super().__init__(sdf_version)
-            self.aspect_ratio = aspect_ratio
-
-        def to_version(self, target_version: str) -> "LogicalCamera.AspectRatio":
-            kwargs = {"sdf_version": target_version}
-            kwargs["aspect_ratio"] = self.aspect_ratio
-            new_obj = self.__class__(**kwargs)
-            return new_obj
-
-        def to_sdf(self, version: str | None = None) -> ET.Element:
-            if self.__version__ is None and version is not None:
-                self.__version__ = version
-            elif version is not None and version != self.__version__:
-                return self.to_version(version).to_sdf()
-            version = self.__version__ or version
-            el = ET.Element("aspect_ratio")
-            if self.aspect_ratio is not None:
-                el.text = str(self.aspect_ratio)
-            return el
-
-        @classmethod
-        def _from_sdf(cls, el: ET.Element, version: str) -> "LogicalCamera.AspectRatio | SDFError":
-            _text = el.text or 1
-            _aspect_ratio = _parse_double(_text)
-            if isinstance(_aspect_ratio, SDFError):
-                return _aspect_ratio
-            return cls(sdf_version=version, aspect_ratio=_aspect_ratio)
-
-    class Far(BaseModel):
-        def __init__(self, sdf_version: str | None = None, far: float = 1):
-            super().__init__(sdf_version)
-            self.far = far
-
-        def to_version(self, target_version: str) -> "LogicalCamera.Far":
-            kwargs = {"sdf_version": target_version}
-            kwargs["far"] = self.far
-            new_obj = self.__class__(**kwargs)
-            return new_obj
-
-        def to_sdf(self, version: str | None = None) -> ET.Element:
-            if self.__version__ is None and version is not None:
-                self.__version__ = version
-            elif version is not None and version != self.__version__:
-                return self.to_version(version).to_sdf()
-            version = self.__version__ or version
-            el = ET.Element("far")
-            if self.far is not None:
-                el.text = str(self.far)
-            return el
-
-        @classmethod
-        def _from_sdf(cls, el: ET.Element, version: str) -> "LogicalCamera.Far | SDFError":
-            _text = el.text or 1
-            _far = _parse_double(_text)
-            if isinstance(_far, SDFError):
-                return _far
-            return cls(sdf_version=version, far=_far)
-
-    class HorizontalFov(BaseModel):
-        def __init__(self, sdf_version: str | None = None, horizontal_fov: float = 1):
-            super().__init__(sdf_version)
-            self.horizontal_fov = horizontal_fov
-
-        def to_version(self, target_version: str) -> "LogicalCamera.HorizontalFov":
-            kwargs = {"sdf_version": target_version}
-            kwargs["horizontal_fov"] = self.horizontal_fov
-            new_obj = self.__class__(**kwargs)
-            return new_obj
-
-        def to_sdf(self, version: str | None = None) -> ET.Element:
-            if self.__version__ is None and version is not None:
-                self.__version__ = version
-            elif version is not None and version != self.__version__:
-                return self.to_version(version).to_sdf()
-            version = self.__version__ or version
-            el = ET.Element("horizontal_fov")
-            if self.horizontal_fov is not None:
-                el.text = str(self.horizontal_fov)
-            return el
-
-        @classmethod
-        def _from_sdf(cls, el: ET.Element, version: str) -> "LogicalCamera.HorizontalFov | SDFError":
-            _text = el.text or 1
-            _horizontal_fov = _parse_double(_text)
-            if isinstance(_horizontal_fov, SDFError):
-                return _horizontal_fov
-            return cls(sdf_version=version, horizontal_fov=_horizontal_fov)
-
-    class Near(BaseModel):
-        def __init__(self, sdf_version: str | None = None, near: float = 0):
-            super().__init__(sdf_version)
-            self.near = near
-
-        def to_version(self, target_version: str) -> "LogicalCamera.Near":
-            kwargs = {"sdf_version": target_version}
-            kwargs["near"] = self.near
-            new_obj = self.__class__(**kwargs)
-            return new_obj
-
-        def to_sdf(self, version: str | None = None) -> ET.Element:
-            if self.__version__ is None and version is not None:
-                self.__version__ = version
-            elif version is not None and version != self.__version__:
-                return self.to_version(version).to_sdf()
-            version = self.__version__ or version
-            el = ET.Element("near")
-            if self.near is not None:
-                el.text = str(self.near)
-            return el
-
-        @classmethod
-        def _from_sdf(cls, el: ET.Element, version: str) -> "LogicalCamera.Near | SDFError":
-            _text = el.text or 0
-            _near = _parse_double(_text)
-            if isinstance(_near, SDFError):
-                return _near
-            return cls(sdf_version=version, near=_near)
-
     def __init__(
         self,
         sdf_version: str | None = None,
-        aspect_ratio: "LogicalCamera.AspectRatio" = None,
-        far: "LogicalCamera.Far" = None,
-        horizontal_fov: "LogicalCamera.HorizontalFov" = None,
-        near: "LogicalCamera.Near" = None
+        aspect_ratio: float = 1,
+        far: float = 1,
+        horizontal_fov: float = 1,
+        near: float = 0
     ):
         super().__init__(sdf_version)
         self.aspect_ratio = aspect_ratio
         self.far = far
         self.horizontal_fov = horizontal_fov
         self.near = near
-        if self.aspect_ratio is not None:
-            if getattr(self.aspect_ratio, '__version__', None) is None:
-                self.aspect_ratio.__version__ = self.__version__
-            elif getattr(self.aspect_ratio, '__version__', None) != self.__version__ and self.__version__ is not None:
-                self.aspect_ratio = self.aspect_ratio.to_version(self.__version__)
-        if self.far is not None:
-            if getattr(self.far, '__version__', None) is None:
-                self.far.__version__ = self.__version__
-            elif getattr(self.far, '__version__', None) != self.__version__ and self.__version__ is not None:
-                self.far = self.far.to_version(self.__version__)
-        if self.horizontal_fov is not None:
-            if getattr(self.horizontal_fov, '__version__', None) is None:
-                self.horizontal_fov.__version__ = self.__version__
-            elif getattr(self.horizontal_fov, '__version__', None) != self.__version__ and self.__version__ is not None:
-                self.horizontal_fov = self.horizontal_fov.to_version(self.__version__)
-        if self.near is not None:
-            if getattr(self.near, '__version__', None) is None:
-                self.near.__version__ = self.__version__
-            elif getattr(self.near, '__version__', None) != self.__version__ and self.__version__ is not None:
-                self.near = self.near.to_version(self.__version__)
 
     def to_version(self, target_version: str) -> "LogicalCamera":
         kwargs = {"sdf_version": target_version}
-        kwargs["aspect_ratio"] = self.aspect_ratio.to_version(target_version) if self.aspect_ratio is not None else None
-        kwargs["far"] = self.far.to_version(target_version) if self.far is not None else None
-        kwargs["horizontal_fov"] = self.horizontal_fov.to_version(target_version) if self.horizontal_fov is not None else None
-        kwargs["near"] = self.near.to_version(target_version) if self.near is not None else None
+        kwargs["aspect_ratio"] = self.aspect_ratio
+        kwargs["far"] = self.far
+        kwargs["horizontal_fov"] = self.horizontal_fov
+        kwargs["near"] = self.near
         new_obj = self.__class__(**kwargs)
         return new_obj
 
@@ -213,47 +73,59 @@ class LogicalCamera(BaseModel):
         version = self.__version__ or version
         el = ET.Element("logical_camera")
         if self.aspect_ratio is not None:
-            el.append(self.aspect_ratio.to_sdf(version))
+            _c_tmp = ET.Element("aspect_ratio")
+            _c_tmp.text = str(self.aspect_ratio)
+            el.append(_c_tmp)
         if self.far is not None:
-            el.append(self.far.to_sdf(version))
+            _c_tmp = ET.Element("far")
+            _c_tmp.text = str(self.far)
+            el.append(_c_tmp)
         if self.horizontal_fov is not None:
-            el.append(self.horizontal_fov.to_sdf(version))
+            _c_tmp = ET.Element("horizontal_fov")
+            _c_tmp.text = str(self.horizontal_fov)
+            el.append(_c_tmp)
         if self.near is not None:
-            el.append(self.near.to_sdf(version))
+            _c_tmp = ET.Element("near")
+            _c_tmp.text = str(self.near)
+            el.append(_c_tmp)
         return el
 
     @classmethod
     def _from_sdf(cls, el: ET.Element, version: str) -> "LogicalCamera | SDFError":
-        _c_aspect_ratio = el.find("aspect_ratio")
-        if _c_aspect_ratio is not None:
-            _res = cls.AspectRatio._from_sdf(_c_aspect_ratio, version)
-            if isinstance(_res, SDFError):
-                return _res.extend("aspect_ratio")
-            _aspect_ratio = _res
+        _c_tmp = el.find("aspect_ratio")
+        if _c_tmp is not None:
+            _text = _c_tmp.text if _c_tmp.text is not None else 1
+            _val = _parse_double(_text)
+            if isinstance(_val, SDFError):
+                return _val.extend("aspect_ratio")
+            _aspect_ratio = _val
         else:
             _aspect_ratio = None
-        _c_far = el.find("far")
-        if _c_far is not None:
-            _res = cls.Far._from_sdf(_c_far, version)
-            if isinstance(_res, SDFError):
-                return _res.extend("far")
-            _far = _res
+        _c_tmp = el.find("far")
+        if _c_tmp is not None:
+            _text = _c_tmp.text if _c_tmp.text is not None else 1
+            _val = _parse_double(_text)
+            if isinstance(_val, SDFError):
+                return _val.extend("far")
+            _far = _val
         else:
             _far = None
-        _c_horizontal_fov = el.find("horizontal_fov")
-        if _c_horizontal_fov is not None:
-            _res = cls.HorizontalFov._from_sdf(_c_horizontal_fov, version)
-            if isinstance(_res, SDFError):
-                return _res.extend("horizontal_fov")
-            _horizontal_fov = _res
+        _c_tmp = el.find("horizontal_fov")
+        if _c_tmp is not None:
+            _text = _c_tmp.text if _c_tmp.text is not None else 1
+            _val = _parse_double(_text)
+            if isinstance(_val, SDFError):
+                return _val.extend("horizontal_fov")
+            _horizontal_fov = _val
         else:
             _horizontal_fov = None
-        _c_near = el.find("near")
-        if _c_near is not None:
-            _res = cls.Near._from_sdf(_c_near, version)
-            if isinstance(_res, SDFError):
-                return _res.extend("near")
-            _near = _res
+        _c_tmp = el.find("near")
+        if _c_tmp is not None:
+            _text = _c_tmp.text if _c_tmp.text is not None else 0
+            _val = _parse_double(_text)
+            if isinstance(_val, SDFError):
+                return _val.extend("near")
+            _near = _val
         else:
             _near = None
         return cls(sdf_version=version, aspect_ratio=_aspect_ratio, far=_far, horizontal_fov=_horizontal_fov, near=_near)

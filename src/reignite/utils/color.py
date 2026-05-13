@@ -6,13 +6,36 @@ from .errors import SDFError
 
 
 class Color:
-    def __init__(self, r: int, g: int, b: int, a: int):
+    def __init__(self, r: int | float | str, g: int | float = None, b: int | float = None, a: int | float = 1.0):
+        if isinstance(r, str):
+            if r.startswith("#"):
+                r = r[1:]
+                if len(r) == 6:
+                    r, g, b = (int(r[i:i + 2], 16) for i in (0, 2, 4))
+                    a = 255
+                elif len(r) == 8:
+                    r, g, b, a = (int(r[i:i + 2], 16) for i in (0, 2, 4, 6))
+                elif len(r) == 3:
+                    r, g, b = (int(r[i] * 2, 16) for i in range(3))
+                    a = 255
+                else:
+                    raise ValueError(f"Invalid hex color: #{r}")
+            else:
+                raise ValueError(f"Invalid color string: {r}")
+        if isinstance(r, float):
+            r = int(r * 255)
+        if isinstance(g, float):
+            g = int(g * 255)
+        if isinstance(b, float):
+            b = int(b * 255)
+        if isinstance(a, float):
+            a = int(a * 255)
         self.r = r
         self.g = g
         self.b = b
         self.a = a
 
-    def to_sdf(self) -> str:
+    def to_sdf(self, version: str = None) -> str:
         return f"{self.r / 255.0} {self.g / 255.0} {self.b / 255.0} {self.a / 255.0}"
 
     @classmethod

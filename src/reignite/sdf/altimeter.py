@@ -16,7 +16,7 @@ class Altimeter(BaseModel):
         def __init__(self, sdf_version: str | None = None, noise: "Noise" = None):
             super().__init__(sdf_version)
             self.noise = noise
-            if self.noise is not None:
+            if self.noise is not None and hasattr(self.noise, 'to_version'):
                 if getattr(self.noise, '__version__', None) is None:
                     self.noise.__version__ = self.__version__
                 elif getattr(self.noise, '__version__', None) != self.__version__ and self.__version__ is not None:
@@ -25,7 +25,7 @@ class Altimeter(BaseModel):
         def to_version(self, target_version: str) -> "Altimeter.VerticalPosition":
             from ..elements.noise import Noise
             kwargs = {"sdf_version": target_version}
-            kwargs["noise"] = self.noise.to_version(target_version) if self.noise is not None else None
+            kwargs["noise"] = self.noise.to_version(target_version) if hasattr(self.noise, "to_version") else self.noise
             new_obj = self.__class__(**kwargs)
             return new_obj
 
@@ -40,7 +40,16 @@ class Altimeter(BaseModel):
             if self.noise is None:
                 self.noise = Noise(sdf_version=version)
             if self.noise is not None:
-                el.append(self.noise.to_sdf(version))
+                if hasattr(self.noise, 'to_sdf'):
+                    _child_res = self.noise.to_sdf(version)
+                else:
+                    _child_res = str(self.noise)
+                if isinstance(_child_res, str):
+                    _item_el = ET.Element('noise')
+                    _item_el.text = _child_res
+                else:
+                    _item_el = _child_res
+                el.append(_item_el)
             return el
 
         @classmethod
@@ -63,7 +72,7 @@ class Altimeter(BaseModel):
         def __init__(self, sdf_version: str | None = None, noise: "Noise" = None):
             super().__init__(sdf_version)
             self.noise = noise
-            if self.noise is not None:
+            if self.noise is not None and hasattr(self.noise, 'to_version'):
                 if getattr(self.noise, '__version__', None) is None:
                     self.noise.__version__ = self.__version__
                 elif getattr(self.noise, '__version__', None) != self.__version__ and self.__version__ is not None:
@@ -72,7 +81,7 @@ class Altimeter(BaseModel):
         def to_version(self, target_version: str) -> "Altimeter.VerticalVelocity":
             from ..elements.noise import Noise
             kwargs = {"sdf_version": target_version}
-            kwargs["noise"] = self.noise.to_version(target_version) if self.noise is not None else None
+            kwargs["noise"] = self.noise.to_version(target_version) if hasattr(self.noise, "to_version") else self.noise
             new_obj = self.__class__(**kwargs)
             return new_obj
 
@@ -87,7 +96,16 @@ class Altimeter(BaseModel):
             if self.noise is None:
                 self.noise = Noise(sdf_version=version)
             if self.noise is not None:
-                el.append(self.noise.to_sdf(version))
+                if hasattr(self.noise, 'to_sdf'):
+                    _child_res = self.noise.to_sdf(version)
+                else:
+                    _child_res = str(self.noise)
+                if isinstance(_child_res, str):
+                    _item_el = ET.Element('noise')
+                    _item_el.text = _child_res
+                else:
+                    _item_el = _child_res
+                el.append(_item_el)
             return el
 
         @classmethod
@@ -115,12 +133,12 @@ class Altimeter(BaseModel):
         super().__init__(sdf_version)
         self.vertical_position = vertical_position
         self.vertical_velocity = vertical_velocity
-        if self.vertical_position is not None:
+        if self.vertical_position is not None and hasattr(self.vertical_position, 'to_version'):
             if getattr(self.vertical_position, '__version__', None) is None:
                 self.vertical_position.__version__ = self.__version__
             elif getattr(self.vertical_position, '__version__', None) != self.__version__ and self.__version__ is not None:
                 self.vertical_position = self.vertical_position.to_version(self.__version__)
-        if self.vertical_velocity is not None:
+        if self.vertical_velocity is not None and hasattr(self.vertical_velocity, 'to_version'):
             if getattr(self.vertical_velocity, '__version__', None) is None:
                 self.vertical_velocity.__version__ = self.__version__
             elif getattr(self.vertical_velocity, '__version__', None) != self.__version__ and self.__version__ is not None:
@@ -128,8 +146,8 @@ class Altimeter(BaseModel):
 
     def to_version(self, target_version: str) -> "Altimeter":
         kwargs = {"sdf_version": target_version}
-        kwargs["vertical_position"] = self.vertical_position.to_version(target_version) if self.vertical_position is not None else None
-        kwargs["vertical_velocity"] = self.vertical_velocity.to_version(target_version) if self.vertical_velocity is not None else None
+        kwargs["vertical_position"] = self.vertical_position.to_version(target_version) if hasattr(self.vertical_position, "to_version") else self.vertical_position
+        kwargs["vertical_velocity"] = self.vertical_velocity.to_version(target_version) if hasattr(self.vertical_velocity, "to_version") else self.vertical_velocity
         new_obj = self.__class__(**kwargs)
         return new_obj
 
@@ -141,9 +159,27 @@ class Altimeter(BaseModel):
         version = self.__version__ or version
         el = ET.Element("altimeter")
         if self.vertical_position is not None:
-            el.append(self.vertical_position.to_sdf(version))
+            if hasattr(self.vertical_position, 'to_sdf'):
+                _child_res = self.vertical_position.to_sdf(version)
+            else:
+                _child_res = str(self.vertical_position)
+            if isinstance(_child_res, str):
+                _item_el = ET.Element('vertical_position')
+                _item_el.text = _child_res
+            else:
+                _item_el = _child_res
+            el.append(_item_el)
         if self.vertical_velocity is not None:
-            el.append(self.vertical_velocity.to_sdf(version))
+            if hasattr(self.vertical_velocity, 'to_sdf'):
+                _child_res = self.vertical_velocity.to_sdf(version)
+            else:
+                _child_res = str(self.vertical_velocity)
+            if isinstance(_child_res, str):
+                _item_el = ET.Element('vertical_velocity')
+                _item_el.text = _child_res
+            else:
+                _item_el = _child_res
+            el.append(_item_el)
         return el
 
     @classmethod

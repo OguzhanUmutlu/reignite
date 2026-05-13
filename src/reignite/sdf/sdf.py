@@ -33,25 +33,49 @@ class Sdf(BaseModel):
         self.version = version
         self.worlds = worlds or []
         for _i, _c in enumerate(self.actors):
+            if not hasattr(_c, 'to_version'): continue
             if getattr(_c, '__version__', None) is None:
                 _c.__version__ = self.__version__
             elif getattr(_c, '__version__', None) != self.__version__ and self.__version__ is not None:
                 self.actors[_i] = _c.to_version(self.__version__)
         for _i, _c in enumerate(self.lights):
+            if not hasattr(_c, 'to_version'): continue
             if getattr(_c, '__version__', None) is None:
                 _c.__version__ = self.__version__
             elif getattr(_c, '__version__', None) != self.__version__ and self.__version__ is not None:
                 self.lights[_i] = _c.to_version(self.__version__)
         for _i, _c in enumerate(self.models):
+            if not hasattr(_c, 'to_version'): continue
             if getattr(_c, '__version__', None) is None:
                 _c.__version__ = self.__version__
             elif getattr(_c, '__version__', None) != self.__version__ and self.__version__ is not None:
                 self.models[_i] = _c.to_version(self.__version__)
         for _i, _c in enumerate(self.worlds):
+            if not hasattr(_c, 'to_version'): continue
             if getattr(_c, '__version__', None) is None:
                 _c.__version__ = self.__version__
             elif getattr(_c, '__version__', None) != self.__version__ and self.__version__ is not None:
                 self.worlds[_i] = _c.to_version(self.__version__)
+
+    def add_actor(self, *items: "Actor"):
+        if self.actors is None:
+            self.actors = []
+        self.actors.extend(items)
+
+    def add_light(self, *items: "Light"):
+        if self.lights is None:
+            self.lights = []
+        self.lights.extend(items)
+
+    def add_model(self, *items: "Model"):
+        if self.models is None:
+            self.models = []
+        self.models.extend(items)
+
+    def add_world(self, *items: "World"):
+        if self.worlds is None:
+            self.worlds = []
+        self.worlds.extend(items)
 
     def to_version(self, target_version: str) -> "Sdf":
         from ..elements.actor import Actor
@@ -59,11 +83,11 @@ class Sdf(BaseModel):
         from ..elements.model import Model
         from ..elements.world import World
         kwargs = {"sdf_version": target_version}
-        kwargs["actors"] = [c.to_version(target_version) for c in (self.actors or [])]
-        kwargs["lights"] = [c.to_version(target_version) for c in (self.lights or [])]
-        kwargs["models"] = [c.to_version(target_version) for c in (self.models or [])]
+        kwargs["actors"] = [c.to_version(target_version) if hasattr(c, "to_version") else c for c in (self.actors or [])]
+        kwargs["lights"] = [c.to_version(target_version) if hasattr(c, "to_version") else c for c in (self.lights or [])]
+        kwargs["models"] = [c.to_version(target_version) if hasattr(c, "to_version") else c for c in (self.models or [])]
         kwargs["version"] = self.version
-        kwargs["worlds"] = [c.to_version(target_version) for c in (self.worlds or [])]
+        kwargs["worlds"] = [c.to_version(target_version) if hasattr(c, "to_version") else c for c in (self.worlds or [])]
         new_obj = self.__class__(**kwargs)
         return new_obj
 
@@ -79,15 +103,51 @@ class Sdf(BaseModel):
         version = self.__version__ or version
         el = ET.Element("sdf")
         for item in (self.actors or []):
-            el.append(item.to_sdf(version))
+            if hasattr(item, 'to_sdf'):
+                _child_res = item.to_sdf(version)
+            else:
+                _child_res = str(item)
+            if isinstance(_child_res, str):
+                _item_el = ET.Element('actor')
+                _item_el.text = _child_res
+            else:
+                _item_el = _child_res
+            el.append(_item_el)
         for item in (self.lights or []):
-            el.append(item.to_sdf(version))
+            if hasattr(item, 'to_sdf'):
+                _child_res = item.to_sdf(version)
+            else:
+                _child_res = str(item)
+            if isinstance(_child_res, str):
+                _item_el = ET.Element('light')
+                _item_el.text = _child_res
+            else:
+                _item_el = _child_res
+            el.append(_item_el)
         for item in (self.models or []):
-            el.append(item.to_sdf(version))
+            if hasattr(item, 'to_sdf'):
+                _child_res = item.to_sdf(version)
+            else:
+                _child_res = str(item)
+            if isinstance(_child_res, str):
+                _item_el = ET.Element('model')
+                _item_el.text = _child_res
+            else:
+                _item_el = _child_res
+            el.append(_item_el)
         if self.version is not None:
             el.set("version", self.version)
         for item in (self.worlds or []):
-            el.append(item.to_sdf(version))
+            if hasattr(item, 'to_sdf'):
+                _child_res = item.to_sdf(version)
+            else:
+                _child_res = str(item)
+            if isinstance(_child_res, str):
+                _item_el = ET.Element('world')
+                _item_el.text = _child_res
+            else:
+                _item_el = _child_res
+            el.append(_item_el)
         return el
 
     @classmethod

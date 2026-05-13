@@ -43,236 +43,16 @@ def _parse_double(raw: str) -> float | SDFError:
 
 
 class Noise(BaseModel):
-    class BiasMean(BaseModel):
-        def __init__(self, sdf_version: str | None = None, bias_mean: float = 0.0):
-            super().__init__(sdf_version)
-            self.bias_mean = bias_mean
-
-        def to_version(self, target_version: str) -> "Noise.BiasMean":
-            kwargs = {"sdf_version": target_version}
-            kwargs["bias_mean"] = self.bias_mean
-            new_obj = self.__class__(**kwargs)
-            return new_obj
-
-        def to_sdf(self, version: str | None = None) -> ET.Element:
-            if self.__version__ is None and version is not None:
-                self.__version__ = version
-            elif version is not None and version != self.__version__:
-                return self.to_version(version).to_sdf()
-            version = self.__version__ or version
-            el = ET.Element("bias_mean")
-            if self.bias_mean is not None:
-                el.text = str(self.bias_mean)
-            return el
-
-        @classmethod
-        def _from_sdf(cls, el: ET.Element, version: str) -> "Noise.BiasMean | SDFError":
-            _text = el.text or 0.0
-            _bias_mean = _parse_double(_text)
-            if isinstance(_bias_mean, SDFError):
-                return _bias_mean
-            return cls(sdf_version=version, bias_mean=_bias_mean)
-
-    class BiasStddev(BaseModel):
-        def __init__(self, sdf_version: str | None = None, bias_stddev: float = 0.0):
-            super().__init__(sdf_version)
-            self.bias_stddev = bias_stddev
-
-        def to_version(self, target_version: str) -> "Noise.BiasStddev":
-            kwargs = {"sdf_version": target_version}
-            kwargs["bias_stddev"] = self.bias_stddev
-            new_obj = self.__class__(**kwargs)
-            return new_obj
-
-        def to_sdf(self, version: str | None = None) -> ET.Element:
-            if self.__version__ is None and version is not None:
-                self.__version__ = version
-            elif version is not None and version != self.__version__:
-                return self.to_version(version).to_sdf()
-            version = self.__version__ or version
-            el = ET.Element("bias_stddev")
-            if self.bias_stddev is not None:
-                el.text = str(self.bias_stddev)
-            return el
-
-        @classmethod
-        def _from_sdf(cls, el: ET.Element, version: str) -> "Noise.BiasStddev | SDFError":
-            _text = el.text or 0.0
-            _bias_stddev = _parse_double(_text)
-            if isinstance(_bias_stddev, SDFError):
-                return _bias_stddev
-            return cls(sdf_version=version, bias_stddev=_bias_stddev)
-
-    class DynamicBiasCorrelationTime(BaseModel):
-        def __init__(self, sdf_version: str | None = None, dynamic_bias_correlation_time: float = 0.0):
-            super().__init__(sdf_version)
-            self.dynamic_bias_correlation_time = dynamic_bias_correlation_time
-
-        def to_version(self, target_version: str) -> "Noise.DynamicBiasCorrelationTime":
-            if self.dynamic_bias_correlation_time is not None and cmp_version(target_version, "1.6") < 0:
-                raise ValueError(f"'dynamic_bias_correlation_time' is not supported in SDF version {target_version} (added in 1.6)")
-            kwargs = {"sdf_version": target_version}
-            kwargs["dynamic_bias_correlation_time"] = self.dynamic_bias_correlation_time
-            new_obj = self.__class__(**kwargs)
-            return new_obj
-
-        def to_sdf(self, version: str | None = None) -> ET.Element:
-            if self.__version__ is None and version is not None:
-                self.__version__ = version
-            elif version is not None and version != self.__version__:
-                return self.to_version(version).to_sdf()
-            version = self.__version__ or version
-            el = ET.Element("dynamic_bias_correlation_time")
-            if self.dynamic_bias_correlation_time is not None:
-                el.text = str(self.dynamic_bias_correlation_time)
-            return el
-
-        @classmethod
-        def _from_sdf(cls, el: ET.Element, version: str) -> "Noise.DynamicBiasCorrelationTime | SDFError":
-            _text = el.text or 0.0
-            _dynamic_bias_correlation_time = _parse_double(_text)
-            if isinstance(_dynamic_bias_correlation_time, SDFError):
-                return _dynamic_bias_correlation_time
-            if _dynamic_bias_correlation_time is not None and cmp_version(version, "1.6") < 0:
-                if _dynamic_bias_correlation_time != 0.0:
-                    return SDFError(f"'dynamic_bias_correlation_time' is not supported in SDF version {version} (added in 1.6)")
-            return cls(sdf_version=version, dynamic_bias_correlation_time=_dynamic_bias_correlation_time)
-
-    class DynamicBiasStddev(BaseModel):
-        def __init__(self, sdf_version: str | None = None, dynamic_bias_stddev: float = 0.0):
-            super().__init__(sdf_version)
-            self.dynamic_bias_stddev = dynamic_bias_stddev
-
-        def to_version(self, target_version: str) -> "Noise.DynamicBiasStddev":
-            if self.dynamic_bias_stddev is not None and cmp_version(target_version, "1.6") < 0:
-                raise ValueError(f"'dynamic_bias_stddev' is not supported in SDF version {target_version} (added in 1.6)")
-            kwargs = {"sdf_version": target_version}
-            kwargs["dynamic_bias_stddev"] = self.dynamic_bias_stddev
-            new_obj = self.__class__(**kwargs)
-            return new_obj
-
-        def to_sdf(self, version: str | None = None) -> ET.Element:
-            if self.__version__ is None and version is not None:
-                self.__version__ = version
-            elif version is not None and version != self.__version__:
-                return self.to_version(version).to_sdf()
-            version = self.__version__ or version
-            el = ET.Element("dynamic_bias_stddev")
-            if self.dynamic_bias_stddev is not None:
-                el.text = str(self.dynamic_bias_stddev)
-            return el
-
-        @classmethod
-        def _from_sdf(cls, el: ET.Element, version: str) -> "Noise.DynamicBiasStddev | SDFError":
-            _text = el.text or 0.0
-            _dynamic_bias_stddev = _parse_double(_text)
-            if isinstance(_dynamic_bias_stddev, SDFError):
-                return _dynamic_bias_stddev
-            if _dynamic_bias_stddev is not None and cmp_version(version, "1.6") < 0:
-                if _dynamic_bias_stddev != 0.0:
-                    return SDFError(f"'dynamic_bias_stddev' is not supported in SDF version {version} (added in 1.6)")
-            return cls(sdf_version=version, dynamic_bias_stddev=_dynamic_bias_stddev)
-
-    class Mean(BaseModel):
-        def __init__(self, sdf_version: str | None = None, mean: float = 0.0):
-            super().__init__(sdf_version)
-            self.mean = mean
-
-        def to_version(self, target_version: str) -> "Noise.Mean":
-            kwargs = {"sdf_version": target_version}
-            kwargs["mean"] = self.mean
-            new_obj = self.__class__(**kwargs)
-            return new_obj
-
-        def to_sdf(self, version: str | None = None) -> ET.Element:
-            if self.__version__ is None and version is not None:
-                self.__version__ = version
-            elif version is not None and version != self.__version__:
-                return self.to_version(version).to_sdf()
-            version = self.__version__ or version
-            el = ET.Element("mean")
-            if self.mean is not None:
-                el.text = str(self.mean)
-            return el
-
-        @classmethod
-        def _from_sdf(cls, el: ET.Element, version: str) -> "Noise.Mean | SDFError":
-            _text = el.text or 0.0
-            _mean = _parse_double(_text)
-            if isinstance(_mean, SDFError):
-                return _mean
-            return cls(sdf_version=version, mean=_mean)
-
-    class Precision(BaseModel):
-        def __init__(self, sdf_version: str | None = None, precision: float = 0.0):
-            super().__init__(sdf_version)
-            self.precision = precision
-
-        def to_version(self, target_version: str) -> "Noise.Precision":
-            kwargs = {"sdf_version": target_version}
-            kwargs["precision"] = self.precision
-            new_obj = self.__class__(**kwargs)
-            return new_obj
-
-        def to_sdf(self, version: str | None = None) -> ET.Element:
-            if self.__version__ is None and version is not None:
-                self.__version__ = version
-            elif version is not None and version != self.__version__:
-                return self.to_version(version).to_sdf()
-            version = self.__version__ or version
-            el = ET.Element("precision")
-            if self.precision is not None:
-                el.text = str(self.precision)
-            return el
-
-        @classmethod
-        def _from_sdf(cls, el: ET.Element, version: str) -> "Noise.Precision | SDFError":
-            _text = el.text or 0.0
-            _precision = _parse_double(_text)
-            if isinstance(_precision, SDFError):
-                return _precision
-            return cls(sdf_version=version, precision=_precision)
-
-    class Stddev(BaseModel):
-        def __init__(self, sdf_version: str | None = None, stddev: float = 0.0):
-            super().__init__(sdf_version)
-            self.stddev = stddev
-
-        def to_version(self, target_version: str) -> "Noise.Stddev":
-            kwargs = {"sdf_version": target_version}
-            kwargs["stddev"] = self.stddev
-            new_obj = self.__class__(**kwargs)
-            return new_obj
-
-        def to_sdf(self, version: str | None = None) -> ET.Element:
-            if self.__version__ is None and version is not None:
-                self.__version__ = version
-            elif version is not None and version != self.__version__:
-                return self.to_version(version).to_sdf()
-            version = self.__version__ or version
-            el = ET.Element("stddev")
-            if self.stddev is not None:
-                el.text = str(self.stddev)
-            return el
-
-        @classmethod
-        def _from_sdf(cls, el: ET.Element, version: str) -> "Noise.Stddev | SDFError":
-            _text = el.text or 0.0
-            _stddev = _parse_double(_text)
-            if isinstance(_stddev, SDFError):
-                return _stddev
-            return cls(sdf_version=version, stddev=_stddev)
-
     def __init__(
         self,
         sdf_version: str | None = None,
-        bias_mean: "Noise.BiasMean" = None,
-        bias_stddev: "Noise.BiasStddev" = None,
-        dynamic_bias_correlation_time: "Noise.DynamicBiasCorrelationTime" = None,
-        dynamic_bias_stddev: "Noise.DynamicBiasStddev" = None,
-        mean: "Noise.Mean" = None,
-        precision: "Noise.Precision" = None,
-        stddev: "Noise.Stddev" = None,
+        bias_mean: float = 0.0,
+        bias_stddev: float = 0.0,
+        dynamic_bias_correlation_time: float = 0.0,
+        dynamic_bias_stddev: float = 0.0,
+        mean: float = 0.0,
+        precision: float = 0.0,
+        stddev: float = 0.0,
         type: str = "none"
     ):
         super().__init__(sdf_version)
@@ -284,41 +64,6 @@ class Noise(BaseModel):
         self.precision = precision
         self.stddev = stddev
         self.type = type
-        if self.bias_mean is not None:
-            if getattr(self.bias_mean, '__version__', None) is None:
-                self.bias_mean.__version__ = self.__version__
-            elif getattr(self.bias_mean, '__version__', None) != self.__version__ and self.__version__ is not None:
-                self.bias_mean = self.bias_mean.to_version(self.__version__)
-        if self.bias_stddev is not None:
-            if getattr(self.bias_stddev, '__version__', None) is None:
-                self.bias_stddev.__version__ = self.__version__
-            elif getattr(self.bias_stddev, '__version__', None) != self.__version__ and self.__version__ is not None:
-                self.bias_stddev = self.bias_stddev.to_version(self.__version__)
-        if self.dynamic_bias_correlation_time is not None:
-            if getattr(self.dynamic_bias_correlation_time, '__version__', None) is None:
-                self.dynamic_bias_correlation_time.__version__ = self.__version__
-            elif getattr(self.dynamic_bias_correlation_time, '__version__', None) != self.__version__ and self.__version__ is not None:
-                self.dynamic_bias_correlation_time = self.dynamic_bias_correlation_time.to_version(self.__version__)
-        if self.dynamic_bias_stddev is not None:
-            if getattr(self.dynamic_bias_stddev, '__version__', None) is None:
-                self.dynamic_bias_stddev.__version__ = self.__version__
-            elif getattr(self.dynamic_bias_stddev, '__version__', None) != self.__version__ and self.__version__ is not None:
-                self.dynamic_bias_stddev = self.dynamic_bias_stddev.to_version(self.__version__)
-        if self.mean is not None:
-            if getattr(self.mean, '__version__', None) is None:
-                self.mean.__version__ = self.__version__
-            elif getattr(self.mean, '__version__', None) != self.__version__ and self.__version__ is not None:
-                self.mean = self.mean.to_version(self.__version__)
-        if self.precision is not None:
-            if getattr(self.precision, '__version__', None) is None:
-                self.precision.__version__ = self.__version__
-            elif getattr(self.precision, '__version__', None) != self.__version__ and self.__version__ is not None:
-                self.precision = self.precision.to_version(self.__version__)
-        if self.stddev is not None:
-            if getattr(self.stddev, '__version__', None) is None:
-                self.stddev.__version__ = self.__version__
-            elif getattr(self.stddev, '__version__', None) != self.__version__ and self.__version__ is not None:
-                self.stddev = self.stddev.to_version(self.__version__)
 
     def to_version(self, target_version: str) -> "Noise":
         if self.dynamic_bias_correlation_time is not None and cmp_version(target_version, "1.6") < 0:
@@ -326,13 +71,13 @@ class Noise(BaseModel):
         if self.dynamic_bias_stddev is not None and cmp_version(target_version, "1.6") < 0:
             raise ValueError(f"'dynamic_bias_stddev' is not supported in SDF version {target_version} (added in 1.6)")
         kwargs = {"sdf_version": target_version}
-        kwargs["bias_mean"] = self.bias_mean.to_version(target_version) if self.bias_mean is not None else None
-        kwargs["bias_stddev"] = self.bias_stddev.to_version(target_version) if self.bias_stddev is not None else None
-        kwargs["dynamic_bias_correlation_time"] = self.dynamic_bias_correlation_time.to_version(target_version) if self.dynamic_bias_correlation_time is not None else None
-        kwargs["dynamic_bias_stddev"] = self.dynamic_bias_stddev.to_version(target_version) if self.dynamic_bias_stddev is not None else None
-        kwargs["mean"] = self.mean.to_version(target_version) if self.mean is not None else None
-        kwargs["precision"] = self.precision.to_version(target_version) if self.precision is not None else None
-        kwargs["stddev"] = self.stddev.to_version(target_version) if self.stddev is not None else None
+        kwargs["bias_mean"] = self.bias_mean
+        kwargs["bias_stddev"] = self.bias_stddev
+        kwargs["dynamic_bias_correlation_time"] = self.dynamic_bias_correlation_time
+        kwargs["dynamic_bias_stddev"] = self.dynamic_bias_stddev
+        kwargs["mean"] = self.mean
+        kwargs["precision"] = self.precision
+        kwargs["stddev"] = self.stddev
         kwargs["type"] = self.type
         new_obj = self.__class__(**kwargs)
         return new_obj
@@ -345,83 +90,104 @@ class Noise(BaseModel):
         version = self.__version__ or version
         el = ET.Element("noise")
         if self.bias_mean is not None:
-            el.append(self.bias_mean.to_sdf(version))
+            _c_tmp = ET.Element("bias_mean")
+            _c_tmp.text = str(self.bias_mean)
+            el.append(_c_tmp)
         if self.bias_stddev is not None:
-            el.append(self.bias_stddev.to_sdf(version))
+            _c_tmp = ET.Element("bias_stddev")
+            _c_tmp.text = str(self.bias_stddev)
+            el.append(_c_tmp)
         if self.dynamic_bias_correlation_time is not None:
-            el.append(self.dynamic_bias_correlation_time.to_sdf(version))
+            _c_tmp = ET.Element("dynamic_bias_correlation_time")
+            _c_tmp.text = str(self.dynamic_bias_correlation_time)
+            el.append(_c_tmp)
         if self.dynamic_bias_stddev is not None:
-            el.append(self.dynamic_bias_stddev.to_sdf(version))
+            _c_tmp = ET.Element("dynamic_bias_stddev")
+            _c_tmp.text = str(self.dynamic_bias_stddev)
+            el.append(_c_tmp)
         if self.mean is not None:
-            el.append(self.mean.to_sdf(version))
+            _c_tmp = ET.Element("mean")
+            _c_tmp.text = str(self.mean)
+            el.append(_c_tmp)
         if self.precision is not None:
-            el.append(self.precision.to_sdf(version))
+            _c_tmp = ET.Element("precision")
+            _c_tmp.text = str(self.precision)
+            el.append(_c_tmp)
         if self.stddev is not None:
-            el.append(self.stddev.to_sdf(version))
+            _c_tmp = ET.Element("stddev")
+            _c_tmp.text = str(self.stddev)
+            el.append(_c_tmp)
         if self.type is not None:
             el.set("type", self.type)
         return el
 
     @classmethod
     def _from_sdf(cls, el: ET.Element, version: str) -> "Noise | SDFError":
-        _c_bias_mean = el.find("bias_mean")
-        if _c_bias_mean is not None:
-            _res = cls.BiasMean._from_sdf(_c_bias_mean, version)
-            if isinstance(_res, SDFError):
-                return _res.extend("bias_mean")
-            _bias_mean = _res
+        _c_tmp = el.find("bias_mean")
+        if _c_tmp is not None:
+            _text = _c_tmp.text if _c_tmp.text is not None else 0.0
+            _val = _parse_double(_text)
+            if isinstance(_val, SDFError):
+                return _val.extend("bias_mean")
+            _bias_mean = _val
         else:
             _bias_mean = None
-        _c_bias_stddev = el.find("bias_stddev")
-        if _c_bias_stddev is not None:
-            _res = cls.BiasStddev._from_sdf(_c_bias_stddev, version)
-            if isinstance(_res, SDFError):
-                return _res.extend("bias_stddev")
-            _bias_stddev = _res
+        _c_tmp = el.find("bias_stddev")
+        if _c_tmp is not None:
+            _text = _c_tmp.text if _c_tmp.text is not None else 0.0
+            _val = _parse_double(_text)
+            if isinstance(_val, SDFError):
+                return _val.extend("bias_stddev")
+            _bias_stddev = _val
         else:
             _bias_stddev = None
-        _c_dynamic_bias_correlation_time = el.find("dynamic_bias_correlation_time")
-        if _c_dynamic_bias_correlation_time is not None:
-            _res = cls.DynamicBiasCorrelationTime._from_sdf(_c_dynamic_bias_correlation_time, version)
-            if isinstance(_res, SDFError):
-                return _res.extend("dynamic_bias_correlation_time")
-            _dynamic_bias_correlation_time = _res
+        _c_tmp = el.find("dynamic_bias_correlation_time")
+        if _c_tmp is not None:
+            _text = _c_tmp.text if _c_tmp.text is not None else 0.0
+            _val = _parse_double(_text)
+            if isinstance(_val, SDFError):
+                return _val.extend("dynamic_bias_correlation_time")
+            _dynamic_bias_correlation_time = _val
         else:
             _dynamic_bias_correlation_time = None
         if _dynamic_bias_correlation_time is not None and cmp_version(version, "1.6") < 0:
             return SDFError(f"'dynamic_bias_correlation_time' is not supported in SDF version {version} (added in 1.6)")
-        _c_dynamic_bias_stddev = el.find("dynamic_bias_stddev")
-        if _c_dynamic_bias_stddev is not None:
-            _res = cls.DynamicBiasStddev._from_sdf(_c_dynamic_bias_stddev, version)
-            if isinstance(_res, SDFError):
-                return _res.extend("dynamic_bias_stddev")
-            _dynamic_bias_stddev = _res
+        _c_tmp = el.find("dynamic_bias_stddev")
+        if _c_tmp is not None:
+            _text = _c_tmp.text if _c_tmp.text is not None else 0.0
+            _val = _parse_double(_text)
+            if isinstance(_val, SDFError):
+                return _val.extend("dynamic_bias_stddev")
+            _dynamic_bias_stddev = _val
         else:
             _dynamic_bias_stddev = None
         if _dynamic_bias_stddev is not None and cmp_version(version, "1.6") < 0:
             return SDFError(f"'dynamic_bias_stddev' is not supported in SDF version {version} (added in 1.6)")
-        _c_mean = el.find("mean")
-        if _c_mean is not None:
-            _res = cls.Mean._from_sdf(_c_mean, version)
-            if isinstance(_res, SDFError):
-                return _res.extend("mean")
-            _mean = _res
+        _c_tmp = el.find("mean")
+        if _c_tmp is not None:
+            _text = _c_tmp.text if _c_tmp.text is not None else 0.0
+            _val = _parse_double(_text)
+            if isinstance(_val, SDFError):
+                return _val.extend("mean")
+            _mean = _val
         else:
             _mean = None
-        _c_precision = el.find("precision")
-        if _c_precision is not None:
-            _res = cls.Precision._from_sdf(_c_precision, version)
-            if isinstance(_res, SDFError):
-                return _res.extend("precision")
-            _precision = _res
+        _c_tmp = el.find("precision")
+        if _c_tmp is not None:
+            _text = _c_tmp.text if _c_tmp.text is not None else 0.0
+            _val = _parse_double(_text)
+            if isinstance(_val, SDFError):
+                return _val.extend("precision")
+            _precision = _val
         else:
             _precision = None
-        _c_stddev = el.find("stddev")
-        if _c_stddev is not None:
-            _res = cls.Stddev._from_sdf(_c_stddev, version)
-            if isinstance(_res, SDFError):
-                return _res.extend("stddev")
-            _stddev = _res
+        _c_tmp = el.find("stddev")
+        if _c_tmp is not None:
+            _text = _c_tmp.text if _c_tmp.text is not None else 0.0
+            _val = _parse_double(_text)
+            if isinstance(_val, SDFError):
+                return _val.extend("stddev")
+            _stddev = _val
         else:
             _stddev = None
         _type = el.get("type", "none")

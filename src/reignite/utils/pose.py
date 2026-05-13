@@ -15,7 +15,7 @@ class Pose:
         self.pitch = pitch
         self.yaw = yaw
 
-    def to_sdf(self) -> str:
+    def to_sdf(self, version: str = None) -> str:
         return f"{self.x} {self.y} {self.z} {self.roll} {self.pitch} {self.yaw}"
 
     @classmethod

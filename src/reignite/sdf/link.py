@@ -60,130 +60,16 @@ def _parse_double(raw: str) -> float | SDFError:
 
 
 class Link(BaseModel):
-    class Acceleration(BaseModel):
-        def __init__(self, sdf_version: str | None = None, acceleration: _SDFPose = None):
-            super().__init__(sdf_version)
-            if acceleration is None:
-                acceleration = _SDFPose.from_sdf("0 0 0 0 0 0", version=sdf_version)
-            self.acceleration = acceleration
-
-        def to_version(self, target_version: str) -> "Link.Acceleration":
-            if self.acceleration is not None and cmp_version(target_version, "1.5") < 0:
-                raise ValueError(f"'acceleration' is not supported in SDF version {target_version} (added in 1.5)")
-            if self.acceleration is not None and cmp_version(target_version, "1.12") >= 0:
-                raise ValueError(f"'acceleration' is not supported in SDF version {target_version} (removed in 1.12)")
-            kwargs = {"sdf_version": target_version}
-            kwargs["acceleration"] = self.acceleration
-            new_obj = self.__class__(**kwargs)
-            return new_obj
-
-        def to_sdf(self, version: str | None = None) -> ET.Element:
-            if self.__version__ is None and version is not None:
-                self.__version__ = version
-            elif version is not None and version != self.__version__:
-                return self.to_version(version).to_sdf()
-            version = self.__version__ or version
-            el = ET.Element("acceleration")
-            if self.acceleration is not None:
-                el.text = self.acceleration.to_sdf(version)
-            return el
-
-        @classmethod
-        def _from_sdf(cls, el: ET.Element, version: str) -> "Link.Acceleration | SDFError":
-            _text = el.text or "0 0 0 0 0 0"
-            _acceleration = _SDFPose._from_sdf(_text, version)
-            if isinstance(_acceleration, SDFError):
-                return _acceleration
-            if _acceleration is not None and cmp_version(version, "1.5") < 0:
-                if _acceleration != "0 0 0 0 0 0":
-                    return SDFError(f"'acceleration' is not supported in SDF version {version} (added in 1.5)")
-            return cls(sdf_version=version, acceleration=_acceleration)
-
     class Damping(BaseModel):
-        class Angular(BaseModel):
-            def __init__(self, sdf_version: str | None = None, angular: float = 0.0):
-                super().__init__(sdf_version)
-                self.angular = angular
-
-            def to_version(self, target_version: str) -> "Link.Damping.Angular":
-                kwargs = {"sdf_version": target_version}
-                kwargs["angular"] = self.angular
-                new_obj = self.__class__(**kwargs)
-                return new_obj
-
-            def to_sdf(self, version: str | None = None) -> ET.Element:
-                if self.__version__ is None and version is not None:
-                    self.__version__ = version
-                elif version is not None and version != self.__version__:
-                    return self.to_version(version).to_sdf()
-                version = self.__version__ or version
-                el = ET.Element("angular")
-                if self.angular is not None:
-                    el.text = str(self.angular)
-                return el
-
-            @classmethod
-            def _from_sdf(cls, el: ET.Element, version: str) -> "Link.Damping.Angular | SDFError":
-                _text = el.text or 0.0
-                _angular = _parse_double(_text)
-                if isinstance(_angular, SDFError):
-                    return _angular
-                return cls(sdf_version=version, angular=_angular)
-
-        class Linear(BaseModel):
-            def __init__(self, sdf_version: str | None = None, linear: float = 0.0):
-                super().__init__(sdf_version)
-                self.linear = linear
-
-            def to_version(self, target_version: str) -> "Link.Damping.Linear":
-                kwargs = {"sdf_version": target_version}
-                kwargs["linear"] = self.linear
-                new_obj = self.__class__(**kwargs)
-                return new_obj
-
-            def to_sdf(self, version: str | None = None) -> ET.Element:
-                if self.__version__ is None and version is not None:
-                    self.__version__ = version
-                elif version is not None and version != self.__version__:
-                    return self.to_version(version).to_sdf()
-                version = self.__version__ or version
-                el = ET.Element("linear")
-                if self.linear is not None:
-                    el.text = str(self.linear)
-                return el
-
-            @classmethod
-            def _from_sdf(cls, el: ET.Element, version: str) -> "Link.Damping.Linear | SDFError":
-                _text = el.text or 0.0
-                _linear = _parse_double(_text)
-                if isinstance(_linear, SDFError):
-                    return _linear
-                return cls(sdf_version=version, linear=_linear)
-
-        def __init__(
-            self,
-            sdf_version: str | None = None,
-            angular: "Link.Damping.Angular" = None,
-            linear: "Link.Damping.Linear" = None
-        ):
+        def __init__(self, sdf_version: str | None = None, angular: float = 0.0, linear: float = 0.0):
             super().__init__(sdf_version)
             self.angular = angular
             self.linear = linear
-            if self.angular is not None:
-                if getattr(self.angular, '__version__', None) is None:
-                    self.angular.__version__ = self.__version__
-                elif getattr(self.angular, '__version__', None) != self.__version__ and self.__version__ is not None:
-                    self.angular = self.angular.to_version(self.__version__)
-            if self.linear is not None:
-                if getattr(self.linear, '__version__', None) is None:
-                    self.linear.__version__ = self.__version__
-                elif getattr(self.linear, '__version__', None) != self.__version__ and self.__version__ is not None:
-                    self.linear = self.linear.to_version(self.__version__)
 
         def to_version(self, target_version: str) -> "Link.Damping":
             kwargs = {"sdf_version": target_version}
-            kwargs["angular"] = self.angular.to_version(target_version) if self.angular is not None else None
-            kwargs["linear"] = self.linear.to_version(target_version) if self.linear is not None else None
+            kwargs["angular"] = self.angular
+            kwargs["linear"] = self.linear
             new_obj = self.__class__(**kwargs)
             return new_obj
 
@@ -195,176 +81,36 @@ class Link(BaseModel):
             version = self.__version__ or version
             el = ET.Element("damping")
             if self.angular is not None:
-                el.append(self.angular.to_sdf(version))
+                _c_tmp = ET.Element("angular")
+                _c_tmp.text = str(self.angular)
+                el.append(_c_tmp)
             if self.linear is not None:
-                el.append(self.linear.to_sdf(version))
+                _c_tmp = ET.Element("linear")
+                _c_tmp.text = str(self.linear)
+                el.append(_c_tmp)
             return el
 
         @classmethod
         def _from_sdf(cls, el: ET.Element, version: str) -> "Link.Damping | SDFError":
-            _c_angular = el.find("angular")
-            if _c_angular is not None:
-                _res = cls.Angular._from_sdf(_c_angular, version)
-                if isinstance(_res, SDFError):
-                    return _res.extend("angular")
-                _angular = _res
+            _c_tmp = el.find("angular")
+            if _c_tmp is not None:
+                _text = _c_tmp.text if _c_tmp.text is not None else 0.0
+                _val = _parse_double(_text)
+                if isinstance(_val, SDFError):
+                    return _val.extend("angular")
+                _angular = _val
             else:
                 _angular = None
-            _c_linear = el.find("linear")
-            if _c_linear is not None:
-                _res = cls.Linear._from_sdf(_c_linear, version)
-                if isinstance(_res, SDFError):
-                    return _res.extend("linear")
-                _linear = _res
+            _c_tmp = el.find("linear")
+            if _c_tmp is not None:
+                _text = _c_tmp.text if _c_tmp.text is not None else 0.0
+                _val = _parse_double(_text)
+                if isinstance(_val, SDFError):
+                    return _val.extend("linear")
+                _linear = _val
             else:
                 _linear = None
             return cls(sdf_version=version, angular=_angular, linear=_linear)
-
-    class EnableWind(BaseModel):
-        def __init__(self, sdf_version: str | None = None, enable_wind: bool = False):
-            super().__init__(sdf_version)
-            self.enable_wind = enable_wind
-
-        def to_version(self, target_version: str) -> "Link.EnableWind":
-            if self.enable_wind is not None and cmp_version(target_version, "1.12") < 0:
-                raise ValueError(f"'enable_wind' is not supported in SDF version {target_version} (added in 1.12)")
-            kwargs = {"sdf_version": target_version}
-            kwargs["enable_wind"] = self.enable_wind
-            new_obj = self.__class__(**kwargs)
-            return new_obj
-
-        def to_sdf(self, version: str | None = None) -> ET.Element:
-            if self.__version__ is None and version is not None:
-                self.__version__ = version
-            elif version is not None and version != self.__version__:
-                return self.to_version(version).to_sdf()
-            version = self.__version__ or version
-            el = ET.Element("enable_wind")
-            if self.enable_wind is not None:
-                el.text = str(self.enable_wind).lower()
-            return el
-
-        @classmethod
-        def _from_sdf(cls, el: ET.Element, version: str) -> "Link.EnableWind | SDFError":
-            _text = el.text or False
-            _enable_wind = str(_text).strip().lower() == 'true'
-            if isinstance(_enable_wind, SDFError):
-                return _enable_wind
-            if _enable_wind is not None and cmp_version(version, "1.12") < 0:
-                if _enable_wind != False:
-                    return SDFError(f"'enable_wind' is not supported in SDF version {version} (added in 1.12)")
-            return cls(sdf_version=version, enable_wind=_enable_wind)
-
-    class Gravity(BaseModel):
-        def __init__(self, sdf_version: str | None = None, gravity: bool = True):
-            super().__init__(sdf_version)
-            self.gravity = gravity
-
-        def to_version(self, target_version: str) -> "Link.Gravity":
-            if self.gravity is not None and cmp_version(target_version, "1.2") < 0:
-                raise ValueError(f"'gravity' is not supported in SDF version {target_version} (added in 1.2)")
-            if self.gravity is not None and cmp_version(target_version, "1.5") >= 0:
-                raise ValueError(f"'gravity' is not supported in SDF version {target_version} (removed in 1.5)")
-            kwargs = {"sdf_version": target_version}
-            kwargs["gravity"] = self.gravity
-            new_obj = self.__class__(**kwargs)
-            return new_obj
-
-        def to_sdf(self, version: str | None = None) -> ET.Element:
-            if self.__version__ is None and version is not None:
-                self.__version__ = version
-            elif version is not None and version != self.__version__:
-                return self.to_version(version).to_sdf()
-            version = self.__version__ or version
-            el = ET.Element("gravity")
-            if self.gravity is not None:
-                el.text = str(self.gravity).lower()
-            return el
-
-        @classmethod
-        def _from_sdf(cls, el: ET.Element, version: str) -> "Link.Gravity | SDFError":
-            _text = el.text or True
-            _gravity = str(_text).strip().lower() == 'true'
-            if isinstance(_gravity, SDFError):
-                return _gravity
-            if _gravity is not None and cmp_version(version, "1.2") < 0:
-                if _gravity != True:
-                    return SDFError(f"'gravity' is not supported in SDF version {version} (added in 1.2)")
-            return cls(sdf_version=version, gravity=_gravity)
-
-    class Kinematic(BaseModel):
-        def __init__(self, sdf_version: str | None = None, kinematic: bool = False):
-            super().__init__(sdf_version)
-            self.kinematic = kinematic
-
-        def to_version(self, target_version: str) -> "Link.Kinematic":
-            if self.kinematic is not None and cmp_version(target_version, "1.2") < 0:
-                raise ValueError(f"'kinematic' is not supported in SDF version {target_version} (added in 1.2)")
-            if self.kinematic is not None and cmp_version(target_version, "1.5") >= 0:
-                raise ValueError(f"'kinematic' is not supported in SDF version {target_version} (removed in 1.5)")
-            kwargs = {"sdf_version": target_version}
-            kwargs["kinematic"] = self.kinematic
-            new_obj = self.__class__(**kwargs)
-            return new_obj
-
-        def to_sdf(self, version: str | None = None) -> ET.Element:
-            if self.__version__ is None and version is not None:
-                self.__version__ = version
-            elif version is not None and version != self.__version__:
-                return self.to_version(version).to_sdf()
-            version = self.__version__ or version
-            el = ET.Element("kinematic")
-            if self.kinematic is not None:
-                el.text = str(self.kinematic).lower()
-            return el
-
-        @classmethod
-        def _from_sdf(cls, el: ET.Element, version: str) -> "Link.Kinematic | SDFError":
-            _text = el.text or False
-            _kinematic = str(_text).strip().lower() == 'true'
-            if isinstance(_kinematic, SDFError):
-                return _kinematic
-            if _kinematic is not None and cmp_version(version, "1.2") < 0:
-                if _kinematic != False:
-                    return SDFError(f"'kinematic' is not supported in SDF version {version} (added in 1.2)")
-            return cls(sdf_version=version, kinematic=_kinematic)
-
-    class MustBeBaseLink(BaseModel):
-        def __init__(self, sdf_version: str | None = None, must_be_base_link: bool = False):
-            super().__init__(sdf_version)
-            self.must_be_base_link = must_be_base_link
-
-        def to_version(self, target_version: str) -> "Link.MustBeBaseLink":
-            if self.must_be_base_link is not None and cmp_version(target_version, "1.4") < 0:
-                raise ValueError(f"'must_be_base_link' is not supported in SDF version {target_version} (added in 1.4)")
-            if self.must_be_base_link is not None and cmp_version(target_version, "1.5") >= 0:
-                raise ValueError(f"'must_be_base_link' is not supported in SDF version {target_version} (removed in 1.5)")
-            kwargs = {"sdf_version": target_version}
-            kwargs["must_be_base_link"] = self.must_be_base_link
-            new_obj = self.__class__(**kwargs)
-            return new_obj
-
-        def to_sdf(self, version: str | None = None) -> ET.Element:
-            if self.__version__ is None and version is not None:
-                self.__version__ = version
-            elif version is not None and version != self.__version__:
-                return self.to_version(version).to_sdf()
-            version = self.__version__ or version
-            el = ET.Element("must_be_base_link")
-            if self.must_be_base_link is not None:
-                el.text = str(self.must_be_base_link).lower()
-            return el
-
-        @classmethod
-        def _from_sdf(cls, el: ET.Element, version: str) -> "Link.MustBeBaseLink | SDFError":
-            _text = el.text or False
-            _must_be_base_link = str(_text).strip().lower() == 'true'
-            if isinstance(_must_be_base_link, SDFError):
-                return _must_be_base_link
-            if _must_be_base_link is not None and cmp_version(version, "1.4") < 0:
-                if _must_be_base_link != False:
-                    return SDFError(f"'must_be_base_link' is not supported in SDF version {version} (added in 1.4)")
-            return cls(sdf_version=version, must_be_base_link=_must_be_base_link)
 
     class Origin(BaseModel):
         def __init__(self, sdf_version: str | None = None, pose: _SDFPose = None):
@@ -387,117 +133,38 @@ class Link(BaseModel):
             version = self.__version__ or version
             el = ET.Element("origin")
             if self.pose is not None:
-                el.set("pose", self.pose.to_sdf(version))
+                if cmp_version(version, "1.2") >= 0:
+                    _c_tmp = ET.Element("pose")
+                    _c_tmp.text = self.pose.to_sdf(version)
+                    el.append(_c_tmp)
+                else:
+                    el.set("pose", self.pose.to_sdf(version))
             return el
 
         @classmethod
         def _from_sdf(cls, el: ET.Element, version: str) -> "Link.Origin | SDFError":
-            _pose = _SDFPose._from_sdf(el.get("pose", "0 0 0 0 0 0"), version)
+            _raw_pose = None
+            if cmp_version(version, "1.2") >= 0:
+                _c_tmp = el.find("pose")
+                if _c_tmp is not None: _raw_pose = _c_tmp.text
+            else:
+                _raw_pose = el.get("pose")
+            if _raw_pose is None: _raw_pose = "0 0 0 0 0 0"
+            _pose = _SDFPose._from_sdf(_raw_pose, version)
             if isinstance(_pose, SDFError):
                 return _pose.extend("@pose")
             return cls(sdf_version=version, pose=_pose)
 
-    class SelfCollide(BaseModel):
-        def __init__(self, sdf_version: str | None = None, self_collide: bool = False):
-            super().__init__(sdf_version)
-            self.self_collide = self_collide
-
-        def to_version(self, target_version: str) -> "Link.SelfCollide":
-            if self.self_collide is not None and cmp_version(target_version, "1.2") < 0:
-                raise ValueError(f"'self_collide' is not supported in SDF version {target_version} (added in 1.2)")
-            if self.self_collide is not None and cmp_version(target_version, "1.5") >= 0:
-                raise ValueError(f"'self_collide' is not supported in SDF version {target_version} (removed in 1.5)")
-            kwargs = {"sdf_version": target_version}
-            kwargs["self_collide"] = self.self_collide
-            new_obj = self.__class__(**kwargs)
-            return new_obj
-
-        def to_sdf(self, version: str | None = None) -> ET.Element:
-            if self.__version__ is None and version is not None:
-                self.__version__ = version
-            elif version is not None and version != self.__version__:
-                return self.to_version(version).to_sdf()
-            version = self.__version__ or version
-            el = ET.Element("self_collide")
-            if self.self_collide is not None:
-                el.text = str(self.self_collide).lower()
-            return el
-
-        @classmethod
-        def _from_sdf(cls, el: ET.Element, version: str) -> "Link.SelfCollide | SDFError":
-            _text = el.text or False
-            _self_collide = str(_text).strip().lower() == 'true'
-            if isinstance(_self_collide, SDFError):
-                return _self_collide
-            if _self_collide is not None and cmp_version(version, "1.2") < 0:
-                if _self_collide != False:
-                    return SDFError(f"'self_collide' is not supported in SDF version {version} (added in 1.2)")
-            return cls(sdf_version=version, self_collide=_self_collide)
-
-    class Velocity(BaseModel):
-        def __init__(self, sdf_version: str | None = None, velocity: _SDFPose = None):
-            super().__init__(sdf_version)
-            if velocity is None:
-                velocity = _SDFPose.from_sdf("0 0 0 0 0 0", version=sdf_version)
-            self.velocity = velocity
-
-        def to_version(self, target_version: str) -> "Link.Velocity":
-            if self.velocity is not None and cmp_version(target_version, "1.5") < 0:
-                raise ValueError(f"'velocity' is not supported in SDF version {target_version} (added in 1.5)")
-            if self.velocity is not None and cmp_version(target_version, "1.12") >= 0:
-                raise ValueError(f"'velocity' is not supported in SDF version {target_version} (removed in 1.12)")
-            kwargs = {"sdf_version": target_version}
-            kwargs["velocity"] = self.velocity
-            new_obj = self.__class__(**kwargs)
-            return new_obj
-
-        def to_sdf(self, version: str | None = None) -> ET.Element:
-            if self.__version__ is None and version is not None:
-                self.__version__ = version
-            elif version is not None and version != self.__version__:
-                return self.to_version(version).to_sdf()
-            version = self.__version__ or version
-            el = ET.Element("velocity")
-            if self.velocity is not None:
-                el.text = self.velocity.to_sdf(version)
-            return el
-
-        @classmethod
-        def _from_sdf(cls, el: ET.Element, version: str) -> "Link.Velocity | SDFError":
-            _text = el.text or "0 0 0 0 0 0"
-            _velocity = _SDFPose._from_sdf(_text, version)
-            if isinstance(_velocity, SDFError):
-                return _velocity
-            if _velocity is not None and cmp_version(version, "1.5") < 0:
-                if _velocity != "0 0 0 0 0 0":
-                    return SDFError(f"'velocity' is not supported in SDF version {version} (added in 1.5)")
-            return cls(sdf_version=version, velocity=_velocity)
-
     class VelocityDecay(BaseModel):
-        def __init__(
-            self,
-            sdf_version: str | None = None,
-            angular: "Angular" = None,
-            linear: "Linear" = None
-        ):
+        def __init__(self, sdf_version: str | None = None, angular: float = 0.0, linear: float = 0.0):
             super().__init__(sdf_version)
             self.angular = angular
             self.linear = linear
-            if self.angular is not None:
-                if getattr(self.angular, '__version__', None) is None:
-                    self.angular.__version__ = self.__version__
-                elif getattr(self.angular, '__version__', None) != self.__version__ and self.__version__ is not None:
-                    self.angular = self.angular.to_version(self.__version__)
-            if self.linear is not None:
-                if getattr(self.linear, '__version__', None) is None:
-                    self.linear.__version__ = self.__version__
-                elif getattr(self.linear, '__version__', None) != self.__version__ and self.__version__ is not None:
-                    self.linear = self.linear.to_version(self.__version__)
 
         def to_version(self, target_version: str) -> "Link.VelocityDecay":
             kwargs = {"sdf_version": target_version}
-            kwargs["angular"] = self.angular.to_version(target_version) if self.angular is not None else None
-            kwargs["linear"] = self.linear.to_version(target_version) if self.linear is not None else None
+            kwargs["angular"] = self.angular
+            kwargs["linear"] = self.linear
             new_obj = self.__class__(**kwargs)
             return new_obj
 
@@ -509,86 +176,53 @@ class Link(BaseModel):
             version = self.__version__ or version
             el = ET.Element("velocity_decay")
             if self.angular is not None:
-                el.append(self.angular.to_sdf(version))
+                _c_tmp = ET.Element("angular")
+                _c_tmp.text = str(self.angular)
+                el.append(_c_tmp)
             if self.linear is not None:
-                el.append(self.linear.to_sdf(version))
+                _c_tmp = ET.Element("linear")
+                _c_tmp.text = str(self.linear)
+                el.append(_c_tmp)
             return el
 
         @classmethod
         def _from_sdf(cls, el: ET.Element, version: str) -> "Link.VelocityDecay | SDFError":
-            _c_angular = el.find("angular")
-            if _c_angular is not None:
-                _res = Angular._from_sdf(_c_angular, version)
-                if isinstance(_res, SDFError):
-                    return _res.extend("angular")
-                _angular = _res
+            _c_tmp = el.find("angular")
+            if _c_tmp is not None:
+                _text = _c_tmp.text if _c_tmp.text is not None else 0.0
+                _val = _parse_double(_text)
+                if isinstance(_val, SDFError):
+                    return _val.extend("angular")
+                _angular = _val
             else:
                 _angular = None
-            _c_linear = el.find("linear")
-            if _c_linear is not None:
-                _res = Linear._from_sdf(_c_linear, version)
-                if isinstance(_res, SDFError):
-                    return _res.extend("linear")
-                _linear = _res
+            _c_tmp = el.find("linear")
+            if _c_tmp is not None:
+                _text = _c_tmp.text if _c_tmp.text is not None else 0.0
+                _val = _parse_double(_text)
+                if isinstance(_val, SDFError):
+                    return _val.extend("linear")
+                _linear = _val
             else:
                 _linear = None
             return cls(sdf_version=version, angular=_angular, linear=_linear)
 
-    class Wrench(BaseModel):
-        def __init__(self, sdf_version: str | None = None, wrench: _SDFPose = None):
-            super().__init__(sdf_version)
-            if wrench is None:
-                wrench = _SDFPose.from_sdf("0 0 0 0 0 0", version=sdf_version)
-            self.wrench = wrench
-
-        def to_version(self, target_version: str) -> "Link.Wrench":
-            if self.wrench is not None and cmp_version(target_version, "1.5") < 0:
-                raise ValueError(f"'wrench' is not supported in SDF version {target_version} (added in 1.5)")
-            if self.wrench is not None and cmp_version(target_version, "1.12") >= 0:
-                raise ValueError(f"'wrench' is not supported in SDF version {target_version} (removed in 1.12)")
-            kwargs = {"sdf_version": target_version}
-            kwargs["wrench"] = self.wrench
-            new_obj = self.__class__(**kwargs)
-            return new_obj
-
-        def to_sdf(self, version: str | None = None) -> ET.Element:
-            if self.__version__ is None and version is not None:
-                self.__version__ = version
-            elif version is not None and version != self.__version__:
-                return self.to_version(version).to_sdf()
-            version = self.__version__ or version
-            el = ET.Element("wrench")
-            if self.wrench is not None:
-                el.text = self.wrench.to_sdf(version)
-            return el
-
-        @classmethod
-        def _from_sdf(cls, el: ET.Element, version: str) -> "Link.Wrench | SDFError":
-            _text = el.text or "0 0 0 0 0 0"
-            _wrench = _SDFPose._from_sdf(_text, version)
-            if isinstance(_wrench, SDFError):
-                return _wrench
-            if _wrench is not None and cmp_version(version, "1.5") < 0:
-                if _wrench != "0 0 0 0 0 0":
-                    return SDFError(f"'wrench' is not supported in SDF version {version} (added in 1.5)")
-            return cls(sdf_version=version, wrench=_wrench)
-
     def __init__(
         self,
         sdf_version: str | None = None,
-        acceleration: "Link.Acceleration" = None,
+        acceleration: _SDFPose = None,
         audio_sinks: List["AudioSink"] = None,
         audio_sources: List["AudioSource"] = None,
         batterys: List["Battery"] = None,
         collisions: List["Collision"] = None,
         damping: "Link.Damping" = None,
-        enable_wind: "Link.EnableWind" = None,
+        enable_wind: bool = False,
         frames: List["Frame"] = None,
         gravity: bool = True,
         inertial: "Inertial" = None,
         kinematic: bool = False,
         lights: List["Light"] = None,
-        must_be_base_link: "Link.MustBeBaseLink" = None,
+        must_be_base_link: bool = False,
         name: str = "__default__",
         origin: "Link.Origin" = None,
         particle_emitters: List["ParticleEmitter"] = None,
@@ -596,12 +230,18 @@ class Link(BaseModel):
         projector: "Projector" = None,
         self_collide: bool = False,
         sensor: "Sensor" = None,
-        velocity: "Link.Velocity" = None,
+        velocity: _SDFPose = None,
         velocity_decay: "Link.VelocityDecay" = None,
         visuals: List["Visual"] = None,
-        wrench: "Link.Wrench" = None
+        wrench: _SDFPose = None
     ):
         super().__init__(sdf_version)
+        if acceleration is None:
+            acceleration = _SDFPose.from_sdf("0 0 0 0 0 0", version=sdf_version)
+        if velocity is None:
+            velocity = _SDFPose.from_sdf("0 0 0 0 0 0", version=sdf_version)
+        if wrench is None:
+            wrench = _SDFPose.from_sdf("0 0 0 0 0 0", version=sdf_version)
         self.acceleration = acceleration
         self.audio_sinks = audio_sinks or []
         self.audio_sources = audio_sources or []
@@ -626,106 +266,129 @@ class Link(BaseModel):
         self.velocity_decay = velocity_decay
         self.visuals = visuals or []
         self.wrench = wrench
-        if self.acceleration is not None:
-            if getattr(self.acceleration, '__version__', None) is None:
-                self.acceleration.__version__ = self.__version__
-            elif getattr(self.acceleration, '__version__', None) != self.__version__ and self.__version__ is not None:
-                self.acceleration = self.acceleration.to_version(self.__version__)
         for _i, _c in enumerate(self.audio_sinks):
+            if not hasattr(_c, 'to_version'): continue
             if getattr(_c, '__version__', None) is None:
                 _c.__version__ = self.__version__
             elif getattr(_c, '__version__', None) != self.__version__ and self.__version__ is not None:
                 self.audio_sinks[_i] = _c.to_version(self.__version__)
         for _i, _c in enumerate(self.audio_sources):
+            if not hasattr(_c, 'to_version'): continue
             if getattr(_c, '__version__', None) is None:
                 _c.__version__ = self.__version__
             elif getattr(_c, '__version__', None) != self.__version__ and self.__version__ is not None:
                 self.audio_sources[_i] = _c.to_version(self.__version__)
         for _i, _c in enumerate(self.batterys):
+            if not hasattr(_c, 'to_version'): continue
             if getattr(_c, '__version__', None) is None:
                 _c.__version__ = self.__version__
             elif getattr(_c, '__version__', None) != self.__version__ and self.__version__ is not None:
                 self.batterys[_i] = _c.to_version(self.__version__)
         for _i, _c in enumerate(self.collisions):
+            if not hasattr(_c, 'to_version'): continue
             if getattr(_c, '__version__', None) is None:
                 _c.__version__ = self.__version__
             elif getattr(_c, '__version__', None) != self.__version__ and self.__version__ is not None:
                 self.collisions[_i] = _c.to_version(self.__version__)
-        if self.damping is not None:
+        if self.damping is not None and hasattr(self.damping, 'to_version'):
             if getattr(self.damping, '__version__', None) is None:
                 self.damping.__version__ = self.__version__
             elif getattr(self.damping, '__version__', None) != self.__version__ and self.__version__ is not None:
                 self.damping = self.damping.to_version(self.__version__)
-        if self.enable_wind is not None:
-            if getattr(self.enable_wind, '__version__', None) is None:
-                self.enable_wind.__version__ = self.__version__
-            elif getattr(self.enable_wind, '__version__', None) != self.__version__ and self.__version__ is not None:
-                self.enable_wind = self.enable_wind.to_version(self.__version__)
         for _i, _c in enumerate(self.frames):
+            if not hasattr(_c, 'to_version'): continue
             if getattr(_c, '__version__', None) is None:
                 _c.__version__ = self.__version__
             elif getattr(_c, '__version__', None) != self.__version__ and self.__version__ is not None:
                 self.frames[_i] = _c.to_version(self.__version__)
-        if self.inertial is not None:
+        if self.inertial is not None and hasattr(self.inertial, 'to_version'):
             if getattr(self.inertial, '__version__', None) is None:
                 self.inertial.__version__ = self.__version__
             elif getattr(self.inertial, '__version__', None) != self.__version__ and self.__version__ is not None:
                 self.inertial = self.inertial.to_version(self.__version__)
         for _i, _c in enumerate(self.lights):
+            if not hasattr(_c, 'to_version'): continue
             if getattr(_c, '__version__', None) is None:
                 _c.__version__ = self.__version__
             elif getattr(_c, '__version__', None) != self.__version__ and self.__version__ is not None:
                 self.lights[_i] = _c.to_version(self.__version__)
-        if self.must_be_base_link is not None:
-            if getattr(self.must_be_base_link, '__version__', None) is None:
-                self.must_be_base_link.__version__ = self.__version__
-            elif getattr(self.must_be_base_link, '__version__', None) != self.__version__ and self.__version__ is not None:
-                self.must_be_base_link = self.must_be_base_link.to_version(self.__version__)
-        if self.origin is not None:
+        if self.origin is not None and hasattr(self.origin, 'to_version'):
             if getattr(self.origin, '__version__', None) is None:
                 self.origin.__version__ = self.__version__
             elif getattr(self.origin, '__version__', None) != self.__version__ and self.__version__ is not None:
                 self.origin = self.origin.to_version(self.__version__)
         for _i, _c in enumerate(self.particle_emitters):
+            if not hasattr(_c, 'to_version'): continue
             if getattr(_c, '__version__', None) is None:
                 _c.__version__ = self.__version__
             elif getattr(_c, '__version__', None) != self.__version__ and self.__version__ is not None:
                 self.particle_emitters[_i] = _c.to_version(self.__version__)
-        if self.pose is not None:
+        if self.pose is not None and hasattr(self.pose, 'to_version'):
             if getattr(self.pose, '__version__', None) is None:
                 self.pose.__version__ = self.__version__
             elif getattr(self.pose, '__version__', None) != self.__version__ and self.__version__ is not None:
                 self.pose = self.pose.to_version(self.__version__)
-        if self.projector is not None:
+        if self.projector is not None and hasattr(self.projector, 'to_version'):
             if getattr(self.projector, '__version__', None) is None:
                 self.projector.__version__ = self.__version__
             elif getattr(self.projector, '__version__', None) != self.__version__ and self.__version__ is not None:
                 self.projector = self.projector.to_version(self.__version__)
-        if self.sensor is not None:
+        if self.sensor is not None and hasattr(self.sensor, 'to_version'):
             if getattr(self.sensor, '__version__', None) is None:
                 self.sensor.__version__ = self.__version__
             elif getattr(self.sensor, '__version__', None) != self.__version__ and self.__version__ is not None:
                 self.sensor = self.sensor.to_version(self.__version__)
-        if self.velocity is not None:
-            if getattr(self.velocity, '__version__', None) is None:
-                self.velocity.__version__ = self.__version__
-            elif getattr(self.velocity, '__version__', None) != self.__version__ and self.__version__ is not None:
-                self.velocity = self.velocity.to_version(self.__version__)
-        if self.velocity_decay is not None:
+        if self.velocity_decay is not None and hasattr(self.velocity_decay, 'to_version'):
             if getattr(self.velocity_decay, '__version__', None) is None:
                 self.velocity_decay.__version__ = self.__version__
             elif getattr(self.velocity_decay, '__version__', None) != self.__version__ and self.__version__ is not None:
                 self.velocity_decay = self.velocity_decay.to_version(self.__version__)
         for _i, _c in enumerate(self.visuals):
+            if not hasattr(_c, 'to_version'): continue
             if getattr(_c, '__version__', None) is None:
                 _c.__version__ = self.__version__
             elif getattr(_c, '__version__', None) != self.__version__ and self.__version__ is not None:
                 self.visuals[_i] = _c.to_version(self.__version__)
-        if self.wrench is not None:
-            if getattr(self.wrench, '__version__', None) is None:
-                self.wrench.__version__ = self.__version__
-            elif getattr(self.wrench, '__version__', None) != self.__version__ and self.__version__ is not None:
-                self.wrench = self.wrench.to_version(self.__version__)
+
+    def add_audio_sink(self, *items: "AudioSink"):
+        if self.audio_sinks is None:
+            self.audio_sinks = []
+        self.audio_sinks.extend(items)
+
+    def add_audio_source(self, *items: "AudioSource"):
+        if self.audio_sources is None:
+            self.audio_sources = []
+        self.audio_sources.extend(items)
+
+    def add_battery(self, *items: "Battery"):
+        if self.batterys is None:
+            self.batterys = []
+        self.batterys.extend(items)
+
+    def add_collision(self, *items: "Collision"):
+        if self.collisions is None:
+            self.collisions = []
+        self.collisions.extend(items)
+
+    def add_frame(self, *items: "Frame"):
+        if self.frames is None:
+            self.frames = []
+        self.frames.extend(items)
+
+    def add_light(self, *items: "Light"):
+        if self.lights is None:
+            self.lights = []
+        self.lights.extend(items)
+
+    def add_particle_emitter(self, *items: "ParticleEmitter"):
+        if self.particle_emitters is None:
+            self.particle_emitters = []
+        self.particle_emitters.extend(items)
+
+    def add_visual(self, *items: "Visual"):
+        if self.visuals is None:
+            self.visuals = []
+        self.visuals.extend(items)
 
     def to_version(self, target_version: str) -> "Link":
         from ..elements.audio_sink import AudioSink
@@ -801,30 +464,30 @@ class Link(BaseModel):
         if self.wrench is not None and cmp_version(target_version, "1.12") >= 0:
             raise ValueError(f"'wrench' is not supported in SDF version {target_version} (removed in 1.12)")
         kwargs = {"sdf_version": target_version}
-        kwargs["acceleration"] = self.acceleration.to_version(target_version) if self.acceleration is not None else None
-        kwargs["audio_sinks"] = [c.to_version(target_version) for c in (self.audio_sinks or [])]
-        kwargs["audio_sources"] = [c.to_version(target_version) for c in (self.audio_sources or [])]
-        kwargs["batterys"] = [c.to_version(target_version) for c in (self.batterys or [])]
-        kwargs["collisions"] = [c.to_version(target_version) for c in (self.collisions or [])]
-        kwargs["damping"] = self.damping.to_version(target_version) if self.damping is not None else None
-        kwargs["enable_wind"] = self.enable_wind.to_version(target_version) if self.enable_wind is not None else None
-        kwargs["frames"] = [c.to_version(target_version) for c in (self.frames or [])]
+        kwargs["acceleration"] = self.acceleration
+        kwargs["audio_sinks"] = [c.to_version(target_version) if hasattr(c, "to_version") else c for c in (self.audio_sinks or [])]
+        kwargs["audio_sources"] = [c.to_version(target_version) if hasattr(c, "to_version") else c for c in (self.audio_sources or [])]
+        kwargs["batterys"] = [c.to_version(target_version) if hasattr(c, "to_version") else c for c in (self.batterys or [])]
+        kwargs["collisions"] = [c.to_version(target_version) if hasattr(c, "to_version") else c for c in (self.collisions or [])]
+        kwargs["damping"] = self.damping.to_version(target_version) if hasattr(self.damping, "to_version") else self.damping
+        kwargs["enable_wind"] = self.enable_wind
+        kwargs["frames"] = [c.to_version(target_version) if hasattr(c, "to_version") else c for c in (self.frames or [])]
         kwargs["gravity"] = self.gravity
-        kwargs["inertial"] = self.inertial.to_version(target_version) if self.inertial is not None else None
+        kwargs["inertial"] = self.inertial.to_version(target_version) if hasattr(self.inertial, "to_version") else self.inertial
         kwargs["kinematic"] = self.kinematic
-        kwargs["lights"] = [c.to_version(target_version) for c in (self.lights or [])]
-        kwargs["must_be_base_link"] = self.must_be_base_link.to_version(target_version) if self.must_be_base_link is not None else None
+        kwargs["lights"] = [c.to_version(target_version) if hasattr(c, "to_version") else c for c in (self.lights or [])]
+        kwargs["must_be_base_link"] = self.must_be_base_link
         kwargs["name"] = self.name
-        kwargs["origin"] = self.origin.to_version(target_version) if self.origin is not None else None
-        kwargs["particle_emitters"] = [c.to_version(target_version) for c in (self.particle_emitters or [])]
-        kwargs["pose"] = self.pose.to_version(target_version) if self.pose is not None else None
-        kwargs["projector"] = self.projector.to_version(target_version) if self.projector is not None else None
+        kwargs["origin"] = self.origin.to_version(target_version) if hasattr(self.origin, "to_version") else self.origin
+        kwargs["particle_emitters"] = [c.to_version(target_version) if hasattr(c, "to_version") else c for c in (self.particle_emitters or [])]
+        kwargs["pose"] = self.pose.to_version(target_version) if hasattr(self.pose, "to_version") else self.pose
+        kwargs["projector"] = self.projector.to_version(target_version) if hasattr(self.projector, "to_version") else self.projector
         kwargs["self_collide"] = self.self_collide
-        kwargs["sensor"] = self.sensor.to_version(target_version) if self.sensor is not None else None
-        kwargs["velocity"] = self.velocity.to_version(target_version) if self.velocity is not None else None
-        kwargs["velocity_decay"] = self.velocity_decay.to_version(target_version) if self.velocity_decay is not None else None
-        kwargs["visuals"] = [c.to_version(target_version) for c in (self.visuals or [])]
-        kwargs["wrench"] = self.wrench.to_version(target_version) if self.wrench is not None else None
+        kwargs["sensor"] = self.sensor.to_version(target_version) if hasattr(self.sensor, "to_version") else self.sensor
+        kwargs["velocity"] = self.velocity
+        kwargs["velocity_decay"] = self.velocity_decay.to_version(target_version) if hasattr(self.velocity_decay, "to_version") else self.velocity_decay
+        kwargs["visuals"] = [c.to_version(target_version) if hasattr(c, "to_version") else c for c in (self.visuals or [])]
+        kwargs["wrench"] = self.wrench
         new_obj = self.__class__(**kwargs)
         return new_obj
 
@@ -848,61 +511,205 @@ class Link(BaseModel):
         version = self.__version__ or version
         el = ET.Element("link")
         if self.acceleration is not None:
-            el.append(self.acceleration.to_sdf(version))
+            _c_tmp = ET.Element("acceleration")
+            _c_tmp.text = self.acceleration.to_sdf(version)
+            el.append(_c_tmp)
         for item in (self.audio_sinks or []):
-            el.append(item.to_sdf(version))
+            if hasattr(item, 'to_sdf'):
+                _child_res = item.to_sdf(version)
+            else:
+                _child_res = str(item)
+            if isinstance(_child_res, str):
+                _item_el = ET.Element('audio_sink')
+                _item_el.text = _child_res
+            else:
+                _item_el = _child_res
+            el.append(_item_el)
         for item in (self.audio_sources or []):
-            el.append(item.to_sdf(version))
+            if hasattr(item, 'to_sdf'):
+                _child_res = item.to_sdf(version)
+            else:
+                _child_res = str(item)
+            if isinstance(_child_res, str):
+                _item_el = ET.Element('audio_source')
+                _item_el.text = _child_res
+            else:
+                _item_el = _child_res
+            el.append(_item_el)
         for item in (self.batterys or []):
-            el.append(item.to_sdf(version))
+            if hasattr(item, 'to_sdf'):
+                _child_res = item.to_sdf(version)
+            else:
+                _child_res = str(item)
+            if isinstance(_child_res, str):
+                _item_el = ET.Element('battery')
+                _item_el.text = _child_res
+            else:
+                _item_el = _child_res
+            el.append(_item_el)
         for item in (self.collisions or []):
-            el.append(item.to_sdf(version))
+            if hasattr(item, 'to_sdf'):
+                _child_res = item.to_sdf(version)
+            else:
+                _child_res = str(item)
+            if isinstance(_child_res, str):
+                _item_el = ET.Element('collision')
+                _item_el.text = _child_res
+            else:
+                _item_el = _child_res
+            el.append(_item_el)
         if cmp_version(version, "1.2") < 0:
             if self.damping is None:
                 self.damping = self.__class__.Damping(sdf_version=version)
         if self.damping is not None:
-            _item_el = self.damping.to_sdf(version)
+            if hasattr(self.damping, 'to_sdf'):
+                _child_res = self.damping.to_sdf(version)
+            else:
+                _child_res = str(self.damping)
+            if isinstance(_child_res, str):
+                _item_el = ET.Element('damping')
+                _item_el.text = _child_res
+            else:
+                _item_el = _child_res
             if cmp_version(version, "1.2") >= 0:
                 _item_el.tag = "velocity_decay"
             else:
                 _item_el.tag = "damping"
             el.append(_item_el)
         if self.enable_wind is not None:
-            el.append(self.enable_wind.to_sdf(version))
+            _c_tmp = ET.Element("enable_wind")
+            _c_tmp.text = str(self.enable_wind).lower()
+            el.append(_c_tmp)
         for item in (self.frames or []):
-            el.append(item.to_sdf(version))
+            if hasattr(item, 'to_sdf'):
+                _child_res = item.to_sdf(version)
+            else:
+                _child_res = str(item)
+            if isinstance(_child_res, str):
+                _item_el = ET.Element('frame')
+                _item_el.text = _child_res
+            else:
+                _item_el = _child_res
+            el.append(_item_el)
         if self.gravity is not None:
             el.set("gravity", str(self.gravity).lower())
         if self.inertial is not None:
-            el.append(self.inertial.to_sdf(version))
+            if hasattr(self.inertial, 'to_sdf'):
+                _child_res = self.inertial.to_sdf(version)
+            else:
+                _child_res = str(self.inertial)
+            if isinstance(_child_res, str):
+                _item_el = ET.Element('inertial')
+                _item_el.text = _child_res
+            else:
+                _item_el = _child_res
+            el.append(_item_el)
         if self.kinematic is not None:
             el.set("kinematic", str(self.kinematic).lower())
         for item in (self.lights or []):
-            el.append(item.to_sdf(version))
+            if hasattr(item, 'to_sdf'):
+                _child_res = item.to_sdf(version)
+            else:
+                _child_res = str(item)
+            if isinstance(_child_res, str):
+                _item_el = ET.Element('light')
+                _item_el.text = _child_res
+            else:
+                _item_el = _child_res
+            el.append(_item_el)
         if self.must_be_base_link is not None:
-            el.append(self.must_be_base_link.to_sdf(version))
+            _c_tmp = ET.Element("must_be_base_link")
+            _c_tmp.text = str(self.must_be_base_link).lower()
+            el.append(_c_tmp)
         if self.name is not None:
             el.set("name", self.name)
         if self.origin is not None:
-            el.append(self.origin.to_sdf(version))
+            if hasattr(self.origin, 'to_sdf'):
+                _child_res = self.origin.to_sdf(version)
+            else:
+                _child_res = str(self.origin)
+            if isinstance(_child_res, str):
+                _item_el = ET.Element('origin')
+                _item_el.text = _child_res
+            else:
+                _item_el = _child_res
+            el.append(_item_el)
         for item in (self.particle_emitters or []):
-            el.append(item.to_sdf(version))
+            if hasattr(item, 'to_sdf'):
+                _child_res = item.to_sdf(version)
+            else:
+                _child_res = str(item)
+            if isinstance(_child_res, str):
+                _item_el = ET.Element('particle_emitter')
+                _item_el.text = _child_res
+            else:
+                _item_el = _child_res
+            el.append(_item_el)
         if self.pose is not None:
-            el.append(self.pose.to_sdf(version))
+            if hasattr(self.pose, 'to_sdf'):
+                _child_res = self.pose.to_sdf(version)
+            else:
+                _child_res = str(self.pose)
+            if isinstance(_child_res, str):
+                _item_el = ET.Element('pose')
+                _item_el.text = _child_res
+            else:
+                _item_el = _child_res
+            el.append(_item_el)
         if self.projector is not None:
-            el.append(self.projector.to_sdf(version))
+            if hasattr(self.projector, 'to_sdf'):
+                _child_res = self.projector.to_sdf(version)
+            else:
+                _child_res = str(self.projector)
+            if isinstance(_child_res, str):
+                _item_el = ET.Element('projector')
+                _item_el.text = _child_res
+            else:
+                _item_el = _child_res
+            el.append(_item_el)
         if self.self_collide is not None:
             el.set("self_collide", str(self.self_collide).lower())
         if self.sensor is not None:
-            el.append(self.sensor.to_sdf(version))
+            if hasattr(self.sensor, 'to_sdf'):
+                _child_res = self.sensor.to_sdf(version)
+            else:
+                _child_res = str(self.sensor)
+            if isinstance(_child_res, str):
+                _item_el = ET.Element('sensor')
+                _item_el.text = _child_res
+            else:
+                _item_el = _child_res
+            el.append(_item_el)
         if self.velocity is not None:
-            el.append(self.velocity.to_sdf(version))
+            _c_tmp = ET.Element("velocity")
+            _c_tmp.text = self.velocity.to_sdf(version)
+            el.append(_c_tmp)
         if self.velocity_decay is not None:
-            el.append(self.velocity_decay.to_sdf(version))
+            if hasattr(self.velocity_decay, 'to_sdf'):
+                _child_res = self.velocity_decay.to_sdf(version)
+            else:
+                _child_res = str(self.velocity_decay)
+            if isinstance(_child_res, str):
+                _item_el = ET.Element('velocity_decay')
+                _item_el.text = _child_res
+            else:
+                _item_el = _child_res
+            el.append(_item_el)
         for item in (self.visuals or []):
-            el.append(item.to_sdf(version))
+            if hasattr(item, 'to_sdf'):
+                _child_res = item.to_sdf(version)
+            else:
+                _child_res = str(item)
+            if isinstance(_child_res, str):
+                _item_el = ET.Element('visual')
+                _item_el.text = _child_res
+            else:
+                _item_el = _child_res
+            el.append(_item_el)
         if self.wrench is not None:
-            el.append(self.wrench.to_sdf(version))
+            _c_tmp = ET.Element("wrench")
+            _c_tmp.text = self.wrench.to_sdf(version)
+            el.append(_c_tmp)
         return el
 
     @classmethod
@@ -919,12 +726,13 @@ class Link(BaseModel):
         from ..elements.projector import Projector
         from ..elements.sensor import Sensor
         from ..elements.visual import Visual
-        _c_acceleration = el.find("acceleration")
-        if _c_acceleration is not None:
-            _res = cls.Acceleration._from_sdf(_c_acceleration, version)
-            if isinstance(_res, SDFError):
-                return _res.extend("acceleration")
-            _acceleration = _res
+        _c_tmp = el.find("acceleration")
+        if _c_tmp is not None:
+            _text = _c_tmp.text if _c_tmp.text is not None else "0 0 0 0 0 0"
+            _val = _SDFPose._from_sdf(_text, version)
+            if isinstance(_val, SDFError):
+                return _val.extend("acceleration")
+            _acceleration = _val
         else:
             _acceleration = None
         if _acceleration is not None and cmp_version(version, "1.5") < 0:
@@ -974,12 +782,13 @@ class Link(BaseModel):
             if isinstance(_res, SDFError):
                 return _res.extend("damping")
             _damping = _res
-        _c_enable_wind = el.find("enable_wind")
-        if _c_enable_wind is not None:
-            _res = cls.EnableWind._from_sdf(_c_enable_wind, version)
-            if isinstance(_res, SDFError):
-                return _res.extend("enable_wind")
-            _enable_wind = _res
+        _c_tmp = el.find("enable_wind")
+        if _c_tmp is not None:
+            _text = _c_tmp.text if _c_tmp.text is not None else False
+            _val = str(_text).strip().lower() == 'true'
+            if isinstance(_val, SDFError):
+                return _val.extend("enable_wind")
+            _enable_wind = _val
         else:
             _enable_wind = None
         if _enable_wind is not None and cmp_version(version, "1.12") < 0:
@@ -1014,12 +823,13 @@ class Link(BaseModel):
             _lights.append(_res)
         if _lights and cmp_version(version, "1.12") < 0:
             return SDFError(f"'lights' is not supported in SDF version {version} (added in 1.12)")
-        _c_must_be_base_link = el.find("must_be_base_link")
-        if _c_must_be_base_link is not None:
-            _res = cls.MustBeBaseLink._from_sdf(_c_must_be_base_link, version)
-            if isinstance(_res, SDFError):
-                return _res.extend("must_be_base_link")
-            _must_be_base_link = _res
+        _c_tmp = el.find("must_be_base_link")
+        if _c_tmp is not None:
+            _text = _c_tmp.text if _c_tmp.text is not None else False
+            _val = str(_text).strip().lower() == 'true'
+            if isinstance(_val, SDFError):
+                return _val.extend("must_be_base_link")
+            _must_be_base_link = _val
         else:
             _must_be_base_link = None
         if _must_be_base_link is not None and cmp_version(version, "1.4") < 0:
@@ -1072,12 +882,13 @@ class Link(BaseModel):
             _sensor = _res
         else:
             _sensor = None
-        _c_velocity = el.find("velocity")
-        if _c_velocity is not None:
-            _res = cls.Velocity._from_sdf(_c_velocity, version)
-            if isinstance(_res, SDFError):
-                return _res.extend("velocity")
-            _velocity = _res
+        _c_tmp = el.find("velocity")
+        if _c_tmp is not None:
+            _text = _c_tmp.text if _c_tmp.text is not None else "0 0 0 0 0 0"
+            _val = _SDFPose._from_sdf(_text, version)
+            if isinstance(_val, SDFError):
+                return _val.extend("velocity")
+            _velocity = _val
         else:
             _velocity = None
         if _velocity is not None and cmp_version(version, "1.5") < 0:
@@ -1098,12 +909,13 @@ class Link(BaseModel):
             if isinstance(_res, SDFError):
                 return _res.extend("visual")
             _visuals.append(_res)
-        _c_wrench = el.find("wrench")
-        if _c_wrench is not None:
-            _res = cls.Wrench._from_sdf(_c_wrench, version)
-            if isinstance(_res, SDFError):
-                return _res.extend("wrench")
-            _wrench = _res
+        _c_tmp = el.find("wrench")
+        if _c_tmp is not None:
+            _text = _c_tmp.text if _c_tmp.text is not None else "0 0 0 0 0 0"
+            _val = _SDFPose._from_sdf(_text, version)
+            if isinstance(_val, SDFError):
+                return _val.extend("wrench")
+            _wrench = _val
         else:
             _wrench = None
         if _wrench is not None and cmp_version(version, "1.5") < 0:

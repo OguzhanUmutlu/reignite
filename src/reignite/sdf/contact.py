@@ -53,60 +53,25 @@ class Contact(BaseModel):
                 return _name.extend("@name")
             return cls(sdf_version=version, collision=_collision, name=_name)
 
-    class Topic(BaseModel):
-        def __init__(self, sdf_version: str | None = None, topic: str = "__default_topic__"):
-            super().__init__(sdf_version)
-            self.topic = topic
-
-        def to_version(self, target_version: str) -> "Contact.Topic":
-            kwargs = {"sdf_version": target_version}
-            kwargs["topic"] = self.topic
-            new_obj = self.__class__(**kwargs)
-            return new_obj
-
-        def to_sdf(self, version: str | None = None) -> ET.Element:
-            if self.__version__ is None and version is not None:
-                self.__version__ = version
-            elif version is not None and version != self.__version__:
-                return self.to_version(version).to_sdf()
-            version = self.__version__ or version
-            el = ET.Element("topic")
-            if self.topic is not None:
-                el.text = self.topic
-            return el
-
-        @classmethod
-        def _from_sdf(cls, el: ET.Element, version: str) -> "Contact.Topic | SDFError":
-            _text = el.text or "__default_topic__"
-            _topic = _text
-            if isinstance(_topic, SDFError):
-                return _topic
-            return cls(sdf_version=version, topic=_topic)
-
     def __init__(
         self,
         sdf_version: str | None = None,
         collision: "Contact.Collision" = None,
-        topic: "Contact.Topic" = None
+        topic: str = "__default_topic__"
     ):
         super().__init__(sdf_version)
         self.collision = collision
         self.topic = topic
-        if self.collision is not None:
+        if self.collision is not None and hasattr(self.collision, 'to_version'):
             if getattr(self.collision, '__version__', None) is None:
                 self.collision.__version__ = self.__version__
             elif getattr(self.collision, '__version__', None) != self.__version__ and self.__version__ is not None:
                 self.collision = self.collision.to_version(self.__version__)
-        if self.topic is not None:
-            if getattr(self.topic, '__version__', None) is None:
-                self.topic.__version__ = self.__version__
-            elif getattr(self.topic, '__version__', None) != self.__version__ and self.__version__ is not None:
-                self.topic = self.topic.to_version(self.__version__)
 
     def to_version(self, target_version: str) -> "Contact":
         kwargs = {"sdf_version": target_version}
-        kwargs["collision"] = self.collision.to_version(target_version) if self.collision is not None else None
-        kwargs["topic"] = self.topic.to_version(target_version) if self.topic is not None else None
+        kwargs["collision"] = self.collision.to_version(target_version) if hasattr(self.collision, "to_version") else self.collision
+        kwargs["topic"] = self.topic
         new_obj = self.__class__(**kwargs)
         return new_obj
 
@@ -118,9 +83,20 @@ class Contact(BaseModel):
         version = self.__version__ or version
         el = ET.Element("contact")
         if self.collision is not None:
-            el.append(self.collision.to_sdf(version))
+            if hasattr(self.collision, 'to_sdf'):
+                _child_res = self.collision.to_sdf(version)
+            else:
+                _child_res = str(self.collision)
+            if isinstance(_child_res, str):
+                _item_el = ET.Element('collision')
+                _item_el.text = _child_res
+            else:
+                _item_el = _child_res
+            el.append(_item_el)
         if self.topic is not None:
-            el.append(self.topic.to_sdf(version))
+            _c_tmp = ET.Element("topic")
+            _c_tmp.text = self.topic
+            el.append(_c_tmp)
         return el
 
     @classmethod
@@ -133,12 +109,13 @@ class Contact(BaseModel):
             _collision = _res
         else:
             _collision = None
-        _c_topic = el.find("topic")
-        if _c_topic is not None:
-            _res = cls.Topic._from_sdf(_c_topic, version)
-            if isinstance(_res, SDFError):
-                return _res.extend("topic")
-            _topic = _res
+        _c_tmp = el.find("topic")
+        if _c_tmp is not None:
+            _text = _c_tmp.text if _c_tmp.text is not None else "__default_topic__"
+            _val = _text
+            if isinstance(_val, SDFError):
+                return _val.extend("topic")
+            _topic = _val
         else:
             _topic = None
         return cls(sdf_version=version, collision=_collision, topic=_topic)

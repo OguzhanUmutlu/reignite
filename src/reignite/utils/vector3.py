@@ -11,7 +11,7 @@ class Vector3:
         self.y = y
         self.z = z
 
-    def to_sdf(self) -> str:
+    def to_sdf(self, version: str = None) -> str:
         return f"{self.x} {self.y} {self.z}"
 
     @classmethod

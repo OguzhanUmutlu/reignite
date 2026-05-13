@@ -16,7 +16,7 @@ class WorldControlPlugin(Plugin):
                  name="World control", **gui_kwargs
                  ):
         super().__init__(name=name, filename="WorldControl", elements=[
-            GzGui(**{"showTitleBar": False, "resizable": False, "height": 72.0, "z": 1.0, "state": "floating",
+            GzGui(**{"show_title_bar": False, "resizable": False, "height": 72.0, "z": 1.0, "state": "floating",
                      "anchor": "3D View", "anchors": [
                     GzGui.Anchor("left", "left"),
                     GzGui.Anchor("bottom", "bottom")

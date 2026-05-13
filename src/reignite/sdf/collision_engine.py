@@ -76,12 +76,12 @@ class CollisionEngine(BaseModel):
         super().__init__(sdf_version)
         self.bullet = bullet
         self.ode = ode
-        if self.bullet is not None:
+        if self.bullet is not None and hasattr(self.bullet, 'to_version'):
             if getattr(self.bullet, '__version__', None) is None:
                 self.bullet.__version__ = self.__version__
             elif getattr(self.bullet, '__version__', None) != self.__version__ and self.__version__ is not None:
                 self.bullet = self.bullet.to_version(self.__version__)
-        if self.ode is not None:
+        if self.ode is not None and hasattr(self.ode, 'to_version'):
             if getattr(self.ode, '__version__', None) is None:
                 self.ode.__version__ = self.__version__
             elif getattr(self.ode, '__version__', None) != self.__version__ and self.__version__ is not None:
@@ -89,8 +89,8 @@ class CollisionEngine(BaseModel):
 
     def to_version(self, target_version: str) -> "CollisionEngine":
         kwargs = {"sdf_version": target_version}
-        kwargs["bullet"] = self.bullet.to_version(target_version) if self.bullet is not None else None
-        kwargs["ode"] = self.ode.to_version(target_version) if self.ode is not None else None
+        kwargs["bullet"] = self.bullet.to_version(target_version) if hasattr(self.bullet, "to_version") else self.bullet
+        kwargs["ode"] = self.ode.to_version(target_version) if hasattr(self.ode, "to_version") else self.ode
         new_obj = self.__class__(**kwargs)
         return new_obj
 
@@ -102,9 +102,27 @@ class CollisionEngine(BaseModel):
         version = self.__version__ or version
         el = ET.Element("collision_engine")
         if self.bullet is not None:
-            el.append(self.bullet.to_sdf(version))
+            if hasattr(self.bullet, 'to_sdf'):
+                _child_res = self.bullet.to_sdf(version)
+            else:
+                _child_res = str(self.bullet)
+            if isinstance(_child_res, str):
+                _item_el = ET.Element('bullet')
+                _item_el.text = _child_res
+            else:
+                _item_el = _child_res
+            el.append(_item_el)
         if self.ode is not None:
-            el.append(self.ode.to_sdf(version))
+            if hasattr(self.ode, 'to_sdf'):
+                _child_res = self.ode.to_sdf(version)
+            else:
+                _child_res = str(self.ode)
+            if isinstance(_child_res, str):
+                _item_el = ET.Element('ode')
+                _item_el.text = _child_res
+            else:
+                _item_el = _child_res
+            el.append(_item_el)
         return el
 
     @classmethod
