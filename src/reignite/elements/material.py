@@ -1,4 +1,4 @@
-from ..sdf.material import *  # noqa: F401
+from .._sdf.material import *  # noqa: F401
 from ..utils import Color
 
 

@@ -1,1 +1,1 @@
-from ..sdf.inertial import *  # noqa: F401
+from .._sdf.inertial import *  # noqa: F401

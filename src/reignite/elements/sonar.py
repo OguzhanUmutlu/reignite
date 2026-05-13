@@ -1,1 +1,1 @@
-from ..sdf.sonar import *  # noqa: F401
+from .._sdf.sonar import *  # noqa: F401

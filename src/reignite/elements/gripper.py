@@ -1,1 +1,1 @@
-from ..sdf.gripper import *  # noqa: F401
+from .._sdf.gripper import *  # noqa: F401

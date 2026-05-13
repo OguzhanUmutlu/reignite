@@ -1,1 +1,1 @@
-from ..sdf.mimic import *  # noqa: F401
+from .._sdf.mimic import *  # noqa: F401

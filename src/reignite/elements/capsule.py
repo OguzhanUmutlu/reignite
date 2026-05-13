@@ -1,1 +1,1 @@
-from ..sdf.capsule import *  # noqa: F401
+from .._sdf.capsule import *  # noqa: F401

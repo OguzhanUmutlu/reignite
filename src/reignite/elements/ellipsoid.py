@@ -1,1 +1,1 @@
-from ..sdf.ellipsoid import *  # noqa: F401
+from .._sdf.ellipsoid import *  # noqa: F401

@@ -1,1 +1,1 @@
-from ..sdf.contact import *  # noqa: F401
+from .._sdf.contact import *  # noqa: F401

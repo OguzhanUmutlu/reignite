@@ -1,1 +1,1 @@
-from ..sdf.gui import *  # noqa: F401
+from .._sdf.gui import *  # noqa: F401

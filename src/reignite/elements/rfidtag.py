@@ -1,1 +1,1 @@
-from ..sdf.rfidtag import *  # noqa: F401
+from .._sdf.rfidtag import *  # noqa: F401

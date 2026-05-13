@@ -1,1 +1,1 @@
-from ..sdf.gazebo import *  # noqa: F401
+from .._sdf.gazebo import *  # noqa: F401

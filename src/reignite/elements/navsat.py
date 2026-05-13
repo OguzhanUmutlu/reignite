@@ -1,1 +1,1 @@
-from ..sdf.navsat import *  # noqa: F401
+from .._sdf.navsat import *  # noqa: F401

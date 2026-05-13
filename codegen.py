@@ -10,7 +10,7 @@ SCRIPT_DIR = Path(__file__).parent
 REPO_DIR = SCRIPT_DIR / "sdformat"
 SRC_DIR = SCRIPT_DIR / "src" / "reignite"
 TYPES_DIR = SRC_DIR / "utils"
-SDF_SRC_DIR = SRC_DIR / "sdf"
+SDF_SRC_DIR = SRC_DIR / "_sdf"
 ELEMENTS_SRC_DIR = SRC_DIR / "elements"
 
 SDF_REPO_URL = "https://github.com/gazebosim/sdformat.git"
@@ -1608,7 +1608,7 @@ def main():
         out_path.write_text(py_src, encoding="utf-8")
         out_el_path = ELEMENTS_SRC_DIR / f"{_module_name_for(element_name)}.py"
         if not out_el_path.exists():
-            out_el_path.write_text(f"from ..sdf.{_module_name_for(element_name)} import *  # noqa: F401\n",
+            out_el_path.write_text(f"from .._sdf.{_module_name_for(element_name)} import *  # noqa: F401\n",
                                    encoding="utf-8")
         print(f"  Wrote {out_path}")
 

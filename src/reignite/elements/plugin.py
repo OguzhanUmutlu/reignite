@@ -4,7 +4,7 @@ from copy import deepcopy
 from pathlib import Path
 from typing import Optional, List
 
-from ..sdf.plugin import Plugin as _Base
+from .._sdf.plugin import Plugin as _Base
 from ..utils.model import BaseModel
 
 

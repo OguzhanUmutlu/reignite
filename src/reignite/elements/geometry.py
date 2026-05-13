@@ -9,7 +9,7 @@ from .mesh import Mesh
 from .plane import Plane
 from .polyline import Polyline
 from .sphere import Sphere
-from ..sdf.geometry import Geometry  # noqa: F401
+from .._sdf.geometry import Geometry  # noqa: F401
 from ..utils import Vector3, Vector2d
 
 
