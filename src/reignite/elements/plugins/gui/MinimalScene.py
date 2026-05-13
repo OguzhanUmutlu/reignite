@@ -5,7 +5,7 @@ from reignite.utils.color import Color
 from reignite.utils.pose import Pose
 
 
-class ThreeDViewPlugin(Plugin):
+class MinimalScenePlugin(Plugin):
     def __init__(self,
                  camera_pose=Pose.from_sdf("0 -10 3 0 0.2 1.5708"),
                  ambient_light=Color.from_sdf("0.4 0.4 0.4"),
