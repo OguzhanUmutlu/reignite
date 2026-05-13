@@ -67,147 +67,243 @@ def _parse_double(raw: str) -> float | SDFError:
 
 
 
-class AlwaysOn(BaseModel):
-    def __init__(self, sdf_version: str | None = None, always_on: bool = False):
-        self.__version__ = sdf_version
-        self.always_on = always_on
-
-    def to_version(self, target_version: str) -> "AlwaysOn":
-        if self.always_on is not None and cmp_version(target_version, "1.2") < 0:
-            raise ValueError(f"'always_on' is not supported in SDF version {target_version} (added in 1.2)")
-        kwargs = {"sdf_version": target_version}
-        kwargs["always_on"] = self.always_on
-        new_obj = self.__class__(**kwargs)
-        return new_obj
-
-    def to_sdf(self, version: str | None = None) -> ET.Element:
-        if self.__version__ is None and version is not None:
-            self.__version__ = version
-        elif version is not None and version != self.__version__:
-            return self.to_version(version).to_sdf()
-        version = self.__version__ or version
-        el = ET.Element("always_on")
-        if self.always_on is not None:
-            el.text = str(self.always_on).lower()
-        return el
-
-    @classmethod
-    def _from_sdf(cls, el: ET.Element, version: str):
-        _text = el.text or False
-        _always_on = str(_text).strip().lower() == 'true'
-        if isinstance(_always_on, SDFError):
-            return _always_on
-        if _always_on is not None and cmp_version(version, "1.2") < 0:
-            if _always_on != False:
-                return SDFError(f"'always_on' is not supported in SDF version {version} (added in 1.2)")
-        return cls(sdf_version=version, always_on=_always_on)
-
-
-class EnableMetrics(BaseModel):
-    def __init__(self, sdf_version: str | None = None, enable_metrics: bool = False):
-        self.__version__ = sdf_version
-        self.enable_metrics = enable_metrics
-
-    def to_version(self, target_version: str) -> "EnableMetrics":
-        if self.enable_metrics is not None and cmp_version(target_version, "1.7") < 0:
-            raise ValueError(f"'enable_metrics' is not supported in SDF version {target_version} (added in 1.7)")
-        kwargs = {"sdf_version": target_version}
-        kwargs["enable_metrics"] = self.enable_metrics
-        new_obj = self.__class__(**kwargs)
-        return new_obj
-
-    def to_sdf(self, version: str | None = None) -> ET.Element:
-        if self.__version__ is None and version is not None:
-            self.__version__ = version
-        elif version is not None and version != self.__version__:
-            return self.to_version(version).to_sdf()
-        version = self.__version__ or version
-        el = ET.Element("enable_metrics")
-        if self.enable_metrics is not None:
-            el.text = str(self.enable_metrics).lower()
-        return el
-
-    @classmethod
-    def _from_sdf(cls, el: ET.Element, version: str):
-        _text = el.text or False
-        _enable_metrics = str(_text).strip().lower() == 'true'
-        if isinstance(_enable_metrics, SDFError):
-            return _enable_metrics
-        if _enable_metrics is not None and cmp_version(version, "1.7") < 0:
-            if _enable_metrics != False:
-                return SDFError(f"'enable_metrics' is not supported in SDF version {version} (added in 1.7)")
-        return cls(sdf_version=version, enable_metrics=_enable_metrics)
-
-
-class FrameId(BaseModel):
-    def __init__(self, sdf_version: str | None = None, frame_id: str = ""):
-        self.__version__ = sdf_version
-        self.frame_id = frame_id
-
-    def to_version(self, target_version: str) -> "FrameId":
-        if self.frame_id is not None and cmp_version(target_version, "1.12") < 0:
-            raise ValueError(f"'frame_id' is not supported in SDF version {target_version} (added in 1.12)")
-        kwargs = {"sdf_version": target_version}
-        kwargs["frame_id"] = self.frame_id
-        new_obj = self.__class__(**kwargs)
-        return new_obj
-
-    def to_sdf(self, version: str | None = None) -> ET.Element:
-        if self.__version__ is None and version is not None:
-            self.__version__ = version
-        elif version is not None and version != self.__version__:
-            return self.to_version(version).to_sdf()
-        version = self.__version__ or version
-        el = ET.Element("frame_id")
-        if self.frame_id is not None:
-            el.text = self.frame_id
-        return el
-
-    @classmethod
-    def _from_sdf(cls, el: ET.Element, version: str):
-        _text = el.text or ""
-        _frame_id = _text
-        if isinstance(_frame_id, SDFError):
-            return _frame_id
-        if _frame_id is not None and cmp_version(version, "1.12") < 0:
-            if _frame_id != "":
-                return SDFError(f"'frame_id' is not supported in SDF version {version} (added in 1.12)")
-        return cls(sdf_version=version, frame_id=_frame_id)
-
-
-class Origin(BaseModel):
-    def __init__(self, sdf_version: str | None = None, pose: _SDFPose = None):
-        self.__version__ = sdf_version
-        if pose is None:
-            pose = _SDFPose.from_sdf("0 0 0 0 0 0", version=sdf_version)
-        self.pose = pose
-
-    def to_version(self, target_version: str) -> "Origin":
-        kwargs = {"sdf_version": target_version}
-        kwargs["pose"] = self.pose
-        new_obj = self.__class__(**kwargs)
-        return new_obj
-
-    def to_sdf(self, version: str | None = None) -> ET.Element:
-        if self.__version__ is None and version is not None:
-            self.__version__ = version
-        elif version is not None and version != self.__version__:
-            return self.to_version(version).to_sdf()
-        version = self.__version__ or version
-        el = ET.Element("origin")
-        if self.pose is not None:
-            el.set("pose", self.pose.to_sdf(version))
-        return el
-
-    @classmethod
-    def _from_sdf(cls, el: ET.Element, version: str):
-        _pose = _SDFPose._from_sdf(el.get("pose", "0 0 0 0 0 0"), version)
-        if isinstance(_pose, SDFError):
-            return _pose.extend("@pose")
-        return cls(sdf_version=version, pose=_pose)
-
-
 class Sensor(BaseModel):
+    class AlwaysOn(BaseModel):
+        def __init__(self, sdf_version: str | None = None, always_on: bool = False):
+            super().__init__(sdf_version)
+            self.always_on = always_on
+
+        def to_version(self, target_version: str) -> "Sensor.AlwaysOn":
+            if self.always_on is not None and cmp_version(target_version, "1.2") < 0:
+                raise ValueError(f"'always_on' is not supported in SDF version {target_version} (added in 1.2)")
+            kwargs = {"sdf_version": target_version}
+            kwargs["always_on"] = self.always_on
+            new_obj = self.__class__(**kwargs)
+            return new_obj
+
+        def to_sdf(self, version: str | None = None) -> ET.Element:
+            if self.__version__ is None and version is not None:
+                self.__version__ = version
+            elif version is not None and version != self.__version__:
+                return self.to_version(version).to_sdf()
+            version = self.__version__ or version
+            el = ET.Element("always_on")
+            if self.always_on is not None:
+                el.text = str(self.always_on).lower()
+            return el
+
+        @classmethod
+        def _from_sdf(cls, el: ET.Element, version: str) -> "Sensor.AlwaysOn | SDFError":
+            _text = el.text or False
+            _always_on = str(_text).strip().lower() == 'true'
+            if isinstance(_always_on, SDFError):
+                return _always_on
+            if _always_on is not None and cmp_version(version, "1.2") < 0:
+                if _always_on != False:
+                    return SDFError(f"'always_on' is not supported in SDF version {version} (added in 1.2)")
+            return cls(sdf_version=version, always_on=_always_on)
+
+    class EnableMetrics(BaseModel):
+        def __init__(self, sdf_version: str | None = None, enable_metrics: bool = False):
+            super().__init__(sdf_version)
+            self.enable_metrics = enable_metrics
+
+        def to_version(self, target_version: str) -> "Sensor.EnableMetrics":
+            if self.enable_metrics is not None and cmp_version(target_version, "1.7") < 0:
+                raise ValueError(f"'enable_metrics' is not supported in SDF version {target_version} (added in 1.7)")
+            kwargs = {"sdf_version": target_version}
+            kwargs["enable_metrics"] = self.enable_metrics
+            new_obj = self.__class__(**kwargs)
+            return new_obj
+
+        def to_sdf(self, version: str | None = None) -> ET.Element:
+            if self.__version__ is None and version is not None:
+                self.__version__ = version
+            elif version is not None and version != self.__version__:
+                return self.to_version(version).to_sdf()
+            version = self.__version__ or version
+            el = ET.Element("enable_metrics")
+            if self.enable_metrics is not None:
+                el.text = str(self.enable_metrics).lower()
+            return el
+
+        @classmethod
+        def _from_sdf(cls, el: ET.Element, version: str) -> "Sensor.EnableMetrics | SDFError":
+            _text = el.text or False
+            _enable_metrics = str(_text).strip().lower() == 'true'
+            if isinstance(_enable_metrics, SDFError):
+                return _enable_metrics
+            if _enable_metrics is not None and cmp_version(version, "1.7") < 0:
+                if _enable_metrics != False:
+                    return SDFError(f"'enable_metrics' is not supported in SDF version {version} (added in 1.7)")
+            return cls(sdf_version=version, enable_metrics=_enable_metrics)
+
+    class FrameId(BaseModel):
+        def __init__(self, sdf_version: str | None = None, frame_id: str = ""):
+            super().__init__(sdf_version)
+            self.frame_id = frame_id
+
+        def to_version(self, target_version: str) -> "Sensor.FrameId":
+            if self.frame_id is not None and cmp_version(target_version, "1.12") < 0:
+                raise ValueError(f"'frame_id' is not supported in SDF version {target_version} (added in 1.12)")
+            kwargs = {"sdf_version": target_version}
+            kwargs["frame_id"] = self.frame_id
+            new_obj = self.__class__(**kwargs)
+            return new_obj
+
+        def to_sdf(self, version: str | None = None) -> ET.Element:
+            if self.__version__ is None and version is not None:
+                self.__version__ = version
+            elif version is not None and version != self.__version__:
+                return self.to_version(version).to_sdf()
+            version = self.__version__ or version
+            el = ET.Element("frame_id")
+            if self.frame_id is not None:
+                el.text = self.frame_id
+            return el
+
+        @classmethod
+        def _from_sdf(cls, el: ET.Element, version: str) -> "Sensor.FrameId | SDFError":
+            _text = el.text or ""
+            _frame_id = _text
+            if isinstance(_frame_id, SDFError):
+                return _frame_id
+            if _frame_id is not None and cmp_version(version, "1.12") < 0:
+                if _frame_id != "":
+                    return SDFError(f"'frame_id' is not supported in SDF version {version} (added in 1.12)")
+            return cls(sdf_version=version, frame_id=_frame_id)
+
+    class Origin(BaseModel):
+        def __init__(self, sdf_version: str | None = None, pose: _SDFPose = None):
+            super().__init__(sdf_version)
+            if pose is None:
+                pose = _SDFPose.from_sdf("0 0 0 0 0 0", version=sdf_version)
+            self.pose = pose
+
+        def to_version(self, target_version: str) -> "Sensor.Origin":
+            kwargs = {"sdf_version": target_version}
+            kwargs["pose"] = self.pose
+            new_obj = self.__class__(**kwargs)
+            return new_obj
+
+        def to_sdf(self, version: str | None = None) -> ET.Element:
+            if self.__version__ is None and version is not None:
+                self.__version__ = version
+            elif version is not None and version != self.__version__:
+                return self.to_version(version).to_sdf()
+            version = self.__version__ or version
+            el = ET.Element("origin")
+            if self.pose is not None:
+                el.set("pose", self.pose.to_sdf(version))
+            return el
+
+        @classmethod
+        def _from_sdf(cls, el: ET.Element, version: str) -> "Sensor.Origin | SDFError":
+            _pose = _SDFPose._from_sdf(el.get("pose", "0 0 0 0 0 0"), version)
+            if isinstance(_pose, SDFError):
+                return _pose.extend("@pose")
+            return cls(sdf_version=version, pose=_pose)
+
+    class Topic(BaseModel):
+        def __init__(self, sdf_version: str | None = None, topic: str = "__default"):
+            super().__init__(sdf_version)
+            self.topic = topic
+
+        def to_version(self, target_version: str) -> "Sensor.Topic":
+            kwargs = {"sdf_version": target_version}
+            kwargs["topic"] = self.topic
+            new_obj = self.__class__(**kwargs)
+            return new_obj
+
+        def to_sdf(self, version: str | None = None) -> ET.Element:
+            if self.__version__ is None and version is not None:
+                self.__version__ = version
+            elif version is not None and version != self.__version__:
+                return self.to_version(version).to_sdf()
+            version = self.__version__ or version
+            el = ET.Element("topic")
+            if self.topic is not None:
+                el.text = self.topic
+            return el
+
+        @classmethod
+        def _from_sdf(cls, el: ET.Element, version: str) -> "Sensor.Topic | SDFError":
+            _text = el.text or "__default"
+            _topic = _text
+            if isinstance(_topic, SDFError):
+                return _topic
+            return cls(sdf_version=version, topic=_topic)
+
+    class UpdateRate(BaseModel):
+        def __init__(self, sdf_version: str | None = None, update_rate: float = 0):
+            super().__init__(sdf_version)
+            self.update_rate = update_rate
+
+        def to_version(self, target_version: str) -> "Sensor.UpdateRate":
+            if self.update_rate is not None and cmp_version(target_version, "1.2") < 0:
+                raise ValueError(f"'update_rate' is not supported in SDF version {target_version} (added in 1.2)")
+            kwargs = {"sdf_version": target_version}
+            kwargs["update_rate"] = self.update_rate
+            new_obj = self.__class__(**kwargs)
+            return new_obj
+
+        def to_sdf(self, version: str | None = None) -> ET.Element:
+            if self.__version__ is None and version is not None:
+                self.__version__ = version
+            elif version is not None and version != self.__version__:
+                return self.to_version(version).to_sdf()
+            version = self.__version__ or version
+            el = ET.Element("update_rate")
+            if self.update_rate is not None:
+                el.text = str(self.update_rate)
+            return el
+
+        @classmethod
+        def _from_sdf(cls, el: ET.Element, version: str) -> "Sensor.UpdateRate | SDFError":
+            _text = el.text or 0
+            _update_rate = _parse_double(_text)
+            if isinstance(_update_rate, SDFError):
+                return _update_rate
+            if _update_rate is not None and cmp_version(version, "1.2") < 0:
+                if _update_rate != 0:
+                    return SDFError(f"'update_rate' is not supported in SDF version {version} (added in 1.2)")
+            return cls(sdf_version=version, update_rate=_update_rate)
+
+    class Visualize(BaseModel):
+        def __init__(self, sdf_version: str | None = None, visualize: bool = False):
+            super().__init__(sdf_version)
+            self.visualize = visualize
+
+        def to_version(self, target_version: str) -> "Sensor.Visualize":
+            if self.visualize is not None and cmp_version(target_version, "1.2") < 0:
+                raise ValueError(f"'visualize' is not supported in SDF version {target_version} (added in 1.2)")
+            kwargs = {"sdf_version": target_version}
+            kwargs["visualize"] = self.visualize
+            new_obj = self.__class__(**kwargs)
+            return new_obj
+
+        def to_sdf(self, version: str | None = None) -> ET.Element:
+            if self.__version__ is None and version is not None:
+                self.__version__ = version
+            elif version is not None and version != self.__version__:
+                return self.to_version(version).to_sdf()
+            version = self.__version__ or version
+            el = ET.Element("visualize")
+            if self.visualize is not None:
+                el.text = str(self.visualize).lower()
+            return el
+
+        @classmethod
+        def _from_sdf(cls, el: ET.Element, version: str) -> "Sensor.Visualize | SDFError":
+            _text = el.text or False
+            _visualize = str(_text).strip().lower() == 'true'
+            if isinstance(_visualize, SDFError):
+                return _visualize
+            if _visualize is not None and cmp_version(version, "1.2") < 0:
+                if _visualize != False:
+                    return SDFError(f"'visualize' is not supported in SDF version {version} (added in 1.2)")
+            return cls(sdf_version=version, visualize=_visualize)
+
     def __init__(
         self,
         sdf_version: str | None = None,
@@ -217,9 +313,9 @@ class Sensor(BaseModel):
         always_on: bool = False,
         camera: "Camera" = None,
         contact: "Contact" = None,
-        enable_metrics: "EnableMetrics" = None,
+        enable_metrics: "Sensor.EnableMetrics" = None,
         force_torque: "ForceTorque" = None,
-        frame_id: "FrameId" = None,
+        frame_id: "Sensor.FrameId" = None,
         frames: List["Frame"] = None,
         gps: "Gps" = None,
         imu: "Imu" = None,
@@ -228,20 +324,20 @@ class Sensor(BaseModel):
         magnetometer: "Magnetometer" = None,
         name: str = "__default__",
         navsat: "Navsat" = None,
-        origin: "Origin" = None,
+        origin: "Sensor.Origin" = None,
         plugins: List["Plugin"] = None,
         pose: "Pose" = None,
         ray: "Ray" = None,
         rfid: "Rfid" = None,
         rfidtag: "Rfidtag" = None,
         sonar: "Sonar" = None,
-        topic: "Topic" = None,
+        topic: "Sensor.Topic" = None,
         transceiver: "Transceiver" = None,
         type: str = "__default__",
         update_rate: float = 0,
         visualize: bool = False
     ):
-        self.__version__ = sdf_version
+        super().__init__(sdf_version)
         self.air_pressure = air_pressure
         self.air_speed = air_speed
         self.altimeter = altimeter
@@ -576,7 +672,7 @@ class Sensor(BaseModel):
         return el
 
     @classmethod
-    def _from_sdf(cls, el: ET.Element, version: str):
+    def _from_sdf(cls, el: ET.Element, version: str) -> "Sensor | SDFError":
         from ..elements.air_pressure import AirPressure
         from ..elements.air_speed import AirSpeed
         from ..elements.altimeter import Altimeter
@@ -648,7 +744,7 @@ class Sensor(BaseModel):
             _contact = None
         _c_enable_metrics = el.find("enable_metrics")
         if _c_enable_metrics is not None:
-            _res = EnableMetrics._from_sdf(_c_enable_metrics, version)
+            _res = cls.EnableMetrics._from_sdf(_c_enable_metrics, version)
             if isinstance(_res, SDFError):
                 return _res.extend("enable_metrics")
             _enable_metrics = _res
@@ -668,7 +764,7 @@ class Sensor(BaseModel):
             return SDFError(f"'force_torque' is not supported in SDF version {version} (added in 1.4)")
         _c_frame_id = el.find("frame_id")
         if _c_frame_id is not None:
-            _res = FrameId._from_sdf(_c_frame_id, version)
+            _res = cls.FrameId._from_sdf(_c_frame_id, version)
             if isinstance(_res, SDFError):
                 return _res.extend("frame_id")
             _frame_id = _res
@@ -749,7 +845,7 @@ class Sensor(BaseModel):
             return SDFError(f"'navsat' is not supported in SDF version {version} (added in 1.7)")
         _c_origin = el.find("origin")
         if _c_origin is not None:
-            _res = Origin._from_sdf(_c_origin, version)
+            _res = cls.Origin._from_sdf(_c_origin, version)
             if isinstance(_res, SDFError):
                 return _res.extend("origin")
             _origin = _res
@@ -807,7 +903,7 @@ class Sensor(BaseModel):
             return SDFError(f"'sonar' is not supported in SDF version {version} (added in 1.4)")
         _c_topic = el.find("topic")
         if _c_topic is not None:
-            _res = Topic._from_sdf(_c_topic, version)
+            _res = cls.Topic._from_sdf(_c_topic, version)
             if isinstance(_res, SDFError):
                 return _res.extend("topic")
             _topic = _res
@@ -833,106 +929,3 @@ class Sensor(BaseModel):
         if isinstance(_visualize, SDFError):
             return _visualize.extend("@visualize")
         return cls(sdf_version=version, air_pressure=_air_pressure, air_speed=_air_speed, altimeter=_altimeter, always_on=_always_on, camera=_camera, contact=_contact, enable_metrics=_enable_metrics, force_torque=_force_torque, frame_id=_frame_id, frames=_frames, gps=_gps, imu=_imu, lidar=_lidar, logical_camera=_logical_camera, magnetometer=_magnetometer, name=_name, navsat=_navsat, origin=_origin, plugins=_plugins, pose=_pose, ray=_ray, rfid=_rfid, rfidtag=_rfidtag, sonar=_sonar, topic=_topic, transceiver=_transceiver, type=_type, update_rate=_update_rate, visualize=_visualize)
-
-
-class Topic(BaseModel):
-    def __init__(self, sdf_version: str | None = None, topic: str = "__default"):
-        self.__version__ = sdf_version
-        self.topic = topic
-
-    def to_version(self, target_version: str) -> "Topic":
-        kwargs = {"sdf_version": target_version}
-        kwargs["topic"] = self.topic
-        new_obj = self.__class__(**kwargs)
-        return new_obj
-
-    def to_sdf(self, version: str | None = None) -> ET.Element:
-        if self.__version__ is None and version is not None:
-            self.__version__ = version
-        elif version is not None and version != self.__version__:
-            return self.to_version(version).to_sdf()
-        version = self.__version__ or version
-        el = ET.Element("topic")
-        if self.topic is not None:
-            el.text = self.topic
-        return el
-
-    @classmethod
-    def _from_sdf(cls, el: ET.Element, version: str):
-        _text = el.text or "__default"
-        _topic = _text
-        if isinstance(_topic, SDFError):
-            return _topic
-        return cls(sdf_version=version, topic=_topic)
-
-
-class UpdateRate(BaseModel):
-    def __init__(self, sdf_version: str | None = None, update_rate: float = 0):
-        self.__version__ = sdf_version
-        self.update_rate = update_rate
-
-    def to_version(self, target_version: str) -> "UpdateRate":
-        if self.update_rate is not None and cmp_version(target_version, "1.2") < 0:
-            raise ValueError(f"'update_rate' is not supported in SDF version {target_version} (added in 1.2)")
-        kwargs = {"sdf_version": target_version}
-        kwargs["update_rate"] = self.update_rate
-        new_obj = self.__class__(**kwargs)
-        return new_obj
-
-    def to_sdf(self, version: str | None = None) -> ET.Element:
-        if self.__version__ is None and version is not None:
-            self.__version__ = version
-        elif version is not None and version != self.__version__:
-            return self.to_version(version).to_sdf()
-        version = self.__version__ or version
-        el = ET.Element("update_rate")
-        if self.update_rate is not None:
-            el.text = str(self.update_rate)
-        return el
-
-    @classmethod
-    def _from_sdf(cls, el: ET.Element, version: str):
-        _text = el.text or 0
-        _update_rate = _parse_double(_text)
-        if isinstance(_update_rate, SDFError):
-            return _update_rate
-        if _update_rate is not None and cmp_version(version, "1.2") < 0:
-            if _update_rate != 0:
-                return SDFError(f"'update_rate' is not supported in SDF version {version} (added in 1.2)")
-        return cls(sdf_version=version, update_rate=_update_rate)
-
-
-class Visualize(BaseModel):
-    def __init__(self, sdf_version: str | None = None, visualize: bool = False):
-        self.__version__ = sdf_version
-        self.visualize = visualize
-
-    def to_version(self, target_version: str) -> "Visualize":
-        if self.visualize is not None and cmp_version(target_version, "1.2") < 0:
-            raise ValueError(f"'visualize' is not supported in SDF version {target_version} (added in 1.2)")
-        kwargs = {"sdf_version": target_version}
-        kwargs["visualize"] = self.visualize
-        new_obj = self.__class__(**kwargs)
-        return new_obj
-
-    def to_sdf(self, version: str | None = None) -> ET.Element:
-        if self.__version__ is None and version is not None:
-            self.__version__ = version
-        elif version is not None and version != self.__version__:
-            return self.to_version(version).to_sdf()
-        version = self.__version__ or version
-        el = ET.Element("visualize")
-        if self.visualize is not None:
-            el.text = str(self.visualize).lower()
-        return el
-
-    @classmethod
-    def _from_sdf(cls, el: ET.Element, version: str):
-        _text = el.text or False
-        _visualize = str(_text).strip().lower() == 'true'
-        if isinstance(_visualize, SDFError):
-            return _visualize
-        if _visualize is not None and cmp_version(version, "1.2") < 0:
-            if _visualize != False:
-                return SDFError(f"'visualize' is not supported in SDF version {version} (added in 1.2)")
-        return cls(sdf_version=version, visualize=_visualize)

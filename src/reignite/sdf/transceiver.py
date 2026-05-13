@@ -41,236 +41,229 @@ def _parse_double(raw: str) -> float | SDFError:
 
 
 
-class Essid(BaseModel):
-    def __init__(self, sdf_version: str | None = None, essid: str = "wireless"):
-        self.__version__ = sdf_version
-        self.essid = essid
-
-    def to_version(self, target_version: str) -> "Essid":
-        kwargs = {"sdf_version": target_version}
-        kwargs["essid"] = self.essid
-        new_obj = self.__class__(**kwargs)
-        return new_obj
-
-    def to_sdf(self, version: str | None = None) -> ET.Element:
-        if self.__version__ is None and version is not None:
-            self.__version__ = version
-        elif version is not None and version != self.__version__:
-            return self.to_version(version).to_sdf()
-        version = self.__version__ or version
-        el = ET.Element("essid")
-        if self.essid is not None:
-            el.text = self.essid
-        return el
-
-    @classmethod
-    def _from_sdf(cls, el: ET.Element, version: str):
-        _text = el.text or "wireless"
-        _essid = _text
-        if isinstance(_essid, SDFError):
-            return _essid
-        return cls(sdf_version=version, essid=_essid)
-
-
-class Frequency(BaseModel):
-    def __init__(self, sdf_version: str | None = None, frequency: float = 2442):
-        self.__version__ = sdf_version
-        self.frequency = frequency
-
-    def to_version(self, target_version: str) -> "Frequency":
-        kwargs = {"sdf_version": target_version}
-        kwargs["frequency"] = self.frequency
-        new_obj = self.__class__(**kwargs)
-        return new_obj
-
-    def to_sdf(self, version: str | None = None) -> ET.Element:
-        if self.__version__ is None and version is not None:
-            self.__version__ = version
-        elif version is not None and version != self.__version__:
-            return self.to_version(version).to_sdf()
-        version = self.__version__ or version
-        el = ET.Element("frequency")
-        if self.frequency is not None:
-            el.text = str(self.frequency)
-        return el
-
-    @classmethod
-    def _from_sdf(cls, el: ET.Element, version: str):
-        _text = el.text or 2442
-        _frequency = _parse_double(_text)
-        if isinstance(_frequency, SDFError):
-            return _frequency
-        return cls(sdf_version=version, frequency=_frequency)
-
-
-class Gain(BaseModel):
-    def __init__(self, sdf_version: str | None = None, gain: float = 2.5):
-        self.__version__ = sdf_version
-        self.gain = gain
-
-    def to_version(self, target_version: str) -> "Gain":
-        kwargs = {"sdf_version": target_version}
-        kwargs["gain"] = self.gain
-        new_obj = self.__class__(**kwargs)
-        return new_obj
-
-    def to_sdf(self, version: str | None = None) -> ET.Element:
-        if self.__version__ is None and version is not None:
-            self.__version__ = version
-        elif version is not None and version != self.__version__:
-            return self.to_version(version).to_sdf()
-        version = self.__version__ or version
-        el = ET.Element("gain")
-        if self.gain is not None:
-            el.text = str(self.gain)
-        return el
-
-    @classmethod
-    def _from_sdf(cls, el: ET.Element, version: str):
-        _text = el.text or 2.5
-        _gain = _parse_double(_text)
-        if isinstance(_gain, SDFError):
-            return _gain
-        return cls(sdf_version=version, gain=_gain)
-
-
-class MaxFrequency(BaseModel):
-    def __init__(self, sdf_version: str | None = None, max_frequency: float = 2484):
-        self.__version__ = sdf_version
-        self.max_frequency = max_frequency
-
-    def to_version(self, target_version: str) -> "MaxFrequency":
-        kwargs = {"sdf_version": target_version}
-        kwargs["max_frequency"] = self.max_frequency
-        new_obj = self.__class__(**kwargs)
-        return new_obj
-
-    def to_sdf(self, version: str | None = None) -> ET.Element:
-        if self.__version__ is None and version is not None:
-            self.__version__ = version
-        elif version is not None and version != self.__version__:
-            return self.to_version(version).to_sdf()
-        version = self.__version__ or version
-        el = ET.Element("max_frequency")
-        if self.max_frequency is not None:
-            el.text = str(self.max_frequency)
-        return el
-
-    @classmethod
-    def _from_sdf(cls, el: ET.Element, version: str):
-        _text = el.text or 2484
-        _max_frequency = _parse_double(_text)
-        if isinstance(_max_frequency, SDFError):
-            return _max_frequency
-        return cls(sdf_version=version, max_frequency=_max_frequency)
-
-
-class MinFrequency(BaseModel):
-    def __init__(self, sdf_version: str | None = None, min_frequency: float = 2412):
-        self.__version__ = sdf_version
-        self.min_frequency = min_frequency
-
-    def to_version(self, target_version: str) -> "MinFrequency":
-        kwargs = {"sdf_version": target_version}
-        kwargs["min_frequency"] = self.min_frequency
-        new_obj = self.__class__(**kwargs)
-        return new_obj
-
-    def to_sdf(self, version: str | None = None) -> ET.Element:
-        if self.__version__ is None and version is not None:
-            self.__version__ = version
-        elif version is not None and version != self.__version__:
-            return self.to_version(version).to_sdf()
-        version = self.__version__ or version
-        el = ET.Element("min_frequency")
-        if self.min_frequency is not None:
-            el.text = str(self.min_frequency)
-        return el
-
-    @classmethod
-    def _from_sdf(cls, el: ET.Element, version: str):
-        _text = el.text or 2412
-        _min_frequency = _parse_double(_text)
-        if isinstance(_min_frequency, SDFError):
-            return _min_frequency
-        return cls(sdf_version=version, min_frequency=_min_frequency)
-
-
-class Power(BaseModel):
-    def __init__(self, sdf_version: str | None = None, power: float = 14.50):
-        self.__version__ = sdf_version
-        self.power = power
-
-    def to_version(self, target_version: str) -> "Power":
-        kwargs = {"sdf_version": target_version}
-        kwargs["power"] = self.power
-        new_obj = self.__class__(**kwargs)
-        return new_obj
-
-    def to_sdf(self, version: str | None = None) -> ET.Element:
-        if self.__version__ is None and version is not None:
-            self.__version__ = version
-        elif version is not None and version != self.__version__:
-            return self.to_version(version).to_sdf()
-        version = self.__version__ or version
-        el = ET.Element("power")
-        if self.power is not None:
-            el.text = str(self.power)
-        return el
-
-    @classmethod
-    def _from_sdf(cls, el: ET.Element, version: str):
-        _text = el.text or 14.50
-        _power = _parse_double(_text)
-        if isinstance(_power, SDFError):
-            return _power
-        return cls(sdf_version=version, power=_power)
-
-
-class Sensitivity(BaseModel):
-    def __init__(self, sdf_version: str | None = None, sensitivity: float = -90):
-        self.__version__ = sdf_version
-        self.sensitivity = sensitivity
-
-    def to_version(self, target_version: str) -> "Sensitivity":
-        kwargs = {"sdf_version": target_version}
-        kwargs["sensitivity"] = self.sensitivity
-        new_obj = self.__class__(**kwargs)
-        return new_obj
-
-    def to_sdf(self, version: str | None = None) -> ET.Element:
-        if self.__version__ is None and version is not None:
-            self.__version__ = version
-        elif version is not None and version != self.__version__:
-            return self.to_version(version).to_sdf()
-        version = self.__version__ or version
-        el = ET.Element("sensitivity")
-        if self.sensitivity is not None:
-            el.text = str(self.sensitivity)
-        return el
-
-    @classmethod
-    def _from_sdf(cls, el: ET.Element, version: str):
-        _text = el.text or -90
-        _sensitivity = _parse_double(_text)
-        if isinstance(_sensitivity, SDFError):
-            return _sensitivity
-        return cls(sdf_version=version, sensitivity=_sensitivity)
-
-
 class Transceiver(BaseModel):
+    class Essid(BaseModel):
+        def __init__(self, sdf_version: str | None = None, essid: str = "wireless"):
+            super().__init__(sdf_version)
+            self.essid = essid
+
+        def to_version(self, target_version: str) -> "Transceiver.Essid":
+            kwargs = {"sdf_version": target_version}
+            kwargs["essid"] = self.essid
+            new_obj = self.__class__(**kwargs)
+            return new_obj
+
+        def to_sdf(self, version: str | None = None) -> ET.Element:
+            if self.__version__ is None and version is not None:
+                self.__version__ = version
+            elif version is not None and version != self.__version__:
+                return self.to_version(version).to_sdf()
+            version = self.__version__ or version
+            el = ET.Element("essid")
+            if self.essid is not None:
+                el.text = self.essid
+            return el
+
+        @classmethod
+        def _from_sdf(cls, el: ET.Element, version: str) -> "Transceiver.Essid | SDFError":
+            _text = el.text or "wireless"
+            _essid = _text
+            if isinstance(_essid, SDFError):
+                return _essid
+            return cls(sdf_version=version, essid=_essid)
+
+    class Frequency(BaseModel):
+        def __init__(self, sdf_version: str | None = None, frequency: float = 2442):
+            super().__init__(sdf_version)
+            self.frequency = frequency
+
+        def to_version(self, target_version: str) -> "Transceiver.Frequency":
+            kwargs = {"sdf_version": target_version}
+            kwargs["frequency"] = self.frequency
+            new_obj = self.__class__(**kwargs)
+            return new_obj
+
+        def to_sdf(self, version: str | None = None) -> ET.Element:
+            if self.__version__ is None and version is not None:
+                self.__version__ = version
+            elif version is not None and version != self.__version__:
+                return self.to_version(version).to_sdf()
+            version = self.__version__ or version
+            el = ET.Element("frequency")
+            if self.frequency is not None:
+                el.text = str(self.frequency)
+            return el
+
+        @classmethod
+        def _from_sdf(cls, el: ET.Element, version: str) -> "Transceiver.Frequency | SDFError":
+            _text = el.text or 2442
+            _frequency = _parse_double(_text)
+            if isinstance(_frequency, SDFError):
+                return _frequency
+            return cls(sdf_version=version, frequency=_frequency)
+
+    class Gain(BaseModel):
+        def __init__(self, sdf_version: str | None = None, gain: float = 2.5):
+            super().__init__(sdf_version)
+            self.gain = gain
+
+        def to_version(self, target_version: str) -> "Transceiver.Gain":
+            kwargs = {"sdf_version": target_version}
+            kwargs["gain"] = self.gain
+            new_obj = self.__class__(**kwargs)
+            return new_obj
+
+        def to_sdf(self, version: str | None = None) -> ET.Element:
+            if self.__version__ is None and version is not None:
+                self.__version__ = version
+            elif version is not None and version != self.__version__:
+                return self.to_version(version).to_sdf()
+            version = self.__version__ or version
+            el = ET.Element("gain")
+            if self.gain is not None:
+                el.text = str(self.gain)
+            return el
+
+        @classmethod
+        def _from_sdf(cls, el: ET.Element, version: str) -> "Transceiver.Gain | SDFError":
+            _text = el.text or 2.5
+            _gain = _parse_double(_text)
+            if isinstance(_gain, SDFError):
+                return _gain
+            return cls(sdf_version=version, gain=_gain)
+
+    class MaxFrequency(BaseModel):
+        def __init__(self, sdf_version: str | None = None, max_frequency: float = 2484):
+            super().__init__(sdf_version)
+            self.max_frequency = max_frequency
+
+        def to_version(self, target_version: str) -> "Transceiver.MaxFrequency":
+            kwargs = {"sdf_version": target_version}
+            kwargs["max_frequency"] = self.max_frequency
+            new_obj = self.__class__(**kwargs)
+            return new_obj
+
+        def to_sdf(self, version: str | None = None) -> ET.Element:
+            if self.__version__ is None and version is not None:
+                self.__version__ = version
+            elif version is not None and version != self.__version__:
+                return self.to_version(version).to_sdf()
+            version = self.__version__ or version
+            el = ET.Element("max_frequency")
+            if self.max_frequency is not None:
+                el.text = str(self.max_frequency)
+            return el
+
+        @classmethod
+        def _from_sdf(cls, el: ET.Element, version: str) -> "Transceiver.MaxFrequency | SDFError":
+            _text = el.text or 2484
+            _max_frequency = _parse_double(_text)
+            if isinstance(_max_frequency, SDFError):
+                return _max_frequency
+            return cls(sdf_version=version, max_frequency=_max_frequency)
+
+    class MinFrequency(BaseModel):
+        def __init__(self, sdf_version: str | None = None, min_frequency: float = 2412):
+            super().__init__(sdf_version)
+            self.min_frequency = min_frequency
+
+        def to_version(self, target_version: str) -> "Transceiver.MinFrequency":
+            kwargs = {"sdf_version": target_version}
+            kwargs["min_frequency"] = self.min_frequency
+            new_obj = self.__class__(**kwargs)
+            return new_obj
+
+        def to_sdf(self, version: str | None = None) -> ET.Element:
+            if self.__version__ is None and version is not None:
+                self.__version__ = version
+            elif version is not None and version != self.__version__:
+                return self.to_version(version).to_sdf()
+            version = self.__version__ or version
+            el = ET.Element("min_frequency")
+            if self.min_frequency is not None:
+                el.text = str(self.min_frequency)
+            return el
+
+        @classmethod
+        def _from_sdf(cls, el: ET.Element, version: str) -> "Transceiver.MinFrequency | SDFError":
+            _text = el.text or 2412
+            _min_frequency = _parse_double(_text)
+            if isinstance(_min_frequency, SDFError):
+                return _min_frequency
+            return cls(sdf_version=version, min_frequency=_min_frequency)
+
+    class Power(BaseModel):
+        def __init__(self, sdf_version: str | None = None, power: float = 14.50):
+            super().__init__(sdf_version)
+            self.power = power
+
+        def to_version(self, target_version: str) -> "Transceiver.Power":
+            kwargs = {"sdf_version": target_version}
+            kwargs["power"] = self.power
+            new_obj = self.__class__(**kwargs)
+            return new_obj
+
+        def to_sdf(self, version: str | None = None) -> ET.Element:
+            if self.__version__ is None and version is not None:
+                self.__version__ = version
+            elif version is not None and version != self.__version__:
+                return self.to_version(version).to_sdf()
+            version = self.__version__ or version
+            el = ET.Element("power")
+            if self.power is not None:
+                el.text = str(self.power)
+            return el
+
+        @classmethod
+        def _from_sdf(cls, el: ET.Element, version: str) -> "Transceiver.Power | SDFError":
+            _text = el.text or 14.50
+            _power = _parse_double(_text)
+            if isinstance(_power, SDFError):
+                return _power
+            return cls(sdf_version=version, power=_power)
+
+    class Sensitivity(BaseModel):
+        def __init__(self, sdf_version: str | None = None, sensitivity: float = -90):
+            super().__init__(sdf_version)
+            self.sensitivity = sensitivity
+
+        def to_version(self, target_version: str) -> "Transceiver.Sensitivity":
+            kwargs = {"sdf_version": target_version}
+            kwargs["sensitivity"] = self.sensitivity
+            new_obj = self.__class__(**kwargs)
+            return new_obj
+
+        def to_sdf(self, version: str | None = None) -> ET.Element:
+            if self.__version__ is None and version is not None:
+                self.__version__ = version
+            elif version is not None and version != self.__version__:
+                return self.to_version(version).to_sdf()
+            version = self.__version__ or version
+            el = ET.Element("sensitivity")
+            if self.sensitivity is not None:
+                el.text = str(self.sensitivity)
+            return el
+
+        @classmethod
+        def _from_sdf(cls, el: ET.Element, version: str) -> "Transceiver.Sensitivity | SDFError":
+            _text = el.text or -90
+            _sensitivity = _parse_double(_text)
+            if isinstance(_sensitivity, SDFError):
+                return _sensitivity
+            return cls(sdf_version=version, sensitivity=_sensitivity)
+
     def __init__(
         self,
         sdf_version: str | None = None,
-        essid: "Essid" = None,
-        frequency: "Frequency" = None,
-        gain: "Gain" = None,
-        max_frequency: "MaxFrequency" = None,
-        min_frequency: "MinFrequency" = None,
-        power: "Power" = None,
-        sensitivity: "Sensitivity" = None
+        essid: "Transceiver.Essid" = None,
+        frequency: "Transceiver.Frequency" = None,
+        gain: "Transceiver.Gain" = None,
+        max_frequency: "Transceiver.MaxFrequency" = None,
+        min_frequency: "Transceiver.MinFrequency" = None,
+        power: "Transceiver.Power" = None,
+        sensitivity: "Transceiver.Sensitivity" = None
     ):
-        self.__version__ = sdf_version
+        super().__init__(sdf_version)
         self.essid = essid
         self.frequency = frequency
         self.gain = gain
@@ -350,10 +343,10 @@ class Transceiver(BaseModel):
         return el
 
     @classmethod
-    def _from_sdf(cls, el: ET.Element, version: str):
+    def _from_sdf(cls, el: ET.Element, version: str) -> "Transceiver | SDFError":
         _c_essid = el.find("essid")
         if _c_essid is not None:
-            _res = Essid._from_sdf(_c_essid, version)
+            _res = cls.Essid._from_sdf(_c_essid, version)
             if isinstance(_res, SDFError):
                 return _res.extend("essid")
             _essid = _res
@@ -361,7 +354,7 @@ class Transceiver(BaseModel):
             _essid = None
         _c_frequency = el.find("frequency")
         if _c_frequency is not None:
-            _res = Frequency._from_sdf(_c_frequency, version)
+            _res = cls.Frequency._from_sdf(_c_frequency, version)
             if isinstance(_res, SDFError):
                 return _res.extend("frequency")
             _frequency = _res
@@ -369,7 +362,7 @@ class Transceiver(BaseModel):
             _frequency = None
         _c_gain = el.find("gain")
         if _c_gain is not None:
-            _res = Gain._from_sdf(_c_gain, version)
+            _res = cls.Gain._from_sdf(_c_gain, version)
             if isinstance(_res, SDFError):
                 return _res.extend("gain")
             _gain = _res
@@ -377,7 +370,7 @@ class Transceiver(BaseModel):
             _gain = None
         _c_max_frequency = el.find("max_frequency")
         if _c_max_frequency is not None:
-            _res = MaxFrequency._from_sdf(_c_max_frequency, version)
+            _res = cls.MaxFrequency._from_sdf(_c_max_frequency, version)
             if isinstance(_res, SDFError):
                 return _res.extend("max_frequency")
             _max_frequency = _res
@@ -385,7 +378,7 @@ class Transceiver(BaseModel):
             _max_frequency = None
         _c_min_frequency = el.find("min_frequency")
         if _c_min_frequency is not None:
-            _res = MinFrequency._from_sdf(_c_min_frequency, version)
+            _res = cls.MinFrequency._from_sdf(_c_min_frequency, version)
             if isinstance(_res, SDFError):
                 return _res.extend("min_frequency")
             _min_frequency = _res
@@ -393,7 +386,7 @@ class Transceiver(BaseModel):
             _min_frequency = None
         _c_power = el.find("power")
         if _c_power is not None:
-            _res = Power._from_sdf(_c_power, version)
+            _res = cls.Power._from_sdf(_c_power, version)
             if isinstance(_res, SDFError):
                 return _res.extend("power")
             _power = _res
@@ -401,7 +394,7 @@ class Transceiver(BaseModel):
             _power = None
         _c_sensitivity = el.find("sensitivity")
         if _c_sensitivity is not None:
-            _res = Sensitivity._from_sdf(_c_sensitivity, version)
+            _res = cls.Sensitivity._from_sdf(_c_sensitivity, version)
             if isinstance(_res, SDFError):
                 return _res.extend("sensitivity")
             _sensitivity = _res

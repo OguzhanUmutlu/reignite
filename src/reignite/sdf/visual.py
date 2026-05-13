@@ -52,254 +52,247 @@ def _parse_double(raw: str) -> float | SDFError:
 
 
 
-class CastShadows(BaseModel):
-    def __init__(self, sdf_version: str | None = None, cast_shadows: bool = True):
-        self.__version__ = sdf_version
-        self.cast_shadows = cast_shadows
-
-    def to_version(self, target_version: str) -> "CastShadows":
-        if self.cast_shadows is not None and cmp_version(target_version, "1.2") < 0:
-            raise ValueError(f"'cast_shadows' is not supported in SDF version {target_version} (added in 1.2)")
-        kwargs = {"sdf_version": target_version}
-        kwargs["cast_shadows"] = self.cast_shadows
-        new_obj = self.__class__(**kwargs)
-        return new_obj
-
-    def to_sdf(self, version: str | None = None) -> ET.Element:
-        if self.__version__ is None and version is not None:
-            self.__version__ = version
-        elif version is not None and version != self.__version__:
-            return self.to_version(version).to_sdf()
-        version = self.__version__ or version
-        el = ET.Element("cast_shadows")
-        if self.cast_shadows is not None:
-            el.text = str(self.cast_shadows).lower()
-        return el
-
-    @classmethod
-    def _from_sdf(cls, el: ET.Element, version: str):
-        _text = el.text or True
-        _cast_shadows = str(_text).strip().lower() == 'true'
-        if isinstance(_cast_shadows, SDFError):
-            return _cast_shadows
-        if _cast_shadows is not None and cmp_version(version, "1.2") < 0:
-            if _cast_shadows != True:
-                return SDFError(f"'cast_shadows' is not supported in SDF version {version} (added in 1.2)")
-        return cls(sdf_version=version, cast_shadows=_cast_shadows)
-
-
-class LaserRetro(BaseModel):
-    def __init__(self, sdf_version: str | None = None, laser_retro: float = 0.0):
-        self.__version__ = sdf_version
-        self.laser_retro = laser_retro
-
-    def to_version(self, target_version: str) -> "LaserRetro":
-        if self.laser_retro is not None and cmp_version(target_version, "1.2") < 0:
-            raise ValueError(f"'laser_retro' is not supported in SDF version {target_version} (added in 1.2)")
-        kwargs = {"sdf_version": target_version}
-        kwargs["laser_retro"] = self.laser_retro
-        new_obj = self.__class__(**kwargs)
-        return new_obj
-
-    def to_sdf(self, version: str | None = None) -> ET.Element:
-        if self.__version__ is None and version is not None:
-            self.__version__ = version
-        elif version is not None and version != self.__version__:
-            return self.to_version(version).to_sdf()
-        version = self.__version__ or version
-        el = ET.Element("laser_retro")
-        if self.laser_retro is not None:
-            el.text = str(self.laser_retro)
-        return el
-
-    @classmethod
-    def _from_sdf(cls, el: ET.Element, version: str):
-        _text = el.text or 0.0
-        _laser_retro = _parse_double(_text)
-        if isinstance(_laser_retro, SDFError):
-            return _laser_retro
-        if _laser_retro is not None and cmp_version(version, "1.2") < 0:
-            if _laser_retro != 0.0:
-                return SDFError(f"'laser_retro' is not supported in SDF version {version} (added in 1.2)")
-        return cls(sdf_version=version, laser_retro=_laser_retro)
-
-
-class Layer(BaseModel):
-    def __init__(self, sdf_version: str | None = None, layer: int = 0):
-        self.__version__ = sdf_version
-        self.layer = layer
-
-    def to_version(self, target_version: str) -> "Layer":
-        kwargs = {"sdf_version": target_version}
-        kwargs["layer"] = self.layer
-        new_obj = self.__class__(**kwargs)
-        return new_obj
-
-    def to_sdf(self, version: str | None = None) -> ET.Element:
-        if self.__version__ is None and version is not None:
-            self.__version__ = version
-        elif version is not None and version != self.__version__:
-            return self.to_version(version).to_sdf()
-        version = self.__version__ or version
-        el = ET.Element("layer")
-        if self.layer is not None:
-            el.text = str(self.layer)
-        return el
-
-    @classmethod
-    def _from_sdf(cls, el: ET.Element, version: str):
-        _text = el.text or 0
-        _layer = _parse_int32(_text)
-        if isinstance(_layer, SDFError):
-            return _layer
-        return cls(sdf_version=version, layer=_layer)
-
-
-class Meta(BaseModel):
-    def __init__(self, sdf_version: str | None = None, layer: "Layer" = None):
-        self.__version__ = sdf_version
-        self.layer = layer
-        if self.layer is not None:
-            if getattr(self.layer, '__version__', None) is None:
-                self.layer.__version__ = self.__version__
-            elif getattr(self.layer, '__version__', None) != self.__version__ and self.__version__ is not None:
-                self.layer = self.layer.to_version(self.__version__)
-
-    def to_version(self, target_version: str) -> "Meta":
-        kwargs = {"sdf_version": target_version}
-        kwargs["layer"] = self.layer.to_version(target_version) if self.layer is not None else None
-        new_obj = self.__class__(**kwargs)
-        return new_obj
-
-    def to_sdf(self, version: str | None = None) -> ET.Element:
-        if self.__version__ is None and version is not None:
-            self.__version__ = version
-        elif version is not None and version != self.__version__:
-            return self.to_version(version).to_sdf()
-        version = self.__version__ or version
-        el = ET.Element("meta")
-        if self.layer is not None:
-            el.append(self.layer.to_sdf(version))
-        return el
-
-    @classmethod
-    def _from_sdf(cls, el: ET.Element, version: str):
-        _c_layer = el.find("layer")
-        if _c_layer is not None:
-            _res = Layer._from_sdf(_c_layer, version)
-            if isinstance(_res, SDFError):
-                return _res.extend("layer")
-            _layer = _res
-        else:
-            _layer = None
-        return cls(sdf_version=version, layer=_layer)
-
-
-class Origin(BaseModel):
-    def __init__(self, sdf_version: str | None = None, pose: _SDFPose = None):
-        self.__version__ = sdf_version
-        if pose is None:
-            pose = _SDFPose.from_sdf("0 0 0 0 0 0", version=sdf_version)
-        self.pose = pose
-
-    def to_version(self, target_version: str) -> "Origin":
-        kwargs = {"sdf_version": target_version}
-        kwargs["pose"] = self.pose
-        new_obj = self.__class__(**kwargs)
-        return new_obj
-
-    def to_sdf(self, version: str | None = None) -> ET.Element:
-        if self.__version__ is None and version is not None:
-            self.__version__ = version
-        elif version is not None and version != self.__version__:
-            return self.to_version(version).to_sdf()
-        version = self.__version__ or version
-        el = ET.Element("origin")
-        if self.pose is not None:
-            el.set("pose", self.pose.to_sdf(version))
-        return el
-
-    @classmethod
-    def _from_sdf(cls, el: ET.Element, version: str):
-        _pose = _SDFPose._from_sdf(el.get("pose", "0 0 0 0 0 0"), version)
-        if isinstance(_pose, SDFError):
-            return _pose.extend("@pose")
-        return cls(sdf_version=version, pose=_pose)
-
-
-class Transparency(BaseModel):
-    def __init__(self, sdf_version: str | None = None, transparency: float = 0.0):
-        self.__version__ = sdf_version
-        self.transparency = transparency
-
-    def to_version(self, target_version: str) -> "Transparency":
-        if self.transparency is not None and cmp_version(target_version, "1.2") < 0:
-            raise ValueError(f"'transparency' is not supported in SDF version {target_version} (added in 1.2)")
-        kwargs = {"sdf_version": target_version}
-        kwargs["transparency"] = self.transparency
-        new_obj = self.__class__(**kwargs)
-        return new_obj
-
-    def to_sdf(self, version: str | None = None) -> ET.Element:
-        if self.__version__ is None and version is not None:
-            self.__version__ = version
-        elif version is not None and version != self.__version__:
-            return self.to_version(version).to_sdf()
-        version = self.__version__ or version
-        el = ET.Element("transparency")
-        if self.transparency is not None:
-            el.text = str(self.transparency)
-        return el
-
-    @classmethod
-    def _from_sdf(cls, el: ET.Element, version: str):
-        _text = el.text or 0.0
-        _transparency = _parse_double(_text)
-        if isinstance(_transparency, SDFError):
-            return _transparency
-        if _transparency is not None and cmp_version(version, "1.2") < 0:
-            if _transparency != 0.0:
-                return SDFError(f"'transparency' is not supported in SDF version {version} (added in 1.2)")
-        return cls(sdf_version=version, transparency=_transparency)
-
-
-class VisibilityFlags(BaseModel):
-    def __init__(self, sdf_version: str | None = None, visibility_flags: int = 4294967295):
-        self.__version__ = sdf_version
-        self.visibility_flags = visibility_flags
-
-    def to_version(self, target_version: str) -> "VisibilityFlags":
-        if self.visibility_flags is not None and cmp_version(target_version, "1.7") < 0:
-            raise ValueError(f"'visibility_flags' is not supported in SDF version {target_version} (added in 1.7)")
-        kwargs = {"sdf_version": target_version}
-        kwargs["visibility_flags"] = self.visibility_flags
-        new_obj = self.__class__(**kwargs)
-        return new_obj
-
-    def to_sdf(self, version: str | None = None) -> ET.Element:
-        if self.__version__ is None and version is not None:
-            self.__version__ = version
-        elif version is not None and version != self.__version__:
-            return self.to_version(version).to_sdf()
-        version = self.__version__ or version
-        el = ET.Element("visibility_flags")
-        if self.visibility_flags is not None:
-            el.text = str(self.visibility_flags)
-        return el
-
-    @classmethod
-    def _from_sdf(cls, el: ET.Element, version: str):
-        _text = el.text or 4294967295
-        _visibility_flags = _parse_uint32(_text)
-        if isinstance(_visibility_flags, SDFError):
-            return _visibility_flags
-        if _visibility_flags is not None and cmp_version(version, "1.7") < 0:
-            if _visibility_flags != 4294967295:
-                return SDFError(f"'visibility_flags' is not supported in SDF version {version} (added in 1.7)")
-        return cls(sdf_version=version, visibility_flags=_visibility_flags)
-
-
 class Visual(BaseModel):
+    class CastShadows(BaseModel):
+        def __init__(self, sdf_version: str | None = None, cast_shadows: bool = True):
+            super().__init__(sdf_version)
+            self.cast_shadows = cast_shadows
+
+        def to_version(self, target_version: str) -> "Visual.CastShadows":
+            if self.cast_shadows is not None and cmp_version(target_version, "1.2") < 0:
+                raise ValueError(f"'cast_shadows' is not supported in SDF version {target_version} (added in 1.2)")
+            kwargs = {"sdf_version": target_version}
+            kwargs["cast_shadows"] = self.cast_shadows
+            new_obj = self.__class__(**kwargs)
+            return new_obj
+
+        def to_sdf(self, version: str | None = None) -> ET.Element:
+            if self.__version__ is None and version is not None:
+                self.__version__ = version
+            elif version is not None and version != self.__version__:
+                return self.to_version(version).to_sdf()
+            version = self.__version__ or version
+            el = ET.Element("cast_shadows")
+            if self.cast_shadows is not None:
+                el.text = str(self.cast_shadows).lower()
+            return el
+
+        @classmethod
+        def _from_sdf(cls, el: ET.Element, version: str) -> "Visual.CastShadows | SDFError":
+            _text = el.text or True
+            _cast_shadows = str(_text).strip().lower() == 'true'
+            if isinstance(_cast_shadows, SDFError):
+                return _cast_shadows
+            if _cast_shadows is not None and cmp_version(version, "1.2") < 0:
+                if _cast_shadows != True:
+                    return SDFError(f"'cast_shadows' is not supported in SDF version {version} (added in 1.2)")
+            return cls(sdf_version=version, cast_shadows=_cast_shadows)
+
+    class LaserRetro(BaseModel):
+        def __init__(self, sdf_version: str | None = None, laser_retro: float = 0.0):
+            super().__init__(sdf_version)
+            self.laser_retro = laser_retro
+
+        def to_version(self, target_version: str) -> "Visual.LaserRetro":
+            if self.laser_retro is not None and cmp_version(target_version, "1.2") < 0:
+                raise ValueError(f"'laser_retro' is not supported in SDF version {target_version} (added in 1.2)")
+            kwargs = {"sdf_version": target_version}
+            kwargs["laser_retro"] = self.laser_retro
+            new_obj = self.__class__(**kwargs)
+            return new_obj
+
+        def to_sdf(self, version: str | None = None) -> ET.Element:
+            if self.__version__ is None and version is not None:
+                self.__version__ = version
+            elif version is not None and version != self.__version__:
+                return self.to_version(version).to_sdf()
+            version = self.__version__ or version
+            el = ET.Element("laser_retro")
+            if self.laser_retro is not None:
+                el.text = str(self.laser_retro)
+            return el
+
+        @classmethod
+        def _from_sdf(cls, el: ET.Element, version: str) -> "Visual.LaserRetro | SDFError":
+            _text = el.text or 0.0
+            _laser_retro = _parse_double(_text)
+            if isinstance(_laser_retro, SDFError):
+                return _laser_retro
+            if _laser_retro is not None and cmp_version(version, "1.2") < 0:
+                if _laser_retro != 0.0:
+                    return SDFError(f"'laser_retro' is not supported in SDF version {version} (added in 1.2)")
+            return cls(sdf_version=version, laser_retro=_laser_retro)
+
+    class Meta(BaseModel):
+        class Layer(BaseModel):
+            def __init__(self, sdf_version: str | None = None, layer: int = 0):
+                super().__init__(sdf_version)
+                self.layer = layer
+
+            def to_version(self, target_version: str) -> "Visual.Meta.Layer":
+                kwargs = {"sdf_version": target_version}
+                kwargs["layer"] = self.layer
+                new_obj = self.__class__(**kwargs)
+                return new_obj
+
+            def to_sdf(self, version: str | None = None) -> ET.Element:
+                if self.__version__ is None and version is not None:
+                    self.__version__ = version
+                elif version is not None and version != self.__version__:
+                    return self.to_version(version).to_sdf()
+                version = self.__version__ or version
+                el = ET.Element("layer")
+                if self.layer is not None:
+                    el.text = str(self.layer)
+                return el
+
+            @classmethod
+            def _from_sdf(cls, el: ET.Element, version: str) -> "Visual.Meta.Layer | SDFError":
+                _text = el.text or 0
+                _layer = _parse_int32(_text)
+                if isinstance(_layer, SDFError):
+                    return _layer
+                return cls(sdf_version=version, layer=_layer)
+
+        def __init__(self, sdf_version: str | None = None, layer: "Visual.Meta.Layer" = None):
+            super().__init__(sdf_version)
+            self.layer = layer
+            if self.layer is not None:
+                if getattr(self.layer, '__version__', None) is None:
+                    self.layer.__version__ = self.__version__
+                elif getattr(self.layer, '__version__', None) != self.__version__ and self.__version__ is not None:
+                    self.layer = self.layer.to_version(self.__version__)
+
+        def to_version(self, target_version: str) -> "Visual.Meta":
+            kwargs = {"sdf_version": target_version}
+            kwargs["layer"] = self.layer.to_version(target_version) if self.layer is not None else None
+            new_obj = self.__class__(**kwargs)
+            return new_obj
+
+        def to_sdf(self, version: str | None = None) -> ET.Element:
+            if self.__version__ is None and version is not None:
+                self.__version__ = version
+            elif version is not None and version != self.__version__:
+                return self.to_version(version).to_sdf()
+            version = self.__version__ or version
+            el = ET.Element("meta")
+            if self.layer is not None:
+                el.append(self.layer.to_sdf(version))
+            return el
+
+        @classmethod
+        def _from_sdf(cls, el: ET.Element, version: str) -> "Visual.Meta | SDFError":
+            _c_layer = el.find("layer")
+            if _c_layer is not None:
+                _res = cls.Layer._from_sdf(_c_layer, version)
+                if isinstance(_res, SDFError):
+                    return _res.extend("layer")
+                _layer = _res
+            else:
+                _layer = None
+            return cls(sdf_version=version, layer=_layer)
+
+    class Origin(BaseModel):
+        def __init__(self, sdf_version: str | None = None, pose: _SDFPose = None):
+            super().__init__(sdf_version)
+            if pose is None:
+                pose = _SDFPose.from_sdf("0 0 0 0 0 0", version=sdf_version)
+            self.pose = pose
+
+        def to_version(self, target_version: str) -> "Visual.Origin":
+            kwargs = {"sdf_version": target_version}
+            kwargs["pose"] = self.pose
+            new_obj = self.__class__(**kwargs)
+            return new_obj
+
+        def to_sdf(self, version: str | None = None) -> ET.Element:
+            if self.__version__ is None and version is not None:
+                self.__version__ = version
+            elif version is not None and version != self.__version__:
+                return self.to_version(version).to_sdf()
+            version = self.__version__ or version
+            el = ET.Element("origin")
+            if self.pose is not None:
+                el.set("pose", self.pose.to_sdf(version))
+            return el
+
+        @classmethod
+        def _from_sdf(cls, el: ET.Element, version: str) -> "Visual.Origin | SDFError":
+            _pose = _SDFPose._from_sdf(el.get("pose", "0 0 0 0 0 0"), version)
+            if isinstance(_pose, SDFError):
+                return _pose.extend("@pose")
+            return cls(sdf_version=version, pose=_pose)
+
+    class Transparency(BaseModel):
+        def __init__(self, sdf_version: str | None = None, transparency: float = 0.0):
+            super().__init__(sdf_version)
+            self.transparency = transparency
+
+        def to_version(self, target_version: str) -> "Visual.Transparency":
+            if self.transparency is not None and cmp_version(target_version, "1.2") < 0:
+                raise ValueError(f"'transparency' is not supported in SDF version {target_version} (added in 1.2)")
+            kwargs = {"sdf_version": target_version}
+            kwargs["transparency"] = self.transparency
+            new_obj = self.__class__(**kwargs)
+            return new_obj
+
+        def to_sdf(self, version: str | None = None) -> ET.Element:
+            if self.__version__ is None and version is not None:
+                self.__version__ = version
+            elif version is not None and version != self.__version__:
+                return self.to_version(version).to_sdf()
+            version = self.__version__ or version
+            el = ET.Element("transparency")
+            if self.transparency is not None:
+                el.text = str(self.transparency)
+            return el
+
+        @classmethod
+        def _from_sdf(cls, el: ET.Element, version: str) -> "Visual.Transparency | SDFError":
+            _text = el.text or 0.0
+            _transparency = _parse_double(_text)
+            if isinstance(_transparency, SDFError):
+                return _transparency
+            if _transparency is not None and cmp_version(version, "1.2") < 0:
+                if _transparency != 0.0:
+                    return SDFError(f"'transparency' is not supported in SDF version {version} (added in 1.2)")
+            return cls(sdf_version=version, transparency=_transparency)
+
+    class VisibilityFlags(BaseModel):
+        def __init__(self, sdf_version: str | None = None, visibility_flags: int = 4294967295):
+            super().__init__(sdf_version)
+            self.visibility_flags = visibility_flags
+
+        def to_version(self, target_version: str) -> "Visual.VisibilityFlags":
+            if self.visibility_flags is not None and cmp_version(target_version, "1.7") < 0:
+                raise ValueError(f"'visibility_flags' is not supported in SDF version {target_version} (added in 1.7)")
+            kwargs = {"sdf_version": target_version}
+            kwargs["visibility_flags"] = self.visibility_flags
+            new_obj = self.__class__(**kwargs)
+            return new_obj
+
+        def to_sdf(self, version: str | None = None) -> ET.Element:
+            if self.__version__ is None and version is not None:
+                self.__version__ = version
+            elif version is not None and version != self.__version__:
+                return self.to_version(version).to_sdf()
+            version = self.__version__ or version
+            el = ET.Element("visibility_flags")
+            if self.visibility_flags is not None:
+                el.text = str(self.visibility_flags)
+            return el
+
+        @classmethod
+        def _from_sdf(cls, el: ET.Element, version: str) -> "Visual.VisibilityFlags | SDFError":
+            _text = el.text or 4294967295
+            _visibility_flags = _parse_uint32(_text)
+            if isinstance(_visibility_flags, SDFError):
+                return _visibility_flags
+            if _visibility_flags is not None and cmp_version(version, "1.7") < 0:
+                if _visibility_flags != 4294967295:
+                    return SDFError(f"'visibility_flags' is not supported in SDF version {version} (added in 1.7)")
+            return cls(sdf_version=version, visibility_flags=_visibility_flags)
+
     def __init__(
         self,
         sdf_version: str | None = None,
@@ -308,15 +301,15 @@ class Visual(BaseModel):
         geometry: "Geometry" = None,
         laser_retro: float = 0.0,
         material: "Material" = None,
-        meta: "Meta" = None,
+        meta: "Visual.Meta" = None,
         name: str = "__default__",
-        origin: "Origin" = None,
+        origin: "Visual.Origin" = None,
         plugins: List["Plugin"] = None,
         pose: "Pose" = None,
         transparency: float = 0.0,
-        visibility_flags: "VisibilityFlags" = None
+        visibility_flags: "Visual.VisibilityFlags" = None
     ):
-        self.__version__ = sdf_version
+        super().__init__(sdf_version)
         self.cast_shadows = cast_shadows
         self.frames = frames or []
         self.geometry = geometry
@@ -453,7 +446,7 @@ class Visual(BaseModel):
         return el
 
     @classmethod
-    def _from_sdf(cls, el: ET.Element, version: str):
+    def _from_sdf(cls, el: ET.Element, version: str) -> "Visual | SDFError":
         from ..elements.frame import Frame
         from ..elements.geometry import Geometry
         from ..elements.material import Material
@@ -494,7 +487,7 @@ class Visual(BaseModel):
             _material = None
         _c_meta = el.find("meta")
         if _c_meta is not None:
-            _res = Meta._from_sdf(_c_meta, version)
+            _res = cls.Meta._from_sdf(_c_meta, version)
             if isinstance(_res, SDFError):
                 return _res.extend("meta")
             _meta = _res
@@ -507,7 +500,7 @@ class Visual(BaseModel):
             return _name.extend("@name")
         _c_origin = el.find("origin")
         if _c_origin is not None:
-            _res = Origin._from_sdf(_c_origin, version)
+            _res = cls.Origin._from_sdf(_c_origin, version)
             if isinstance(_res, SDFError):
                 return _res.extend("origin")
             _origin = _res
@@ -536,7 +529,7 @@ class Visual(BaseModel):
             return _transparency.extend("@transparency")
         _c_visibility_flags = el.find("visibility_flags")
         if _c_visibility_flags is not None:
-            _res = VisibilityFlags._from_sdf(_c_visibility_flags, version)
+            _res = cls.VisibilityFlags._from_sdf(_c_visibility_flags, version)
             if isinstance(_res, SDFError):
                 return _res.extend("visibility_flags")
             _visibility_flags = _res

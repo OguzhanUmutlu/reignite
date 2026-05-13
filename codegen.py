@@ -456,35 +456,32 @@ def get_node_hash(node: dict) -> str:
     return hashlib.md5(s.encode("utf-8")).hexdigest()
 
 
-def _collect_classes(
+def _collect_class_spec(
         name: str,
         node: dict,
-        class_specs: list[dict],
         defined: dict[str, str],
         all_convert_ops: dict[str, list[dict]],
         parent_name: str = None,
-        external_imports: set[str] = None
-) -> str:
+        external_imports: set[str] = None,
+) -> dict:
     if external_imports is None:
         external_imports = set()
+
     base_class_name = _to_classname(name)
     class_name = base_class_name
     node_hash = get_node_hash(node)
 
     if class_name in defined:
         if defined[class_name] == node_hash:
-            return class_name
-
+            return {"class_name": class_name, "_reuse": True, "element_name": name}
         if parent_name:
             class_name = _to_classname(parent_name) + base_class_name
         else:
             class_name = base_class_name + "2"
-
         if class_name in defined and defined[class_name] != node_hash:
             class_name = class_name + "2"
-
         if class_name in defined and defined[class_name] == node_hash:
-            return class_name
+            return {"class_name": class_name, "_reuse": True, "element_name": name}
 
     defined[class_name] = node_hash
 
@@ -500,34 +497,42 @@ def _collect_classes(
     child_items = {k: v for k, v in node.items()
                    if not k.startswith("_") and isinstance(v, dict)}
 
+    child_specs: list[dict] = []
     child_class_names: dict[str, str] = {}
-    for cname, cnode in child_items.items():
+
+    for cname, cnode in sorted(child_items.items()):
         if cnode.get("_is_include"):
             child_cls = _to_classname(cname)
             external_imports.add(cname)
+            child_class_names[cname] = child_cls
         else:
-            child_cls = _collect_classes(cname, cnode, class_specs, defined, all_convert_ops,
-                                         parent_name=name, external_imports=external_imports)
-        child_class_names[cname] = child_cls
+            child_spec = _collect_class_spec(
+                cname, cnode, defined, all_convert_ops,
+                parent_name=name, external_imports=external_imports,
+            )
+            child_class_names[cname] = child_spec["class_name"]
+            if not child_spec.get("_reuse"):
+                child_specs.append(child_spec)
+
+    child_specs.sort(key=lambda s: s["class_name"])
 
     params: list[tuple] = []
     type_imports: dict[str, str] = {}
     needs_int_helpers = False
     needs_float_helpers = False
-    seen_py_names = set()
+    seen_py_names: set[str] = set()
 
     for aname, ameta in (node.get("_attributes") or {}).items():
         py_name = aname.replace("-", "_")
-        if py_name in seen_py_names: continue
+        if py_name in seen_py_names:
+            continue
         seen_py_names.add(py_name)
         added_in = ameta.get("_added_in")
-
         removed_in = ameta.get("_removed_in")
         for op in applicable_ops:
             if op.get("type") == "remove" and op.get("attribute") == aname:
                 if not removed_in or cmp_version(op["_version"], removed_in) < 0:
                     removed_in = op["_version"]
-
         ameta["_removed_in"] = removed_in
         hint, default, to_expr, from_expr, mod = resolve_type(ameta.get("type"))
         raw_default = default
@@ -553,42 +558,34 @@ def _collect_classes(
                     renames[op["_version"]] = {"kind": "leaf", "name": op["to_element"]}
                 elif op.get("to_attribute"):
                     renames[op["_version"]] = {"kind": "attr", "name": op["to_attribute"]}
-
         required_history = ameta.get("_required_history", {})
         effective_req = _effective_required(ameta.get("required", "0"), required_history)
         is_required = effective_req == "1"
         if is_required and ameta.get("default", "") != "":
             is_required = False
-
         params.append((
             py_name, hint, default, raw_default, to_expr, from_expr,
-            ameta.get("description", ""), False, "attr", aname, init_default_expr, renames, added_in,
-            removed_in, is_required, required_history
+            ameta.get("description", ""), False, "attr", aname,
+            init_default_expr, renames, added_in, removed_in, is_required, required_history,
         ))
 
     for cname, cnode in child_items.items():
         py_name = cname.replace("-", "_")
-
         required = cnode.get("_required", "0")
         is_list = required in ("*", "+")
-
         if is_list and not py_name.endswith("s"):
             py_name += "s"
-
-        if py_name in seen_py_names: continue
+        if py_name in seen_py_names:
+            continue
         seen_py_names.add(py_name)
         added_in = cnode.get("_added_in")
-
         removed_in = cnode.get("_removed_in")
         for op in applicable_ops:
             if op.get("type") == "remove" and op.get("element") == cname:
                 if not removed_in or cmp_version(op["_version"], removed_in) < 0:
                     removed_in = op["_version"]
-
         cnode["_removed_in"] = removed_in
-
         child_cls = child_class_names.get(cname, _to_classname(cname))
-
         hint = f'List["{child_cls}"]' if is_list else f'"{child_cls}"'
         default = "None"
         desc = cnode.get("_description", "")
@@ -599,16 +596,14 @@ def _collect_classes(
                     renames[op["_version"]] = {"kind": "child", "name": op["to_element"]}
                 elif op.get("to_attribute"):
                     renames[op["_version"]] = {"kind": "attr", "name": op["to_attribute"]}
-
         required_history = cnode.get("_required_history", {})
         effective_req = _effective_required(required, required_history)
         is_required = effective_req == "1" or effective_req == "+"
         if is_required and cnode.get("_default", "") != "":
             is_required = False
-
         params.append((
             py_name, hint, default, default, "", "", desc,
-            is_list, "child", cname, None, renames, added_in, removed_in, is_required, required_history
+            is_list, "child", cname, None, renames, added_in, removed_in, is_required, required_history,
         ))
 
     if node.get("_type") and not child_items:
@@ -640,26 +635,23 @@ def _collect_classes(
                         renames[op["_version"]] = {"kind": "leaf", "name": op["to_element"]}
                     elif op.get("to_attribute"):
                         renames[op["_version"]] = {"kind": "attr", "name": op["to_attribute"]}
-
             required_history = node.get("_required_history", {})
             effective_req = _effective_required(node.get("_required", "0"), required_history)
             is_required = effective_req == "1" or effective_req == "+"
             if is_required and node.get("_default", "") != "":
                 is_required = False
-
             params = [(
                 name.replace("-", "_"), hint, default, raw_default, to_expr, from_expr,
-                node.get("_description", ""), False, "leaf", name, init_default_expr, renames, added_in,
-                node.get("_removed_in"), is_required, required_history
+                node.get("_description", ""), False, "leaf", name, init_default_expr, renames,
+                added_in, node.get("_removed_in"), is_required, required_history,
             )] + params
 
-    class_migrations = {}
+    class_migrations: dict[str, list] = {}
     for op in applicable_ops:
         if op.get("type") in ("move", "copy", "map"):
             v = op["_version"]
             if v not in class_migrations:
                 class_migrations[v] = []
-
             mig_op = {"type": op["type"]}
             if op["type"] in ("move", "copy"):
                 frm = op.get("from_element", "")
@@ -675,10 +667,7 @@ def _collect_classes(
                 mig_op["to_value"] = op.get("to_value", "")
             class_migrations[v].append(mig_op)
 
-    formatted_migrations = [{"version": k, "ops": v} for k, v in class_migrations.items()]
-
-    class_specs.append({
-        "migrations": formatted_migrations,
+    return {
         "class_name": class_name,
         "element_name": name,
         "params": sorted(params, key=lambda p: p[0]),
@@ -687,16 +676,42 @@ def _collect_classes(
         "needs_float_helpers": needs_float_helpers,
         "external_imports": external_imports,
         "child_class_names": child_class_names,
-    })
+        "child_specs": child_specs,
+        "migrations": [{"version": k, "ops": v} for k, v in class_migrations.items()]
+    }
 
-    return class_name
+
+def _indent_block(lines: list[str], spaces: int) -> list[str]:
+    pad = " " * spaces
+    return [pad + line if line.strip() else line for line in lines]
 
 
-def _render_class(spec: dict, file_external_imports: set[str]) -> str:
+def _render_class(spec: dict, file_external_imports: set[str], indent: int = 0,
+                  outer_prefix: str = "") -> str:
     name = spec["element_name"]
     class_name = spec["class_name"]
     params = spec["params"]
     child_class_names = spec.get("child_class_names", {})
+    child_specs: list[dict] = spec.get("child_specs", [])
+
+    nested_child_xml_names: set[str] = {s["element_name"] for s in child_specs}
+
+    my_prefix = f"{outer_prefix}{class_name}."
+
+    def _nested_bare(xml_name: str) -> str:
+        return child_class_names.get(xml_name, _to_classname(xml_name))
+
+    def _qualified_cls(xml_name: str) -> str:
+        bare = _nested_bare(xml_name)
+        if xml_name in nested_child_xml_names:
+            return f"cls.{bare}"
+        return bare
+
+    def _qualified_self(xml_name: str) -> str:
+        bare = _nested_bare(xml_name)
+        if xml_name in nested_child_xml_names:
+            return f"self.__class__.{bare}"
+        return bare
 
     local_import_lines = []
     for p in params:
@@ -711,14 +726,38 @@ def _render_class(spec: dict, file_external_imports: set[str]) -> str:
 
     block: list[str] = [f"class {class_name}(BaseModel):"]
 
+    if child_specs:
+        for child_spec in child_specs:
+            child_src = _render_class(
+                child_spec,
+                file_external_imports,
+                indent=0,
+                outer_prefix=my_prefix,
+            )
+            nested_lines = _indent_block(child_src.splitlines(), 4)
+            block.extend(nested_lines)
+            block.append("")
+
+    def _qualified_hint(p: tuple) -> str:
+        py_name, hint, default, raw_default, to_expr, from_expr, desc, is_list, xml_kind, xml_name, *_ = p
+        if xml_kind != "child":
+            return hint
+        bare = _nested_bare(xml_name)
+        if xml_name in nested_child_xml_names:
+            full = f"{my_prefix}{bare}"
+        else:
+            full = bare
+        if is_list:
+            return f'List["{full}"]'
+        return f'"{full}"'
+
     if spec.get("migrations"):
-        import json
         migs = json.dumps(spec["migrations"])
         block.append(f"    _MIGRATIONS = {migs}")
         block.append("")
 
     init_params = ["self", "sdf_version: str | None = None"] + [
-        f"{p[0]}: {p[1]} = {p[2]}" for p in params
+        f"{p[0]}: {_qualified_hint(p)} = {p[2]}" for p in params
     ]
     sig = ", ".join(init_params)
     if len(f"    def __init__({sig}):") > 100:
@@ -727,12 +766,12 @@ def _render_class(spec: dict, file_external_imports: set[str]) -> str:
         block.append("        sdf_version: str | None = None,")
         for i, p in enumerate(params):
             comma = "," if i < len(params) - 1 else ""
-            block.append(f"        {p[0]}: {p[1]} = {p[2]}{comma}")
+            block.append(f"        {p[0]}: {_qualified_hint(p)} = {p[2]}{comma}")
         block.append("    ):")
     else:
         block.append(f"    def __init__({sig}):")
 
-    block.append("        self.__version__ = sdf_version")
+    block.append("        super().__init__(sdf_version)")
     for p in params:
         py_name = p[0]
         init_default_expr = p[10]
@@ -753,17 +792,19 @@ def _render_class(spec: dict, file_external_imports: set[str]) -> str:
                 block.append(f"        for _i, _c in enumerate(self.{py_name}):")
                 block.append(f"            if getattr(_c, '__version__', None) is None:")
                 block.append(f"                _c.__version__ = self.__version__")
-                block.append(f"            elif getattr(_c, '__version__', None) != self.__version__ and self.__version__ is not None:")
+                block.append(
+                    f"            elif getattr(_c, '__version__', None) != self.__version__ and self.__version__ is not None:")
                 block.append(f"                self.{py_name}[_i] = _c.to_version(self.__version__)")
             else:
                 block.append(f"        if self.{py_name} is not None:")
                 block.append(f"            if getattr(self.{py_name}, '__version__', None) is None:")
                 block.append(f"                self.{py_name}.__version__ = self.__version__")
-                block.append(f"            elif getattr(self.{py_name}, '__version__', None) != self.__version__ and self.__version__ is not None:")
+                block.append(
+                    f"            elif getattr(self.{py_name}, '__version__', None) != self.__version__ and self.__version__ is not None:")
                 block.append(f"                self.{py_name} = self.{py_name}.to_version(self.__version__)")
 
     block.append("")
-    block.append(f'    def to_version(self, target_version: str) -> "{class_name}":')
+    block.append(f'    def to_version(self, target_version: str) -> "{outer_prefix}{class_name}":')
     if local_import_lines:
         block.extend(local_import_lines)
     for p in params:
@@ -814,7 +855,6 @@ def _render_class(spec: dict, file_external_imports: set[str]) -> str:
                 check_conds.append(f'cmp_version(version, "{added_in}") >= 0')
             if removed_in:
                 check_conds.append(f'cmp_version(version, "{removed_in}") < 0')
-
             sorted_history = sorted(
                 required_history.items(),
                 key=lambda x: tuple(int(v) for v in x[0].split("."))
@@ -827,29 +867,25 @@ def _render_class(spec: dict, file_external_imports: set[str]) -> str:
                 elif req in ("0", "*") and required_since is not None:
                     optional_since = v
                     break
-
             if optional_since:
                 check_conds.append(f'cmp_version(version, "{optional_since}") < 0')
             elif required_since and required_since != BASE_VERSION:
                 check_conds.append(f'cmp_version(version, "{required_since}") >= 0')
-
             if check_conds:
                 cond = " and ".join(check_conds)
                 block.append(f"        if {cond}:")
-                indent = "            "
+                indent_ = "            "
             else:
-                indent = "        "
-
+                indent_ = "        "
             if is_list:
-                block.append(f"{indent}if not self.{py_name}:")
-                block.append(f'{indent}    raise ValueError(f"\'{py_name}\' is required in SDF version {{version}}")')
+                block.append(f"{indent_}if not self.{py_name}:")
+                block.append(f'{indent_}    raise ValueError(f"\'{py_name}\' is required in SDF version {{version}}")')
             elif xml_kind == "child":
-                block.append(f"{indent}if self.{py_name} is None:")
-                block.append(
-                    f'{indent}    self.{py_name} = {child_class_names.get(xml_name, _to_classname(xml_name))}(sdf_version=version)')
+                block.append(f"{indent_}if self.{py_name} is None:")
+                block.append(f'{indent_}    self.{py_name} = {_qualified_self(xml_name)}(sdf_version=version)')
             else:
-                block.append(f"{indent}if self.{py_name} is None:")
-                block.append(f'{indent}    raise ValueError(f"\'{py_name}\' is required in SDF version {{version}}")')
+                block.append(f"{indent_}if self.{py_name} is None:")
+                block.append(f'{indent_}    raise ValueError(f"\'{py_name}\' is required in SDF version {{version}}")')
 
         if xml_kind in ("attr", "leaf"):
             expr = to_expr.replace("{val}", val_ref)
@@ -897,7 +933,6 @@ def _render_class(spec: dict, file_external_imports: set[str]) -> str:
                 else:
                     block.append(f"        if self.{py_name} is not None:")
                     block.append(f"            _item_el = self.{py_name}.to_sdf(version)")
-
                 sorted_versions = sorted(renames.keys(), key=lambda v: tuple(int(x) for x in v.split(".")),
                                          reverse=True)
                 first = True
@@ -916,9 +951,7 @@ def _render_class(spec: dict, file_external_imports: set[str]) -> str:
 
     block.append("")
     block.append("    @classmethod")
-    block.append(
-        f'    def _from_sdf(cls, el: ET.Element, version: str):'
-    )
+    block.append(f'    def _from_sdf(cls, el: ET.Element, version: str) -> "{outer_prefix}{class_name} | SDFError":')
     if local_import_lines:
         block.extend(local_import_lines)
     init_args: list[str] = ["sdf_version=version"]
@@ -931,7 +964,6 @@ def _render_class(spec: dict, file_external_imports: set[str]) -> str:
                     check_conds.append(f'cmp_version(version, "{added_in}") >= 0')
                 if removed_in:
                     check_conds.append(f'cmp_version(version, "{removed_in}") < 0')
-
                 sorted_history = sorted(
                     required_history.items(),
                     key=lambda x: tuple(int(v) for v in x[0].split("."))
@@ -944,24 +976,21 @@ def _render_class(spec: dict, file_external_imports: set[str]) -> str:
                     elif req in ("0", "*") and required_since is not None:
                         optional_since = v
                         break
-
                 if optional_since:
                     check_conds.append(f'cmp_version(version, "{optional_since}") < 0')
                 elif required_since and required_since != BASE_VERSION:
                     check_conds.append(f'cmp_version(version, "{required_since}") >= 0')
-
                 if check_conds:
                     cond = " and ".join(check_conds)
                     block.append(f"        if {cond}:")
-                    indent = "            "
+                    indent_ = "            "
                 else:
-                    indent = "        "
-
+                    indent_ = "        "
                 if xml_kind == "attr":
-                    block.append(f'{indent}if el.get("{xml_name}") is None:')
+                    block.append(f'{indent_}if el.get("{xml_name}") is None:')
                 else:
-                    block.append(f'{indent}if el.text is None:')
-                block.append(f'{indent}    return SDFError(f"\'{py_name}\' is required in SDF version {{version}}")')
+                    block.append(f'{indent_}if el.text is None:')
+                block.append(f'{indent_}    return SDFError(f"\'{py_name}\' is required in SDF version {{version}}")')
 
             if not renames:
                 if xml_kind == "attr":
@@ -988,20 +1017,17 @@ def _render_class(spec: dict, file_external_imports: set[str]) -> str:
                         first = False
                     else:
                         block.append(f'        elif cmp_version(version, "{v}") >= 0:')
-
                     if loc["kind"] == "attr":
                         block.append(f'            _raw_{py_name} = el.get("{loc["name"]}")')
                     else:
                         block.append(f'            _c_tmp = el.find("{loc["name"]}")')
                         block.append(f'            if _c_tmp is not None: _raw_{py_name} = _c_tmp.text')
-
                 block.append(f'        else:')
                 if xml_kind == "attr":
                     block.append(f'            _raw_{py_name} = el.get("{xml_name}")')
                 else:
                     block.append(f'            _c_tmp = el.find("{xml_name}")')
                     block.append(f'            if _c_tmp is not None: _raw_{py_name} = _c_tmp.text')
-
                 block.append(f'        if _raw_{py_name} is None: _raw_{py_name} = {raw_default}')
                 val_expr = from_expr.replace("{raw}", f"_raw_{py_name}")
                 block.append(f"        _{py_name} = {val_expr}")
@@ -1012,7 +1038,7 @@ def _render_class(spec: dict, file_external_imports: set[str]) -> str:
                     block.append(f'            return _{py_name}')
 
         elif xml_kind == "child":
-            child_cls = child_class_names.get(xml_name, _to_classname(xml_name))
+            child_cls = _qualified_cls(xml_name)
             if not renames:
                 if is_list:
                     block.append(f'        _{py_name} = []')
@@ -1042,7 +1068,6 @@ def _render_class(spec: dict, file_external_imports: set[str]) -> str:
                     block.append(f'        _els_{py_name} = []')
                 else:
                     block.append(f'        _c_{py_name} = None')
-
                 sorted_versions = sorted(renames.keys(), key=lambda v: tuple(int(x) for x in v.split(".")),
                                          reverse=True)
                 first = True
@@ -1053,18 +1078,15 @@ def _render_class(spec: dict, file_external_imports: set[str]) -> str:
                         first = False
                     else:
                         block.append(f'        elif cmp_version(version, "{v}") >= 0:')
-
                     if is_list:
                         block.append(f'            _els_{py_name} = el.findall("{loc["name"]}")')
                     else:
                         block.append(f'            _c_{py_name} = el.find("{loc["name"]}")')
-
                 block.append(f'        else:')
                 if is_list:
                     block.append(f'            _els_{py_name} = el.findall("{xml_name}")')
                 else:
                     block.append(f'            _c_{py_name} = el.find("{xml_name}")')
-
                 if is_list:
                     block.append(f'        _{py_name} = []')
                     block.append(f'        for c in _els_{py_name}:')
@@ -1094,7 +1116,6 @@ def _render_class(spec: dict, file_external_imports: set[str]) -> str:
                 check_conds.append(f'cmp_version(version, "{added_in}") >= 0')
             if removed_in:
                 check_conds.append(f'cmp_version(version, "{removed_in}") < 0')
-
             sorted_history = sorted(
                 required_history.items(),
                 key=lambda x: tuple(int(v) for v in x[0].split("."))
@@ -1107,21 +1128,18 @@ def _render_class(spec: dict, file_external_imports: set[str]) -> str:
                 elif req in ("0", "*") and required_since is not None:
                     optional_since = v
                     break
-
             if optional_since:
                 check_conds.append(f'cmp_version(version, "{optional_since}") < 0')
             elif required_since and required_since != BASE_VERSION:
                 check_conds.append(f'cmp_version(version, "{required_since}") >= 0')
-
             if check_conds:
                 cond = " and ".join(check_conds)
                 block.append(f"        if {cond}:")
-                indent = "            "
+                indent_ = "            "
             else:
-                indent = "        "
-
-            block.append(f"{indent}if not _{py_name}:")
-            block.append(f'{indent}    return SDFError(f"\'{py_name}\' is required in SDF version {{version}}")')
+                indent_ = "        "
+            block.append(f"{indent_}if not _{py_name}:")
+            block.append(f'{indent_}    return SDFError(f"\'{py_name}\' is required in SDF version {{version}}")')
 
         if added_in:
             if is_list:
@@ -1147,7 +1165,17 @@ def _render_class(spec: dict, file_external_imports: set[str]) -> str:
         block.append('        return cls(sdf_version=version)')
 
     block.append("")
+
+    if indent > 0:
+        block = _indent_block(block, indent)
+
     return "\n".join(block)
+
+
+def _walk_specs(spec: dict):
+    yield spec
+    for child in spec.get("child_specs", []):
+        yield from _walk_specs(child)
 
 
 def generate_element_file(
@@ -1155,24 +1183,28 @@ def generate_element_file(
         node: dict,
         convert_ops: dict[str, list[dict]],
 ) -> str:
-    class_specs: list[dict] = []
     defined: dict[str, str] = {}
     external_imports: set[str] = set()
 
-    _collect_classes(element_name, node, class_specs, defined, convert_ops, external_imports=external_imports)
+    root_spec = _collect_class_spec(
+        element_name, node, defined, convert_ops,
+        external_imports=external_imports,
+    )
 
     all_type_imports: dict[str, str] = {}
     needs_list = False
     needs_helpers = False
     needs_version_cmp = False
 
-    for spec in class_specs:
-        all_type_imports.update(spec["type_imports"])
-        if any("List[" in p[1] for p in spec["params"]):
+    for spec in _walk_specs(root_spec):
+        if spec.get("_reuse"):
+            continue
+        all_type_imports.update(spec.get("type_imports", {}))
+        if any("List[" in p[1] for p in spec.get("params", [])):
             needs_list = True
-        if spec["needs_int_helpers"] or spec["needs_float_helpers"]:
+        if spec.get("needs_int_helpers") or spec.get("needs_float_helpers"):
             needs_helpers = True
-        if any(len(p[11]) > 0 or p[12] for p in spec["params"]):
+        if any(len(p[11]) > 0 or p[12] for p in spec.get("params", [])):
             needs_version_cmp = True
 
     lines: list[str] = [
@@ -1197,7 +1229,7 @@ def generate_element_file(
     if needs_version_cmp:
         lines.append("from ..utils.version import cmp_version")
 
-    if any(s.get("migrations") for s in class_specs):
+    if any(s.get("migrations") for s in _walk_specs(root_spec) if not s.get("_reuse")):
         lines.append("from ..utils.migration import apply_migrations")
 
     lines.append("")
@@ -1218,8 +1250,8 @@ def generate_element_file(
 
     lines.append("")
 
-    for spec in sorted(class_specs, key=lambda s: s["class_name"]):
-        lines.append(_render_class(spec, external_imports))
+    if not root_spec.get("_reuse"):
+        lines.append(_render_class(root_spec, external_imports, indent=0))
         lines.append("")
 
     return "\n".join(lines).rstrip() + "\n"

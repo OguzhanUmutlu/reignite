@@ -42,16 +42,106 @@ def _parse_double(raw: str) -> float | SDFError:
 
 
 class Mimic(BaseModel):
+    class Multiplier(BaseModel):
+        def __init__(self, sdf_version: str | None = None, multiplier: float = 1.0):
+            super().__init__(sdf_version)
+            self.multiplier = multiplier
+
+        def to_version(self, target_version: str) -> "Mimic.Multiplier":
+            kwargs = {"sdf_version": target_version}
+            kwargs["multiplier"] = self.multiplier
+            new_obj = self.__class__(**kwargs)
+            return new_obj
+
+        def to_sdf(self, version: str | None = None) -> ET.Element:
+            if self.__version__ is None and version is not None:
+                self.__version__ = version
+            elif version is not None and version != self.__version__:
+                return self.to_version(version).to_sdf()
+            version = self.__version__ or version
+            el = ET.Element("multiplier")
+            if self.multiplier is not None:
+                el.text = str(self.multiplier)
+            return el
+
+        @classmethod
+        def _from_sdf(cls, el: ET.Element, version: str) -> "Mimic.Multiplier | SDFError":
+            _text = el.text or 1.0
+            _multiplier = _parse_double(_text)
+            if isinstance(_multiplier, SDFError):
+                return _multiplier
+            return cls(sdf_version=version, multiplier=_multiplier)
+
+    class Offset(BaseModel):
+        def __init__(self, sdf_version: str | None = None, offset: float = 0):
+            super().__init__(sdf_version)
+            self.offset = offset
+
+        def to_version(self, target_version: str) -> "Mimic.Offset":
+            kwargs = {"sdf_version": target_version}
+            kwargs["offset"] = self.offset
+            new_obj = self.__class__(**kwargs)
+            return new_obj
+
+        def to_sdf(self, version: str | None = None) -> ET.Element:
+            if self.__version__ is None and version is not None:
+                self.__version__ = version
+            elif version is not None and version != self.__version__:
+                return self.to_version(version).to_sdf()
+            version = self.__version__ or version
+            el = ET.Element("offset")
+            if self.offset is not None:
+                el.text = str(self.offset)
+            return el
+
+        @classmethod
+        def _from_sdf(cls, el: ET.Element, version: str) -> "Mimic.Offset | SDFError":
+            _text = el.text or 0
+            _offset = _parse_double(_text)
+            if isinstance(_offset, SDFError):
+                return _offset
+            return cls(sdf_version=version, offset=_offset)
+
+    class Reference(BaseModel):
+        def __init__(self, sdf_version: str | None = None, reference: float = 0):
+            super().__init__(sdf_version)
+            self.reference = reference
+
+        def to_version(self, target_version: str) -> "Mimic.Reference":
+            kwargs = {"sdf_version": target_version}
+            kwargs["reference"] = self.reference
+            new_obj = self.__class__(**kwargs)
+            return new_obj
+
+        def to_sdf(self, version: str | None = None) -> ET.Element:
+            if self.__version__ is None and version is not None:
+                self.__version__ = version
+            elif version is not None and version != self.__version__:
+                return self.to_version(version).to_sdf()
+            version = self.__version__ or version
+            el = ET.Element("reference")
+            if self.reference is not None:
+                el.text = str(self.reference)
+            return el
+
+        @classmethod
+        def _from_sdf(cls, el: ET.Element, version: str) -> "Mimic.Reference | SDFError":
+            _text = el.text or 0
+            _reference = _parse_double(_text)
+            if isinstance(_reference, SDFError):
+                return _reference
+            return cls(sdf_version=version, reference=_reference)
+
     def __init__(
         self,
         sdf_version: str | None = None,
         axis: str = "axis",
         joint: str = "",
-        multiplier: "Multiplier" = None,
-        offset: "Offset" = None,
-        reference: "Reference" = None
+        multiplier: "Mimic.Multiplier" = None,
+        offset: "Mimic.Offset" = None,
+        reference: "Mimic.Reference" = None
     ):
-        self.__version__ = sdf_version
+        super().__init__(sdf_version)
         self.axis = axis
         self.joint = joint
         self.multiplier = multiplier
@@ -105,7 +195,7 @@ class Mimic(BaseModel):
         return el
 
     @classmethod
-    def _from_sdf(cls, el: ET.Element, version: str):
+    def _from_sdf(cls, el: ET.Element, version: str) -> "Mimic | SDFError":
         _axis = el.get("axis", "axis")
         if isinstance(_axis, SDFError):
             return _axis.extend("@axis")
@@ -116,7 +206,7 @@ class Mimic(BaseModel):
             return _joint.extend("@joint")
         _c_multiplier = el.find("multiplier")
         if _c_multiplier is not None:
-            _res = Multiplier._from_sdf(_c_multiplier, version)
+            _res = cls.Multiplier._from_sdf(_c_multiplier, version)
             if isinstance(_res, SDFError):
                 return _res.extend("multiplier")
             _multiplier = _res
@@ -124,7 +214,7 @@ class Mimic(BaseModel):
             _multiplier = None
         _c_offset = el.find("offset")
         if _c_offset is not None:
-            _res = Offset._from_sdf(_c_offset, version)
+            _res = cls.Offset._from_sdf(_c_offset, version)
             if isinstance(_res, SDFError):
                 return _res.extend("offset")
             _offset = _res
@@ -132,103 +222,10 @@ class Mimic(BaseModel):
             _offset = None
         _c_reference = el.find("reference")
         if _c_reference is not None:
-            _res = Reference._from_sdf(_c_reference, version)
+            _res = cls.Reference._from_sdf(_c_reference, version)
             if isinstance(_res, SDFError):
                 return _res.extend("reference")
             _reference = _res
         else:
             _reference = None
         return cls(sdf_version=version, axis=_axis, joint=_joint, multiplier=_multiplier, offset=_offset, reference=_reference)
-
-
-class Multiplier(BaseModel):
-    def __init__(self, sdf_version: str | None = None, multiplier: float = 1.0):
-        self.__version__ = sdf_version
-        self.multiplier = multiplier
-
-    def to_version(self, target_version: str) -> "Multiplier":
-        kwargs = {"sdf_version": target_version}
-        kwargs["multiplier"] = self.multiplier
-        new_obj = self.__class__(**kwargs)
-        return new_obj
-
-    def to_sdf(self, version: str | None = None) -> ET.Element:
-        if self.__version__ is None and version is not None:
-            self.__version__ = version
-        elif version is not None and version != self.__version__:
-            return self.to_version(version).to_sdf()
-        version = self.__version__ or version
-        el = ET.Element("multiplier")
-        if self.multiplier is not None:
-            el.text = str(self.multiplier)
-        return el
-
-    @classmethod
-    def _from_sdf(cls, el: ET.Element, version: str):
-        _text = el.text or 1.0
-        _multiplier = _parse_double(_text)
-        if isinstance(_multiplier, SDFError):
-            return _multiplier
-        return cls(sdf_version=version, multiplier=_multiplier)
-
-
-class Offset(BaseModel):
-    def __init__(self, sdf_version: str | None = None, offset: float = 0):
-        self.__version__ = sdf_version
-        self.offset = offset
-
-    def to_version(self, target_version: str) -> "Offset":
-        kwargs = {"sdf_version": target_version}
-        kwargs["offset"] = self.offset
-        new_obj = self.__class__(**kwargs)
-        return new_obj
-
-    def to_sdf(self, version: str | None = None) -> ET.Element:
-        if self.__version__ is None and version is not None:
-            self.__version__ = version
-        elif version is not None and version != self.__version__:
-            return self.to_version(version).to_sdf()
-        version = self.__version__ or version
-        el = ET.Element("offset")
-        if self.offset is not None:
-            el.text = str(self.offset)
-        return el
-
-    @classmethod
-    def _from_sdf(cls, el: ET.Element, version: str):
-        _text = el.text or 0
-        _offset = _parse_double(_text)
-        if isinstance(_offset, SDFError):
-            return _offset
-        return cls(sdf_version=version, offset=_offset)
-
-
-class Reference(BaseModel):
-    def __init__(self, sdf_version: str | None = None, reference: float = 0):
-        self.__version__ = sdf_version
-        self.reference = reference
-
-    def to_version(self, target_version: str) -> "Reference":
-        kwargs = {"sdf_version": target_version}
-        kwargs["reference"] = self.reference
-        new_obj = self.__class__(**kwargs)
-        return new_obj
-
-    def to_sdf(self, version: str | None = None) -> ET.Element:
-        if self.__version__ is None and version is not None:
-            self.__version__ = version
-        elif version is not None and version != self.__version__:
-            return self.to_version(version).to_sdf()
-        version = self.__version__ or version
-        el = ET.Element("reference")
-        if self.reference is not None:
-            el.text = str(self.reference)
-        return el
-
-    @classmethod
-    def _from_sdf(cls, el: ET.Element, version: str):
-        _text = el.text or 0
-        _reference = _parse_double(_text)
-        if isinstance(_reference, SDFError):
-            return _reference
-        return cls(sdf_version=version, reference=_reference)

@@ -26,7 +26,7 @@ class Sdf(BaseModel):
         version: str = "1.3",
         worlds: List["World"] = None
     ):
-        self.__version__ = sdf_version
+        super().__init__(sdf_version)
         self.actors = actors or []
         self.lights = lights or []
         self.models = models or []
@@ -91,7 +91,7 @@ class Sdf(BaseModel):
         return el
 
     @classmethod
-    def _from_sdf(cls, el: ET.Element, version: str):
+    def _from_sdf(cls, el: ET.Element, version: str) -> "Sdf | SDFError":
         from ..elements.actor import Actor
         from ..elements.light import Light
         from ..elements.model import Model

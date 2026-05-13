@@ -22,30 +22,29 @@ if typing.TYPE_CHECKING:
     from ..elements.sphere import Sphere
 
 
-class Empty(BaseModel):
-    def __init__(self, sdf_version: str | None = None):
-        self.__version__ = sdf_version
-
-    def to_version(self, target_version: str) -> "Empty":
-        kwargs = {"sdf_version": target_version}
-        new_obj = self.__class__(**kwargs)
-        return new_obj
-
-    def to_sdf(self, version: str | None = None) -> ET.Element:
-        if self.__version__ is None and version is not None:
-            self.__version__ = version
-        elif version is not None and version != self.__version__:
-            return self.to_version(version).to_sdf()
-        version = self.__version__ or version
-        el = ET.Element("empty")
-        return el
-
-    @classmethod
-    def _from_sdf(cls, el: ET.Element, version: str):
-        return cls(sdf_version=version)
-
-
 class Geometry(BaseModel):
+    class Empty(BaseModel):
+        def __init__(self, sdf_version: str | None = None):
+            super().__init__(sdf_version)
+
+        def to_version(self, target_version: str) -> "Geometry.Empty":
+            kwargs = {"sdf_version": target_version}
+            new_obj = self.__class__(**kwargs)
+            return new_obj
+
+        def to_sdf(self, version: str | None = None) -> ET.Element:
+            if self.__version__ is None and version is not None:
+                self.__version__ = version
+            elif version is not None and version != self.__version__:
+                return self.to_version(version).to_sdf()
+            version = self.__version__ or version
+            el = ET.Element("empty")
+            return el
+
+        @classmethod
+        def _from_sdf(cls, el: ET.Element, version: str) -> "Geometry.Empty | SDFError":
+            return cls(sdf_version=version)
+
     def __init__(
         self,
         sdf_version: str | None = None,
@@ -54,7 +53,7 @@ class Geometry(BaseModel):
         cone: "Cone" = None,
         cylinder: "Cylinder" = None,
         ellipsoid: "Ellipsoid" = None,
-        empty: "Empty" = None,
+        empty: "Geometry.Empty" = None,
         heightmap: "Heightmap" = None,
         image: "Image" = None,
         mesh: "Mesh" = None,
@@ -62,7 +61,7 @@ class Geometry(BaseModel):
         polyline: "Polyline" = None,
         sphere: "Sphere" = None
     ):
-        self.__version__ = sdf_version
+        super().__init__(sdf_version)
         self.box = box
         self.capsule = capsule
         self.cone = cone
@@ -219,7 +218,7 @@ class Geometry(BaseModel):
         return el
 
     @classmethod
-    def _from_sdf(cls, el: ET.Element, version: str):
+    def _from_sdf(cls, el: ET.Element, version: str) -> "Geometry | SDFError":
         from ..elements.box import Box
         from ..elements.capsule import Capsule
         from ..elements.cone import Cone
@@ -279,7 +278,7 @@ class Geometry(BaseModel):
             return SDFError(f"'ellipsoid' is not supported in SDF version {version} (added in 1.8)")
         _c_empty = el.find("empty")
         if _c_empty is not None:
-            _res = Empty._from_sdf(_c_empty, version)
+            _res = cls.Empty._from_sdf(_c_empty, version)
             if isinstance(_res, SDFError):
                 return _res.extend("empty")
             _empty = _res

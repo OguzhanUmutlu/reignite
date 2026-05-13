@@ -41,79 +41,167 @@ def _parse_double(raw: str) -> float | SDFError:
 
 
 
-class Granularity(BaseModel):
-    def __init__(self, sdf_version: str | None = None, granularity: int = 1):
-        self.__version__ = sdf_version
-        self.granularity = granularity
-
-    def to_version(self, target_version: str) -> "Granularity":
-        kwargs = {"sdf_version": target_version}
-        kwargs["granularity"] = self.granularity
-        new_obj = self.__class__(**kwargs)
-        return new_obj
-
-    def to_sdf(self, version: str | None = None) -> ET.Element:
-        if self.__version__ is None and version is not None:
-            self.__version__ = version
-        elif version is not None and version != self.__version__:
-            return self.to_version(version).to_sdf()
-        version = self.__version__ or version
-        el = ET.Element("granularity")
-        if self.granularity is not None:
-            el.text = str(self.granularity)
-        return el
-
-    @classmethod
-    def _from_sdf(cls, el: ET.Element, version: str):
-        _text = el.text or 1
-        _granularity = _parse_int32(_text)
-        if isinstance(_granularity, SDFError):
-            return _granularity
-        return cls(sdf_version=version, granularity=_granularity)
-
-
-class Height(BaseModel):
-    def __init__(self, sdf_version: str | None = None, height: float = 1):
-        self.__version__ = sdf_version
-        self.height = height
-
-    def to_version(self, target_version: str) -> "Height":
-        kwargs = {"sdf_version": target_version}
-        kwargs["height"] = self.height
-        new_obj = self.__class__(**kwargs)
-        return new_obj
-
-    def to_sdf(self, version: str | None = None) -> ET.Element:
-        if self.__version__ is None and version is not None:
-            self.__version__ = version
-        elif version is not None and version != self.__version__:
-            return self.to_version(version).to_sdf()
-        version = self.__version__ or version
-        el = ET.Element("height")
-        if self.height is not None:
-            el.text = str(self.height)
-        return el
-
-    @classmethod
-    def _from_sdf(cls, el: ET.Element, version: str):
-        _text = el.text or 1
-        _height = _parse_double(_text)
-        if isinstance(_height, SDFError):
-            return _height
-        return cls(sdf_version=version, height=_height)
-
-
 class Image(BaseModel):
+    class Granularity(BaseModel):
+        def __init__(self, sdf_version: str | None = None, granularity: int = 1):
+            super().__init__(sdf_version)
+            self.granularity = granularity
+
+        def to_version(self, target_version: str) -> "Image.Granularity":
+            kwargs = {"sdf_version": target_version}
+            kwargs["granularity"] = self.granularity
+            new_obj = self.__class__(**kwargs)
+            return new_obj
+
+        def to_sdf(self, version: str | None = None) -> ET.Element:
+            if self.__version__ is None and version is not None:
+                self.__version__ = version
+            elif version is not None and version != self.__version__:
+                return self.to_version(version).to_sdf()
+            version = self.__version__ or version
+            el = ET.Element("granularity")
+            if self.granularity is not None:
+                el.text = str(self.granularity)
+            return el
+
+        @classmethod
+        def _from_sdf(cls, el: ET.Element, version: str) -> "Image.Granularity | SDFError":
+            _text = el.text or 1
+            _granularity = _parse_int32(_text)
+            if isinstance(_granularity, SDFError):
+                return _granularity
+            return cls(sdf_version=version, granularity=_granularity)
+
+    class Height(BaseModel):
+        def __init__(self, sdf_version: str | None = None, height: float = 1):
+            super().__init__(sdf_version)
+            self.height = height
+
+        def to_version(self, target_version: str) -> "Image.Height":
+            kwargs = {"sdf_version": target_version}
+            kwargs["height"] = self.height
+            new_obj = self.__class__(**kwargs)
+            return new_obj
+
+        def to_sdf(self, version: str | None = None) -> ET.Element:
+            if self.__version__ is None and version is not None:
+                self.__version__ = version
+            elif version is not None and version != self.__version__:
+                return self.to_version(version).to_sdf()
+            version = self.__version__ or version
+            el = ET.Element("height")
+            if self.height is not None:
+                el.text = str(self.height)
+            return el
+
+        @classmethod
+        def _from_sdf(cls, el: ET.Element, version: str) -> "Image.Height | SDFError":
+            _text = el.text or 1
+            _height = _parse_double(_text)
+            if isinstance(_height, SDFError):
+                return _height
+            return cls(sdf_version=version, height=_height)
+
+    class Scale(BaseModel):
+        def __init__(self, sdf_version: str | None = None, scale: float = 1):
+            super().__init__(sdf_version)
+            self.scale = scale
+
+        def to_version(self, target_version: str) -> "Image.Scale":
+            kwargs = {"sdf_version": target_version}
+            kwargs["scale"] = self.scale
+            new_obj = self.__class__(**kwargs)
+            return new_obj
+
+        def to_sdf(self, version: str | None = None) -> ET.Element:
+            if self.__version__ is None and version is not None:
+                self.__version__ = version
+            elif version is not None and version != self.__version__:
+                return self.to_version(version).to_sdf()
+            version = self.__version__ or version
+            el = ET.Element("scale")
+            if self.scale is not None:
+                el.text = str(self.scale)
+            return el
+
+        @classmethod
+        def _from_sdf(cls, el: ET.Element, version: str) -> "Image.Scale | SDFError":
+            _text = el.text or 1
+            _scale = _parse_double(_text)
+            if isinstance(_scale, SDFError):
+                return _scale
+            return cls(sdf_version=version, scale=_scale)
+
+    class Threshold(BaseModel):
+        def __init__(self, sdf_version: str | None = None, threshold: int = 200):
+            super().__init__(sdf_version)
+            self.threshold = threshold
+
+        def to_version(self, target_version: str) -> "Image.Threshold":
+            kwargs = {"sdf_version": target_version}
+            kwargs["threshold"] = self.threshold
+            new_obj = self.__class__(**kwargs)
+            return new_obj
+
+        def to_sdf(self, version: str | None = None) -> ET.Element:
+            if self.__version__ is None and version is not None:
+                self.__version__ = version
+            elif version is not None and version != self.__version__:
+                return self.to_version(version).to_sdf()
+            version = self.__version__ or version
+            el = ET.Element("threshold")
+            if self.threshold is not None:
+                el.text = str(self.threshold)
+            return el
+
+        @classmethod
+        def _from_sdf(cls, el: ET.Element, version: str) -> "Image.Threshold | SDFError":
+            _text = el.text or 200
+            _threshold = _parse_int32(_text)
+            if isinstance(_threshold, SDFError):
+                return _threshold
+            return cls(sdf_version=version, threshold=_threshold)
+
+    class Uri(BaseModel):
+        def __init__(self, sdf_version: str | None = None, uri: str = "__default__"):
+            super().__init__(sdf_version)
+            self.uri = uri
+
+        def to_version(self, target_version: str) -> "Image.Uri":
+            kwargs = {"sdf_version": target_version}
+            kwargs["uri"] = self.uri
+            new_obj = self.__class__(**kwargs)
+            return new_obj
+
+        def to_sdf(self, version: str | None = None) -> ET.Element:
+            if self.__version__ is None and version is not None:
+                self.__version__ = version
+            elif version is not None and version != self.__version__:
+                return self.to_version(version).to_sdf()
+            version = self.__version__ or version
+            el = ET.Element("uri")
+            if self.uri is not None:
+                el.text = self.uri
+            return el
+
+        @classmethod
+        def _from_sdf(cls, el: ET.Element, version: str) -> "Image.Uri | SDFError":
+            _text = el.text or "__default__"
+            _uri = _text
+            if isinstance(_uri, SDFError):
+                return _uri
+            return cls(sdf_version=version, uri=_uri)
+
     def __init__(
         self,
         sdf_version: str | None = None,
-        granularity: "Granularity" = None,
-        height: "Height" = None,
-        scale: "Scale" = None,
-        threshold: "Threshold" = None,
-        uri: "Uri" = None
+        granularity: "Image.Granularity" = None,
+        height: "Image.Height" = None,
+        scale: "Image.Scale" = None,
+        threshold: "Image.Threshold" = None,
+        uri: "Image.Uri" = None
     ):
-        self.__version__ = sdf_version
+        super().__init__(sdf_version)
         self.granularity = granularity
         self.height = height
         self.scale = scale
@@ -175,10 +263,10 @@ class Image(BaseModel):
         return el
 
     @classmethod
-    def _from_sdf(cls, el: ET.Element, version: str):
+    def _from_sdf(cls, el: ET.Element, version: str) -> "Image | SDFError":
         _c_granularity = el.find("granularity")
         if _c_granularity is not None:
-            _res = Granularity._from_sdf(_c_granularity, version)
+            _res = cls.Granularity._from_sdf(_c_granularity, version)
             if isinstance(_res, SDFError):
                 return _res.extend("granularity")
             _granularity = _res
@@ -186,7 +274,7 @@ class Image(BaseModel):
             _granularity = None
         _c_height = el.find("height")
         if _c_height is not None:
-            _res = Height._from_sdf(_c_height, version)
+            _res = cls.Height._from_sdf(_c_height, version)
             if isinstance(_res, SDFError):
                 return _res.extend("height")
             _height = _res
@@ -194,7 +282,7 @@ class Image(BaseModel):
             _height = None
         _c_scale = el.find("scale")
         if _c_scale is not None:
-            _res = Scale._from_sdf(_c_scale, version)
+            _res = cls.Scale._from_sdf(_c_scale, version)
             if isinstance(_res, SDFError):
                 return _res.extend("scale")
             _scale = _res
@@ -202,7 +290,7 @@ class Image(BaseModel):
             _scale = None
         _c_threshold = el.find("threshold")
         if _c_threshold is not None:
-            _res = Threshold._from_sdf(_c_threshold, version)
+            _res = cls.Threshold._from_sdf(_c_threshold, version)
             if isinstance(_res, SDFError):
                 return _res.extend("threshold")
             _threshold = _res
@@ -210,103 +298,10 @@ class Image(BaseModel):
             _threshold = None
         _c_uri = el.find("uri")
         if _c_uri is not None:
-            _res = Uri._from_sdf(_c_uri, version)
+            _res = cls.Uri._from_sdf(_c_uri, version)
             if isinstance(_res, SDFError):
                 return _res.extend("uri")
             _uri = _res
         else:
             _uri = None
         return cls(sdf_version=version, granularity=_granularity, height=_height, scale=_scale, threshold=_threshold, uri=_uri)
-
-
-class Scale(BaseModel):
-    def __init__(self, sdf_version: str | None = None, scale: float = 1):
-        self.__version__ = sdf_version
-        self.scale = scale
-
-    def to_version(self, target_version: str) -> "Scale":
-        kwargs = {"sdf_version": target_version}
-        kwargs["scale"] = self.scale
-        new_obj = self.__class__(**kwargs)
-        return new_obj
-
-    def to_sdf(self, version: str | None = None) -> ET.Element:
-        if self.__version__ is None and version is not None:
-            self.__version__ = version
-        elif version is not None and version != self.__version__:
-            return self.to_version(version).to_sdf()
-        version = self.__version__ or version
-        el = ET.Element("scale")
-        if self.scale is not None:
-            el.text = str(self.scale)
-        return el
-
-    @classmethod
-    def _from_sdf(cls, el: ET.Element, version: str):
-        _text = el.text or 1
-        _scale = _parse_double(_text)
-        if isinstance(_scale, SDFError):
-            return _scale
-        return cls(sdf_version=version, scale=_scale)
-
-
-class Threshold(BaseModel):
-    def __init__(self, sdf_version: str | None = None, threshold: int = 200):
-        self.__version__ = sdf_version
-        self.threshold = threshold
-
-    def to_version(self, target_version: str) -> "Threshold":
-        kwargs = {"sdf_version": target_version}
-        kwargs["threshold"] = self.threshold
-        new_obj = self.__class__(**kwargs)
-        return new_obj
-
-    def to_sdf(self, version: str | None = None) -> ET.Element:
-        if self.__version__ is None and version is not None:
-            self.__version__ = version
-        elif version is not None and version != self.__version__:
-            return self.to_version(version).to_sdf()
-        version = self.__version__ or version
-        el = ET.Element("threshold")
-        if self.threshold is not None:
-            el.text = str(self.threshold)
-        return el
-
-    @classmethod
-    def _from_sdf(cls, el: ET.Element, version: str):
-        _text = el.text or 200
-        _threshold = _parse_int32(_text)
-        if isinstance(_threshold, SDFError):
-            return _threshold
-        return cls(sdf_version=version, threshold=_threshold)
-
-
-class Uri(BaseModel):
-    def __init__(self, sdf_version: str | None = None, uri: str = "__default__"):
-        self.__version__ = sdf_version
-        self.uri = uri
-
-    def to_version(self, target_version: str) -> "Uri":
-        kwargs = {"sdf_version": target_version}
-        kwargs["uri"] = self.uri
-        new_obj = self.__class__(**kwargs)
-        return new_obj
-
-    def to_sdf(self, version: str | None = None) -> ET.Element:
-        if self.__version__ is None and version is not None:
-            self.__version__ = version
-        elif version is not None and version != self.__version__:
-            return self.to_version(version).to_sdf()
-        version = self.__version__ or version
-        el = ET.Element("uri")
-        if self.uri is not None:
-            el.text = self.uri
-        return el
-
-    @classmethod
-    def _from_sdf(cls, el: ET.Element, version: str):
-        _text = el.text or "__default__"
-        _uri = _text
-        if isinstance(_uri, SDFError):
-            return _uri
-        return cls(sdf_version=version, uri=_uri)

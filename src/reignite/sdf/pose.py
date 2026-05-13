@@ -23,7 +23,7 @@ class Pose(BaseModel):
         relative_to: str = "",
         rotation_format: str = "euler_rpy"
     ):
-        self.__version__ = sdf_version
+        super().__init__(sdf_version)
         if pose is None:
             pose = _SDFPose.from_sdf("0 0 0 0 0 0", version=sdf_version)
         self.degrees = degrees
@@ -73,7 +73,7 @@ class Pose(BaseModel):
         return el
 
     @classmethod
-    def _from_sdf(cls, el: ET.Element, version: str):
+    def _from_sdf(cls, el: ET.Element, version: str) -> "Pose | SDFError":
         _degrees = str(el.get("degrees", False)).strip().lower() == 'true'
         if isinstance(_degrees, SDFError):
             return _degrees.extend("@degrees")

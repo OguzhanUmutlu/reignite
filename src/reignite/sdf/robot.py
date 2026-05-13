@@ -18,43 +18,42 @@ if typing.TYPE_CHECKING:
     from ..elements.plugin import Plugin
 
 
-class Pose(BaseModel):
-    _MIGRATIONS = [{"version": "1.7", "ops": [{"type": "move", "from": "frame", "to": "relative_to"}]}]
-
-    def __init__(self, sdf_version: str | None = None, pose: _SDFPose = None):
-        self.__version__ = sdf_version
-        if pose is None:
-            pose = _SDFPose.from_sdf("0 0 0 0 0 0", version=sdf_version)
-        self.pose = pose
-
-    def to_version(self, target_version: str) -> "Pose":
-        kwargs = {"sdf_version": target_version}
-        kwargs["pose"] = self.pose
-        new_obj = self.__class__(**kwargs)
-        apply_migrations(new_obj, target_version)
-        return new_obj
-
-    def to_sdf(self, version: str | None = None) -> ET.Element:
-        if self.__version__ is None and version is not None:
-            self.__version__ = version
-        elif version is not None and version != self.__version__:
-            return self.to_version(version).to_sdf()
-        version = self.__version__ or version
-        el = ET.Element("pose")
-        if self.pose is not None:
-            el.text = self.pose.to_sdf(version)
-        return el
-
-    @classmethod
-    def _from_sdf(cls, el: ET.Element, version: str):
-        _text = el.text or "0 0 0 0 0 0"
-        _pose = _SDFPose._from_sdf(_text, version)
-        if isinstance(_pose, SDFError):
-            return _pose
-        return cls(sdf_version=version, pose=_pose)
-
-
 class Robot(BaseModel):
+    class Pose(BaseModel):
+        _MIGRATIONS = [{"version": "1.7", "ops": [{"type": "move", "from": "frame", "to": "relative_to"}]}]
+
+        def __init__(self, sdf_version: str | None = None, pose: _SDFPose = None):
+            super().__init__(sdf_version)
+            if pose is None:
+                pose = _SDFPose.from_sdf("0 0 0 0 0 0", version=sdf_version)
+            self.pose = pose
+
+        def to_version(self, target_version: str) -> "Robot.Pose":
+            kwargs = {"sdf_version": target_version}
+            kwargs["pose"] = self.pose
+            new_obj = self.__class__(**kwargs)
+            apply_migrations(new_obj, target_version)
+            return new_obj
+
+        def to_sdf(self, version: str | None = None) -> ET.Element:
+            if self.__version__ is None and version is not None:
+                self.__version__ = version
+            elif version is not None and version != self.__version__:
+                return self.to_version(version).to_sdf()
+            version = self.__version__ or version
+            el = ET.Element("pose")
+            if self.pose is not None:
+                el.text = self.pose.to_sdf(version)
+            return el
+
+        @classmethod
+        def _from_sdf(cls, el: ET.Element, version: str) -> "Robot.Pose | SDFError":
+            _text = el.text or "0 0 0 0 0 0"
+            _pose = _SDFPose._from_sdf(_text, version)
+            if isinstance(_pose, SDFError):
+                return _pose
+            return cls(sdf_version=version, pose=_pose)
+
     def __init__(
         self,
         sdf_version: str | None = None,
@@ -63,9 +62,9 @@ class Robot(BaseModel):
         links: List["Link"] = None,
         name: str = "__default__",
         plugins: List["Plugin"] = None,
-        pose: "Pose" = None
+        pose: "Robot.Pose" = None
     ):
-        self.__version__ = sdf_version
+        super().__init__(sdf_version)
         self.grippers = grippers or []
         self.joints = joints or []
         self.links = links or []
@@ -139,7 +138,7 @@ class Robot(BaseModel):
         return el
 
     @classmethod
-    def _from_sdf(cls, el: ET.Element, version: str):
+    def _from_sdf(cls, el: ET.Element, version: str) -> "Robot | SDFError":
         from ..elements.gripper import Gripper
         from ..elements.joint import Joint
         from ..elements.link import Link
@@ -173,7 +172,7 @@ class Robot(BaseModel):
             _plugins.append(_res)
         _c_pose = el.find("pose")
         if _c_pose is not None:
-            _res = Pose._from_sdf(_c_pose, version)
+            _res = cls.Pose._from_sdf(_c_pose, version)
             if isinstance(_res, SDFError):
                 return _res.extend("pose")
             _pose = _res

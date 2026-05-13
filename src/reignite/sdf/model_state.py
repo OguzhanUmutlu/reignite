@@ -18,18 +18,79 @@ if typing.TYPE_CHECKING:
 
 
 class ModelState(BaseModel):
+    class ModelStateModelState(BaseModel):
+        def __init__(self, sdf_version: str | None = None, name: str = "__default__"):
+            super().__init__(sdf_version)
+            self.name = name
+
+        def to_version(self, target_version: str) -> "ModelState.ModelStateModelState":
+            kwargs = {"sdf_version": target_version}
+            kwargs["name"] = self.name
+            new_obj = self.__class__(**kwargs)
+            return new_obj
+
+        def to_sdf(self, version: str | None = None) -> ET.Element:
+            if self.__version__ is None and version is not None:
+                self.__version__ = version
+            elif version is not None and version != self.__version__:
+                return self.to_version(version).to_sdf()
+            version = self.__version__ or version
+            el = ET.Element("model_state")
+            if self.name is not None:
+                el.set("name", self.name)
+            return el
+
+        @classmethod
+        def _from_sdf(cls, el: ET.Element, version: str) -> "ModelState.ModelStateModelState | SDFError":
+            _name = el.get("name", "__default__")
+            if isinstance(_name, SDFError):
+                return _name.extend("@name")
+            return cls(sdf_version=version, name=_name)
+
+    class Scale(BaseModel):
+        def __init__(self, sdf_version: str | None = None, scale: _SDFVector3 = None):
+            super().__init__(sdf_version)
+            if scale is None:
+                scale = _SDFVector3.from_sdf("1 1 1", version=sdf_version)
+            self.scale = scale
+
+        def to_version(self, target_version: str) -> "ModelState.Scale":
+            kwargs = {"sdf_version": target_version}
+            kwargs["scale"] = self.scale
+            new_obj = self.__class__(**kwargs)
+            return new_obj
+
+        def to_sdf(self, version: str | None = None) -> ET.Element:
+            if self.__version__ is None and version is not None:
+                self.__version__ = version
+            elif version is not None and version != self.__version__:
+                return self.to_version(version).to_sdf()
+            version = self.__version__ or version
+            el = ET.Element("scale")
+            if self.scale is not None:
+                el.text = self.scale.to_sdf(version)
+            return el
+
+        @classmethod
+        def _from_sdf(cls, el: ET.Element, version: str) -> "ModelState.Scale | SDFError":
+            _text = el.text or "1 1 1"
+            _scale = _SDFVector3._from_sdf(_text, version)
+            if isinstance(_scale, SDFError):
+                return _scale
+            return cls(sdf_version=version, scale=_scale)
+
     def __init__(
         self,
         sdf_version: str | None = None,
         frames: List["Frame"] = None,
         joint_states: List["JointState"] = None,
         link_states: List["LinkState"] = None,
-        model_states: List["ModelStateModelState"] = None,
+        model_states: List["ModelState.ModelStateModelState"] = None,
         name: str = "__default__",
         pose: "Pose" = None,
-        scale: "Scale" = None
+        scale: "ModelState.Scale" = None
     ):
-        self.__version__ = sdf_version
+        super().__init__(sdf_version)
         self.frames = frames or []
         self.joint_states = joint_states or []
         self.link_states = link_states or []
@@ -112,7 +173,7 @@ class ModelState(BaseModel):
         return el
 
     @classmethod
-    def _from_sdf(cls, el: ET.Element, version: str):
+    def _from_sdf(cls, el: ET.Element, version: str) -> "ModelState | SDFError":
         from ..elements.frame import Frame
         from ..elements.joint_state import JointState
         from ..elements.link_state import LinkState
@@ -137,7 +198,7 @@ class ModelState(BaseModel):
             _link_states.append(_res)
         _model_states = []
         for c in el.findall("model_state"):
-            _res = ModelStateModelState._from_sdf(c, version)
+            _res = cls.ModelStateModelState._from_sdf(c, version)
             if isinstance(_res, SDFError):
                 return _res.extend("model_state")
             _model_states.append(_res)
@@ -154,73 +215,10 @@ class ModelState(BaseModel):
             _pose = None
         _c_scale = el.find("scale")
         if _c_scale is not None:
-            _res = Scale._from_sdf(_c_scale, version)
+            _res = cls.Scale._from_sdf(_c_scale, version)
             if isinstance(_res, SDFError):
                 return _res.extend("scale")
             _scale = _res
         else:
             _scale = None
         return cls(sdf_version=version, frames=_frames, joint_states=_joint_states, link_states=_link_states, model_states=_model_states, name=_name, pose=_pose, scale=_scale)
-
-
-class ModelStateModelState(BaseModel):
-    def __init__(self, sdf_version: str | None = None, name: str = "__default__"):
-        self.__version__ = sdf_version
-        self.name = name
-
-    def to_version(self, target_version: str) -> "ModelStateModelState":
-        kwargs = {"sdf_version": target_version}
-        kwargs["name"] = self.name
-        new_obj = self.__class__(**kwargs)
-        return new_obj
-
-    def to_sdf(self, version: str | None = None) -> ET.Element:
-        if self.__version__ is None and version is not None:
-            self.__version__ = version
-        elif version is not None and version != self.__version__:
-            return self.to_version(version).to_sdf()
-        version = self.__version__ or version
-        el = ET.Element("model_state")
-        if self.name is not None:
-            el.set("name", self.name)
-        return el
-
-    @classmethod
-    def _from_sdf(cls, el: ET.Element, version: str):
-        _name = el.get("name", "__default__")
-        if isinstance(_name, SDFError):
-            return _name.extend("@name")
-        return cls(sdf_version=version, name=_name)
-
-
-class Scale(BaseModel):
-    def __init__(self, sdf_version: str | None = None, scale: _SDFVector3 = None):
-        self.__version__ = sdf_version
-        if scale is None:
-            scale = _SDFVector3.from_sdf("1 1 1", version=sdf_version)
-        self.scale = scale
-
-    def to_version(self, target_version: str) -> "Scale":
-        kwargs = {"sdf_version": target_version}
-        kwargs["scale"] = self.scale
-        new_obj = self.__class__(**kwargs)
-        return new_obj
-
-    def to_sdf(self, version: str | None = None) -> ET.Element:
-        if self.__version__ is None and version is not None:
-            self.__version__ = version
-        elif version is not None and version != self.__version__:
-            return self.to_version(version).to_sdf()
-        version = self.__version__ or version
-        el = ET.Element("scale")
-        if self.scale is not None:
-            el.text = self.scale.to_sdf(version)
-        return el
-
-    @classmethod
-    def _from_sdf(cls, el: ET.Element, version: str):
-        _text = el.text or "1 1 1"
-        _scale = _SDFVector3._from_sdf(_text, version)
-        if isinstance(_scale, SDFError):
-            return _scale
-        return cls(sdf_version=version, scale=_scale)

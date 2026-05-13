@@ -51,46 +51,208 @@ def _parse_double(raw: str) -> float | SDFError:
 
 
 
-class AutoInertiaParams(BaseModel):
-    def __init__(self, sdf_version: str | None = None):
-        self.__version__ = sdf_version
-
-    def to_version(self, target_version: str) -> "AutoInertiaParams":
-        kwargs = {"sdf_version": target_version}
-        new_obj = self.__class__(**kwargs)
-        return new_obj
-
-    def to_sdf(self, version: str | None = None) -> ET.Element:
-        if self.__version__ is None and version is not None:
-            self.__version__ = version
-        elif version is not None and version != self.__version__:
-            return self.to_version(version).to_sdf()
-        version = self.__version__ or version
-        el = ET.Element("auto_inertia_params")
-        return el
-
-    @classmethod
-    def _from_sdf(cls, el: ET.Element, version: str):
-        return cls(sdf_version=version)
-
-
 class Collision(BaseModel):
+    class AutoInertiaParams(BaseModel):
+        def __init__(self, sdf_version: str | None = None):
+            super().__init__(sdf_version)
+
+        def to_version(self, target_version: str) -> "Collision.AutoInertiaParams":
+            kwargs = {"sdf_version": target_version}
+            new_obj = self.__class__(**kwargs)
+            return new_obj
+
+        def to_sdf(self, version: str | None = None) -> ET.Element:
+            if self.__version__ is None and version is not None:
+                self.__version__ = version
+            elif version is not None and version != self.__version__:
+                return self.to_version(version).to_sdf()
+            version = self.__version__ or version
+            el = ET.Element("auto_inertia_params")
+            return el
+
+        @classmethod
+        def _from_sdf(cls, el: ET.Element, version: str) -> "Collision.AutoInertiaParams | SDFError":
+            return cls(sdf_version=version)
+
+    class Density(BaseModel):
+        def __init__(self, sdf_version: str | None = None, density: float = 1000.0):
+            super().__init__(sdf_version)
+            self.density = density
+
+        def to_version(self, target_version: str) -> "Collision.Density":
+            if self.density is not None and cmp_version(target_version, "1.11") < 0:
+                raise ValueError(f"'density' is not supported in SDF version {target_version} (added in 1.11)")
+            kwargs = {"sdf_version": target_version}
+            kwargs["density"] = self.density
+            new_obj = self.__class__(**kwargs)
+            return new_obj
+
+        def to_sdf(self, version: str | None = None) -> ET.Element:
+            if self.__version__ is None and version is not None:
+                self.__version__ = version
+            elif version is not None and version != self.__version__:
+                return self.to_version(version).to_sdf()
+            version = self.__version__ or version
+            el = ET.Element("density")
+            if self.density is not None:
+                el.text = str(self.density)
+            return el
+
+        @classmethod
+        def _from_sdf(cls, el: ET.Element, version: str) -> "Collision.Density | SDFError":
+            _text = el.text or 1000.0
+            _density = _parse_double(_text)
+            if isinstance(_density, SDFError):
+                return _density
+            if _density is not None and cmp_version(version, "1.11") < 0:
+                if _density != 1000.0:
+                    return SDFError(f"'density' is not supported in SDF version {version} (added in 1.11)")
+            return cls(sdf_version=version, density=_density)
+
+    class LaserRetro(BaseModel):
+        def __init__(self, sdf_version: str | None = None, laser_retro: float = 0):
+            super().__init__(sdf_version)
+            self.laser_retro = laser_retro
+
+        def to_version(self, target_version: str) -> "Collision.LaserRetro":
+            if self.laser_retro is not None and cmp_version(target_version, "1.2") < 0:
+                raise ValueError(f"'laser_retro' is not supported in SDF version {target_version} (added in 1.2)")
+            kwargs = {"sdf_version": target_version}
+            kwargs["laser_retro"] = self.laser_retro
+            new_obj = self.__class__(**kwargs)
+            return new_obj
+
+        def to_sdf(self, version: str | None = None) -> ET.Element:
+            if self.__version__ is None and version is not None:
+                self.__version__ = version
+            elif version is not None and version != self.__version__:
+                return self.to_version(version).to_sdf()
+            version = self.__version__ or version
+            el = ET.Element("laser_retro")
+            if self.laser_retro is not None:
+                el.text = str(self.laser_retro)
+            return el
+
+        @classmethod
+        def _from_sdf(cls, el: ET.Element, version: str) -> "Collision.LaserRetro | SDFError":
+            _text = el.text or 0
+            _laser_retro = _parse_double(_text)
+            if isinstance(_laser_retro, SDFError):
+                return _laser_retro
+            if _laser_retro is not None and cmp_version(version, "1.2") < 0:
+                if _laser_retro != 0:
+                    return SDFError(f"'laser_retro' is not supported in SDF version {version} (added in 1.2)")
+            return cls(sdf_version=version, laser_retro=_laser_retro)
+
+    class Mass(BaseModel):
+        def __init__(self, sdf_version: str | None = None, mass: float = 0):
+            super().__init__(sdf_version)
+            self.mass = mass
+
+        def to_version(self, target_version: str) -> "Collision.Mass":
+            if self.mass is not None and cmp_version(target_version, "1.2") >= 0:
+                raise ValueError(f"'mass' is not supported in SDF version {target_version} (removed in 1.2)")
+            kwargs = {"sdf_version": target_version}
+            kwargs["mass"] = self.mass
+            new_obj = self.__class__(**kwargs)
+            return new_obj
+
+        def to_sdf(self, version: str | None = None) -> ET.Element:
+            if self.__version__ is None and version is not None:
+                self.__version__ = version
+            elif version is not None and version != self.__version__:
+                return self.to_version(version).to_sdf()
+            version = self.__version__ or version
+            el = ET.Element("mass")
+            if self.mass is not None:
+                el.text = str(self.mass)
+            return el
+
+        @classmethod
+        def _from_sdf(cls, el: ET.Element, version: str) -> "Collision.Mass | SDFError":
+            _text = el.text or 0
+            _mass = _parse_double(_text)
+            if isinstance(_mass, SDFError):
+                return _mass
+            return cls(sdf_version=version, mass=_mass)
+
+    class MaxContacts(BaseModel):
+        def __init__(self, sdf_version: str | None = None, max_contacts: int = 10):
+            super().__init__(sdf_version)
+            self.max_contacts = max_contacts
+
+        def to_version(self, target_version: str) -> "Collision.MaxContacts":
+            kwargs = {"sdf_version": target_version}
+            kwargs["max_contacts"] = self.max_contacts
+            new_obj = self.__class__(**kwargs)
+            return new_obj
+
+        def to_sdf(self, version: str | None = None) -> ET.Element:
+            if self.__version__ is None and version is not None:
+                self.__version__ = version
+            elif version is not None and version != self.__version__:
+                return self.to_version(version).to_sdf()
+            version = self.__version__ or version
+            el = ET.Element("max_contacts")
+            if self.max_contacts is not None:
+                el.text = str(self.max_contacts)
+            return el
+
+        @classmethod
+        def _from_sdf(cls, el: ET.Element, version: str) -> "Collision.MaxContacts | SDFError":
+            _text = el.text or 10
+            _max_contacts = _parse_int32(_text)
+            if isinstance(_max_contacts, SDFError):
+                return _max_contacts
+            return cls(sdf_version=version, max_contacts=_max_contacts)
+
+    class Origin(BaseModel):
+        def __init__(self, sdf_version: str | None = None, pose: _SDFPose = None):
+            super().__init__(sdf_version)
+            if pose is None:
+                pose = _SDFPose.from_sdf("0 0 0 0 0 0", version=sdf_version)
+            self.pose = pose
+
+        def to_version(self, target_version: str) -> "Collision.Origin":
+            kwargs = {"sdf_version": target_version}
+            kwargs["pose"] = self.pose
+            new_obj = self.__class__(**kwargs)
+            return new_obj
+
+        def to_sdf(self, version: str | None = None) -> ET.Element:
+            if self.__version__ is None and version is not None:
+                self.__version__ = version
+            elif version is not None and version != self.__version__:
+                return self.to_version(version).to_sdf()
+            version = self.__version__ or version
+            el = ET.Element("origin")
+            if self.pose is not None:
+                el.set("pose", self.pose.to_sdf(version))
+            return el
+
+        @classmethod
+        def _from_sdf(cls, el: ET.Element, version: str) -> "Collision.Origin | SDFError":
+            _pose = _SDFPose._from_sdf(el.get("pose", "0 0 0 0 0 0"), version)
+            if isinstance(_pose, SDFError):
+                return _pose.extend("@pose")
+            return cls(sdf_version=version, pose=_pose)
+
     def __init__(
         self,
         sdf_version: str | None = None,
-        auto_inertia_params: "AutoInertiaParams" = None,
-        density: "Density" = None,
+        auto_inertia_params: "Collision.AutoInertiaParams" = None,
+        density: "Collision.Density" = None,
         frames: List["Frame"] = None,
         geometry: "Geometry" = None,
         laser_retro: float = 0,
-        mass: "Mass" = None,
-        max_contacts: "MaxContacts" = None,
+        mass: "Collision.Mass" = None,
+        max_contacts: "Collision.MaxContacts" = None,
         name: str = "__default__",
-        origin: "Origin" = None,
+        origin: "Collision.Origin" = None,
         pose: "Pose" = None,
         surface: "Surface" = None
     ):
-        self.__version__ = sdf_version
+        super().__init__(sdf_version)
         self.auto_inertia_params = auto_inertia_params
         self.density = density
         self.frames = frames or []
@@ -222,14 +384,14 @@ class Collision(BaseModel):
         return el
 
     @classmethod
-    def _from_sdf(cls, el: ET.Element, version: str):
+    def _from_sdf(cls, el: ET.Element, version: str) -> "Collision | SDFError":
         from ..elements.frame import Frame
         from ..elements.geometry import Geometry
         from ..elements.pose import Pose
         from ..elements.surface import Surface
         _c_auto_inertia_params = el.find("auto_inertia_params")
         if _c_auto_inertia_params is not None:
-            _res = AutoInertiaParams._from_sdf(_c_auto_inertia_params, version)
+            _res = cls.AutoInertiaParams._from_sdf(_c_auto_inertia_params, version)
             if isinstance(_res, SDFError):
                 return _res.extend("auto_inertia_params")
             _auto_inertia_params = _res
@@ -239,7 +401,7 @@ class Collision(BaseModel):
             return SDFError(f"'auto_inertia_params' is not supported in SDF version {version} (added in 1.11)")
         _c_density = el.find("density")
         if _c_density is not None:
-            _res = Density._from_sdf(_c_density, version)
+            _res = cls.Density._from_sdf(_c_density, version)
             if isinstance(_res, SDFError):
                 return _res.extend("density")
             _density = _res
@@ -271,7 +433,7 @@ class Collision(BaseModel):
             return _laser_retro.extend("@laser_retro")
         _c_mass = el.find("mass")
         if _c_mass is not None:
-            _res = Mass._from_sdf(_c_mass, version)
+            _res = cls.Mass._from_sdf(_c_mass, version)
             if isinstance(_res, SDFError):
                 return _res.extend("mass")
             _mass = _res
@@ -279,7 +441,7 @@ class Collision(BaseModel):
             _mass = None
         _c_max_contacts = el.find("max_contacts")
         if _c_max_contacts is not None:
-            _res = MaxContacts._from_sdf(_c_max_contacts, version)
+            _res = cls.MaxContacts._from_sdf(_c_max_contacts, version)
             if isinstance(_res, SDFError):
                 return _res.extend("max_contacts")
             _max_contacts = _res
@@ -290,7 +452,7 @@ class Collision(BaseModel):
             return _name.extend("@name")
         _c_origin = el.find("origin")
         if _c_origin is not None:
-            _res = Origin._from_sdf(_c_origin, version)
+            _res = cls.Origin._from_sdf(_c_origin, version)
             if isinstance(_res, SDFError):
                 return _res.extend("origin")
             _origin = _res
@@ -315,171 +477,3 @@ class Collision(BaseModel):
         else:
             _surface = None
         return cls(sdf_version=version, auto_inertia_params=_auto_inertia_params, density=_density, frames=_frames, geometry=_geometry, laser_retro=_laser_retro, mass=_mass, max_contacts=_max_contacts, name=_name, origin=_origin, pose=_pose, surface=_surface)
-
-
-class Density(BaseModel):
-    def __init__(self, sdf_version: str | None = None, density: float = 1000.0):
-        self.__version__ = sdf_version
-        self.density = density
-
-    def to_version(self, target_version: str) -> "Density":
-        if self.density is not None and cmp_version(target_version, "1.11") < 0:
-            raise ValueError(f"'density' is not supported in SDF version {target_version} (added in 1.11)")
-        kwargs = {"sdf_version": target_version}
-        kwargs["density"] = self.density
-        new_obj = self.__class__(**kwargs)
-        return new_obj
-
-    def to_sdf(self, version: str | None = None) -> ET.Element:
-        if self.__version__ is None and version is not None:
-            self.__version__ = version
-        elif version is not None and version != self.__version__:
-            return self.to_version(version).to_sdf()
-        version = self.__version__ or version
-        el = ET.Element("density")
-        if self.density is not None:
-            el.text = str(self.density)
-        return el
-
-    @classmethod
-    def _from_sdf(cls, el: ET.Element, version: str):
-        _text = el.text or 1000.0
-        _density = _parse_double(_text)
-        if isinstance(_density, SDFError):
-            return _density
-        if _density is not None and cmp_version(version, "1.11") < 0:
-            if _density != 1000.0:
-                return SDFError(f"'density' is not supported in SDF version {version} (added in 1.11)")
-        return cls(sdf_version=version, density=_density)
-
-
-class LaserRetro(BaseModel):
-    def __init__(self, sdf_version: str | None = None, laser_retro: float = 0):
-        self.__version__ = sdf_version
-        self.laser_retro = laser_retro
-
-    def to_version(self, target_version: str) -> "LaserRetro":
-        if self.laser_retro is not None and cmp_version(target_version, "1.2") < 0:
-            raise ValueError(f"'laser_retro' is not supported in SDF version {target_version} (added in 1.2)")
-        kwargs = {"sdf_version": target_version}
-        kwargs["laser_retro"] = self.laser_retro
-        new_obj = self.__class__(**kwargs)
-        return new_obj
-
-    def to_sdf(self, version: str | None = None) -> ET.Element:
-        if self.__version__ is None and version is not None:
-            self.__version__ = version
-        elif version is not None and version != self.__version__:
-            return self.to_version(version).to_sdf()
-        version = self.__version__ or version
-        el = ET.Element("laser_retro")
-        if self.laser_retro is not None:
-            el.text = str(self.laser_retro)
-        return el
-
-    @classmethod
-    def _from_sdf(cls, el: ET.Element, version: str):
-        _text = el.text or 0
-        _laser_retro = _parse_double(_text)
-        if isinstance(_laser_retro, SDFError):
-            return _laser_retro
-        if _laser_retro is not None and cmp_version(version, "1.2") < 0:
-            if _laser_retro != 0:
-                return SDFError(f"'laser_retro' is not supported in SDF version {version} (added in 1.2)")
-        return cls(sdf_version=version, laser_retro=_laser_retro)
-
-
-class Mass(BaseModel):
-    def __init__(self, sdf_version: str | None = None, mass: float = 0):
-        self.__version__ = sdf_version
-        self.mass = mass
-
-    def to_version(self, target_version: str) -> "Mass":
-        if self.mass is not None and cmp_version(target_version, "1.2") >= 0:
-            raise ValueError(f"'mass' is not supported in SDF version {target_version} (removed in 1.2)")
-        kwargs = {"sdf_version": target_version}
-        kwargs["mass"] = self.mass
-        new_obj = self.__class__(**kwargs)
-        return new_obj
-
-    def to_sdf(self, version: str | None = None) -> ET.Element:
-        if self.__version__ is None and version is not None:
-            self.__version__ = version
-        elif version is not None and version != self.__version__:
-            return self.to_version(version).to_sdf()
-        version = self.__version__ or version
-        el = ET.Element("mass")
-        if self.mass is not None:
-            el.text = str(self.mass)
-        return el
-
-    @classmethod
-    def _from_sdf(cls, el: ET.Element, version: str):
-        _text = el.text or 0
-        _mass = _parse_double(_text)
-        if isinstance(_mass, SDFError):
-            return _mass
-        return cls(sdf_version=version, mass=_mass)
-
-
-class MaxContacts(BaseModel):
-    def __init__(self, sdf_version: str | None = None, max_contacts: int = 10):
-        self.__version__ = sdf_version
-        self.max_contacts = max_contacts
-
-    def to_version(self, target_version: str) -> "MaxContacts":
-        kwargs = {"sdf_version": target_version}
-        kwargs["max_contacts"] = self.max_contacts
-        new_obj = self.__class__(**kwargs)
-        return new_obj
-
-    def to_sdf(self, version: str | None = None) -> ET.Element:
-        if self.__version__ is None and version is not None:
-            self.__version__ = version
-        elif version is not None and version != self.__version__:
-            return self.to_version(version).to_sdf()
-        version = self.__version__ or version
-        el = ET.Element("max_contacts")
-        if self.max_contacts is not None:
-            el.text = str(self.max_contacts)
-        return el
-
-    @classmethod
-    def _from_sdf(cls, el: ET.Element, version: str):
-        _text = el.text or 10
-        _max_contacts = _parse_int32(_text)
-        if isinstance(_max_contacts, SDFError):
-            return _max_contacts
-        return cls(sdf_version=version, max_contacts=_max_contacts)
-
-
-class Origin(BaseModel):
-    def __init__(self, sdf_version: str | None = None, pose: _SDFPose = None):
-        self.__version__ = sdf_version
-        if pose is None:
-            pose = _SDFPose.from_sdf("0 0 0 0 0 0", version=sdf_version)
-        self.pose = pose
-
-    def to_version(self, target_version: str) -> "Origin":
-        kwargs = {"sdf_version": target_version}
-        kwargs["pose"] = self.pose
-        new_obj = self.__class__(**kwargs)
-        return new_obj
-
-    def to_sdf(self, version: str | None = None) -> ET.Element:
-        if self.__version__ is None and version is not None:
-            self.__version__ = version
-        elif version is not None and version != self.__version__:
-            return self.to_version(version).to_sdf()
-        version = self.__version__ or version
-        el = ET.Element("origin")
-        if self.pose is not None:
-            el.set("pose", self.pose.to_sdf(version))
-        return el
-
-    @classmethod
-    def _from_sdf(cls, el: ET.Element, version: str):
-        _pose = _SDFPose._from_sdf(el.get("pose", "0 0 0 0 0 0"), version)
-        if isinstance(_pose, SDFError):
-            return _pose.extend("@pose")
-        return cls(sdf_version=version, pose=_pose)

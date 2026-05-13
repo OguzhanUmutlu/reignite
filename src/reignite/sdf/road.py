@@ -48,49 +48,78 @@ def _parse_double(raw: str) -> float | SDFError:
 
 
 
-class Point(BaseModel):
-    def __init__(self, sdf_version: str | None = None, point: _SDFVector3 = None):
-        self.__version__ = sdf_version
-        if point is None:
-            point = _SDFVector3.from_sdf("0 0 0", version=sdf_version)
-        self.point = point
-
-    def to_version(self, target_version: str) -> "Point":
-        kwargs = {"sdf_version": target_version}
-        kwargs["point"] = self.point
-        new_obj = self.__class__(**kwargs)
-        return new_obj
-
-    def to_sdf(self, version: str | None = None) -> ET.Element:
-        if self.__version__ is None and version is not None:
-            self.__version__ = version
-        elif version is not None and version != self.__version__:
-            return self.to_version(version).to_sdf()
-        version = self.__version__ or version
-        el = ET.Element("point")
-        if self.point is not None:
-            el.text = self.point.to_sdf(version)
-        return el
-
-    @classmethod
-    def _from_sdf(cls, el: ET.Element, version: str):
-        _text = el.text or "0 0 0"
-        _point = _SDFVector3._from_sdf(_text, version)
-        if isinstance(_point, SDFError):
-            return _point
-        return cls(sdf_version=version, point=_point)
-
-
 class Road(BaseModel):
+    class Point(BaseModel):
+        def __init__(self, sdf_version: str | None = None, point: _SDFVector3 = None):
+            super().__init__(sdf_version)
+            if point is None:
+                point = _SDFVector3.from_sdf("0 0 0", version=sdf_version)
+            self.point = point
+
+        def to_version(self, target_version: str) -> "Road.Point":
+            kwargs = {"sdf_version": target_version}
+            kwargs["point"] = self.point
+            new_obj = self.__class__(**kwargs)
+            return new_obj
+
+        def to_sdf(self, version: str | None = None) -> ET.Element:
+            if self.__version__ is None and version is not None:
+                self.__version__ = version
+            elif version is not None and version != self.__version__:
+                return self.to_version(version).to_sdf()
+            version = self.__version__ or version
+            el = ET.Element("point")
+            if self.point is not None:
+                el.text = self.point.to_sdf(version)
+            return el
+
+        @classmethod
+        def _from_sdf(cls, el: ET.Element, version: str) -> "Road.Point | SDFError":
+            _text = el.text or "0 0 0"
+            _point = _SDFVector3._from_sdf(_text, version)
+            if isinstance(_point, SDFError):
+                return _point
+            return cls(sdf_version=version, point=_point)
+
+    class Width(BaseModel):
+        def __init__(self, sdf_version: str | None = None, width: float = 1.0):
+            super().__init__(sdf_version)
+            self.width = width
+
+        def to_version(self, target_version: str) -> "Road.Width":
+            kwargs = {"sdf_version": target_version}
+            kwargs["width"] = self.width
+            new_obj = self.__class__(**kwargs)
+            return new_obj
+
+        def to_sdf(self, version: str | None = None) -> ET.Element:
+            if self.__version__ is None and version is not None:
+                self.__version__ = version
+            elif version is not None and version != self.__version__:
+                return self.to_version(version).to_sdf()
+            version = self.__version__ or version
+            el = ET.Element("width")
+            if self.width is not None:
+                el.text = str(self.width)
+            return el
+
+        @classmethod
+        def _from_sdf(cls, el: ET.Element, version: str) -> "Road.Width | SDFError":
+            _text = el.text or 1.0
+            _width = _parse_double(_text)
+            if isinstance(_width, SDFError):
+                return _width
+            return cls(sdf_version=version, width=_width)
+
     def __init__(
         self,
         sdf_version: str | None = None,
         material: "Material" = None,
         name: str = "__default__",
-        points: List["Point"] = None,
-        width: "Width" = None
+        points: List["Road.Point"] = None,
+        width: "Road.Width" = None
     ):
-        self.__version__ = sdf_version
+        super().__init__(sdf_version)
         self.material = material
         self.name = name
         self.points = points or []
@@ -142,7 +171,7 @@ class Road(BaseModel):
         return el
 
     @classmethod
-    def _from_sdf(cls, el: ET.Element, version: str):
+    def _from_sdf(cls, el: ET.Element, version: str) -> "Road | SDFError":
         from ..elements.material import Material
         _c_material = el.find("material")
         if _c_material is not None:
@@ -159,47 +188,16 @@ class Road(BaseModel):
             return _name.extend("@name")
         _points = []
         for c in el.findall("point"):
-            _res = Point._from_sdf(c, version)
+            _res = cls.Point._from_sdf(c, version)
             if isinstance(_res, SDFError):
                 return _res.extend("point")
             _points.append(_res)
         _c_width = el.find("width")
         if _c_width is not None:
-            _res = Width._from_sdf(_c_width, version)
+            _res = cls.Width._from_sdf(_c_width, version)
             if isinstance(_res, SDFError):
                 return _res.extend("width")
             _width = _res
         else:
             _width = None
         return cls(sdf_version=version, material=_material, name=_name, points=_points, width=_width)
-
-
-class Width(BaseModel):
-    def __init__(self, sdf_version: str | None = None, width: float = 1.0):
-        self.__version__ = sdf_version
-        self.width = width
-
-    def to_version(self, target_version: str) -> "Width":
-        kwargs = {"sdf_version": target_version}
-        kwargs["width"] = self.width
-        new_obj = self.__class__(**kwargs)
-        return new_obj
-
-    def to_sdf(self, version: str | None = None) -> ET.Element:
-        if self.__version__ is None and version is not None:
-            self.__version__ = version
-        elif version is not None and version != self.__version__:
-            return self.to_version(version).to_sdf()
-        version = self.__version__ or version
-        el = ET.Element("width")
-        if self.width is not None:
-            el.text = str(self.width)
-        return el
-
-    @classmethod
-    def _from_sdf(cls, el: ET.Element, version: str):
-        _text = el.text or 1.0
-        _width = _parse_double(_text)
-        if isinstance(_width, SDFError):
-            return _width
-        return cls(sdf_version=version, width=_width)

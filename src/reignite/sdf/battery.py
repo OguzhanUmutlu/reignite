@@ -42,13 +42,43 @@ def _parse_double(raw: str) -> float | SDFError:
 
 
 class Battery(BaseModel):
+    class Voltage(BaseModel):
+        def __init__(self, sdf_version: str | None = None, voltage: float = 0.0):
+            super().__init__(sdf_version)
+            self.voltage = voltage
+
+        def to_version(self, target_version: str) -> "Battery.Voltage":
+            kwargs = {"sdf_version": target_version}
+            kwargs["voltage"] = self.voltage
+            new_obj = self.__class__(**kwargs)
+            return new_obj
+
+        def to_sdf(self, version: str | None = None) -> ET.Element:
+            if self.__version__ is None and version is not None:
+                self.__version__ = version
+            elif version is not None and version != self.__version__:
+                return self.to_version(version).to_sdf()
+            version = self.__version__ or version
+            el = ET.Element("voltage")
+            if self.voltage is not None:
+                el.text = str(self.voltage)
+            return el
+
+        @classmethod
+        def _from_sdf(cls, el: ET.Element, version: str) -> "Battery.Voltage | SDFError":
+            _text = el.text or 0.0
+            _voltage = _parse_double(_text)
+            if isinstance(_voltage, SDFError):
+                return _voltage
+            return cls(sdf_version=version, voltage=_voltage)
+
     def __init__(
         self,
         sdf_version: str | None = None,
         name: str = "__default__",
-        voltage: "Voltage" = None
+        voltage: "Battery.Voltage" = None
     ):
-        self.__version__ = sdf_version
+        super().__init__(sdf_version)
         self.name = name
         self.voltage = voltage
         if self.voltage is not None:
@@ -78,47 +108,16 @@ class Battery(BaseModel):
         return el
 
     @classmethod
-    def _from_sdf(cls, el: ET.Element, version: str):
+    def _from_sdf(cls, el: ET.Element, version: str) -> "Battery | SDFError":
         _name = el.get("name", "__default__")
         if isinstance(_name, SDFError):
             return _name.extend("@name")
         _c_voltage = el.find("voltage")
         if _c_voltage is not None:
-            _res = Voltage._from_sdf(_c_voltage, version)
+            _res = cls.Voltage._from_sdf(_c_voltage, version)
             if isinstance(_res, SDFError):
                 return _res.extend("voltage")
             _voltage = _res
         else:
             _voltage = None
         return cls(sdf_version=version, name=_name, voltage=_voltage)
-
-
-class Voltage(BaseModel):
-    def __init__(self, sdf_version: str | None = None, voltage: float = 0.0):
-        self.__version__ = sdf_version
-        self.voltage = voltage
-
-    def to_version(self, target_version: str) -> "Voltage":
-        kwargs = {"sdf_version": target_version}
-        kwargs["voltage"] = self.voltage
-        new_obj = self.__class__(**kwargs)
-        return new_obj
-
-    def to_sdf(self, version: str | None = None) -> ET.Element:
-        if self.__version__ is None and version is not None:
-            self.__version__ = version
-        elif version is not None and version != self.__version__:
-            return self.to_version(version).to_sdf()
-        version = self.__version__ or version
-        el = ET.Element("voltage")
-        if self.voltage is not None:
-            el.text = str(self.voltage)
-        return el
-
-    @classmethod
-    def _from_sdf(cls, el: ET.Element, version: str):
-        _text = el.text or 0.0
-        _voltage = _parse_double(_text)
-        if isinstance(_voltage, SDFError):
-            return _voltage
-        return cls(sdf_version=version, voltage=_voltage)

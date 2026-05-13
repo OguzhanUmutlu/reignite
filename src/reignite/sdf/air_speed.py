@@ -12,8 +12,55 @@ if typing.TYPE_CHECKING:
 
 
 class AirSpeed(BaseModel):
-    def __init__(self, sdf_version: str | None = None, pressure: "Pressure" = None):
-        self.__version__ = sdf_version
+    class Pressure(BaseModel):
+        def __init__(self, sdf_version: str | None = None, noise: "Noise" = None):
+            super().__init__(sdf_version)
+            self.noise = noise
+            if self.noise is not None:
+                if getattr(self.noise, '__version__', None) is None:
+                    self.noise.__version__ = self.__version__
+                elif getattr(self.noise, '__version__', None) != self.__version__ and self.__version__ is not None:
+                    self.noise = self.noise.to_version(self.__version__)
+
+        def to_version(self, target_version: str) -> "AirSpeed.Pressure":
+            from ..elements.noise import Noise
+            kwargs = {"sdf_version": target_version}
+            kwargs["noise"] = self.noise.to_version(target_version) if self.noise is not None else None
+            new_obj = self.__class__(**kwargs)
+            return new_obj
+
+        def to_sdf(self, version: str | None = None) -> ET.Element:
+            from ..elements.noise import Noise
+            if self.__version__ is None and version is not None:
+                self.__version__ = version
+            elif version is not None and version != self.__version__:
+                return self.to_version(version).to_sdf()
+            version = self.__version__ or version
+            el = ET.Element("pressure")
+            if self.noise is None:
+                self.noise = Noise(sdf_version=version)
+            if self.noise is not None:
+                el.append(self.noise.to_sdf(version))
+            return el
+
+        @classmethod
+        def _from_sdf(cls, el: ET.Element, version: str) -> "AirSpeed.Pressure | SDFError":
+            from ..elements.noise import Noise
+            _c_noise = el.find("noise")
+            if _c_noise is not None:
+                _res = Noise._from_sdf(_c_noise, version)
+                if isinstance(_res, SDFError):
+                    return _res.extend("noise")
+                _noise = _res
+            else:
+                _res = Noise._from_sdf(ET.Element("noise"), version)
+                if isinstance(_res, SDFError):
+                    return _res.extend("noise")
+                _noise = _res
+            return cls(sdf_version=version, noise=_noise)
+
+    def __init__(self, sdf_version: str | None = None, pressure: "AirSpeed.Pressure" = None):
+        super().__init__(sdf_version)
         self.pressure = pressure
         if self.pressure is not None:
             if getattr(self.pressure, '__version__', None) is None:
@@ -39,61 +86,13 @@ class AirSpeed(BaseModel):
         return el
 
     @classmethod
-    def _from_sdf(cls, el: ET.Element, version: str):
+    def _from_sdf(cls, el: ET.Element, version: str) -> "AirSpeed | SDFError":
         _c_pressure = el.find("pressure")
         if _c_pressure is not None:
-            _res = Pressure._from_sdf(_c_pressure, version)
+            _res = cls.Pressure._from_sdf(_c_pressure, version)
             if isinstance(_res, SDFError):
                 return _res.extend("pressure")
             _pressure = _res
         else:
             _pressure = None
         return cls(sdf_version=version, pressure=_pressure)
-
-
-class Pressure(BaseModel):
-    def __init__(self, sdf_version: str | None = None, noise: "Noise" = None):
-        self.__version__ = sdf_version
-        self.noise = noise
-        if self.noise is not None:
-            if getattr(self.noise, '__version__', None) is None:
-                self.noise.__version__ = self.__version__
-            elif getattr(self.noise, '__version__', None) != self.__version__ and self.__version__ is not None:
-                self.noise = self.noise.to_version(self.__version__)
-
-    def to_version(self, target_version: str) -> "Pressure":
-        from ..elements.noise import Noise
-        kwargs = {"sdf_version": target_version}
-        kwargs["noise"] = self.noise.to_version(target_version) if self.noise is not None else None
-        new_obj = self.__class__(**kwargs)
-        return new_obj
-
-    def to_sdf(self, version: str | None = None) -> ET.Element:
-        from ..elements.noise import Noise
-        if self.__version__ is None and version is not None:
-            self.__version__ = version
-        elif version is not None and version != self.__version__:
-            return self.to_version(version).to_sdf()
-        version = self.__version__ or version
-        el = ET.Element("pressure")
-        if self.noise is None:
-            self.noise = Noise(sdf_version=version)
-        if self.noise is not None:
-            el.append(self.noise.to_sdf(version))
-        return el
-
-    @classmethod
-    def _from_sdf(cls, el: ET.Element, version: str):
-        from ..elements.noise import Noise
-        _c_noise = el.find("noise")
-        if _c_noise is not None:
-            _res = Noise._from_sdf(_c_noise, version)
-            if isinstance(_res, SDFError):
-                return _res.extend("noise")
-            _noise = _res
-        else:
-            _res = Noise._from_sdf(ET.Element("noise"), version)
-            if isinstance(_res, SDFError):
-                return _res.extend("noise")
-            _noise = _res
-        return cls(sdf_version=version, noise=_noise)

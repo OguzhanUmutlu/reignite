@@ -10,7 +10,7 @@ from ..utils.errors import SDFError
 
 class Rfidtag(BaseModel):
     def __init__(self, sdf_version: str | None = None):
-        self.__version__ = sdf_version
+        super().__init__(sdf_version)
 
     def to_version(self, target_version: str) -> "Rfidtag":
         kwargs = {"sdf_version": target_version}
@@ -27,5 +27,5 @@ class Rfidtag(BaseModel):
         return el
 
     @classmethod
-    def _from_sdf(cls, el: ET.Element, version: str):
+    def _from_sdf(cls, el: ET.Element, version: str) -> "Rfidtag | SDFError":
         return cls(sdf_version=version)

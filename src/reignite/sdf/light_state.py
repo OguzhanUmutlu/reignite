@@ -18,7 +18,7 @@ class LightState(BaseModel):
         name: str = "__default__",
         pose: "Pose" = None
     ):
-        self.__version__ = sdf_version
+        super().__init__(sdf_version)
         self.name = name
         self.pose = pose
         if self.pose is not None:
@@ -50,7 +50,7 @@ class LightState(BaseModel):
         return el
 
     @classmethod
-    def _from_sdf(cls, el: ET.Element, version: str):
+    def _from_sdf(cls, el: ET.Element, version: str) -> "LightState | SDFError":
         from ..elements.pose import Pose
         _name = el.get("name", "__default__")
         if isinstance(_name, SDFError):

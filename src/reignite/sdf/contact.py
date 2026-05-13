@@ -8,59 +8,88 @@ from ..utils.model import BaseModel
 from ..utils.errors import SDFError
 
 
-class Collision(BaseModel):
-    def __init__(
-        self,
-        sdf_version: str | None = None,
-        collision: str = "__default__",
-        name: str = "__default__"
-    ):
-        self.__version__ = sdf_version
-        self.collision = collision
-        self.name = name
-
-    def to_version(self, target_version: str) -> "Collision":
-        if self.name is not None and cmp_version(target_version, "1.2") >= 0:
-            raise ValueError(f"'name' is not supported in SDF version {target_version} (removed in 1.2)")
-        kwargs = {"sdf_version": target_version}
-        kwargs["collision"] = self.collision
-        kwargs["name"] = self.name
-        new_obj = self.__class__(**kwargs)
-        return new_obj
-
-    def to_sdf(self, version: str | None = None) -> ET.Element:
-        if self.__version__ is None and version is not None:
-            self.__version__ = version
-        elif version is not None and version != self.__version__:
-            return self.to_version(version).to_sdf()
-        version = self.__version__ or version
-        el = ET.Element("collision")
-        if self.collision is not None:
-            el.text = self.collision
-        if self.name is not None:
-            el.set("name", self.name)
-        return el
-
-    @classmethod
-    def _from_sdf(cls, el: ET.Element, version: str):
-        _text = el.text or "__default__"
-        _collision = _text
-        if isinstance(_collision, SDFError):
-            return _collision
-        _name = el.get("name", "__default__")
-        if isinstance(_name, SDFError):
-            return _name.extend("@name")
-        return cls(sdf_version=version, collision=_collision, name=_name)
-
-
 class Contact(BaseModel):
+    class Collision(BaseModel):
+        def __init__(
+            self,
+            sdf_version: str | None = None,
+            collision: str = "__default__",
+            name: str = "__default__"
+        ):
+            super().__init__(sdf_version)
+            self.collision = collision
+            self.name = name
+
+        def to_version(self, target_version: str) -> "Contact.Collision":
+            if self.name is not None and cmp_version(target_version, "1.2") >= 0:
+                raise ValueError(f"'name' is not supported in SDF version {target_version} (removed in 1.2)")
+            kwargs = {"sdf_version": target_version}
+            kwargs["collision"] = self.collision
+            kwargs["name"] = self.name
+            new_obj = self.__class__(**kwargs)
+            return new_obj
+
+        def to_sdf(self, version: str | None = None) -> ET.Element:
+            if self.__version__ is None and version is not None:
+                self.__version__ = version
+            elif version is not None and version != self.__version__:
+                return self.to_version(version).to_sdf()
+            version = self.__version__ or version
+            el = ET.Element("collision")
+            if self.collision is not None:
+                el.text = self.collision
+            if self.name is not None:
+                el.set("name", self.name)
+            return el
+
+        @classmethod
+        def _from_sdf(cls, el: ET.Element, version: str) -> "Contact.Collision | SDFError":
+            _text = el.text or "__default__"
+            _collision = _text
+            if isinstance(_collision, SDFError):
+                return _collision
+            _name = el.get("name", "__default__")
+            if isinstance(_name, SDFError):
+                return _name.extend("@name")
+            return cls(sdf_version=version, collision=_collision, name=_name)
+
+    class Topic(BaseModel):
+        def __init__(self, sdf_version: str | None = None, topic: str = "__default_topic__"):
+            super().__init__(sdf_version)
+            self.topic = topic
+
+        def to_version(self, target_version: str) -> "Contact.Topic":
+            kwargs = {"sdf_version": target_version}
+            kwargs["topic"] = self.topic
+            new_obj = self.__class__(**kwargs)
+            return new_obj
+
+        def to_sdf(self, version: str | None = None) -> ET.Element:
+            if self.__version__ is None and version is not None:
+                self.__version__ = version
+            elif version is not None and version != self.__version__:
+                return self.to_version(version).to_sdf()
+            version = self.__version__ or version
+            el = ET.Element("topic")
+            if self.topic is not None:
+                el.text = self.topic
+            return el
+
+        @classmethod
+        def _from_sdf(cls, el: ET.Element, version: str) -> "Contact.Topic | SDFError":
+            _text = el.text or "__default_topic__"
+            _topic = _text
+            if isinstance(_topic, SDFError):
+                return _topic
+            return cls(sdf_version=version, topic=_topic)
+
     def __init__(
         self,
         sdf_version: str | None = None,
-        collision: "Collision" = None,
-        topic: "Topic" = None
+        collision: "Contact.Collision" = None,
+        topic: "Contact.Topic" = None
     ):
-        self.__version__ = sdf_version
+        super().__init__(sdf_version)
         self.collision = collision
         self.topic = topic
         if self.collision is not None:
@@ -95,10 +124,10 @@ class Contact(BaseModel):
         return el
 
     @classmethod
-    def _from_sdf(cls, el: ET.Element, version: str):
+    def _from_sdf(cls, el: ET.Element, version: str) -> "Contact | SDFError":
         _c_collision = el.find("collision")
         if _c_collision is not None:
-            _res = Collision._from_sdf(_c_collision, version)
+            _res = cls.Collision._from_sdf(_c_collision, version)
             if isinstance(_res, SDFError):
                 return _res.extend("collision")
             _collision = _res
@@ -106,41 +135,10 @@ class Contact(BaseModel):
             _collision = None
         _c_topic = el.find("topic")
         if _c_topic is not None:
-            _res = Topic._from_sdf(_c_topic, version)
+            _res = cls.Topic._from_sdf(_c_topic, version)
             if isinstance(_res, SDFError):
                 return _res.extend("topic")
             _topic = _res
         else:
             _topic = None
         return cls(sdf_version=version, collision=_collision, topic=_topic)
-
-
-class Topic(BaseModel):
-    def __init__(self, sdf_version: str | None = None, topic: str = "__default_topic__"):
-        self.__version__ = sdf_version
-        self.topic = topic
-
-    def to_version(self, target_version: str) -> "Topic":
-        kwargs = {"sdf_version": target_version}
-        kwargs["topic"] = self.topic
-        new_obj = self.__class__(**kwargs)
-        return new_obj
-
-    def to_sdf(self, version: str | None = None) -> ET.Element:
-        if self.__version__ is None and version is not None:
-            self.__version__ = version
-        elif version is not None and version != self.__version__:
-            return self.to_version(version).to_sdf()
-        version = self.__version__ or version
-        el = ET.Element("topic")
-        if self.topic is not None:
-            el.text = self.topic
-        return el
-
-    @classmethod
-    def _from_sdf(cls, el: ET.Element, version: str):
-        _text = el.text or "__default_topic__"
-        _topic = _text
-        if isinstance(_topic, SDFError):
-            return _topic
-        return cls(sdf_version=version, topic=_topic)

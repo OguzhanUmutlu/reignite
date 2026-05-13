@@ -20,7 +20,7 @@ class Frame(BaseModel):
         name: str = "",
         pose: "Pose" = None
     ):
-        self.__version__ = sdf_version
+        super().__init__(sdf_version)
         self.attached_to = attached_to
         self.name = name
         self.pose = pose
@@ -60,7 +60,7 @@ class Frame(BaseModel):
         return el
 
     @classmethod
-    def _from_sdf(cls, el: ET.Element, version: str):
+    def _from_sdf(cls, el: ET.Element, version: str) -> "Frame | SDFError":
         from ..elements.pose import Pose
         _attached_to = el.get("attached_to", "")
         if isinstance(_attached_to, SDFError):

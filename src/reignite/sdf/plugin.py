@@ -15,7 +15,7 @@ class Plugin(BaseModel):
         filename: str = "__default__",
         name: str = "__default__"
     ):
-        self.__version__ = sdf_version
+        super().__init__(sdf_version)
         self.filename = filename
         self.name = name
 
@@ -40,7 +40,7 @@ class Plugin(BaseModel):
         return el
 
     @classmethod
-    def _from_sdf(cls, el: ET.Element, version: str):
+    def _from_sdf(cls, el: ET.Element, version: str) -> "Plugin | SDFError":
         _filename = el.get("filename", "__default__")
         if isinstance(_filename, SDFError):
             return _filename.extend("@filename")

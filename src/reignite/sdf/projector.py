@@ -49,114 +49,176 @@ def _parse_double(raw: str) -> float | SDFError:
 
 
 
-class FarClip(BaseModel):
-    def __init__(self, sdf_version: str | None = None, far_clip: float = 10.0):
-        self.__version__ = sdf_version
-        self.far_clip = far_clip
-
-    def to_version(self, target_version: str) -> "FarClip":
-        kwargs = {"sdf_version": target_version}
-        kwargs["far_clip"] = self.far_clip
-        new_obj = self.__class__(**kwargs)
-        return new_obj
-
-    def to_sdf(self, version: str | None = None) -> ET.Element:
-        if self.__version__ is None and version is not None:
-            self.__version__ = version
-        elif version is not None and version != self.__version__:
-            return self.to_version(version).to_sdf()
-        version = self.__version__ or version
-        el = ET.Element("far_clip")
-        if self.far_clip is not None:
-            el.text = str(self.far_clip)
-        return el
-
-    @classmethod
-    def _from_sdf(cls, el: ET.Element, version: str):
-        _text = el.text or 10.0
-        _far_clip = _parse_double(_text)
-        if isinstance(_far_clip, SDFError):
-            return _far_clip
-        return cls(sdf_version=version, far_clip=_far_clip)
-
-
-class Fov(BaseModel):
-    def __init__(self, sdf_version: str | None = None, fov: float = 0.785):
-        self.__version__ = sdf_version
-        self.fov = fov
-
-    def to_version(self, target_version: str) -> "Fov":
-        kwargs = {"sdf_version": target_version}
-        kwargs["fov"] = self.fov
-        new_obj = self.__class__(**kwargs)
-        return new_obj
-
-    def to_sdf(self, version: str | None = None) -> ET.Element:
-        if self.__version__ is None and version is not None:
-            self.__version__ = version
-        elif version is not None and version != self.__version__:
-            return self.to_version(version).to_sdf()
-        version = self.__version__ or version
-        el = ET.Element("fov")
-        if self.fov is not None:
-            el.text = str(self.fov)
-        return el
-
-    @classmethod
-    def _from_sdf(cls, el: ET.Element, version: str):
-        _text = el.text or 0.785
-        _fov = _parse_double(_text)
-        if isinstance(_fov, SDFError):
-            return _fov
-        return cls(sdf_version=version, fov=_fov)
-
-
-class NearClip(BaseModel):
-    def __init__(self, sdf_version: str | None = None, near_clip: float = 0.1):
-        self.__version__ = sdf_version
-        self.near_clip = near_clip
-
-    def to_version(self, target_version: str) -> "NearClip":
-        kwargs = {"sdf_version": target_version}
-        kwargs["near_clip"] = self.near_clip
-        new_obj = self.__class__(**kwargs)
-        return new_obj
-
-    def to_sdf(self, version: str | None = None) -> ET.Element:
-        if self.__version__ is None and version is not None:
-            self.__version__ = version
-        elif version is not None and version != self.__version__:
-            return self.to_version(version).to_sdf()
-        version = self.__version__ or version
-        el = ET.Element("near_clip")
-        if self.near_clip is not None:
-            el.text = str(self.near_clip)
-        return el
-
-    @classmethod
-    def _from_sdf(cls, el: ET.Element, version: str):
-        _text = el.text or 0.1
-        _near_clip = _parse_double(_text)
-        if isinstance(_near_clip, SDFError):
-            return _near_clip
-        return cls(sdf_version=version, near_clip=_near_clip)
-
-
 class Projector(BaseModel):
+    class FarClip(BaseModel):
+        def __init__(self, sdf_version: str | None = None, far_clip: float = 10.0):
+            super().__init__(sdf_version)
+            self.far_clip = far_clip
+
+        def to_version(self, target_version: str) -> "Projector.FarClip":
+            kwargs = {"sdf_version": target_version}
+            kwargs["far_clip"] = self.far_clip
+            new_obj = self.__class__(**kwargs)
+            return new_obj
+
+        def to_sdf(self, version: str | None = None) -> ET.Element:
+            if self.__version__ is None and version is not None:
+                self.__version__ = version
+            elif version is not None and version != self.__version__:
+                return self.to_version(version).to_sdf()
+            version = self.__version__ or version
+            el = ET.Element("far_clip")
+            if self.far_clip is not None:
+                el.text = str(self.far_clip)
+            return el
+
+        @classmethod
+        def _from_sdf(cls, el: ET.Element, version: str) -> "Projector.FarClip | SDFError":
+            _text = el.text or 10.0
+            _far_clip = _parse_double(_text)
+            if isinstance(_far_clip, SDFError):
+                return _far_clip
+            return cls(sdf_version=version, far_clip=_far_clip)
+
+    class Fov(BaseModel):
+        def __init__(self, sdf_version: str | None = None, fov: float = 0.785):
+            super().__init__(sdf_version)
+            self.fov = fov
+
+        def to_version(self, target_version: str) -> "Projector.Fov":
+            kwargs = {"sdf_version": target_version}
+            kwargs["fov"] = self.fov
+            new_obj = self.__class__(**kwargs)
+            return new_obj
+
+        def to_sdf(self, version: str | None = None) -> ET.Element:
+            if self.__version__ is None and version is not None:
+                self.__version__ = version
+            elif version is not None and version != self.__version__:
+                return self.to_version(version).to_sdf()
+            version = self.__version__ or version
+            el = ET.Element("fov")
+            if self.fov is not None:
+                el.text = str(self.fov)
+            return el
+
+        @classmethod
+        def _from_sdf(cls, el: ET.Element, version: str) -> "Projector.Fov | SDFError":
+            _text = el.text or 0.785
+            _fov = _parse_double(_text)
+            if isinstance(_fov, SDFError):
+                return _fov
+            return cls(sdf_version=version, fov=_fov)
+
+    class NearClip(BaseModel):
+        def __init__(self, sdf_version: str | None = None, near_clip: float = 0.1):
+            super().__init__(sdf_version)
+            self.near_clip = near_clip
+
+        def to_version(self, target_version: str) -> "Projector.NearClip":
+            kwargs = {"sdf_version": target_version}
+            kwargs["near_clip"] = self.near_clip
+            new_obj = self.__class__(**kwargs)
+            return new_obj
+
+        def to_sdf(self, version: str | None = None) -> ET.Element:
+            if self.__version__ is None and version is not None:
+                self.__version__ = version
+            elif version is not None and version != self.__version__:
+                return self.to_version(version).to_sdf()
+            version = self.__version__ or version
+            el = ET.Element("near_clip")
+            if self.near_clip is not None:
+                el.text = str(self.near_clip)
+            return el
+
+        @classmethod
+        def _from_sdf(cls, el: ET.Element, version: str) -> "Projector.NearClip | SDFError":
+            _text = el.text or 0.1
+            _near_clip = _parse_double(_text)
+            if isinstance(_near_clip, SDFError):
+                return _near_clip
+            return cls(sdf_version=version, near_clip=_near_clip)
+
+    class Texture(BaseModel):
+        def __init__(self, sdf_version: str | None = None, texture: str = "__default__"):
+            super().__init__(sdf_version)
+            self.texture = texture
+
+        def to_version(self, target_version: str) -> "Projector.Texture":
+            kwargs = {"sdf_version": target_version}
+            kwargs["texture"] = self.texture
+            new_obj = self.__class__(**kwargs)
+            return new_obj
+
+        def to_sdf(self, version: str | None = None) -> ET.Element:
+            if self.__version__ is None and version is not None:
+                self.__version__ = version
+            elif version is not None and version != self.__version__:
+                return self.to_version(version).to_sdf()
+            version = self.__version__ or version
+            el = ET.Element("texture")
+            if self.texture is not None:
+                el.text = self.texture
+            return el
+
+        @classmethod
+        def _from_sdf(cls, el: ET.Element, version: str) -> "Projector.Texture | SDFError":
+            _text = el.text or "__default__"
+            _texture = _text
+            if isinstance(_texture, SDFError):
+                return _texture
+            return cls(sdf_version=version, texture=_texture)
+
+    class VisibilityFlags(BaseModel):
+        def __init__(self, sdf_version: str | None = None, visibility_flags: int = 4294967295):
+            super().__init__(sdf_version)
+            self.visibility_flags = visibility_flags
+
+        def to_version(self, target_version: str) -> "Projector.VisibilityFlags":
+            if self.visibility_flags is not None and cmp_version(target_version, "1.7") < 0:
+                raise ValueError(f"'visibility_flags' is not supported in SDF version {target_version} (added in 1.7)")
+            kwargs = {"sdf_version": target_version}
+            kwargs["visibility_flags"] = self.visibility_flags
+            new_obj = self.__class__(**kwargs)
+            return new_obj
+
+        def to_sdf(self, version: str | None = None) -> ET.Element:
+            if self.__version__ is None and version is not None:
+                self.__version__ = version
+            elif version is not None and version != self.__version__:
+                return self.to_version(version).to_sdf()
+            version = self.__version__ or version
+            el = ET.Element("visibility_flags")
+            if self.visibility_flags is not None:
+                el.text = str(self.visibility_flags)
+            return el
+
+        @classmethod
+        def _from_sdf(cls, el: ET.Element, version: str) -> "Projector.VisibilityFlags | SDFError":
+            _text = el.text or 4294967295
+            _visibility_flags = _parse_uint32(_text)
+            if isinstance(_visibility_flags, SDFError):
+                return _visibility_flags
+            if _visibility_flags is not None and cmp_version(version, "1.7") < 0:
+                if _visibility_flags != 4294967295:
+                    return SDFError(f"'visibility_flags' is not supported in SDF version {version} (added in 1.7)")
+            return cls(sdf_version=version, visibility_flags=_visibility_flags)
+
     def __init__(
         self,
         sdf_version: str | None = None,
-        far_clip: "FarClip" = None,
-        fov: "Fov" = None,
+        far_clip: "Projector.FarClip" = None,
+        fov: "Projector.Fov" = None,
         frames: List["Frame"] = None,
         name: str = "__default__",
-        near_clip: "NearClip" = None,
+        near_clip: "Projector.NearClip" = None,
         plugins: List["Plugin"] = None,
         pose: "Pose" = None,
-        texture: "Texture" = None,
-        visibility_flags: "VisibilityFlags" = None
+        texture: "Projector.Texture" = None,
+        visibility_flags: "Projector.VisibilityFlags" = None
     ):
-        self.__version__ = sdf_version
+        super().__init__(sdf_version)
         self.far_clip = far_clip
         self.fov = fov
         self.frames = frames or []
@@ -261,13 +323,13 @@ class Projector(BaseModel):
         return el
 
     @classmethod
-    def _from_sdf(cls, el: ET.Element, version: str):
+    def _from_sdf(cls, el: ET.Element, version: str) -> "Projector | SDFError":
         from ..elements.frame import Frame
         from ..elements.plugin import Plugin
         from ..elements.pose import Pose
         _c_far_clip = el.find("far_clip")
         if _c_far_clip is not None:
-            _res = FarClip._from_sdf(_c_far_clip, version)
+            _res = cls.FarClip._from_sdf(_c_far_clip, version)
             if isinstance(_res, SDFError):
                 return _res.extend("far_clip")
             _far_clip = _res
@@ -275,7 +337,7 @@ class Projector(BaseModel):
             _far_clip = None
         _c_fov = el.find("fov")
         if _c_fov is not None:
-            _res = Fov._from_sdf(_c_fov, version)
+            _res = cls.Fov._from_sdf(_c_fov, version)
             if isinstance(_res, SDFError):
                 return _res.extend("fov")
             _fov = _res
@@ -294,7 +356,7 @@ class Projector(BaseModel):
             return _name.extend("@name")
         _c_near_clip = el.find("near_clip")
         if _c_near_clip is not None:
-            _res = NearClip._from_sdf(_c_near_clip, version)
+            _res = cls.NearClip._from_sdf(_c_near_clip, version)
             if isinstance(_res, SDFError):
                 return _res.extend("near_clip")
             _near_clip = _res
@@ -316,7 +378,7 @@ class Projector(BaseModel):
             _pose = None
         _c_texture = el.find("texture")
         if _c_texture is not None:
-            _res = Texture._from_sdf(_c_texture, version)
+            _res = cls.Texture._from_sdf(_c_texture, version)
             if isinstance(_res, SDFError):
                 return _res.extend("texture")
             _texture = _res
@@ -324,7 +386,7 @@ class Projector(BaseModel):
             _texture = None
         _c_visibility_flags = el.find("visibility_flags")
         if _c_visibility_flags is not None:
-            _res = VisibilityFlags._from_sdf(_c_visibility_flags, version)
+            _res = cls.VisibilityFlags._from_sdf(_c_visibility_flags, version)
             if isinstance(_res, SDFError):
                 return _res.extend("visibility_flags")
             _visibility_flags = _res
@@ -333,70 +395,3 @@ class Projector(BaseModel):
         if _visibility_flags is not None and cmp_version(version, "1.7") < 0:
             return SDFError(f"'visibility_flags' is not supported in SDF version {version} (added in 1.7)")
         return cls(sdf_version=version, far_clip=_far_clip, fov=_fov, frames=_frames, name=_name, near_clip=_near_clip, plugins=_plugins, pose=_pose, texture=_texture, visibility_flags=_visibility_flags)
-
-
-class Texture(BaseModel):
-    def __init__(self, sdf_version: str | None = None, texture: str = "__default__"):
-        self.__version__ = sdf_version
-        self.texture = texture
-
-    def to_version(self, target_version: str) -> "Texture":
-        kwargs = {"sdf_version": target_version}
-        kwargs["texture"] = self.texture
-        new_obj = self.__class__(**kwargs)
-        return new_obj
-
-    def to_sdf(self, version: str | None = None) -> ET.Element:
-        if self.__version__ is None and version is not None:
-            self.__version__ = version
-        elif version is not None and version != self.__version__:
-            return self.to_version(version).to_sdf()
-        version = self.__version__ or version
-        el = ET.Element("texture")
-        if self.texture is not None:
-            el.text = self.texture
-        return el
-
-    @classmethod
-    def _from_sdf(cls, el: ET.Element, version: str):
-        _text = el.text or "__default__"
-        _texture = _text
-        if isinstance(_texture, SDFError):
-            return _texture
-        return cls(sdf_version=version, texture=_texture)
-
-
-class VisibilityFlags(BaseModel):
-    def __init__(self, sdf_version: str | None = None, visibility_flags: int = 4294967295):
-        self.__version__ = sdf_version
-        self.visibility_flags = visibility_flags
-
-    def to_version(self, target_version: str) -> "VisibilityFlags":
-        if self.visibility_flags is not None and cmp_version(target_version, "1.7") < 0:
-            raise ValueError(f"'visibility_flags' is not supported in SDF version {target_version} (added in 1.7)")
-        kwargs = {"sdf_version": target_version}
-        kwargs["visibility_flags"] = self.visibility_flags
-        new_obj = self.__class__(**kwargs)
-        return new_obj
-
-    def to_sdf(self, version: str | None = None) -> ET.Element:
-        if self.__version__ is None and version is not None:
-            self.__version__ = version
-        elif version is not None and version != self.__version__:
-            return self.to_version(version).to_sdf()
-        version = self.__version__ or version
-        el = ET.Element("visibility_flags")
-        if self.visibility_flags is not None:
-            el.text = str(self.visibility_flags)
-        return el
-
-    @classmethod
-    def _from_sdf(cls, el: ET.Element, version: str):
-        _text = el.text or 4294967295
-        _visibility_flags = _parse_uint32(_text)
-        if isinstance(_visibility_flags, SDFError):
-            return _visibility_flags
-        if _visibility_flags is not None and cmp_version(version, "1.7") < 0:
-            if _visibility_flags != 4294967295:
-                return SDFError(f"'visibility_flags' is not supported in SDF version {version} (added in 1.7)")
-        return cls(sdf_version=version, visibility_flags=_visibility_flags)

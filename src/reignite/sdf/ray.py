@@ -42,429 +42,786 @@ def _parse_double(raw: str) -> float | SDFError:
 
 
 
-class Horizontal(BaseModel):
-    def __init__(
-        self,
-        sdf_version: str | None = None,
-        max_angle: float = 0,
-        min_angle: float = 0,
-        resolution: float = 1,
-        samples: int = 1
-    ):
-        self.__version__ = sdf_version
-        self.max_angle = max_angle
-        self.min_angle = min_angle
-        self.resolution = resolution
-        self.samples = samples
-
-    def to_version(self, target_version: str) -> "Horizontal":
-        if self.max_angle is not None and cmp_version(target_version, "1.2") >= 0:
-            raise ValueError(f"'max_angle' is not supported in SDF version {target_version} (removed in 1.2)")
-        if self.min_angle is not None and cmp_version(target_version, "1.2") >= 0:
-            raise ValueError(f"'min_angle' is not supported in SDF version {target_version} (removed in 1.2)")
-        if self.resolution is not None and cmp_version(target_version, "1.2") >= 0:
-            raise ValueError(f"'resolution' is not supported in SDF version {target_version} (removed in 1.2)")
-        if self.samples is not None and cmp_version(target_version, "1.2") >= 0:
-            raise ValueError(f"'samples' is not supported in SDF version {target_version} (removed in 1.2)")
-        kwargs = {"sdf_version": target_version}
-        kwargs["max_angle"] = self.max_angle
-        kwargs["min_angle"] = self.min_angle
-        kwargs["resolution"] = self.resolution
-        kwargs["samples"] = self.samples
-        new_obj = self.__class__(**kwargs)
-        return new_obj
-
-    def to_sdf(self, version: str | None = None) -> ET.Element:
-        if self.__version__ is None and version is not None:
-            self.__version__ = version
-        elif version is not None and version != self.__version__:
-            return self.to_version(version).to_sdf()
-        version = self.__version__ or version
-        el = ET.Element("horizontal")
-        if self.max_angle is not None:
-            el.set("max_angle", str(self.max_angle))
-        if self.min_angle is not None:
-            el.set("min_angle", str(self.min_angle))
-        if self.resolution is not None:
-            el.set("resolution", str(self.resolution))
-        if self.samples is not None:
-            el.set("samples", str(self.samples))
-        return el
-
-    @classmethod
-    def _from_sdf(cls, el: ET.Element, version: str):
-        _max_angle = _parse_double(el.get("max_angle", 0))
-        if isinstance(_max_angle, SDFError):
-            return _max_angle.extend("@max_angle")
-        _min_angle = _parse_double(el.get("min_angle", 0))
-        if isinstance(_min_angle, SDFError):
-            return _min_angle.extend("@min_angle")
-        _resolution = _parse_double(el.get("resolution", 1))
-        if isinstance(_resolution, SDFError):
-            return _resolution.extend("@resolution")
-        _samples = _parse_uint32(el.get("samples", 1))
-        if isinstance(_samples, SDFError):
-            return _samples.extend("@samples")
-        return cls(sdf_version=version, max_angle=_max_angle, min_angle=_min_angle, resolution=_resolution, samples=_samples)
-
-
-class Max(BaseModel):
-    def __init__(self, sdf_version: str | None = None, max: float = 0):
-        self.__version__ = sdf_version
-        self.max = max
-
-    def to_version(self, target_version: str) -> "Max":
-        if self.max is not None and cmp_version(target_version, "1.2") < 0:
-            raise ValueError(f"'max' is not supported in SDF version {target_version} (added in 1.2)")
-        kwargs = {"sdf_version": target_version}
-        kwargs["max"] = self.max
-        new_obj = self.__class__(**kwargs)
-        return new_obj
-
-    def to_sdf(self, version: str | None = None) -> ET.Element:
-        if self.__version__ is None and version is not None:
-            self.__version__ = version
-        elif version is not None and version != self.__version__:
-            return self.to_version(version).to_sdf()
-        version = self.__version__ or version
-        el = ET.Element("max")
-        if self.max is not None:
-            el.text = str(self.max)
-        return el
-
-    @classmethod
-    def _from_sdf(cls, el: ET.Element, version: str):
-        _text = el.text or 0
-        _max = _parse_double(_text)
-        if isinstance(_max, SDFError):
-            return _max
-        if _max is not None and cmp_version(version, "1.2") < 0:
-            if _max != 0:
-                return SDFError(f"'max' is not supported in SDF version {version} (added in 1.2)")
-        return cls(sdf_version=version, max=_max)
-
-
-class MaxAngle(BaseModel):
-    def __init__(self, sdf_version: str | None = None, max_angle: float = 0):
-        self.__version__ = sdf_version
-        self.max_angle = max_angle
-
-    def to_version(self, target_version: str) -> "MaxAngle":
-        if self.max_angle is not None and cmp_version(target_version, "1.2") < 0:
-            raise ValueError(f"'max_angle' is not supported in SDF version {target_version} (added in 1.2)")
-        kwargs = {"sdf_version": target_version}
-        kwargs["max_angle"] = self.max_angle
-        new_obj = self.__class__(**kwargs)
-        return new_obj
-
-    def to_sdf(self, version: str | None = None) -> ET.Element:
-        if self.__version__ is None and version is not None:
-            self.__version__ = version
-        elif version is not None and version != self.__version__:
-            return self.to_version(version).to_sdf()
-        version = self.__version__ or version
-        el = ET.Element("max_angle")
-        if self.max_angle is not None:
-            el.text = str(self.max_angle)
-        return el
-
-    @classmethod
-    def _from_sdf(cls, el: ET.Element, version: str):
-        _text = el.text or 0
-        _max_angle = _parse_double(_text)
-        if isinstance(_max_angle, SDFError):
-            return _max_angle
-        if _max_angle is not None and cmp_version(version, "1.2") < 0:
-            if _max_angle != 0:
-                return SDFError(f"'max_angle' is not supported in SDF version {version} (added in 1.2)")
-        return cls(sdf_version=version, max_angle=_max_angle)
-
-
-class Mean(BaseModel):
-    def __init__(self, sdf_version: str | None = None, mean: float = 0.0):
-        self.__version__ = sdf_version
-        self.mean = mean
-
-    def to_version(self, target_version: str) -> "Mean":
-        kwargs = {"sdf_version": target_version}
-        kwargs["mean"] = self.mean
-        new_obj = self.__class__(**kwargs)
-        return new_obj
-
-    def to_sdf(self, version: str | None = None) -> ET.Element:
-        if self.__version__ is None and version is not None:
-            self.__version__ = version
-        elif version is not None and version != self.__version__:
-            return self.to_version(version).to_sdf()
-        version = self.__version__ or version
-        el = ET.Element("mean")
-        if self.mean is not None:
-            el.text = str(self.mean)
-        return el
-
-    @classmethod
-    def _from_sdf(cls, el: ET.Element, version: str):
-        _text = el.text or 0.0
-        _mean = _parse_double(_text)
-        if isinstance(_mean, SDFError):
-            return _mean
-        return cls(sdf_version=version, mean=_mean)
-
-
-class Min(BaseModel):
-    def __init__(self, sdf_version: str | None = None, min: float = 0):
-        self.__version__ = sdf_version
-        self.min = min
-
-    def to_version(self, target_version: str) -> "Min":
-        if self.min is not None and cmp_version(target_version, "1.2") < 0:
-            raise ValueError(f"'min' is not supported in SDF version {target_version} (added in 1.2)")
-        kwargs = {"sdf_version": target_version}
-        kwargs["min"] = self.min
-        new_obj = self.__class__(**kwargs)
-        return new_obj
-
-    def to_sdf(self, version: str | None = None) -> ET.Element:
-        if self.__version__ is None and version is not None:
-            self.__version__ = version
-        elif version is not None and version != self.__version__:
-            return self.to_version(version).to_sdf()
-        version = self.__version__ or version
-        el = ET.Element("min")
-        if self.min is not None:
-            el.text = str(self.min)
-        return el
-
-    @classmethod
-    def _from_sdf(cls, el: ET.Element, version: str):
-        _text = el.text or 0
-        _min = _parse_double(_text)
-        if isinstance(_min, SDFError):
-            return _min
-        if _min is not None and cmp_version(version, "1.2") < 0:
-            if _min != 0:
-                return SDFError(f"'min' is not supported in SDF version {version} (added in 1.2)")
-        return cls(sdf_version=version, min=_min)
-
-
-class MinAngle(BaseModel):
-    def __init__(self, sdf_version: str | None = None, min_angle: float = 0):
-        self.__version__ = sdf_version
-        self.min_angle = min_angle
-
-    def to_version(self, target_version: str) -> "MinAngle":
-        if self.min_angle is not None and cmp_version(target_version, "1.2") < 0:
-            raise ValueError(f"'min_angle' is not supported in SDF version {target_version} (added in 1.2)")
-        kwargs = {"sdf_version": target_version}
-        kwargs["min_angle"] = self.min_angle
-        new_obj = self.__class__(**kwargs)
-        return new_obj
-
-    def to_sdf(self, version: str | None = None) -> ET.Element:
-        if self.__version__ is None and version is not None:
-            self.__version__ = version
-        elif version is not None and version != self.__version__:
-            return self.to_version(version).to_sdf()
-        version = self.__version__ or version
-        el = ET.Element("min_angle")
-        if self.min_angle is not None:
-            el.text = str(self.min_angle)
-        return el
-
-    @classmethod
-    def _from_sdf(cls, el: ET.Element, version: str):
-        _text = el.text or 0
-        _min_angle = _parse_double(_text)
-        if isinstance(_min_angle, SDFError):
-            return _min_angle
-        if _min_angle is not None and cmp_version(version, "1.2") < 0:
-            if _min_angle != 0:
-                return SDFError(f"'min_angle' is not supported in SDF version {version} (added in 1.2)")
-        return cls(sdf_version=version, min_angle=_min_angle)
-
-
-class Noise(BaseModel):
-    def __init__(
-        self,
-        sdf_version: str | None = None,
-        mean: "Mean" = None,
-        stddev: "Stddev" = None,
-        type: "Type" = None
-    ):
-        self.__version__ = sdf_version
-        self.mean = mean
-        self.stddev = stddev
-        self.type = type
-        if self.mean is not None:
-            if getattr(self.mean, '__version__', None) is None:
-                self.mean.__version__ = self.__version__
-            elif getattr(self.mean, '__version__', None) != self.__version__ and self.__version__ is not None:
-                self.mean = self.mean.to_version(self.__version__)
-        if self.stddev is not None:
-            if getattr(self.stddev, '__version__', None) is None:
-                self.stddev.__version__ = self.__version__
-            elif getattr(self.stddev, '__version__', None) != self.__version__ and self.__version__ is not None:
-                self.stddev = self.stddev.to_version(self.__version__)
-        if self.type is not None:
-            if getattr(self.type, '__version__', None) is None:
-                self.type.__version__ = self.__version__
-            elif getattr(self.type, '__version__', None) != self.__version__ and self.__version__ is not None:
-                self.type = self.type.to_version(self.__version__)
-
-    def to_version(self, target_version: str) -> "Noise":
-        kwargs = {"sdf_version": target_version}
-        kwargs["mean"] = self.mean.to_version(target_version) if self.mean is not None else None
-        kwargs["stddev"] = self.stddev.to_version(target_version) if self.stddev is not None else None
-        kwargs["type"] = self.type.to_version(target_version) if self.type is not None else None
-        new_obj = self.__class__(**kwargs)
-        return new_obj
-
-    def to_sdf(self, version: str | None = None) -> ET.Element:
-        if self.__version__ is None and version is not None:
-            self.__version__ = version
-        elif version is not None and version != self.__version__:
-            return self.to_version(version).to_sdf()
-        version = self.__version__ or version
-        el = ET.Element("noise")
-        if self.mean is not None:
-            el.append(self.mean.to_sdf(version))
-        if self.stddev is not None:
-            el.append(self.stddev.to_sdf(version))
-        if self.type is not None:
-            el.append(self.type.to_sdf(version))
-        return el
-
-    @classmethod
-    def _from_sdf(cls, el: ET.Element, version: str):
-        _c_mean = el.find("mean")
-        if _c_mean is not None:
-            _res = Mean._from_sdf(_c_mean, version)
-            if isinstance(_res, SDFError):
-                return _res.extend("mean")
-            _mean = _res
-        else:
-            _mean = None
-        _c_stddev = el.find("stddev")
-        if _c_stddev is not None:
-            _res = Stddev._from_sdf(_c_stddev, version)
-            if isinstance(_res, SDFError):
-                return _res.extend("stddev")
-            _stddev = _res
-        else:
-            _stddev = None
-        _c_type = el.find("type")
-        if _c_type is not None:
-            _res = Type._from_sdf(_c_type, version)
-            if isinstance(_res, SDFError):
-                return _res.extend("type")
-            _type = _res
-        else:
-            _type = None
-        return cls(sdf_version=version, mean=_mean, stddev=_stddev, type=_type)
-
-
-class Range(BaseModel):
-    def __init__(
-        self,
-        sdf_version: str | None = None,
-        max: float = 0,
-        min: float = 0,
-        resolution: float = 0
-    ):
-        self.__version__ = sdf_version
-        self.max = max
-        self.min = min
-        self.resolution = resolution
-
-    def to_version(self, target_version: str) -> "Range":
-        if self.max is not None and cmp_version(target_version, "1.2") >= 0:
-            raise ValueError(f"'max' is not supported in SDF version {target_version} (removed in 1.2)")
-        if self.min is not None and cmp_version(target_version, "1.2") >= 0:
-            raise ValueError(f"'min' is not supported in SDF version {target_version} (removed in 1.2)")
-        if self.resolution is not None and cmp_version(target_version, "1.2") >= 0:
-            raise ValueError(f"'resolution' is not supported in SDF version {target_version} (removed in 1.2)")
-        kwargs = {"sdf_version": target_version}
-        kwargs["max"] = self.max
-        kwargs["min"] = self.min
-        kwargs["resolution"] = self.resolution
-        new_obj = self.__class__(**kwargs)
-        return new_obj
-
-    def to_sdf(self, version: str | None = None) -> ET.Element:
-        if self.__version__ is None and version is not None:
-            self.__version__ = version
-        elif version is not None and version != self.__version__:
-            return self.to_version(version).to_sdf()
-        version = self.__version__ or version
-        el = ET.Element("range")
-        if self.max is not None:
-            el.set("max", str(self.max))
-        if self.min is not None:
-            el.set("min", str(self.min))
-        if self.resolution is not None:
-            el.set("resolution", str(self.resolution))
-        return el
-
-    @classmethod
-    def _from_sdf(cls, el: ET.Element, version: str):
-        _max = _parse_double(el.get("max", 0))
-        if isinstance(_max, SDFError):
-            return _max.extend("@max")
-        _min = _parse_double(el.get("min", 0))
-        if isinstance(_min, SDFError):
-            return _min.extend("@min")
-        _resolution = _parse_double(el.get("resolution", 0))
-        if isinstance(_resolution, SDFError):
-            return _resolution.extend("@resolution")
-        return cls(sdf_version=version, max=_max, min=_min, resolution=_resolution)
-
-
-class RangeResolution(BaseModel):
-    def __init__(self, sdf_version: str | None = None, resolution: float = 0):
-        self.__version__ = sdf_version
-        self.resolution = resolution
-
-    def to_version(self, target_version: str) -> "RangeResolution":
-        if self.resolution is not None and cmp_version(target_version, "1.2") < 0:
-            raise ValueError(f"'resolution' is not supported in SDF version {target_version} (added in 1.2)")
-        kwargs = {"sdf_version": target_version}
-        kwargs["resolution"] = self.resolution
-        new_obj = self.__class__(**kwargs)
-        return new_obj
-
-    def to_sdf(self, version: str | None = None) -> ET.Element:
-        if self.__version__ is None and version is not None:
-            self.__version__ = version
-        elif version is not None and version != self.__version__:
-            return self.to_version(version).to_sdf()
-        version = self.__version__ or version
-        el = ET.Element("resolution")
-        if self.resolution is not None:
-            el.text = str(self.resolution)
-        return el
-
-    @classmethod
-    def _from_sdf(cls, el: ET.Element, version: str):
-        _text = el.text or 0
-        _resolution = _parse_double(_text)
-        if isinstance(_resolution, SDFError):
-            return _resolution
-        if _resolution is not None and cmp_version(version, "1.2") < 0:
-            if _resolution != 0:
-                return SDFError(f"'resolution' is not supported in SDF version {version} (added in 1.2)")
-        return cls(sdf_version=version, resolution=_resolution)
-
-
 class Ray(BaseModel):
+    class Noise(BaseModel):
+        class Mean(BaseModel):
+            def __init__(self, sdf_version: str | None = None, mean: float = 0.0):
+                super().__init__(sdf_version)
+                self.mean = mean
+
+            def to_version(self, target_version: str) -> "Ray.Noise.Mean":
+                kwargs = {"sdf_version": target_version}
+                kwargs["mean"] = self.mean
+                new_obj = self.__class__(**kwargs)
+                return new_obj
+
+            def to_sdf(self, version: str | None = None) -> ET.Element:
+                if self.__version__ is None and version is not None:
+                    self.__version__ = version
+                elif version is not None and version != self.__version__:
+                    return self.to_version(version).to_sdf()
+                version = self.__version__ or version
+                el = ET.Element("mean")
+                if self.mean is not None:
+                    el.text = str(self.mean)
+                return el
+
+            @classmethod
+            def _from_sdf(cls, el: ET.Element, version: str) -> "Ray.Noise.Mean | SDFError":
+                _text = el.text or 0.0
+                _mean = _parse_double(_text)
+                if isinstance(_mean, SDFError):
+                    return _mean
+                return cls(sdf_version=version, mean=_mean)
+
+        class Stddev(BaseModel):
+            def __init__(self, sdf_version: str | None = None, stddev: float = 0.0):
+                super().__init__(sdf_version)
+                self.stddev = stddev
+
+            def to_version(self, target_version: str) -> "Ray.Noise.Stddev":
+                kwargs = {"sdf_version": target_version}
+                kwargs["stddev"] = self.stddev
+                new_obj = self.__class__(**kwargs)
+                return new_obj
+
+            def to_sdf(self, version: str | None = None) -> ET.Element:
+                if self.__version__ is None and version is not None:
+                    self.__version__ = version
+                elif version is not None and version != self.__version__:
+                    return self.to_version(version).to_sdf()
+                version = self.__version__ or version
+                el = ET.Element("stddev")
+                if self.stddev is not None:
+                    el.text = str(self.stddev)
+                return el
+
+            @classmethod
+            def _from_sdf(cls, el: ET.Element, version: str) -> "Ray.Noise.Stddev | SDFError":
+                _text = el.text or 0.0
+                _stddev = _parse_double(_text)
+                if isinstance(_stddev, SDFError):
+                    return _stddev
+                return cls(sdf_version=version, stddev=_stddev)
+
+        class Type(BaseModel):
+            def __init__(self, sdf_version: str | None = None, type: str = "gaussian"):
+                super().__init__(sdf_version)
+                self.type = type
+
+            def to_version(self, target_version: str) -> "Ray.Noise.Type":
+                kwargs = {"sdf_version": target_version}
+                kwargs["type"] = self.type
+                new_obj = self.__class__(**kwargs)
+                return new_obj
+
+            def to_sdf(self, version: str | None = None) -> ET.Element:
+                if self.__version__ is None and version is not None:
+                    self.__version__ = version
+                elif version is not None and version != self.__version__:
+                    return self.to_version(version).to_sdf()
+                version = self.__version__ or version
+                el = ET.Element("type")
+                if self.type is not None:
+                    el.text = self.type
+                return el
+
+            @classmethod
+            def _from_sdf(cls, el: ET.Element, version: str) -> "Ray.Noise.Type | SDFError":
+                _text = el.text or "gaussian"
+                _type = _text
+                if isinstance(_type, SDFError):
+                    return _type
+                return cls(sdf_version=version, type=_type)
+
+        def __init__(
+            self,
+            sdf_version: str | None = None,
+            mean: "Ray.Noise.Mean" = None,
+            stddev: "Ray.Noise.Stddev" = None,
+            type: "Ray.Noise.Type" = None
+        ):
+            super().__init__(sdf_version)
+            self.mean = mean
+            self.stddev = stddev
+            self.type = type
+            if self.mean is not None:
+                if getattr(self.mean, '__version__', None) is None:
+                    self.mean.__version__ = self.__version__
+                elif getattr(self.mean, '__version__', None) != self.__version__ and self.__version__ is not None:
+                    self.mean = self.mean.to_version(self.__version__)
+            if self.stddev is not None:
+                if getattr(self.stddev, '__version__', None) is None:
+                    self.stddev.__version__ = self.__version__
+                elif getattr(self.stddev, '__version__', None) != self.__version__ and self.__version__ is not None:
+                    self.stddev = self.stddev.to_version(self.__version__)
+            if self.type is not None:
+                if getattr(self.type, '__version__', None) is None:
+                    self.type.__version__ = self.__version__
+                elif getattr(self.type, '__version__', None) != self.__version__ and self.__version__ is not None:
+                    self.type = self.type.to_version(self.__version__)
+
+        def to_version(self, target_version: str) -> "Ray.Noise":
+            kwargs = {"sdf_version": target_version}
+            kwargs["mean"] = self.mean.to_version(target_version) if self.mean is not None else None
+            kwargs["stddev"] = self.stddev.to_version(target_version) if self.stddev is not None else None
+            kwargs["type"] = self.type.to_version(target_version) if self.type is not None else None
+            new_obj = self.__class__(**kwargs)
+            return new_obj
+
+        def to_sdf(self, version: str | None = None) -> ET.Element:
+            if self.__version__ is None and version is not None:
+                self.__version__ = version
+            elif version is not None and version != self.__version__:
+                return self.to_version(version).to_sdf()
+            version = self.__version__ or version
+            el = ET.Element("noise")
+            if self.mean is not None:
+                el.append(self.mean.to_sdf(version))
+            if self.stddev is not None:
+                el.append(self.stddev.to_sdf(version))
+            if self.type is not None:
+                el.append(self.type.to_sdf(version))
+            return el
+
+        @classmethod
+        def _from_sdf(cls, el: ET.Element, version: str) -> "Ray.Noise | SDFError":
+            _c_mean = el.find("mean")
+            if _c_mean is not None:
+                _res = cls.Mean._from_sdf(_c_mean, version)
+                if isinstance(_res, SDFError):
+                    return _res.extend("mean")
+                _mean = _res
+            else:
+                _mean = None
+            _c_stddev = el.find("stddev")
+            if _c_stddev is not None:
+                _res = cls.Stddev._from_sdf(_c_stddev, version)
+                if isinstance(_res, SDFError):
+                    return _res.extend("stddev")
+                _stddev = _res
+            else:
+                _stddev = None
+            _c_type = el.find("type")
+            if _c_type is not None:
+                _res = cls.Type._from_sdf(_c_type, version)
+                if isinstance(_res, SDFError):
+                    return _res.extend("type")
+                _type = _res
+            else:
+                _type = None
+            return cls(sdf_version=version, mean=_mean, stddev=_stddev, type=_type)
+
+    class Range(BaseModel):
+        class Max(BaseModel):
+            def __init__(self, sdf_version: str | None = None, max: float = 0):
+                super().__init__(sdf_version)
+                self.max = max
+
+            def to_version(self, target_version: str) -> "Ray.Range.Max":
+                if self.max is not None and cmp_version(target_version, "1.2") < 0:
+                    raise ValueError(f"'max' is not supported in SDF version {target_version} (added in 1.2)")
+                kwargs = {"sdf_version": target_version}
+                kwargs["max"] = self.max
+                new_obj = self.__class__(**kwargs)
+                return new_obj
+
+            def to_sdf(self, version: str | None = None) -> ET.Element:
+                if self.__version__ is None and version is not None:
+                    self.__version__ = version
+                elif version is not None and version != self.__version__:
+                    return self.to_version(version).to_sdf()
+                version = self.__version__ or version
+                el = ET.Element("max")
+                if self.max is not None:
+                    el.text = str(self.max)
+                return el
+
+            @classmethod
+            def _from_sdf(cls, el: ET.Element, version: str) -> "Ray.Range.Max | SDFError":
+                _text = el.text or 0
+                _max = _parse_double(_text)
+                if isinstance(_max, SDFError):
+                    return _max
+                if _max is not None and cmp_version(version, "1.2") < 0:
+                    if _max != 0:
+                        return SDFError(f"'max' is not supported in SDF version {version} (added in 1.2)")
+                return cls(sdf_version=version, max=_max)
+
+        class Min(BaseModel):
+            def __init__(self, sdf_version: str | None = None, min: float = 0):
+                super().__init__(sdf_version)
+                self.min = min
+
+            def to_version(self, target_version: str) -> "Ray.Range.Min":
+                if self.min is not None and cmp_version(target_version, "1.2") < 0:
+                    raise ValueError(f"'min' is not supported in SDF version {target_version} (added in 1.2)")
+                kwargs = {"sdf_version": target_version}
+                kwargs["min"] = self.min
+                new_obj = self.__class__(**kwargs)
+                return new_obj
+
+            def to_sdf(self, version: str | None = None) -> ET.Element:
+                if self.__version__ is None and version is not None:
+                    self.__version__ = version
+                elif version is not None and version != self.__version__:
+                    return self.to_version(version).to_sdf()
+                version = self.__version__ or version
+                el = ET.Element("min")
+                if self.min is not None:
+                    el.text = str(self.min)
+                return el
+
+            @classmethod
+            def _from_sdf(cls, el: ET.Element, version: str) -> "Ray.Range.Min | SDFError":
+                _text = el.text or 0
+                _min = _parse_double(_text)
+                if isinstance(_min, SDFError):
+                    return _min
+                if _min is not None and cmp_version(version, "1.2") < 0:
+                    if _min != 0:
+                        return SDFError(f"'min' is not supported in SDF version {version} (added in 1.2)")
+                return cls(sdf_version=version, min=_min)
+
+        class Resolution(BaseModel):
+            def __init__(self, sdf_version: str | None = None, resolution: float = 0):
+                super().__init__(sdf_version)
+                self.resolution = resolution
+
+            def to_version(self, target_version: str) -> "Ray.Range.Resolution":
+                if self.resolution is not None and cmp_version(target_version, "1.2") < 0:
+                    raise ValueError(f"'resolution' is not supported in SDF version {target_version} (added in 1.2)")
+                kwargs = {"sdf_version": target_version}
+                kwargs["resolution"] = self.resolution
+                new_obj = self.__class__(**kwargs)
+                return new_obj
+
+            def to_sdf(self, version: str | None = None) -> ET.Element:
+                if self.__version__ is None and version is not None:
+                    self.__version__ = version
+                elif version is not None and version != self.__version__:
+                    return self.to_version(version).to_sdf()
+                version = self.__version__ or version
+                el = ET.Element("resolution")
+                if self.resolution is not None:
+                    el.text = str(self.resolution)
+                return el
+
+            @classmethod
+            def _from_sdf(cls, el: ET.Element, version: str) -> "Ray.Range.Resolution | SDFError":
+                _text = el.text or 0
+                _resolution = _parse_double(_text)
+                if isinstance(_resolution, SDFError):
+                    return _resolution
+                if _resolution is not None and cmp_version(version, "1.2") < 0:
+                    if _resolution != 0:
+                        return SDFError(f"'resolution' is not supported in SDF version {version} (added in 1.2)")
+                return cls(sdf_version=version, resolution=_resolution)
+
+        def __init__(
+            self,
+            sdf_version: str | None = None,
+            max: float = 0,
+            min: float = 0,
+            resolution: float = 0
+        ):
+            super().__init__(sdf_version)
+            self.max = max
+            self.min = min
+            self.resolution = resolution
+
+        def to_version(self, target_version: str) -> "Ray.Range":
+            if self.max is not None and cmp_version(target_version, "1.2") >= 0:
+                raise ValueError(f"'max' is not supported in SDF version {target_version} (removed in 1.2)")
+            if self.min is not None and cmp_version(target_version, "1.2") >= 0:
+                raise ValueError(f"'min' is not supported in SDF version {target_version} (removed in 1.2)")
+            if self.resolution is not None and cmp_version(target_version, "1.2") >= 0:
+                raise ValueError(f"'resolution' is not supported in SDF version {target_version} (removed in 1.2)")
+            kwargs = {"sdf_version": target_version}
+            kwargs["max"] = self.max
+            kwargs["min"] = self.min
+            kwargs["resolution"] = self.resolution
+            new_obj = self.__class__(**kwargs)
+            return new_obj
+
+        def to_sdf(self, version: str | None = None) -> ET.Element:
+            if self.__version__ is None and version is not None:
+                self.__version__ = version
+            elif version is not None and version != self.__version__:
+                return self.to_version(version).to_sdf()
+            version = self.__version__ or version
+            el = ET.Element("range")
+            if self.max is not None:
+                el.set("max", str(self.max))
+            if self.min is not None:
+                el.set("min", str(self.min))
+            if self.resolution is not None:
+                el.set("resolution", str(self.resolution))
+            return el
+
+        @classmethod
+        def _from_sdf(cls, el: ET.Element, version: str) -> "Ray.Range | SDFError":
+            _max = _parse_double(el.get("max", 0))
+            if isinstance(_max, SDFError):
+                return _max.extend("@max")
+            _min = _parse_double(el.get("min", 0))
+            if isinstance(_min, SDFError):
+                return _min.extend("@min")
+            _resolution = _parse_double(el.get("resolution", 0))
+            if isinstance(_resolution, SDFError):
+                return _resolution.extend("@resolution")
+            return cls(sdf_version=version, max=_max, min=_min, resolution=_resolution)
+
+    class Scan(BaseModel):
+        class Horizontal(BaseModel):
+            class HorizontalResolution(BaseModel):
+                def __init__(self, sdf_version: str | None = None, resolution: float = 1):
+                    super().__init__(sdf_version)
+                    self.resolution = resolution
+
+                def to_version(self, target_version: str) -> "Ray.Scan.Horizontal.HorizontalResolution":
+                    if self.resolution is not None and cmp_version(target_version, "1.2") < 0:
+                        raise ValueError(f"'resolution' is not supported in SDF version {target_version} (added in 1.2)")
+                    kwargs = {"sdf_version": target_version}
+                    kwargs["resolution"] = self.resolution
+                    new_obj = self.__class__(**kwargs)
+                    return new_obj
+
+                def to_sdf(self, version: str | None = None) -> ET.Element:
+                    if self.__version__ is None and version is not None:
+                        self.__version__ = version
+                    elif version is not None and version != self.__version__:
+                        return self.to_version(version).to_sdf()
+                    version = self.__version__ or version
+                    el = ET.Element("resolution")
+                    if self.resolution is not None:
+                        el.text = str(self.resolution)
+                    return el
+
+                @classmethod
+                def _from_sdf(cls, el: ET.Element, version: str) -> "Ray.Scan.Horizontal.HorizontalResolution | SDFError":
+                    _text = el.text or 1
+                    _resolution = _parse_double(_text)
+                    if isinstance(_resolution, SDFError):
+                        return _resolution
+                    if _resolution is not None and cmp_version(version, "1.2") < 0:
+                        if _resolution != 1:
+                            return SDFError(f"'resolution' is not supported in SDF version {version} (added in 1.2)")
+                    return cls(sdf_version=version, resolution=_resolution)
+
+            class MaxAngle(BaseModel):
+                def __init__(self, sdf_version: str | None = None, max_angle: float = 0):
+                    super().__init__(sdf_version)
+                    self.max_angle = max_angle
+
+                def to_version(self, target_version: str) -> "Ray.Scan.Horizontal.MaxAngle":
+                    if self.max_angle is not None and cmp_version(target_version, "1.2") < 0:
+                        raise ValueError(f"'max_angle' is not supported in SDF version {target_version} (added in 1.2)")
+                    kwargs = {"sdf_version": target_version}
+                    kwargs["max_angle"] = self.max_angle
+                    new_obj = self.__class__(**kwargs)
+                    return new_obj
+
+                def to_sdf(self, version: str | None = None) -> ET.Element:
+                    if self.__version__ is None and version is not None:
+                        self.__version__ = version
+                    elif version is not None and version != self.__version__:
+                        return self.to_version(version).to_sdf()
+                    version = self.__version__ or version
+                    el = ET.Element("max_angle")
+                    if self.max_angle is not None:
+                        el.text = str(self.max_angle)
+                    return el
+
+                @classmethod
+                def _from_sdf(cls, el: ET.Element, version: str) -> "Ray.Scan.Horizontal.MaxAngle | SDFError":
+                    _text = el.text or 0
+                    _max_angle = _parse_double(_text)
+                    if isinstance(_max_angle, SDFError):
+                        return _max_angle
+                    if _max_angle is not None and cmp_version(version, "1.2") < 0:
+                        if _max_angle != 0:
+                            return SDFError(f"'max_angle' is not supported in SDF version {version} (added in 1.2)")
+                    return cls(sdf_version=version, max_angle=_max_angle)
+
+            class MinAngle(BaseModel):
+                def __init__(self, sdf_version: str | None = None, min_angle: float = 0):
+                    super().__init__(sdf_version)
+                    self.min_angle = min_angle
+
+                def to_version(self, target_version: str) -> "Ray.Scan.Horizontal.MinAngle":
+                    if self.min_angle is not None and cmp_version(target_version, "1.2") < 0:
+                        raise ValueError(f"'min_angle' is not supported in SDF version {target_version} (added in 1.2)")
+                    kwargs = {"sdf_version": target_version}
+                    kwargs["min_angle"] = self.min_angle
+                    new_obj = self.__class__(**kwargs)
+                    return new_obj
+
+                def to_sdf(self, version: str | None = None) -> ET.Element:
+                    if self.__version__ is None and version is not None:
+                        self.__version__ = version
+                    elif version is not None and version != self.__version__:
+                        return self.to_version(version).to_sdf()
+                    version = self.__version__ or version
+                    el = ET.Element("min_angle")
+                    if self.min_angle is not None:
+                        el.text = str(self.min_angle)
+                    return el
+
+                @classmethod
+                def _from_sdf(cls, el: ET.Element, version: str) -> "Ray.Scan.Horizontal.MinAngle | SDFError":
+                    _text = el.text or 0
+                    _min_angle = _parse_double(_text)
+                    if isinstance(_min_angle, SDFError):
+                        return _min_angle
+                    if _min_angle is not None and cmp_version(version, "1.2") < 0:
+                        if _min_angle != 0:
+                            return SDFError(f"'min_angle' is not supported in SDF version {version} (added in 1.2)")
+                    return cls(sdf_version=version, min_angle=_min_angle)
+
+            class Samples(BaseModel):
+                def __init__(self, sdf_version: str | None = None, samples: int = 640):
+                    super().__init__(sdf_version)
+                    self.samples = samples
+
+                def to_version(self, target_version: str) -> "Ray.Scan.Horizontal.Samples":
+                    if self.samples is not None and cmp_version(target_version, "1.2") < 0:
+                        raise ValueError(f"'samples' is not supported in SDF version {target_version} (added in 1.2)")
+                    kwargs = {"sdf_version": target_version}
+                    kwargs["samples"] = self.samples
+                    new_obj = self.__class__(**kwargs)
+                    return new_obj
+
+                def to_sdf(self, version: str | None = None) -> ET.Element:
+                    if self.__version__ is None and version is not None:
+                        self.__version__ = version
+                    elif version is not None and version != self.__version__:
+                        return self.to_version(version).to_sdf()
+                    version = self.__version__ or version
+                    el = ET.Element("samples")
+                    if self.samples is not None:
+                        el.text = str(self.samples)
+                    return el
+
+                @classmethod
+                def _from_sdf(cls, el: ET.Element, version: str) -> "Ray.Scan.Horizontal.Samples | SDFError":
+                    _text = el.text or 640
+                    _samples = _parse_uint32(_text)
+                    if isinstance(_samples, SDFError):
+                        return _samples
+                    if _samples is not None and cmp_version(version, "1.2") < 0:
+                        if _samples != 640:
+                            return SDFError(f"'samples' is not supported in SDF version {version} (added in 1.2)")
+                    return cls(sdf_version=version, samples=_samples)
+
+            def __init__(
+                self,
+                sdf_version: str | None = None,
+                max_angle: float = 0,
+                min_angle: float = 0,
+                resolution: float = 1,
+                samples: int = 1
+            ):
+                super().__init__(sdf_version)
+                self.max_angle = max_angle
+                self.min_angle = min_angle
+                self.resolution = resolution
+                self.samples = samples
+
+            def to_version(self, target_version: str) -> "Ray.Scan.Horizontal":
+                if self.max_angle is not None and cmp_version(target_version, "1.2") >= 0:
+                    raise ValueError(f"'max_angle' is not supported in SDF version {target_version} (removed in 1.2)")
+                if self.min_angle is not None and cmp_version(target_version, "1.2") >= 0:
+                    raise ValueError(f"'min_angle' is not supported in SDF version {target_version} (removed in 1.2)")
+                if self.resolution is not None and cmp_version(target_version, "1.2") >= 0:
+                    raise ValueError(f"'resolution' is not supported in SDF version {target_version} (removed in 1.2)")
+                if self.samples is not None and cmp_version(target_version, "1.2") >= 0:
+                    raise ValueError(f"'samples' is not supported in SDF version {target_version} (removed in 1.2)")
+                kwargs = {"sdf_version": target_version}
+                kwargs["max_angle"] = self.max_angle
+                kwargs["min_angle"] = self.min_angle
+                kwargs["resolution"] = self.resolution
+                kwargs["samples"] = self.samples
+                new_obj = self.__class__(**kwargs)
+                return new_obj
+
+            def to_sdf(self, version: str | None = None) -> ET.Element:
+                if self.__version__ is None and version is not None:
+                    self.__version__ = version
+                elif version is not None and version != self.__version__:
+                    return self.to_version(version).to_sdf()
+                version = self.__version__ or version
+                el = ET.Element("horizontal")
+                if self.max_angle is not None:
+                    el.set("max_angle", str(self.max_angle))
+                if self.min_angle is not None:
+                    el.set("min_angle", str(self.min_angle))
+                if self.resolution is not None:
+                    el.set("resolution", str(self.resolution))
+                if self.samples is not None:
+                    el.set("samples", str(self.samples))
+                return el
+
+            @classmethod
+            def _from_sdf(cls, el: ET.Element, version: str) -> "Ray.Scan.Horizontal | SDFError":
+                _max_angle = _parse_double(el.get("max_angle", 0))
+                if isinstance(_max_angle, SDFError):
+                    return _max_angle.extend("@max_angle")
+                _min_angle = _parse_double(el.get("min_angle", 0))
+                if isinstance(_min_angle, SDFError):
+                    return _min_angle.extend("@min_angle")
+                _resolution = _parse_double(el.get("resolution", 1))
+                if isinstance(_resolution, SDFError):
+                    return _resolution.extend("@resolution")
+                _samples = _parse_uint32(el.get("samples", 1))
+                if isinstance(_samples, SDFError):
+                    return _samples.extend("@samples")
+                return cls(sdf_version=version, max_angle=_max_angle, min_angle=_min_angle, resolution=_resolution, samples=_samples)
+
+        class Vertical(BaseModel):
+            class VerticalResolution(BaseModel):
+                def __init__(self, sdf_version: str | None = None, resolution: float = 1):
+                    super().__init__(sdf_version)
+                    self.resolution = resolution
+
+                def to_version(self, target_version: str) -> "Ray.Scan.Vertical.VerticalResolution":
+                    if self.resolution is not None and cmp_version(target_version, "1.2") < 0:
+                        raise ValueError(f"'resolution' is not supported in SDF version {target_version} (added in 1.2)")
+                    kwargs = {"sdf_version": target_version}
+                    kwargs["resolution"] = self.resolution
+                    new_obj = self.__class__(**kwargs)
+                    return new_obj
+
+                def to_sdf(self, version: str | None = None) -> ET.Element:
+                    if self.__version__ is None and version is not None:
+                        self.__version__ = version
+                    elif version is not None and version != self.__version__:
+                        return self.to_version(version).to_sdf()
+                    version = self.__version__ or version
+                    el = ET.Element("resolution")
+                    if self.resolution is not None:
+                        el.text = str(self.resolution)
+                    return el
+
+                @classmethod
+                def _from_sdf(cls, el: ET.Element, version: str) -> "Ray.Scan.Vertical.VerticalResolution | SDFError":
+                    _text = el.text or 1
+                    _resolution = _parse_double(_text)
+                    if isinstance(_resolution, SDFError):
+                        return _resolution
+                    if _resolution is not None and cmp_version(version, "1.2") < 0:
+                        if _resolution != 1:
+                            return SDFError(f"'resolution' is not supported in SDF version {version} (added in 1.2)")
+                    return cls(sdf_version=version, resolution=_resolution)
+
+            class VerticalSamples(BaseModel):
+                def __init__(self, sdf_version: str | None = None, samples: int = 1):
+                    super().__init__(sdf_version)
+                    self.samples = samples
+
+                def to_version(self, target_version: str) -> "Ray.Scan.Vertical.VerticalSamples":
+                    if self.samples is not None and cmp_version(target_version, "1.2") < 0:
+                        raise ValueError(f"'samples' is not supported in SDF version {target_version} (added in 1.2)")
+                    kwargs = {"sdf_version": target_version}
+                    kwargs["samples"] = self.samples
+                    new_obj = self.__class__(**kwargs)
+                    return new_obj
+
+                def to_sdf(self, version: str | None = None) -> ET.Element:
+                    if self.__version__ is None and version is not None:
+                        self.__version__ = version
+                    elif version is not None and version != self.__version__:
+                        return self.to_version(version).to_sdf()
+                    version = self.__version__ or version
+                    el = ET.Element("samples")
+                    if self.samples is not None:
+                        el.text = str(self.samples)
+                    return el
+
+                @classmethod
+                def _from_sdf(cls, el: ET.Element, version: str) -> "Ray.Scan.Vertical.VerticalSamples | SDFError":
+                    _text = el.text or 1
+                    _samples = _parse_uint32(_text)
+                    if isinstance(_samples, SDFError):
+                        return _samples
+                    if _samples is not None and cmp_version(version, "1.2") < 0:
+                        if _samples != 1:
+                            return SDFError(f"'samples' is not supported in SDF version {version} (added in 1.2)")
+                    return cls(sdf_version=version, samples=_samples)
+
+            def __init__(
+                self,
+                sdf_version: str | None = None,
+                max_angle: float = 0,
+                min_angle: float = 0,
+                resolution: float = 1,
+                samples: int = 1
+            ):
+                super().__init__(sdf_version)
+                self.max_angle = max_angle
+                self.min_angle = min_angle
+                self.resolution = resolution
+                self.samples = samples
+
+            def to_version(self, target_version: str) -> "Ray.Scan.Vertical":
+                if self.max_angle is not None and cmp_version(target_version, "1.2") >= 0:
+                    raise ValueError(f"'max_angle' is not supported in SDF version {target_version} (removed in 1.2)")
+                if self.min_angle is not None and cmp_version(target_version, "1.2") >= 0:
+                    raise ValueError(f"'min_angle' is not supported in SDF version {target_version} (removed in 1.2)")
+                if self.resolution is not None and cmp_version(target_version, "1.2") >= 0:
+                    raise ValueError(f"'resolution' is not supported in SDF version {target_version} (removed in 1.2)")
+                if self.samples is not None and cmp_version(target_version, "1.2") >= 0:
+                    raise ValueError(f"'samples' is not supported in SDF version {target_version} (removed in 1.2)")
+                kwargs = {"sdf_version": target_version}
+                kwargs["max_angle"] = self.max_angle
+                kwargs["min_angle"] = self.min_angle
+                kwargs["resolution"] = self.resolution
+                kwargs["samples"] = self.samples
+                new_obj = self.__class__(**kwargs)
+                return new_obj
+
+            def to_sdf(self, version: str | None = None) -> ET.Element:
+                if self.__version__ is None and version is not None:
+                    self.__version__ = version
+                elif version is not None and version != self.__version__:
+                    return self.to_version(version).to_sdf()
+                version = self.__version__ or version
+                el = ET.Element("vertical")
+                if self.max_angle is not None:
+                    el.set("max_angle", str(self.max_angle))
+                if self.min_angle is not None:
+                    el.set("min_angle", str(self.min_angle))
+                if self.resolution is not None:
+                    el.set("resolution", str(self.resolution))
+                if self.samples is not None:
+                    el.set("samples", str(self.samples))
+                return el
+
+            @classmethod
+            def _from_sdf(cls, el: ET.Element, version: str) -> "Ray.Scan.Vertical | SDFError":
+                _max_angle = _parse_double(el.get("max_angle", 0))
+                if isinstance(_max_angle, SDFError):
+                    return _max_angle.extend("@max_angle")
+                _min_angle = _parse_double(el.get("min_angle", 0))
+                if isinstance(_min_angle, SDFError):
+                    return _min_angle.extend("@min_angle")
+                _resolution = _parse_double(el.get("resolution", 1))
+                if isinstance(_resolution, SDFError):
+                    return _resolution.extend("@resolution")
+                _samples = _parse_uint32(el.get("samples", 1))
+                if isinstance(_samples, SDFError):
+                    return _samples.extend("@samples")
+                return cls(sdf_version=version, max_angle=_max_angle, min_angle=_min_angle, resolution=_resolution, samples=_samples)
+
+        def __init__(
+            self,
+            sdf_version: str | None = None,
+            horizontal: "Ray.Scan.Horizontal" = None,
+            vertical: "Ray.Scan.Vertical" = None
+        ):
+            super().__init__(sdf_version)
+            self.horizontal = horizontal
+            self.vertical = vertical
+            if self.horizontal is not None:
+                if getattr(self.horizontal, '__version__', None) is None:
+                    self.horizontal.__version__ = self.__version__
+                elif getattr(self.horizontal, '__version__', None) != self.__version__ and self.__version__ is not None:
+                    self.horizontal = self.horizontal.to_version(self.__version__)
+            if self.vertical is not None:
+                if getattr(self.vertical, '__version__', None) is None:
+                    self.vertical.__version__ = self.__version__
+                elif getattr(self.vertical, '__version__', None) != self.__version__ and self.__version__ is not None:
+                    self.vertical = self.vertical.to_version(self.__version__)
+
+        def to_version(self, target_version: str) -> "Ray.Scan":
+            kwargs = {"sdf_version": target_version}
+            kwargs["horizontal"] = self.horizontal.to_version(target_version) if self.horizontal is not None else None
+            kwargs["vertical"] = self.vertical.to_version(target_version) if self.vertical is not None else None
+            new_obj = self.__class__(**kwargs)
+            return new_obj
+
+        def to_sdf(self, version: str | None = None) -> ET.Element:
+            if self.__version__ is None and version is not None:
+                self.__version__ = version
+            elif version is not None and version != self.__version__:
+                return self.to_version(version).to_sdf()
+            version = self.__version__ or version
+            el = ET.Element("scan")
+            if self.horizontal is None:
+                self.horizontal = self.__class__.Horizontal(sdf_version=version)
+            if self.horizontal is not None:
+                el.append(self.horizontal.to_sdf(version))
+            if self.vertical is not None:
+                el.append(self.vertical.to_sdf(version))
+            return el
+
+        @classmethod
+        def _from_sdf(cls, el: ET.Element, version: str) -> "Ray.Scan | SDFError":
+            _c_horizontal = el.find("horizontal")
+            if _c_horizontal is not None:
+                _res = cls.Horizontal._from_sdf(_c_horizontal, version)
+                if isinstance(_res, SDFError):
+                    return _res.extend("horizontal")
+                _horizontal = _res
+            else:
+                _res = cls.Horizontal._from_sdf(ET.Element("horizontal"), version)
+                if isinstance(_res, SDFError):
+                    return _res.extend("horizontal")
+                _horizontal = _res
+            _c_vertical = el.find("vertical")
+            if _c_vertical is not None:
+                _res = cls.Vertical._from_sdf(_c_vertical, version)
+                if isinstance(_res, SDFError):
+                    return _res.extend("vertical")
+                _vertical = _res
+            else:
+                _vertical = None
+            return cls(sdf_version=version, horizontal=_horizontal, vertical=_vertical)
+
+    class VisibilityMask(BaseModel):
+        def __init__(self, sdf_version: str | None = None, visibility_mask: int = 4294967295):
+            super().__init__(sdf_version)
+            self.visibility_mask = visibility_mask
+
+        def to_version(self, target_version: str) -> "Ray.VisibilityMask":
+            if self.visibility_mask is not None and cmp_version(target_version, "1.9") < 0:
+                raise ValueError(f"'visibility_mask' is not supported in SDF version {target_version} (added in 1.9)")
+            kwargs = {"sdf_version": target_version}
+            kwargs["visibility_mask"] = self.visibility_mask
+            new_obj = self.__class__(**kwargs)
+            return new_obj
+
+        def to_sdf(self, version: str | None = None) -> ET.Element:
+            if self.__version__ is None and version is not None:
+                self.__version__ = version
+            elif version is not None and version != self.__version__:
+                return self.to_version(version).to_sdf()
+            version = self.__version__ or version
+            el = ET.Element("visibility_mask")
+            if self.visibility_mask is not None:
+                el.text = str(self.visibility_mask)
+            return el
+
+        @classmethod
+        def _from_sdf(cls, el: ET.Element, version: str) -> "Ray.VisibilityMask | SDFError":
+            _text = el.text or 4294967295
+            _visibility_mask = _parse_uint32(_text)
+            if isinstance(_visibility_mask, SDFError):
+                return _visibility_mask
+            if _visibility_mask is not None and cmp_version(version, "1.9") < 0:
+                if _visibility_mask != 4294967295:
+                    return SDFError(f"'visibility_mask' is not supported in SDF version {version} (added in 1.9)")
+            return cls(sdf_version=version, visibility_mask=_visibility_mask)
+
     def __init__(
         self,
         sdf_version: str | None = None,
-        noise: "Noise" = None,
-        range: "Range" = None,
-        scan: "Scan" = None,
-        visibility_mask: "VisibilityMask" = None
+        noise: "Ray.Noise" = None,
+        range: "Ray.Range" = None,
+        scan: "Ray.Scan" = None,
+        visibility_mask: "Ray.VisibilityMask" = None
     ):
-        self.__version__ = sdf_version
+        super().__init__(sdf_version)
         self.noise = noise
         self.range = range
         self.scan = scan
@@ -513,11 +870,11 @@ class Ray(BaseModel):
         if self.noise is not None:
             el.append(self.noise.to_sdf(version))
         if self.range is None:
-            self.range = Range(sdf_version=version)
+            self.range = self.__class__.Range(sdf_version=version)
         if self.range is not None:
             el.append(self.range.to_sdf(version))
         if self.scan is None:
-            self.scan = Scan(sdf_version=version)
+            self.scan = self.__class__.Scan(sdf_version=version)
         if self.scan is not None:
             el.append(self.scan.to_sdf(version))
         if self.visibility_mask is not None:
@@ -525,10 +882,10 @@ class Ray(BaseModel):
         return el
 
     @classmethod
-    def _from_sdf(cls, el: ET.Element, version: str):
+    def _from_sdf(cls, el: ET.Element, version: str) -> "Ray | SDFError":
         _c_noise = el.find("noise")
         if _c_noise is not None:
-            _res = Noise._from_sdf(_c_noise, version)
+            _res = cls.Noise._from_sdf(_c_noise, version)
             if isinstance(_res, SDFError):
                 return _res.extend("noise")
             _noise = _res
@@ -538,29 +895,29 @@ class Ray(BaseModel):
             return SDFError(f"'noise' is not supported in SDF version {version} (added in 1.4)")
         _c_range = el.find("range")
         if _c_range is not None:
-            _res = Range._from_sdf(_c_range, version)
+            _res = cls.Range._from_sdf(_c_range, version)
             if isinstance(_res, SDFError):
                 return _res.extend("range")
             _range = _res
         else:
-            _res = Range._from_sdf(ET.Element("range"), version)
+            _res = cls.Range._from_sdf(ET.Element("range"), version)
             if isinstance(_res, SDFError):
                 return _res.extend("range")
             _range = _res
         _c_scan = el.find("scan")
         if _c_scan is not None:
-            _res = Scan._from_sdf(_c_scan, version)
+            _res = cls.Scan._from_sdf(_c_scan, version)
             if isinstance(_res, SDFError):
                 return _res.extend("scan")
             _scan = _res
         else:
-            _res = Scan._from_sdf(ET.Element("scan"), version)
+            _res = cls.Scan._from_sdf(ET.Element("scan"), version)
             if isinstance(_res, SDFError):
                 return _res.extend("scan")
             _scan = _res
         _c_visibility_mask = el.find("visibility_mask")
         if _c_visibility_mask is not None:
-            _res = VisibilityMask._from_sdf(_c_visibility_mask, version)
+            _res = cls.VisibilityMask._from_sdf(_c_visibility_mask, version)
             if isinstance(_res, SDFError):
                 return _res.extend("visibility_mask")
             _visibility_mask = _res
@@ -569,342 +926,3 @@ class Ray(BaseModel):
         if _visibility_mask is not None and cmp_version(version, "1.9") < 0:
             return SDFError(f"'visibility_mask' is not supported in SDF version {version} (added in 1.9)")
         return cls(sdf_version=version, noise=_noise, range=_range, scan=_scan, visibility_mask=_visibility_mask)
-
-
-class Resolution(BaseModel):
-    def __init__(self, sdf_version: str | None = None, resolution: float = 1):
-        self.__version__ = sdf_version
-        self.resolution = resolution
-
-    def to_version(self, target_version: str) -> "Resolution":
-        if self.resolution is not None and cmp_version(target_version, "1.2") < 0:
-            raise ValueError(f"'resolution' is not supported in SDF version {target_version} (added in 1.2)")
-        kwargs = {"sdf_version": target_version}
-        kwargs["resolution"] = self.resolution
-        new_obj = self.__class__(**kwargs)
-        return new_obj
-
-    def to_sdf(self, version: str | None = None) -> ET.Element:
-        if self.__version__ is None and version is not None:
-            self.__version__ = version
-        elif version is not None and version != self.__version__:
-            return self.to_version(version).to_sdf()
-        version = self.__version__ or version
-        el = ET.Element("resolution")
-        if self.resolution is not None:
-            el.text = str(self.resolution)
-        return el
-
-    @classmethod
-    def _from_sdf(cls, el: ET.Element, version: str):
-        _text = el.text or 1
-        _resolution = _parse_double(_text)
-        if isinstance(_resolution, SDFError):
-            return _resolution
-        if _resolution is not None and cmp_version(version, "1.2") < 0:
-            if _resolution != 1:
-                return SDFError(f"'resolution' is not supported in SDF version {version} (added in 1.2)")
-        return cls(sdf_version=version, resolution=_resolution)
-
-
-class Samples(BaseModel):
-    def __init__(self, sdf_version: str | None = None, samples: int = 640):
-        self.__version__ = sdf_version
-        self.samples = samples
-
-    def to_version(self, target_version: str) -> "Samples":
-        if self.samples is not None and cmp_version(target_version, "1.2") < 0:
-            raise ValueError(f"'samples' is not supported in SDF version {target_version} (added in 1.2)")
-        kwargs = {"sdf_version": target_version}
-        kwargs["samples"] = self.samples
-        new_obj = self.__class__(**kwargs)
-        return new_obj
-
-    def to_sdf(self, version: str | None = None) -> ET.Element:
-        if self.__version__ is None and version is not None:
-            self.__version__ = version
-        elif version is not None and version != self.__version__:
-            return self.to_version(version).to_sdf()
-        version = self.__version__ or version
-        el = ET.Element("samples")
-        if self.samples is not None:
-            el.text = str(self.samples)
-        return el
-
-    @classmethod
-    def _from_sdf(cls, el: ET.Element, version: str):
-        _text = el.text or 640
-        _samples = _parse_uint32(_text)
-        if isinstance(_samples, SDFError):
-            return _samples
-        if _samples is not None and cmp_version(version, "1.2") < 0:
-            if _samples != 640:
-                return SDFError(f"'samples' is not supported in SDF version {version} (added in 1.2)")
-        return cls(sdf_version=version, samples=_samples)
-
-
-class Scan(BaseModel):
-    def __init__(
-        self,
-        sdf_version: str | None = None,
-        horizontal: "Horizontal" = None,
-        vertical: "Vertical" = None
-    ):
-        self.__version__ = sdf_version
-        self.horizontal = horizontal
-        self.vertical = vertical
-        if self.horizontal is not None:
-            if getattr(self.horizontal, '__version__', None) is None:
-                self.horizontal.__version__ = self.__version__
-            elif getattr(self.horizontal, '__version__', None) != self.__version__ and self.__version__ is not None:
-                self.horizontal = self.horizontal.to_version(self.__version__)
-        if self.vertical is not None:
-            if getattr(self.vertical, '__version__', None) is None:
-                self.vertical.__version__ = self.__version__
-            elif getattr(self.vertical, '__version__', None) != self.__version__ and self.__version__ is not None:
-                self.vertical = self.vertical.to_version(self.__version__)
-
-    def to_version(self, target_version: str) -> "Scan":
-        kwargs = {"sdf_version": target_version}
-        kwargs["horizontal"] = self.horizontal.to_version(target_version) if self.horizontal is not None else None
-        kwargs["vertical"] = self.vertical.to_version(target_version) if self.vertical is not None else None
-        new_obj = self.__class__(**kwargs)
-        return new_obj
-
-    def to_sdf(self, version: str | None = None) -> ET.Element:
-        if self.__version__ is None and version is not None:
-            self.__version__ = version
-        elif version is not None and version != self.__version__:
-            return self.to_version(version).to_sdf()
-        version = self.__version__ or version
-        el = ET.Element("scan")
-        if self.horizontal is None:
-            self.horizontal = Horizontal(sdf_version=version)
-        if self.horizontal is not None:
-            el.append(self.horizontal.to_sdf(version))
-        if self.vertical is not None:
-            el.append(self.vertical.to_sdf(version))
-        return el
-
-    @classmethod
-    def _from_sdf(cls, el: ET.Element, version: str):
-        _c_horizontal = el.find("horizontal")
-        if _c_horizontal is not None:
-            _res = Horizontal._from_sdf(_c_horizontal, version)
-            if isinstance(_res, SDFError):
-                return _res.extend("horizontal")
-            _horizontal = _res
-        else:
-            _res = Horizontal._from_sdf(ET.Element("horizontal"), version)
-            if isinstance(_res, SDFError):
-                return _res.extend("horizontal")
-            _horizontal = _res
-        _c_vertical = el.find("vertical")
-        if _c_vertical is not None:
-            _res = Vertical._from_sdf(_c_vertical, version)
-            if isinstance(_res, SDFError):
-                return _res.extend("vertical")
-            _vertical = _res
-        else:
-            _vertical = None
-        return cls(sdf_version=version, horizontal=_horizontal, vertical=_vertical)
-
-
-class Stddev(BaseModel):
-    def __init__(self, sdf_version: str | None = None, stddev: float = 0.0):
-        self.__version__ = sdf_version
-        self.stddev = stddev
-
-    def to_version(self, target_version: str) -> "Stddev":
-        kwargs = {"sdf_version": target_version}
-        kwargs["stddev"] = self.stddev
-        new_obj = self.__class__(**kwargs)
-        return new_obj
-
-    def to_sdf(self, version: str | None = None) -> ET.Element:
-        if self.__version__ is None and version is not None:
-            self.__version__ = version
-        elif version is not None and version != self.__version__:
-            return self.to_version(version).to_sdf()
-        version = self.__version__ or version
-        el = ET.Element("stddev")
-        if self.stddev is not None:
-            el.text = str(self.stddev)
-        return el
-
-    @classmethod
-    def _from_sdf(cls, el: ET.Element, version: str):
-        _text = el.text or 0.0
-        _stddev = _parse_double(_text)
-        if isinstance(_stddev, SDFError):
-            return _stddev
-        return cls(sdf_version=version, stddev=_stddev)
-
-
-class Type(BaseModel):
-    def __init__(self, sdf_version: str | None = None, type: str = "gaussian"):
-        self.__version__ = sdf_version
-        self.type = type
-
-    def to_version(self, target_version: str) -> "Type":
-        kwargs = {"sdf_version": target_version}
-        kwargs["type"] = self.type
-        new_obj = self.__class__(**kwargs)
-        return new_obj
-
-    def to_sdf(self, version: str | None = None) -> ET.Element:
-        if self.__version__ is None and version is not None:
-            self.__version__ = version
-        elif version is not None and version != self.__version__:
-            return self.to_version(version).to_sdf()
-        version = self.__version__ or version
-        el = ET.Element("type")
-        if self.type is not None:
-            el.text = self.type
-        return el
-
-    @classmethod
-    def _from_sdf(cls, el: ET.Element, version: str):
-        _text = el.text or "gaussian"
-        _type = _text
-        if isinstance(_type, SDFError):
-            return _type
-        return cls(sdf_version=version, type=_type)
-
-
-class Vertical(BaseModel):
-    def __init__(
-        self,
-        sdf_version: str | None = None,
-        max_angle: float = 0,
-        min_angle: float = 0,
-        resolution: float = 1,
-        samples: int = 1
-    ):
-        self.__version__ = sdf_version
-        self.max_angle = max_angle
-        self.min_angle = min_angle
-        self.resolution = resolution
-        self.samples = samples
-
-    def to_version(self, target_version: str) -> "Vertical":
-        if self.max_angle is not None and cmp_version(target_version, "1.2") >= 0:
-            raise ValueError(f"'max_angle' is not supported in SDF version {target_version} (removed in 1.2)")
-        if self.min_angle is not None and cmp_version(target_version, "1.2") >= 0:
-            raise ValueError(f"'min_angle' is not supported in SDF version {target_version} (removed in 1.2)")
-        if self.resolution is not None and cmp_version(target_version, "1.2") >= 0:
-            raise ValueError(f"'resolution' is not supported in SDF version {target_version} (removed in 1.2)")
-        if self.samples is not None and cmp_version(target_version, "1.2") >= 0:
-            raise ValueError(f"'samples' is not supported in SDF version {target_version} (removed in 1.2)")
-        kwargs = {"sdf_version": target_version}
-        kwargs["max_angle"] = self.max_angle
-        kwargs["min_angle"] = self.min_angle
-        kwargs["resolution"] = self.resolution
-        kwargs["samples"] = self.samples
-        new_obj = self.__class__(**kwargs)
-        return new_obj
-
-    def to_sdf(self, version: str | None = None) -> ET.Element:
-        if self.__version__ is None and version is not None:
-            self.__version__ = version
-        elif version is not None and version != self.__version__:
-            return self.to_version(version).to_sdf()
-        version = self.__version__ or version
-        el = ET.Element("vertical")
-        if self.max_angle is not None:
-            el.set("max_angle", str(self.max_angle))
-        if self.min_angle is not None:
-            el.set("min_angle", str(self.min_angle))
-        if self.resolution is not None:
-            el.set("resolution", str(self.resolution))
-        if self.samples is not None:
-            el.set("samples", str(self.samples))
-        return el
-
-    @classmethod
-    def _from_sdf(cls, el: ET.Element, version: str):
-        _max_angle = _parse_double(el.get("max_angle", 0))
-        if isinstance(_max_angle, SDFError):
-            return _max_angle.extend("@max_angle")
-        _min_angle = _parse_double(el.get("min_angle", 0))
-        if isinstance(_min_angle, SDFError):
-            return _min_angle.extend("@min_angle")
-        _resolution = _parse_double(el.get("resolution", 1))
-        if isinstance(_resolution, SDFError):
-            return _resolution.extend("@resolution")
-        _samples = _parse_uint32(el.get("samples", 1))
-        if isinstance(_samples, SDFError):
-            return _samples.extend("@samples")
-        return cls(sdf_version=version, max_angle=_max_angle, min_angle=_min_angle, resolution=_resolution, samples=_samples)
-
-
-class VerticalSamples(BaseModel):
-    def __init__(self, sdf_version: str | None = None, samples: int = 1):
-        self.__version__ = sdf_version
-        self.samples = samples
-
-    def to_version(self, target_version: str) -> "VerticalSamples":
-        if self.samples is not None and cmp_version(target_version, "1.2") < 0:
-            raise ValueError(f"'samples' is not supported in SDF version {target_version} (added in 1.2)")
-        kwargs = {"sdf_version": target_version}
-        kwargs["samples"] = self.samples
-        new_obj = self.__class__(**kwargs)
-        return new_obj
-
-    def to_sdf(self, version: str | None = None) -> ET.Element:
-        if self.__version__ is None and version is not None:
-            self.__version__ = version
-        elif version is not None and version != self.__version__:
-            return self.to_version(version).to_sdf()
-        version = self.__version__ or version
-        el = ET.Element("samples")
-        if self.samples is not None:
-            el.text = str(self.samples)
-        return el
-
-    @classmethod
-    def _from_sdf(cls, el: ET.Element, version: str):
-        _text = el.text or 1
-        _samples = _parse_uint32(_text)
-        if isinstance(_samples, SDFError):
-            return _samples
-        if _samples is not None and cmp_version(version, "1.2") < 0:
-            if _samples != 1:
-                return SDFError(f"'samples' is not supported in SDF version {version} (added in 1.2)")
-        return cls(sdf_version=version, samples=_samples)
-
-
-class VisibilityMask(BaseModel):
-    def __init__(self, sdf_version: str | None = None, visibility_mask: int = 4294967295):
-        self.__version__ = sdf_version
-        self.visibility_mask = visibility_mask
-
-    def to_version(self, target_version: str) -> "VisibilityMask":
-        if self.visibility_mask is not None and cmp_version(target_version, "1.9") < 0:
-            raise ValueError(f"'visibility_mask' is not supported in SDF version {target_version} (added in 1.9)")
-        kwargs = {"sdf_version": target_version}
-        kwargs["visibility_mask"] = self.visibility_mask
-        new_obj = self.__class__(**kwargs)
-        return new_obj
-
-    def to_sdf(self, version: str | None = None) -> ET.Element:
-        if self.__version__ is None and version is not None:
-            self.__version__ = version
-        elif version is not None and version != self.__version__:
-            return self.to_version(version).to_sdf()
-        version = self.__version__ or version
-        el = ET.Element("visibility_mask")
-        if self.visibility_mask is not None:
-            el.text = str(self.visibility_mask)
-        return el
-
-    @classmethod
-    def _from_sdf(cls, el: ET.Element, version: str):
-        _text = el.text or 4294967295
-        _visibility_mask = _parse_uint32(_text)
-        if isinstance(_visibility_mask, SDFError):
-            return _visibility_mask
-        if _visibility_mask is not None and cmp_version(version, "1.9") < 0:
-            if _visibility_mask != 4294967295:
-                return SDFError(f"'visibility_mask' is not supported in SDF version {version} (added in 1.9)")
-        return cls(sdf_version=version, visibility_mask=_visibility_mask)
