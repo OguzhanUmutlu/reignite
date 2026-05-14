@@ -32,11 +32,19 @@ def find_plugin_binary(filename):
 plugin_classes: dict[str, type] = {}
 
 
+def simple_str(value):
+    if isinstance(value, bool):
+        return "true" if value else "false"
+    if value is None:
+        return ""
+    return str(value)
+
+
 class TextElement(BaseModel):
-    def __init__(self, name: str, text, attributes: Optional[dict] = None, **extra: str):
+    def __init__(self, name: str, text, attributes: Optional[dict] = None, **extra):
         super().__init__(sdf_version=None)
         self.name = name
-        self.text = str(text)
+        self.text = simple_str(text)
         self.attributes = {**(attributes or dict()), **extra}
 
     @classmethod
@@ -45,9 +53,9 @@ class TextElement(BaseModel):
         return cls(el.tag, text, el.attrib)
 
     def to_sdf(self, version: str = None) -> ET.Element:
-        e = ET.Element(self.name, **self.attributes)
+        e = ET.Element(self.name, attrib=self.attributes)
         if self.text is not None:
-            e.text = str(self.text)
+            e.text = simple_str(self.text)
         return e
 
     def to_version(self, target_version: str) -> "BaseModel":
@@ -56,7 +64,7 @@ class TextElement(BaseModel):
 
 class ParentElement(BaseModel):
     def __init__(self, name: str, children: List[BaseModel], attributes: Optional[dict] = None,
-                 **extra: str):
+                 **extra):
         super().__init__(sdf_version=None)
         self.name = name
         self.attributes = {**(attributes or dict()), **extra}
@@ -69,7 +77,7 @@ class ParentElement(BaseModel):
         return cls(el.tag, children, el.attrib)
 
     def to_sdf(self, version: str = None) -> ET.Element:
-        e = ET.Element(self.name, self.attributes)
+        e = ET.Element(self.name, attrib=self.attributes)
         for child in self.children:
             e.append(child.to_sdf(version))
         return e
@@ -85,7 +93,7 @@ class Plugin(_Base):
             elements: Optional[List[BaseModel]] = None,
             filename: str = "__default__",
             name: str = "__default__",
-            **extra: Optional[str]
+            **extra
     ):
         super().__init__(sdf_version=sdf_version, filename=filename, name=name)
         self.elements = elements or []
