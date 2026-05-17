@@ -8,7 +8,7 @@ from typing import List
 
 from ..utils.model import BaseModel
 from ..utils.errors import SDFError
-from ..utils.vector3 import Vector3 as _SDFVector3
+from ..utils.vector3 import Vector3 as _SDFVector3, _Vector3T, _vector3
 from ..utils.version import cmp_version
 
 if typing.TYPE_CHECKING:
@@ -47,6 +47,12 @@ def _parse_double(raw: str) -> float | SDFError:
         return SDFError(f"Invalid double: {raw}")
 
 
+def _parse_vector3(raw: str) -> _Vector3T | SDFError:
+    try:
+        return _vector3(raw)
+    except ValueError as e:
+        return SDFError(str(e))
+
 
 class Road(BaseModel):
     def __init__(
@@ -54,12 +60,14 @@ class Road(BaseModel):
         sdf_version: str | None = None,
         material: "Material" = None,
         name: str = "__default__",
-        points: List[_SDFVector3] = None,
+        points: List[_Vector3T] = None,
         width: float = 1.0
     ):
         super().__init__(sdf_version)
         if points is None:
-            points = _SDFVector3.from_sdf("0 0 0", version=sdf_version)
+            points = _vector3("0 0 0")
+        else:
+            points = _vector3(points)
         self.material = material
         self.name = name
         self.points = points or []
@@ -70,7 +78,7 @@ class Road(BaseModel):
             elif getattr(self.material, '__version__', None) != self.__version__ and self.__version__ is not None:
                 self.material = self.material.to_version(self.__version__)
 
-    def add_point(self, *items: _SDFVector3):
+    def add_point(self, *items: _Vector3T):
         if self.points is None:
             self.points = []
         self.points.extend(items)
@@ -110,7 +118,7 @@ class Road(BaseModel):
             el.set("name", self.name)
         for _v in (self.points or []):
             _c_tmp = ET.Element("point")
-            _c_tmp.text = _v.to_sdf(version)
+            _c_tmp.text = str(_v)
             el.append(_c_tmp)
         if self.width is not None:
             _c_tmp = ET.Element("width")
@@ -137,7 +145,7 @@ class Road(BaseModel):
         _points = []
         for c in el.findall("point"):
             _text = c.text if c.text is not None else "0 0 0"
-            _val = _SDFVector3._from_sdf(_text, version)
+            _val = _parse_vector3(_text)
             if isinstance(_val, SDFError):
                 return _val.extend("point")
             _points.append(_val)

@@ -8,13 +8,52 @@ from typing import List
 
 from ..utils.model import BaseModel
 from ..utils.errors import SDFError
-from ..utils.vector3 import Vector3 as _SDFVector3
+from ..utils.vector3 import Vector3 as _SDFVector3, _Vector3T, _vector3
 
 if typing.TYPE_CHECKING:
     from ..elements.frame import Frame
     from ..elements.joint_state import JointState
     from ..elements.link_state import LinkState
     from ..elements.pose import Pose
+
+
+import math
+
+def _parse_int32(raw: str) -> int | SDFError:
+    try:
+        v = int(raw)
+        if not (-2147483648 <= v <= 2147483647):
+            return SDFError(f"int32 out of range: {v}")
+        return v
+    except ValueError:
+        return SDFError(f"Invalid int32: {raw}")
+
+
+def _parse_uint32(raw: str) -> int | SDFError:
+    try:
+        v = int(raw)
+        if not (0 <= v <= 4294967295):
+            return SDFError(f"uint32 out of range: {v}")
+        return v
+    except ValueError:
+        return SDFError(f"Invalid uint32: {raw}")
+
+
+def _parse_double(raw: str) -> float | SDFError:
+    try:
+        v = float(raw)
+        if not math.isfinite(v) or abs(v) > math.inf:
+            return SDFError(f"double out of range: {raw}")
+        return v
+    except ValueError:
+        return SDFError(f"Invalid double: {raw}")
+
+
+def _parse_vector3(raw: str) -> _Vector3T | SDFError:
+    try:
+        return _vector3(raw)
+    except ValueError as e:
+        return SDFError(str(e))
 
 
 class ModelState(BaseModel):
@@ -56,11 +95,13 @@ class ModelState(BaseModel):
         model_states: List["ModelState.ModelStateModelState"] = None,
         name: str = "__default__",
         pose: "Pose" = None,
-        scale: _SDFVector3 = None
+        scale: _Vector3T = None
     ):
         super().__init__(sdf_version)
         if scale is None:
-            scale = _SDFVector3.from_sdf("1 1 1", version=sdf_version)
+            scale = _vector3("1 1 1")
+        else:
+            scale = _vector3(scale)
         self.frames = frames or []
         self.joint_states = joint_states or []
         self.link_states = link_states or []
@@ -204,7 +245,7 @@ class ModelState(BaseModel):
             el.append(_item_el)
         if self.scale is not None:
             _c_tmp = ET.Element("scale")
-            _c_tmp.text = self.scale.to_sdf(version)
+            _c_tmp.text = str(self.scale)
             el.append(_c_tmp)
         return el
 
@@ -252,7 +293,7 @@ class ModelState(BaseModel):
         _c_tmp = el.find("scale")
         if _c_tmp is not None:
             _text = _c_tmp.text if _c_tmp.text is not None else "1 1 1"
-            _val = _SDFVector3._from_sdf(_text, version)
+            _val = _parse_vector3(_text)
             if isinstance(_val, SDFError):
                 return _val.extend("scale")
             _scale = _val

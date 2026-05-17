@@ -6,7 +6,7 @@ from xml.etree import ElementTree as ET
 
 from ..utils.model import BaseModel
 from ..utils.errors import SDFError
-from ..utils.vector3 import Vector3 as _SDFVector3
+from ..utils.vector3 import Vector3 as _SDFVector3, _Vector3T, _vector3
 from ..utils.version import cmp_version
 
 
@@ -41,6 +41,12 @@ def _parse_double(raw: str) -> float | SDFError:
     except ValueError:
         return SDFError(f"Invalid double: {raw}")
 
+
+def _parse_vector3(raw: str) -> _Vector3T | SDFError:
+    try:
+        return _vector3(raw)
+    except ValueError as e:
+        return SDFError(str(e))
 
 
 class Surface(BaseModel):
@@ -503,14 +509,16 @@ class Surface(BaseModel):
             def __init__(
                 self,
                 sdf_version: str | None = None,
-                fdir1: _SDFVector3 = None,
+                fdir1: _Vector3T = None,
                 friction: float = 1,
                 friction2: float = 1,
                 rolling_friction: float = 1
             ):
                 super().__init__(sdf_version)
                 if fdir1 is None:
-                    fdir1 = _SDFVector3.from_sdf("0 0 0", version=sdf_version)
+                    fdir1 = _vector3("0 0 0")
+                else:
+                    fdir1 = _vector3(fdir1)
                 self.fdir1 = fdir1
                 self.friction = friction
                 self.friction2 = friction2
@@ -534,7 +542,7 @@ class Surface(BaseModel):
                 el = ET.Element("bullet")
                 if self.fdir1 is not None:
                     _c_tmp = ET.Element("fdir1")
-                    _c_tmp.text = self.fdir1.to_sdf(version)
+                    _c_tmp.text = str(self.fdir1)
                     el.append(_c_tmp)
                 if self.friction is not None:
                     _c_tmp = ET.Element("friction")
@@ -555,7 +563,7 @@ class Surface(BaseModel):
                 _c_tmp = el.find("fdir1")
                 if _c_tmp is not None:
                     _text = _c_tmp.text if _c_tmp.text is not None else "0 0 0"
-                    _val = _SDFVector3._from_sdf(_text, version)
+                    _val = _parse_vector3(_text)
                     if isinstance(_val, SDFError):
                         return _val.extend("fdir1")
                     _fdir1 = _val
@@ -594,7 +602,7 @@ class Surface(BaseModel):
             def __init__(
                 self,
                 sdf_version: str | None = None,
-                fdir1: _SDFVector3 = None,
+                fdir1: _Vector3T = None,
                 mu: float = -1,
                 mu2: float = -1,
                 slip1: float = 0.0,
@@ -602,7 +610,9 @@ class Surface(BaseModel):
             ):
                 super().__init__(sdf_version)
                 if fdir1 is None:
-                    fdir1 = _SDFVector3.from_sdf("0 0 0", version=sdf_version)
+                    fdir1 = _vector3("0 0 0")
+                else:
+                    fdir1 = _vector3(fdir1)
                 self.fdir1 = fdir1
                 self.mu = mu
                 self.mu2 = mu2
@@ -637,7 +647,7 @@ class Surface(BaseModel):
                 version = self.__version__ or version
                 el = ET.Element("ode")
                 if self.fdir1 is not None:
-                    el.set("fdir1", self.fdir1.to_sdf(version))
+                    el.set("fdir1", str(self.fdir1))
                 if self.mu is not None:
                     el.set("mu", str(self.mu))
                 if self.mu2 is not None:
@@ -650,7 +660,7 @@ class Surface(BaseModel):
 
             @classmethod
             def _from_sdf(cls, el: ET.Element, version: str) -> "Surface.Friction.FrictionOde | SDFError":
-                _fdir1 = _SDFVector3._from_sdf(el.get("fdir1", "0 0 0"), version)
+                _fdir1 = _parse_vector3(el.get("fdir1", "0 0 0"))
                 if isinstance(_fdir1, SDFError):
                     return _fdir1.extend("@fdir1")
                 _mu = _parse_double(el.get("mu", -1))

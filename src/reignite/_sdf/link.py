@@ -8,7 +8,7 @@ from typing import List
 
 from ..utils.model import BaseModel
 from ..utils.errors import SDFError
-from ..utils.pose import Pose as _SDFPose
+from ..utils.pose import Pose as _SDFPose, _PoseT, _pose
 from ..utils.version import cmp_version
 
 if typing.TYPE_CHECKING:
@@ -57,6 +57,12 @@ def _parse_double(raw: str) -> float | SDFError:
     except ValueError:
         return SDFError(f"Invalid double: {raw}")
 
+
+def _parse_pose(raw: str) -> _PoseT | SDFError:
+    try:
+        return _pose(raw)
+    except ValueError as e:
+        return SDFError(str(e))
 
 
 class Link(BaseModel):
@@ -113,10 +119,12 @@ class Link(BaseModel):
             return cls(sdf_version=version, angular=_angular, linear=_linear)
 
     class Origin(BaseModel):
-        def __init__(self, sdf_version: str | None = None, pose: _SDFPose = None):
+        def __init__(self, sdf_version: str | None = None, pose: _PoseT = None):
             super().__init__(sdf_version)
             if pose is None:
-                pose = _SDFPose.from_sdf("0 0 0 0 0 0", version=sdf_version)
+                pose = _pose("0 0 0 0 0 0")
+            else:
+                pose = _pose(pose)
             self.pose = pose
 
         def to_version(self, target_version: str) -> "Link.Origin":
@@ -135,10 +143,10 @@ class Link(BaseModel):
             if self.pose is not None:
                 if cmp_version(version, "1.2") >= 0:
                     _c_tmp = ET.Element("pose")
-                    _c_tmp.text = self.pose.to_sdf(version)
+                    _c_tmp.text = str(self.pose)
                     el.append(_c_tmp)
                 else:
-                    el.set("pose", self.pose.to_sdf(version))
+                    el.set("pose", str(self.pose))
             return el
 
         @classmethod
@@ -150,7 +158,7 @@ class Link(BaseModel):
             else:
                 _raw_pose = el.get("pose")
             if _raw_pose is None: _raw_pose = "0 0 0 0 0 0"
-            _pose = _SDFPose._from_sdf(_raw_pose, version)
+            _pose = _parse_pose(_raw_pose)
             if isinstance(_pose, SDFError):
                 return _pose.extend("@pose")
             return cls(sdf_version=version, pose=_pose)
@@ -210,7 +218,7 @@ class Link(BaseModel):
     def __init__(
         self,
         sdf_version: str | None = None,
-        acceleration: _SDFPose = None,
+        acceleration: _PoseT = None,
         audio_sinks: List["AudioSink"] = None,
         audio_sources: List["AudioSource"] = None,
         batteries: List["Battery"] = None,
@@ -230,18 +238,24 @@ class Link(BaseModel):
         projector: "Projector" = None,
         self_collide: bool = False,
         sensor: "Sensor" = None,
-        velocity: _SDFPose = None,
+        velocity: _PoseT = None,
         velocity_decay: "Link.VelocityDecay" = None,
         visuals: List["Visual"] = None,
-        wrench: _SDFPose = None
+        wrench: _PoseT = None
     ):
         super().__init__(sdf_version)
         if acceleration is None:
-            acceleration = _SDFPose.from_sdf("0 0 0 0 0 0", version=sdf_version)
+            acceleration = _pose("0 0 0 0 0 0")
+        else:
+            acceleration = _pose(acceleration)
         if velocity is None:
-            velocity = _SDFPose.from_sdf("0 0 0 0 0 0", version=sdf_version)
+            velocity = _pose("0 0 0 0 0 0")
+        else:
+            velocity = _pose(velocity)
         if wrench is None:
-            wrench = _SDFPose.from_sdf("0 0 0 0 0 0", version=sdf_version)
+            wrench = _pose("0 0 0 0 0 0")
+        else:
+            wrench = _pose(wrench)
         self.acceleration = acceleration
         self.audio_sinks = audio_sinks or []
         self.audio_sources = audio_sources or []
@@ -512,7 +526,7 @@ class Link(BaseModel):
         el = ET.Element("link")
         if self.acceleration is not None:
             _c_tmp = ET.Element("acceleration")
-            _c_tmp.text = self.acceleration.to_sdf(version)
+            _c_tmp.text = str(self.acceleration)
             el.append(_c_tmp)
         for item in (self.audio_sinks or []):
             if hasattr(item, 'to_sdf'):
@@ -682,7 +696,7 @@ class Link(BaseModel):
             el.append(_item_el)
         if self.velocity is not None:
             _c_tmp = ET.Element("velocity")
-            _c_tmp.text = self.velocity.to_sdf(version)
+            _c_tmp.text = str(self.velocity)
             el.append(_c_tmp)
         if self.velocity_decay is not None:
             if hasattr(self.velocity_decay, 'to_sdf'):
@@ -708,7 +722,7 @@ class Link(BaseModel):
             el.append(_item_el)
         if self.wrench is not None:
             _c_tmp = ET.Element("wrench")
-            _c_tmp.text = self.wrench.to_sdf(version)
+            _c_tmp.text = str(self.wrench)
             el.append(_c_tmp)
         return el
 
@@ -729,7 +743,7 @@ class Link(BaseModel):
         _c_tmp = el.find("acceleration")
         if _c_tmp is not None:
             _text = _c_tmp.text if _c_tmp.text is not None else "0 0 0 0 0 0"
-            _val = _SDFPose._from_sdf(_text, version)
+            _val = _parse_pose(_text)
             if isinstance(_val, SDFError):
                 return _val.extend("acceleration")
             _acceleration = _val
@@ -885,7 +899,7 @@ class Link(BaseModel):
         _c_tmp = el.find("velocity")
         if _c_tmp is not None:
             _text = _c_tmp.text if _c_tmp.text is not None else "0 0 0 0 0 0"
-            _val = _SDFPose._from_sdf(_text, version)
+            _val = _parse_pose(_text)
             if isinstance(_val, SDFError):
                 return _val.extend("velocity")
             _velocity = _val
@@ -912,7 +926,7 @@ class Link(BaseModel):
         _c_tmp = el.find("wrench")
         if _c_tmp is not None:
             _text = _c_tmp.text if _c_tmp.text is not None else "0 0 0 0 0 0"
-            _val = _SDFPose._from_sdf(_text, version)
+            _val = _parse_pose(_text)
             if isinstance(_val, SDFError):
                 return _val.extend("wrench")
             _wrench = _val

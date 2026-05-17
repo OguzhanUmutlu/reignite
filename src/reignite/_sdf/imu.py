@@ -6,7 +6,7 @@ from xml.etree import ElementTree as ET
 
 from ..utils.model import BaseModel
 from ..utils.errors import SDFError
-from ..utils.vector3 import Vector3 as _SDFVector3
+from ..utils.vector3 import Vector3 as _SDFVector3, _Vector3T, _vector3
 from ..utils.version import cmp_version
 from ..utils.migration import apply_migrations
 
@@ -45,6 +45,12 @@ def _parse_double(raw: str) -> float | SDFError:
     except ValueError:
         return SDFError(f"Invalid double: {raw}")
 
+
+def _parse_vector3(raw: str) -> _Vector3T | SDFError:
+    try:
+        return _vector3(raw)
+    except ValueError as e:
+        return SDFError(str(e))
 
 
 class Imu(BaseModel):
@@ -710,12 +716,14 @@ class Imu(BaseModel):
             def __init__(
                 self,
                 sdf_version: str | None = None,
-                custom_rpy: _SDFVector3 = None,
+                custom_rpy: _Vector3T = None,
                 parent_frame: str = ""
             ):
                 super().__init__(sdf_version)
                 if custom_rpy is None:
-                    custom_rpy = _SDFVector3.from_sdf("0 0 0", version=sdf_version)
+                    custom_rpy = _vector3("0 0 0")
+                else:
+                    custom_rpy = _vector3(custom_rpy)
                 self.custom_rpy = custom_rpy
                 self.parent_frame = parent_frame
 
@@ -734,7 +742,7 @@ class Imu(BaseModel):
                 version = self.__version__ or version
                 el = ET.Element("custom_rpy")
                 if self.custom_rpy is not None:
-                    el.text = self.custom_rpy.to_sdf(version)
+                    el.text = str(self.custom_rpy)
                 if self.parent_frame is not None:
                     el.set("parent_frame", self.parent_frame)
                 return el
@@ -742,7 +750,7 @@ class Imu(BaseModel):
             @classmethod
             def _from_sdf(cls, el: ET.Element, version: str) -> "Imu.OrientationReferenceFrame.CustomRpy | SDFError":
                 _text = el.text or "0 0 0"
-                _custom_rpy = _SDFVector3._from_sdf(_text, version)
+                _custom_rpy = _parse_vector3(_text)
                 if isinstance(_custom_rpy, SDFError):
                     return _custom_rpy
                 _parent_frame = el.get("parent_frame", "")
@@ -754,12 +762,14 @@ class Imu(BaseModel):
             def __init__(
                 self,
                 sdf_version: str | None = None,
-                grav_dir_x: _SDFVector3 = None,
+                grav_dir_x: _Vector3T = None,
                 parent_frame: str = ""
             ):
                 super().__init__(sdf_version)
                 if grav_dir_x is None:
-                    grav_dir_x = _SDFVector3.from_sdf("1 0 0", version=sdf_version)
+                    grav_dir_x = _vector3("1 0 0")
+                else:
+                    grav_dir_x = _vector3(grav_dir_x)
                 self.grav_dir_x = grav_dir_x
                 self.parent_frame = parent_frame
 
@@ -778,7 +788,7 @@ class Imu(BaseModel):
                 version = self.__version__ or version
                 el = ET.Element("grav_dir_x")
                 if self.grav_dir_x is not None:
-                    el.text = self.grav_dir_x.to_sdf(version)
+                    el.text = str(self.grav_dir_x)
                 if self.parent_frame is not None:
                     el.set("parent_frame", self.parent_frame)
                 return el
@@ -786,7 +796,7 @@ class Imu(BaseModel):
             @classmethod
             def _from_sdf(cls, el: ET.Element, version: str) -> "Imu.OrientationReferenceFrame.GravDirX | SDFError":
                 _text = el.text or "1 0 0"
-                _grav_dir_x = _SDFVector3._from_sdf(_text, version)
+                _grav_dir_x = _parse_vector3(_text)
                 if isinstance(_grav_dir_x, SDFError):
                     return _grav_dir_x
                 _parent_frame = el.get("parent_frame", "")

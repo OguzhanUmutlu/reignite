@@ -8,9 +8,9 @@ from typing import List
 
 from ..utils.model import BaseModel
 from ..utils.errors import SDFError
-from ..utils.color import Color as _SDFColor
-from ..utils.pose import Pose as _SDFPose
-from ..utils.vector3 import Vector3 as _SDFVector3
+from ..utils.color import Color as _SDFColor, _ColorT, _color
+from ..utils.pose import Pose as _SDFPose, _PoseT, _pose
+from ..utils.vector3 import Vector3 as _SDFVector3, _Vector3T, _vector3
 from ..utils.version import cmp_version
 
 if typing.TYPE_CHECKING:
@@ -49,6 +49,24 @@ def _parse_double(raw: str) -> float | SDFError:
     except ValueError:
         return SDFError(f"Invalid double: {raw}")
 
+
+def _parse_color(raw: str) -> _ColorT | SDFError:
+    try:
+        return _color(raw)
+    except ValueError as e:
+        return SDFError(str(e))
+
+def _parse_pose(raw: str) -> _PoseT | SDFError:
+    try:
+        return _pose(raw)
+    except ValueError as e:
+        return SDFError(str(e))
+
+def _parse_vector3(raw: str) -> _Vector3T | SDFError:
+    try:
+        return _vector3(raw)
+    except ValueError as e:
+        return SDFError(str(e))
 
 
 class Light(BaseModel):
@@ -121,14 +139,18 @@ class Light(BaseModel):
         def __init__(
             self,
             sdf_version: str | None = None,
-            diffuse: _SDFColor = None,
-            rgba: _SDFColor = None
+            diffuse: _ColorT = None,
+            rgba: _ColorT = None
         ):
             super().__init__(sdf_version)
             if diffuse is None:
-                diffuse = _SDFColor.from_sdf("1 1 1 1", version=sdf_version)
+                diffuse = _color("1 1 1 1")
+            else:
+                diffuse = _color(diffuse)
             if rgba is None:
-                rgba = _SDFColor.from_sdf("1 1 1 1", version=sdf_version)
+                rgba = _color("1 1 1 1")
+            else:
+                rgba = _color(rgba)
             self.diffuse = diffuse
             self.rgba = rgba
 
@@ -151,18 +173,18 @@ class Light(BaseModel):
             version = self.__version__ or version
             el = ET.Element("diffuse")
             if self.diffuse is not None:
-                el.text = self.diffuse.to_sdf(version)
+                el.text = str(self.diffuse)
             if self.rgba is not None:
                 if cmp_version(version, "1.2") >= 0:
-                    el.text = self.rgba.to_sdf(version)
+                    el.text = str(self.rgba)
                 else:
-                    el.set("rgba", self.rgba.to_sdf(version))
+                    el.set("rgba", str(self.rgba))
             return el
 
         @classmethod
         def _from_sdf(cls, el: ET.Element, version: str) -> "Light.Diffuse | SDFError":
             _text = el.text or "1 1 1 1"
-            _diffuse = _SDFColor._from_sdf(_text, version)
+            _diffuse = _parse_color(_text)
             if isinstance(_diffuse, SDFError):
                 return _diffuse
             _raw_rgba = None
@@ -171,7 +193,7 @@ class Light(BaseModel):
             else:
                 _raw_rgba = el.get("rgba")
             if _raw_rgba is None: _raw_rgba = "1 1 1 1"
-            _rgba = _SDFColor._from_sdf(_raw_rgba, version)
+            _rgba = _parse_color(_raw_rgba)
             if isinstance(_rgba, SDFError):
                 return _rgba.extend("@rgba")
             return cls(sdf_version=version, diffuse=_diffuse, rgba=_rgba)
@@ -180,14 +202,18 @@ class Light(BaseModel):
         def __init__(
             self,
             sdf_version: str | None = None,
-            direction: _SDFVector3 = None,
-            xyz: _SDFVector3 = None
+            direction: _Vector3T = None,
+            xyz: _Vector3T = None
         ):
             super().__init__(sdf_version)
             if direction is None:
-                direction = _SDFVector3.from_sdf("0 0 -1", version=sdf_version)
+                direction = _vector3("0 0 -1")
+            else:
+                direction = _vector3(direction)
             if xyz is None:
-                xyz = _SDFVector3.from_sdf("0 0 -1", version=sdf_version)
+                xyz = _vector3("0 0 -1")
+            else:
+                xyz = _vector3(xyz)
             self.direction = direction
             self.xyz = xyz
 
@@ -210,18 +236,18 @@ class Light(BaseModel):
             version = self.__version__ or version
             el = ET.Element("direction")
             if self.direction is not None:
-                el.text = self.direction.to_sdf(version)
+                el.text = str(self.direction)
             if self.xyz is not None:
                 if cmp_version(version, "1.2") >= 0:
-                    el.text = self.xyz.to_sdf(version)
+                    el.text = str(self.xyz)
                 else:
-                    el.set("xyz", self.xyz.to_sdf(version))
+                    el.set("xyz", str(self.xyz))
             return el
 
         @classmethod
         def _from_sdf(cls, el: ET.Element, version: str) -> "Light.Direction | SDFError":
             _text = el.text or "0 0 -1"
-            _direction = _SDFVector3._from_sdf(_text, version)
+            _direction = _parse_vector3(_text)
             if isinstance(_direction, SDFError):
                 return _direction
             _raw_xyz = None
@@ -230,16 +256,18 @@ class Light(BaseModel):
             else:
                 _raw_xyz = el.get("xyz")
             if _raw_xyz is None: _raw_xyz = "0 0 -1"
-            _xyz = _SDFVector3._from_sdf(_raw_xyz, version)
+            _xyz = _parse_vector3(_raw_xyz)
             if isinstance(_xyz, SDFError):
                 return _xyz.extend("@xyz")
             return cls(sdf_version=version, direction=_direction, xyz=_xyz)
 
     class Origin(BaseModel):
-        def __init__(self, sdf_version: str | None = None, pose: _SDFPose = None):
+        def __init__(self, sdf_version: str | None = None, pose: _PoseT = None):
             super().__init__(sdf_version)
             if pose is None:
-                pose = _SDFPose.from_sdf("0 0 0 0 0 0", version=sdf_version)
+                pose = _pose("0 0 0 0 0 0")
+            else:
+                pose = _pose(pose)
             self.pose = pose
 
         def to_version(self, target_version: str) -> "Light.Origin":
@@ -258,10 +286,10 @@ class Light(BaseModel):
             if self.pose is not None:
                 if cmp_version(version, "1.2") >= 0:
                     _c_tmp = ET.Element("pose")
-                    _c_tmp.text = self.pose.to_sdf(version)
+                    _c_tmp.text = str(self.pose)
                     el.append(_c_tmp)
                 else:
-                    el.set("pose", self.pose.to_sdf(version))
+                    el.set("pose", str(self.pose))
             return el
 
         @classmethod
@@ -273,7 +301,7 @@ class Light(BaseModel):
             else:
                 _raw_pose = el.get("pose")
             if _raw_pose is None: _raw_pose = "0 0 0 0 0 0"
-            _pose = _SDFPose._from_sdf(_raw_pose, version)
+            _pose = _parse_pose(_raw_pose)
             if isinstance(_pose, SDFError):
                 return _pose.extend("@pose")
             return cls(sdf_version=version, pose=_pose)
@@ -282,14 +310,18 @@ class Light(BaseModel):
         def __init__(
             self,
             sdf_version: str | None = None,
-            rgba: _SDFColor = None,
-            specular: _SDFColor = None
+            rgba: _ColorT = None,
+            specular: _ColorT = None
         ):
             super().__init__(sdf_version)
             if rgba is None:
-                rgba = _SDFColor.from_sdf(".1 .1 .1 1", version=sdf_version)
+                rgba = _color(".1 .1 .1 1")
+            else:
+                rgba = _color(rgba)
             if specular is None:
-                specular = _SDFColor.from_sdf(".1 .1 .1 1", version=sdf_version)
+                specular = _color(".1 .1 .1 1")
+            else:
+                specular = _color(specular)
             self.rgba = rgba
             self.specular = specular
 
@@ -313,11 +345,11 @@ class Light(BaseModel):
             el = ET.Element("specular")
             if self.rgba is not None:
                 if cmp_version(version, "1.2") >= 0:
-                    el.text = self.rgba.to_sdf(version)
+                    el.text = str(self.rgba)
                 else:
-                    el.set("rgba", self.rgba.to_sdf(version))
+                    el.set("rgba", str(self.rgba))
             if self.specular is not None:
-                el.text = self.specular.to_sdf(version)
+                el.text = str(self.specular)
             return el
 
         @classmethod
@@ -328,11 +360,11 @@ class Light(BaseModel):
             else:
                 _raw_rgba = el.get("rgba")
             if _raw_rgba is None: _raw_rgba = ".1 .1 .1 1"
-            _rgba = _SDFColor._from_sdf(_raw_rgba, version)
+            _rgba = _parse_color(_raw_rgba)
             if isinstance(_rgba, SDFError):
                 return _rgba.extend("@rgba")
             _text = el.text or ".1 .1 .1 1"
-            _specular = _SDFColor._from_sdf(_text, version)
+            _specular = _parse_color(_text)
             if isinstance(_specular, SDFError):
                 return _specular
             return cls(sdf_version=version, rgba=_rgba, specular=_specular)

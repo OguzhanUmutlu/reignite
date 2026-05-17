@@ -8,8 +8,8 @@ from typing import List
 
 from ..utils.model import BaseModel
 from ..utils.errors import SDFError
-from ..utils.pose import Pose as _SDFPose
-from ..utils.vector3 import Vector3 as _SDFVector3
+from ..utils.pose import Pose as _SDFPose, _PoseT, _pose
+from ..utils.vector3 import Vector3 as _SDFVector3, _Vector3T, _vector3
 from ..utils.version import cmp_version
 
 if typing.TYPE_CHECKING:
@@ -20,6 +20,51 @@ if typing.TYPE_CHECKING:
     from ..elements.model_state import ModelState
     from ..elements.plugin import Plugin
     from ..elements.pose import Pose
+
+
+import math
+
+def _parse_int32(raw: str) -> int | SDFError:
+    try:
+        v = int(raw)
+        if not (-2147483648 <= v <= 2147483647):
+            return SDFError(f"int32 out of range: {v}")
+        return v
+    except ValueError:
+        return SDFError(f"Invalid int32: {raw}")
+
+
+def _parse_uint32(raw: str) -> int | SDFError:
+    try:
+        v = int(raw)
+        if not (0 <= v <= 4294967295):
+            return SDFError(f"uint32 out of range: {v}")
+        return v
+    except ValueError:
+        return SDFError(f"Invalid uint32: {raw}")
+
+
+def _parse_double(raw: str) -> float | SDFError:
+    try:
+        v = float(raw)
+        if not math.isfinite(v) or abs(v) > math.inf:
+            return SDFError(f"double out of range: {raw}")
+        return v
+    except ValueError:
+        return SDFError(f"Invalid double: {raw}")
+
+
+def _parse_pose(raw: str) -> _PoseT | SDFError:
+    try:
+        return _pose(raw)
+    except ValueError as e:
+        return SDFError(str(e))
+
+def _parse_vector3(raw: str) -> _Vector3T | SDFError:
+    try:
+        return _vector3(raw)
+    except ValueError as e:
+        return SDFError(str(e))
 
 
 class Model(BaseModel):
@@ -261,10 +306,12 @@ class Model(BaseModel):
             return cls(sdf_version=version, name=_name)
 
     class Origin(BaseModel):
-        def __init__(self, sdf_version: str | None = None, pose: _SDFPose = None):
+        def __init__(self, sdf_version: str | None = None, pose: _PoseT = None):
             super().__init__(sdf_version)
             if pose is None:
-                pose = _SDFPose.from_sdf("0 0 0 0 0 0", version=sdf_version)
+                pose = _pose("0 0 0 0 0 0")
+            else:
+                pose = _pose(pose)
             self.pose = pose
 
         def to_version(self, target_version: str) -> "Model.Origin":
@@ -283,10 +330,10 @@ class Model(BaseModel):
             if self.pose is not None:
                 if cmp_version(version, "1.2") >= 0:
                     _c_tmp = ET.Element("pose")
-                    _c_tmp.text = self.pose.to_sdf(version)
+                    _c_tmp.text = str(self.pose)
                     el.append(_c_tmp)
                 else:
-                    el.set("pose", self.pose.to_sdf(version))
+                    el.set("pose", str(self.pose))
             return el
 
         @classmethod
@@ -298,7 +345,7 @@ class Model(BaseModel):
             else:
                 _raw_pose = el.get("pose")
             if _raw_pose is None: _raw_pose = "0 0 0 0 0 0"
-            _pose = _SDFPose._from_sdf(_raw_pose, version)
+            _pose = _parse_pose(_raw_pose)
             if isinstance(_pose, SDFError):
                 return _pose.extend("@pose")
             return cls(sdf_version=version, pose=_pose)
@@ -321,13 +368,15 @@ class Model(BaseModel):
         placement_frame: str = "",
         plugins: List["Plugin"] = None,
         pose: "Pose" = None,
-        scale: _SDFVector3 = None,
+        scale: _Vector3T = None,
         self_collide: bool = False,
         static: bool = False
     ):
         super().__init__(sdf_version)
         if scale is None:
-            scale = _SDFVector3.from_sdf("1 1 1", version=sdf_version)
+            scale = _vector3("1 1 1")
+        else:
+            scale = _vector3(scale)
         self.allow_auto_disable = allow_auto_disable
         self.canonical_link = canonical_link
         self.enable_wind = enable_wind
@@ -657,7 +706,7 @@ class Model(BaseModel):
             el.append(_item_el)
         if self.scale is not None:
             _c_tmp = ET.Element("scale")
-            _c_tmp.text = self.scale.to_sdf(version)
+            _c_tmp.text = str(self.scale)
             el.append(_c_tmp)
         if self.self_collide is not None:
             _c_tmp = ET.Element("self_collide")
@@ -790,7 +839,7 @@ class Model(BaseModel):
         _c_tmp = el.find("scale")
         if _c_tmp is not None:
             _text = _c_tmp.text if _c_tmp.text is not None else "1 1 1"
-            _val = _SDFVector3._from_sdf(_text, version)
+            _val = _parse_vector3(_text)
             if isinstance(_val, SDFError):
                 return _val.extend("scale")
             _scale = _val

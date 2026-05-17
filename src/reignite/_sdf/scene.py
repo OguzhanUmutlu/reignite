@@ -6,7 +6,7 @@ from xml.etree import ElementTree as ET
 
 from ..utils.model import BaseModel
 from ..utils.errors import SDFError
-from ..utils.color import Color as _SDFColor
+from ..utils.color import Color as _SDFColor, _ColorT, _color
 from ..utils.version import cmp_version
 
 
@@ -42,20 +42,30 @@ def _parse_double(raw: str) -> float | SDFError:
         return SDFError(f"Invalid double: {raw}")
 
 
+def _parse_color(raw: str) -> _ColorT | SDFError:
+    try:
+        return _color(raw)
+    except ValueError as e:
+        return SDFError(str(e))
+
 
 class Scene(BaseModel):
     class Ambient(BaseModel):
         def __init__(
             self,
             sdf_version: str | None = None,
-            ambient: _SDFColor = None,
-            rgba: _SDFColor = None
+            ambient: _ColorT = None,
+            rgba: _ColorT = None
         ):
             super().__init__(sdf_version)
             if ambient is None:
-                ambient = _SDFColor.from_sdf("0.0 0.0 0.0 1.0", version=sdf_version)
+                ambient = _color("0.0 0.0 0.0 1.0")
+            else:
+                ambient = _color(ambient)
             if rgba is None:
-                rgba = _SDFColor.from_sdf("0.0 0.0 0.0 1.0", version=sdf_version)
+                rgba = _color("0.0 0.0 0.0 1.0")
+            else:
+                rgba = _color(rgba)
             self.ambient = ambient
             self.rgba = rgba
 
@@ -76,18 +86,18 @@ class Scene(BaseModel):
             version = self.__version__ or version
             el = ET.Element("ambient")
             if self.ambient is not None:
-                el.text = self.ambient.to_sdf(version)
+                el.text = str(self.ambient)
             if self.rgba is not None:
                 if cmp_version(version, "1.2") >= 0:
-                    el.text = self.rgba.to_sdf(version)
+                    el.text = str(self.rgba)
                 else:
-                    el.set("rgba", self.rgba.to_sdf(version))
+                    el.set("rgba", str(self.rgba))
             return el
 
         @classmethod
         def _from_sdf(cls, el: ET.Element, version: str) -> "Scene.Ambient | SDFError":
             _text = el.text or "0.0 0.0 0.0 1.0"
-            _ambient = _SDFColor._from_sdf(_text, version)
+            _ambient = _parse_color(_text)
             if isinstance(_ambient, SDFError):
                 return _ambient
             _raw_rgba = None
@@ -96,7 +106,7 @@ class Scene(BaseModel):
             else:
                 _raw_rgba = el.get("rgba")
             if _raw_rgba is None: _raw_rgba = "0.0 0.0 0.0 1.0"
-            _rgba = _SDFColor._from_sdf(_raw_rgba, version)
+            _rgba = _parse_color(_raw_rgba)
             if isinstance(_rgba, SDFError):
                 return _rgba.extend("@rgba")
             return cls(sdf_version=version, ambient=_ambient, rgba=_rgba)
@@ -134,12 +144,14 @@ class Scene(BaseModel):
         def __init__(
             self,
             sdf_version: str | None = None,
-            rgba: _SDFColor = None,
+            rgba: _ColorT = None,
             sky: "Scene.Background.Sky" = None
         ):
             super().__init__(sdf_version)
             if rgba is None:
-                rgba = _SDFColor.from_sdf(".7 .7 .7 1", version=sdf_version)
+                rgba = _color(".7 .7 .7 1")
+            else:
+                rgba = _color(rgba)
             self.rgba = rgba
             self.sky = sky
             if self.sky is not None and hasattr(self.sky, 'to_version'):
@@ -168,9 +180,9 @@ class Scene(BaseModel):
             el = ET.Element("background")
             if self.rgba is not None:
                 if cmp_version(version, "1.2") >= 0:
-                    el.text = self.rgba.to_sdf(version)
+                    el.text = str(self.rgba)
                 else:
-                    el.set("rgba", self.rgba.to_sdf(version))
+                    el.set("rgba", str(self.rgba))
             if self.sky is not None:
                 if hasattr(self.sky, 'to_sdf'):
                     _child_res = self.sky.to_sdf(version)
@@ -192,7 +204,7 @@ class Scene(BaseModel):
             else:
                 _raw_rgba = el.get("rgba")
             if _raw_rgba is None: _raw_rgba = ".7 .7 .7 1"
-            _rgba = _SDFColor._from_sdf(_raw_rgba, version)
+            _rgba = _parse_color(_raw_rgba)
             if isinstance(_rgba, SDFError):
                 return _rgba.extend("@rgba")
             _c_sky = el.find("sky")
@@ -209,18 +221,22 @@ class Scene(BaseModel):
         def __init__(
             self,
             sdf_version: str | None = None,
-            color: _SDFColor = None,
+            color: _ColorT = None,
             density: float = 1.0,
             end: float = 100.0,
-            rgba: _SDFColor = None,
+            rgba: _ColorT = None,
             start: float = 1.0,
             type: str = "linear"
         ):
             super().__init__(sdf_version)
             if color is None:
-                color = _SDFColor.from_sdf("1 1 1 1", version=sdf_version)
+                color = _color("1 1 1 1")
+            else:
+                color = _color(color)
             if rgba is None:
-                rgba = _SDFColor.from_sdf("1 1 1 1", version=sdf_version)
+                rgba = _color("1 1 1 1")
+            else:
+                rgba = _color(rgba)
             self.color = color
             self.density = density
             self.end = end
@@ -260,7 +276,7 @@ class Scene(BaseModel):
             el = ET.Element("fog")
             if self.color is not None:
                 _c_tmp = ET.Element("color")
-                _c_tmp.text = self.color.to_sdf(version)
+                _c_tmp.text = str(self.color)
                 el.append(_c_tmp)
             if self.density is not None:
                 el.set("density", str(self.density))
@@ -269,10 +285,10 @@ class Scene(BaseModel):
             if self.rgba is not None:
                 if cmp_version(version, "1.2") >= 0:
                     _c_tmp = ET.Element("color")
-                    _c_tmp.text = self.rgba.to_sdf(version)
+                    _c_tmp.text = str(self.rgba)
                     el.append(_c_tmp)
                 else:
-                    el.set("rgba", self.rgba.to_sdf(version))
+                    el.set("rgba", str(self.rgba))
             if self.start is not None:
                 el.set("start", str(self.start))
             if self.type is not None:
@@ -284,7 +300,7 @@ class Scene(BaseModel):
             _c_tmp = el.find("color")
             if _c_tmp is not None:
                 _text = _c_tmp.text if _c_tmp.text is not None else "1 1 1 1"
-                _val = _SDFColor._from_sdf(_text, version)
+                _val = _parse_color(_text)
                 if isinstance(_val, SDFError):
                     return _val.extend("color")
                 _color = _val
@@ -305,7 +321,7 @@ class Scene(BaseModel):
             else:
                 _raw_rgba = el.get("rgba")
             if _raw_rgba is None: _raw_rgba = "1 1 1 1"
-            _rgba = _SDFColor._from_sdf(_raw_rgba, version)
+            _rgba = _parse_color(_raw_rgba)
             if isinstance(_rgba, SDFError):
                 return _rgba.extend("@rgba")
             _start = _parse_double(el.get("start", 1.0))
@@ -369,7 +385,7 @@ class Scene(BaseModel):
             def __init__(
                 self,
                 sdf_version: str | None = None,
-                ambient: _SDFColor = None,
+                ambient: _ColorT = None,
                 direction: float = 0.0,
                 humidity: float = 0.5,
                 mean_size: float = 0.5,
@@ -377,7 +393,9 @@ class Scene(BaseModel):
             ):
                 super().__init__(sdf_version)
                 if ambient is None:
-                    ambient = _SDFColor.from_sdf(".8 .8 .8 1", version=sdf_version)
+                    ambient = _color(".8 .8 .8 1")
+                else:
+                    ambient = _color(ambient)
                 self.ambient = ambient
                 self.direction = direction
                 self.humidity = humidity
@@ -403,7 +421,7 @@ class Scene(BaseModel):
                 el = ET.Element("clouds")
                 if self.ambient is not None:
                     _c_tmp = ET.Element("ambient")
-                    _c_tmp.text = self.ambient.to_sdf(version)
+                    _c_tmp.text = str(self.ambient)
                     el.append(_c_tmp)
                 if self.direction is not None:
                     _c_tmp = ET.Element("direction")
@@ -428,7 +446,7 @@ class Scene(BaseModel):
                 _c_tmp = el.find("ambient")
                 if _c_tmp is not None:
                     _text = _c_tmp.text if _c_tmp.text is not None else ".8 .8 .8 1"
-                    _val = _SDFColor._from_sdf(_text, version)
+                    _val = _parse_color(_text)
                     if isinstance(_val, SDFError):
                         return _val.extend("ambient")
                     _ambient = _val

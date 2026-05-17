@@ -6,7 +6,7 @@ from xml.etree import ElementTree as ET
 
 from ..utils.model import BaseModel
 from ..utils.errors import SDFError
-from ..utils.vector3 import Vector3 as _SDFVector3
+from ..utils.vector3 import Vector3 as _SDFVector3, _Vector3T, _vector3
 from ..utils.version import cmp_version
 
 
@@ -41,6 +41,12 @@ def _parse_double(raw: str) -> float | SDFError:
     except ValueError:
         return SDFError(f"Invalid double: {raw}")
 
+
+def _parse_vector3(raw: str) -> _Vector3T | SDFError:
+    try:
+        return _vector3(raw)
+    except ValueError as e:
+        return SDFError(str(e))
 
 
 class Mesh(BaseModel):
@@ -163,13 +169,15 @@ class Mesh(BaseModel):
         sdf_version: str | None = None,
         convex_decomposition: "Mesh.ConvexDecomposition" = None,
         optimization: str = "",
-        scale: _SDFVector3 = None,
+        scale: _Vector3T = None,
         submesh: "Mesh.Submesh" = None,
         uri: str = "__default__"
     ):
         super().__init__(sdf_version)
         if scale is None:
-            scale = _SDFVector3.from_sdf("1 1 1", version=sdf_version)
+            scale = _vector3("1 1 1")
+        else:
+            scale = _vector3(scale)
         self.convex_decomposition = convex_decomposition
         self.optimization = optimization
         self.scale = scale
@@ -222,7 +230,7 @@ class Mesh(BaseModel):
             el.set("optimization", self.optimization)
         if self.scale is not None:
             _c_tmp = ET.Element("scale")
-            _c_tmp.text = self.scale.to_sdf(version)
+            _c_tmp.text = str(self.scale)
             el.append(_c_tmp)
         if self.submesh is not None:
             if hasattr(self.submesh, 'to_sdf'):
@@ -262,7 +270,7 @@ class Mesh(BaseModel):
         _c_tmp = el.find("scale")
         if _c_tmp is not None:
             _text = _c_tmp.text if _c_tmp.text is not None else "1 1 1"
-            _val = _SDFVector3._from_sdf(_text, version)
+            _val = _parse_vector3(_text)
             if isinstance(_val, SDFError):
                 return _val.extend("scale")
             _scale = _val

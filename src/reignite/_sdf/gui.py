@@ -8,8 +8,8 @@ from typing import List
 
 from ..utils.model import BaseModel
 from ..utils.errors import SDFError
-from ..utils.pose import Pose as _SDFPose
-from ..utils.vector3 import Vector3 as _SDFVector3
+from ..utils.pose import Pose as _SDFPose, _PoseT, _pose
+from ..utils.vector3 import Vector3 as _SDFVector3, _Vector3T, _vector3
 from ..utils.version import cmp_version
 
 if typing.TYPE_CHECKING:
@@ -50,14 +50,28 @@ def _parse_double(raw: str) -> float | SDFError:
         return SDFError(f"Invalid double: {raw}")
 
 
+def _parse_pose(raw: str) -> _PoseT | SDFError:
+    try:
+        return _pose(raw)
+    except ValueError as e:
+        return SDFError(str(e))
+
+def _parse_vector3(raw: str) -> _Vector3T | SDFError:
+    try:
+        return _vector3(raw)
+    except ValueError as e:
+        return SDFError(str(e))
+
 
 class Gui(BaseModel):
     class Camera(BaseModel):
         class Origin(BaseModel):
-            def __init__(self, sdf_version: str | None = None, pose: _SDFPose = None):
+            def __init__(self, sdf_version: str | None = None, pose: _PoseT = None):
                 super().__init__(sdf_version)
                 if pose is None:
-                    pose = _SDFPose.from_sdf("0 0 0 0 0 0", version=sdf_version)
+                    pose = _pose("0 0 0 0 0 0")
+                else:
+                    pose = _pose(pose)
                 self.pose = pose
 
             def to_version(self, target_version: str) -> "Gui.Camera.Origin":
@@ -76,10 +90,10 @@ class Gui(BaseModel):
                 if self.pose is not None:
                     if cmp_version(version, "1.2") >= 0:
                         _c_tmp = ET.Element("pose")
-                        _c_tmp.text = self.pose.to_sdf(version)
+                        _c_tmp.text = str(self.pose)
                         el.append(_c_tmp)
                     else:
-                        el.set("pose", self.pose.to_sdf(version))
+                        el.set("pose", str(self.pose))
                 return el
 
             @classmethod
@@ -91,7 +105,7 @@ class Gui(BaseModel):
                 else:
                     _raw_pose = el.get("pose")
                 if _raw_pose is None: _raw_pose = "0 0 0 0 0 0"
-                _pose = _SDFPose._from_sdf(_raw_pose, version)
+                _pose = _parse_pose(_raw_pose)
                 if isinstance(_pose, SDFError):
                     return _pose.extend("@pose")
                 return cls(sdf_version=version, pose=_pose)
@@ -106,11 +120,13 @@ class Gui(BaseModel):
                 name: str = "__default__",
                 static: bool = False,
                 use_model_frame: bool = True,
-                xyz: _SDFVector3 = None
+                xyz: _Vector3T = None
             ):
                 super().__init__(sdf_version)
                 if xyz is None:
-                    xyz = _SDFVector3.from_sdf("-5.0 0.0 3.0", version=sdf_version)
+                    xyz = _vector3("-5.0 0.0 3.0")
+                else:
+                    xyz = _vector3(xyz)
                 self.inherit_yaw = inherit_yaw
                 self.max_dist = max_dist
                 self.min_dist = min_dist
@@ -172,7 +188,7 @@ class Gui(BaseModel):
                     el.append(_c_tmp)
                 if self.xyz is not None:
                     _c_tmp = ET.Element("xyz")
-                    _c_tmp.text = self.xyz.to_sdf(version)
+                    _c_tmp.text = str(self.xyz)
                     el.append(_c_tmp)
                 return el
 
@@ -241,7 +257,7 @@ class Gui(BaseModel):
                 _c_tmp = el.find("xyz")
                 if _c_tmp is not None:
                     _text = _c_tmp.text if _c_tmp.text is not None else "-5.0 0.0 3.0"
-                    _val = _SDFVector3._from_sdf(_text, version)
+                    _val = _parse_vector3(_text)
                     if isinstance(_val, SDFError):
                         return _val.extend("xyz")
                     _xyz = _val

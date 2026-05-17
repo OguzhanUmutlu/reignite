@@ -8,7 +8,7 @@ from typing import List
 
 from ..utils.model import BaseModel
 from ..utils.errors import SDFError
-from ..utils.vector3 import Vector3 as _SDFVector3
+from ..utils.vector3 import Vector3 as _SDFVector3, _Vector3T, _vector3
 from ..utils.version import cmp_version
 from ..utils.migration import apply_migrations
 
@@ -29,6 +29,45 @@ if typing.TYPE_CHECKING:
     from ..elements.scene import Scene
     from ..elements.spherical_coordinates import SphericalCoordinates
     from ..elements.state import State
+
+
+import math
+
+def _parse_int32(raw: str) -> int | SDFError:
+    try:
+        v = int(raw)
+        if not (-2147483648 <= v <= 2147483647):
+            return SDFError(f"int32 out of range: {v}")
+        return v
+    except ValueError:
+        return SDFError(f"Invalid int32: {raw}")
+
+
+def _parse_uint32(raw: str) -> int | SDFError:
+    try:
+        v = int(raw)
+        if not (0 <= v <= 4294967295):
+            return SDFError(f"uint32 out of range: {v}")
+        return v
+    except ValueError:
+        return SDFError(f"Invalid uint32: {raw}")
+
+
+def _parse_double(raw: str) -> float | SDFError:
+    try:
+        v = float(raw)
+        if not math.isfinite(v) or abs(v) > math.inf:
+            return SDFError(f"double out of range: {raw}")
+        return v
+    except ValueError:
+        return SDFError(f"Invalid double: {raw}")
+
+
+def _parse_vector3(raw: str) -> _Vector3T | SDFError:
+    try:
+        return _vector3(raw)
+    except ValueError as e:
+        return SDFError(str(e))
 
 
 class World(BaseModel):
@@ -294,10 +333,12 @@ class World(BaseModel):
             return cls(sdf_version=version, merge=_merge, model_states=_model_states, name=_name, placement_frame=_placement_frame, plugins=_plugins, pose=_pose, static=_static, uri=_uri)
 
     class Wind(BaseModel):
-        def __init__(self, sdf_version: str | None = None, linear_velocity: _SDFVector3 = None):
+        def __init__(self, sdf_version: str | None = None, linear_velocity: _Vector3T = None):
             super().__init__(sdf_version)
             if linear_velocity is None:
-                linear_velocity = _SDFVector3.from_sdf("0 0 0", version=sdf_version)
+                linear_velocity = _vector3("0 0 0")
+            else:
+                linear_velocity = _vector3(linear_velocity)
             self.linear_velocity = linear_velocity
 
         def to_version(self, target_version: str) -> "World.Wind":
@@ -315,7 +356,7 @@ class World(BaseModel):
             el = ET.Element("wind")
             if self.linear_velocity is not None:
                 _c_tmp = ET.Element("linear_velocity")
-                _c_tmp.text = self.linear_velocity.to_sdf(version)
+                _c_tmp.text = str(self.linear_velocity)
                 el.append(_c_tmp)
             return el
 
@@ -324,7 +365,7 @@ class World(BaseModel):
             _c_tmp = el.find("linear_velocity")
             if _c_tmp is not None:
                 _text = _c_tmp.text if _c_tmp.text is not None else "0 0 0"
-                _val = _SDFVector3._from_sdf(_text, version)
+                _val = _parse_vector3(_text)
                 if isinstance(_val, SDFError):
                     return _val.extend("linear_velocity")
                 _linear_velocity = _val
@@ -341,12 +382,12 @@ class World(BaseModel):
         atmosphere: "Atmosphere" = None,
         audio: "World.Audio" = None,
         frames: List["Frame"] = None,
-        gravity: _SDFVector3 = None,
+        gravity: _Vector3T = None,
         gui: "Gui" = None,
         includes: List["World.Include"] = None,
         joints: List["Joint"] = None,
         lights: List["Light"] = None,
-        magnetic_field: _SDFVector3 = None,
+        magnetic_field: _Vector3T = None,
         models: List["Model"] = None,
         name: str = "__default__",
         physics: "Physics" = None,
@@ -360,9 +401,13 @@ class World(BaseModel):
     ):
         super().__init__(sdf_version)
         if gravity is None:
-            gravity = _SDFVector3.from_sdf("0 0 -9.8", version=sdf_version)
+            gravity = _vector3("0 0 -9.8")
+        else:
+            gravity = _vector3(gravity)
         if magnetic_field is None:
-            magnetic_field = _SDFVector3.from_sdf("5.5645e-6 22.8758e-6 -42.3884e-6", version=sdf_version)
+            magnetic_field = _vector3("5.5645e-6 22.8758e-6 -42.3884e-6")
+        else:
+            magnetic_field = _vector3(magnetic_field)
         self.actors = actors or []
         self.atmosphere = atmosphere
         self.audio = audio
@@ -659,7 +704,7 @@ class World(BaseModel):
             el.append(_item_el)
         if self.gravity is not None:
             _c_tmp = ET.Element("gravity")
-            _c_tmp.text = self.gravity.to_sdf(version)
+            _c_tmp.text = str(self.gravity)
             el.append(_c_tmp)
         if self.gui is not None:
             if hasattr(self.gui, 'to_sdf'):
@@ -707,7 +752,7 @@ class World(BaseModel):
             el.append(_item_el)
         if self.magnetic_field is not None:
             _c_tmp = ET.Element("magnetic_field")
-            _c_tmp.text = self.magnetic_field.to_sdf(version)
+            _c_tmp.text = str(self.magnetic_field)
             el.append(_c_tmp)
         for item in (self.models or []):
             if hasattr(item, 'to_sdf'):
@@ -872,7 +917,7 @@ class World(BaseModel):
         _c_tmp = el.find("gravity")
         if _c_tmp is not None:
             _text = _c_tmp.text if _c_tmp.text is not None else "0 0 -9.8"
-            _val = _SDFVector3._from_sdf(_text, version)
+            _val = _parse_vector3(_text)
             if isinstance(_val, SDFError):
                 return _val.extend("gravity")
             _gravity = _val
@@ -911,7 +956,7 @@ class World(BaseModel):
         _c_tmp = el.find("magnetic_field")
         if _c_tmp is not None:
             _text = _c_tmp.text if _c_tmp.text is not None else "5.5645e-6 22.8758e-6 -42.3884e-6"
-            _val = _SDFVector3._from_sdf(_text, version)
+            _val = _parse_vector3(_text)
             if isinstance(_val, SDFError):
                 return _val.extend("magnetic_field")
             _magnetic_field = _val

@@ -6,8 +6,8 @@ from xml.etree import ElementTree as ET
 
 from ..utils.model import BaseModel
 from ..utils.errors import SDFError
-from ..utils.color import Color as _SDFColor
-from ..utils.vector3 import Vector3 as _SDFVector3
+from ..utils.color import Color as _SDFColor, _ColorT, _color
+from ..utils.vector3 import Vector3 as _SDFVector3, _Vector3T, _vector3
 
 if typing.TYPE_CHECKING:
     from ..elements.material import Material
@@ -46,14 +46,26 @@ def _parse_double(raw: str) -> float | SDFError:
         return SDFError(f"Invalid double: {raw}")
 
 
+def _parse_color(raw: str) -> _ColorT | SDFError:
+    try:
+        return _color(raw)
+    except ValueError as e:
+        return SDFError(str(e))
+
+def _parse_vector3(raw: str) -> _Vector3T | SDFError:
+    try:
+        return _vector3(raw)
+    except ValueError as e:
+        return SDFError(str(e))
+
 
 class ParticleEmitter(BaseModel):
     def __init__(
         self,
         sdf_version: str | None = None,
-        color_end: _SDFColor = None,
+        color_end: _ColorT = None,
         color_range_image: str = "",
-        color_start: _SDFColor = None,
+        color_start: _ColorT = None,
         duration: float = 0,
         emitting: bool = True,
         lifetime: float = 5,
@@ -62,23 +74,31 @@ class ParticleEmitter(BaseModel):
         min_velocity: float = 1,
         name: str = "__default__",
         particle_scatter_ratio: float = 0.65,
-        particle_size: _SDFVector3 = None,
+        particle_size: _Vector3T = None,
         pose: "Pose" = None,
         rate: float = 10,
         scale_rate: float = 0,
-        size: _SDFVector3 = None,
+        size: _Vector3T = None,
         topic: str = "",
         type: str = "point"
     ):
         super().__init__(sdf_version)
         if color_end is None:
-            color_end = _SDFColor.from_sdf("1 1 1 1", version=sdf_version)
+            color_end = _color("1 1 1 1")
+        else:
+            color_end = _color(color_end)
         if color_start is None:
-            color_start = _SDFColor.from_sdf("1 1 1 1", version=sdf_version)
+            color_start = _color("1 1 1 1")
+        else:
+            color_start = _color(color_start)
         if particle_size is None:
-            particle_size = _SDFVector3.from_sdf("1 1 1", version=sdf_version)
+            particle_size = _vector3("1 1 1")
+        else:
+            particle_size = _vector3(particle_size)
         if size is None:
-            size = _SDFVector3.from_sdf("1 1 1", version=sdf_version)
+            size = _vector3("1 1 1")
+        else:
+            size = _vector3(size)
         self.color_end = color_end
         self.color_range_image = color_range_image
         self.color_start = color_start
@@ -144,7 +164,7 @@ class ParticleEmitter(BaseModel):
         el = ET.Element("particle_emitter")
         if self.color_end is not None:
             _c_tmp = ET.Element("color_end")
-            _c_tmp.text = self.color_end.to_sdf(version)
+            _c_tmp.text = str(self.color_end)
             el.append(_c_tmp)
         if self.color_range_image is not None:
             _c_tmp = ET.Element("color_range_image")
@@ -152,7 +172,7 @@ class ParticleEmitter(BaseModel):
             el.append(_c_tmp)
         if self.color_start is not None:
             _c_tmp = ET.Element("color_start")
-            _c_tmp.text = self.color_start.to_sdf(version)
+            _c_tmp.text = str(self.color_start)
             el.append(_c_tmp)
         if self.duration is not None:
             _c_tmp = ET.Element("duration")
@@ -193,7 +213,7 @@ class ParticleEmitter(BaseModel):
             el.append(_c_tmp)
         if self.particle_size is not None:
             _c_tmp = ET.Element("particle_size")
-            _c_tmp.text = self.particle_size.to_sdf(version)
+            _c_tmp.text = str(self.particle_size)
             el.append(_c_tmp)
         if self.pose is not None:
             if hasattr(self.pose, 'to_sdf'):
@@ -216,7 +236,7 @@ class ParticleEmitter(BaseModel):
             el.append(_c_tmp)
         if self.size is not None:
             _c_tmp = ET.Element("size")
-            _c_tmp.text = self.size.to_sdf(version)
+            _c_tmp.text = str(self.size)
             el.append(_c_tmp)
         if self.topic is not None:
             _c_tmp = ET.Element("topic")
@@ -233,7 +253,7 @@ class ParticleEmitter(BaseModel):
         _c_tmp = el.find("color_end")
         if _c_tmp is not None:
             _text = _c_tmp.text if _c_tmp.text is not None else "1 1 1 1"
-            _val = _SDFColor._from_sdf(_text, version)
+            _val = _parse_color(_text)
             if isinstance(_val, SDFError):
                 return _val.extend("color_end")
             _color_end = _val
@@ -251,7 +271,7 @@ class ParticleEmitter(BaseModel):
         _c_tmp = el.find("color_start")
         if _c_tmp is not None:
             _text = _c_tmp.text if _c_tmp.text is not None else "1 1 1 1"
-            _val = _SDFColor._from_sdf(_text, version)
+            _val = _parse_color(_text)
             if isinstance(_val, SDFError):
                 return _val.extend("color_start")
             _color_start = _val
@@ -325,7 +345,7 @@ class ParticleEmitter(BaseModel):
         _c_tmp = el.find("particle_size")
         if _c_tmp is not None:
             _text = _c_tmp.text if _c_tmp.text is not None else "1 1 1"
-            _val = _SDFVector3._from_sdf(_text, version)
+            _val = _parse_vector3(_text)
             if isinstance(_val, SDFError):
                 return _val.extend("particle_size")
             _particle_size = _val
@@ -360,7 +380,7 @@ class ParticleEmitter(BaseModel):
         _c_tmp = el.find("size")
         if _c_tmp is not None:
             _text = _c_tmp.text if _c_tmp.text is not None else "1 1 1"
-            _val = _SDFVector3._from_sdf(_text, version)
+            _val = _parse_vector3(_text)
             if isinstance(_val, SDFError):
                 return _val.extend("size")
             _size = _val

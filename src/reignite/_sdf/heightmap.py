@@ -8,7 +8,7 @@ from typing import List
 
 from ..utils.model import BaseModel
 from ..utils.errors import SDFError
-from ..utils.vector3 import Vector3 as _SDFVector3
+from ..utils.vector3 import Vector3 as _SDFVector3, _Vector3T, _vector3
 from ..utils.version import cmp_version
 
 
@@ -43,6 +43,12 @@ def _parse_double(raw: str) -> float | SDFError:
     except ValueError:
         return SDFError(f"Invalid double: {raw}")
 
+
+def _parse_vector3(raw: str) -> _Vector3T | SDFError:
+    try:
+        return _vector3(raw)
+    except ValueError as e:
+        return SDFError(str(e))
 
 
 class Heightmap(BaseModel):
@@ -175,18 +181,22 @@ class Heightmap(BaseModel):
         self,
         sdf_version: str | None = None,
         blends: List["Heightmap.Blend"] = None,
-        pos: _SDFVector3 = None,
+        pos: _Vector3T = None,
         sampling: int = 2,
-        size: _SDFVector3 = None,
+        size: _Vector3T = None,
         textures: List["Heightmap.Texture"] = None,
         uri: str = "__default__",
         use_terrain_paging: bool = False
     ):
         super().__init__(sdf_version)
         if pos is None:
-            pos = _SDFVector3.from_sdf("0 0 0", version=sdf_version)
+            pos = _vector3("0 0 0")
+        else:
+            pos = _vector3(pos)
         if size is None:
-            size = _SDFVector3.from_sdf("1 1 1", version=sdf_version)
+            size = _vector3("1 1 1")
+        else:
+            size = _vector3(size)
         self.blends = blends or []
         self.pos = pos
         self.sampling = sampling
@@ -251,7 +261,7 @@ class Heightmap(BaseModel):
             el.append(_item_el)
         if self.pos is not None:
             _c_tmp = ET.Element("pos")
-            _c_tmp.text = self.pos.to_sdf(version)
+            _c_tmp.text = str(self.pos)
             el.append(_c_tmp)
         if self.sampling is not None:
             _c_tmp = ET.Element("sampling")
@@ -259,7 +269,7 @@ class Heightmap(BaseModel):
             el.append(_c_tmp)
         if self.size is not None:
             _c_tmp = ET.Element("size")
-            _c_tmp.text = self.size.to_sdf(version)
+            _c_tmp.text = str(self.size)
             el.append(_c_tmp)
         for item in (self.textures or []):
             if hasattr(item, 'to_sdf'):
@@ -293,7 +303,7 @@ class Heightmap(BaseModel):
         _c_tmp = el.find("pos")
         if _c_tmp is not None:
             _text = _c_tmp.text if _c_tmp.text is not None else "0 0 0"
-            _val = _SDFVector3._from_sdf(_text, version)
+            _val = _parse_vector3(_text)
             if isinstance(_val, SDFError):
                 return _val.extend("pos")
             _pos = _val
@@ -313,7 +323,7 @@ class Heightmap(BaseModel):
         _c_tmp = el.find("size")
         if _c_tmp is not None:
             _text = _c_tmp.text if _c_tmp.text is not None else "1 1 1"
-            _val = _SDFVector3._from_sdf(_text, version)
+            _val = _parse_vector3(_text)
             if isinstance(_val, SDFError):
                 return _val.extend("size")
             _size = _val

@@ -8,7 +8,7 @@ from typing import List
 
 from ..utils.model import BaseModel
 from ..utils.errors import SDFError
-from ..utils.color import Color as _SDFColor
+from ..utils.color import Color as _SDFColor, _ColorT, _color
 from ..utils.version import cmp_version
 
 
@@ -43,6 +43,12 @@ def _parse_double(raw: str) -> float | SDFError:
     except ValueError:
         return SDFError(f"Invalid double: {raw}")
 
+
+def _parse_color(raw: str) -> _ColorT | SDFError:
+    try:
+        return _color(raw)
+    except ValueError as e:
+        return SDFError(str(e))
 
 
 class Material(BaseModel):
@@ -722,27 +728,35 @@ class Material(BaseModel):
     def __init__(
         self,
         sdf_version: str | None = None,
-        ambient: _SDFColor = None,
-        diffuse: _SDFColor = None,
+        ambient: _ColorT = None,
+        diffuse: _ColorT = None,
         double_sided: bool = False,
-        emissive: _SDFColor = None,
+        emissive: _ColorT = None,
         lighting: bool = True,
         pbr: "Material.Pbr" = None,
         render_order: float = 0.0,
         script: "Material.Script" = None,
         shader: "Material.Shader" = None,
         shininess: float = 0,
-        specular: _SDFColor = None
+        specular: _ColorT = None
     ):
         super().__init__(sdf_version)
         if ambient is None:
-            ambient = _SDFColor.from_sdf("0 0 0 1", version=sdf_version)
+            ambient = _color("0 0 0 1")
+        else:
+            ambient = _color(ambient)
         if diffuse is None:
-            diffuse = _SDFColor.from_sdf("0 0 0 1", version=sdf_version)
+            diffuse = _color("0 0 0 1")
+        else:
+            diffuse = _color(diffuse)
         if emissive is None:
-            emissive = _SDFColor.from_sdf("0 0 0 1", version=sdf_version)
+            emissive = _color("0 0 0 1")
+        else:
+            emissive = _color(emissive)
         if specular is None:
-            specular = _SDFColor.from_sdf("0 0 0 1", version=sdf_version)
+            specular = _color("0 0 0 1")
+        else:
+            specular = _color(specular)
         self.ambient = ambient
         self.diffuse = diffuse
         self.double_sided = double_sided
@@ -803,11 +817,11 @@ class Material(BaseModel):
         el = ET.Element("material")
         if self.ambient is not None:
             _c_tmp = ET.Element("ambient")
-            _c_tmp.text = self.ambient.to_sdf(version)
+            _c_tmp.text = str(self.ambient)
             el.append(_c_tmp)
         if self.diffuse is not None:
             _c_tmp = ET.Element("diffuse")
-            _c_tmp.text = self.diffuse.to_sdf(version)
+            _c_tmp.text = str(self.diffuse)
             el.append(_c_tmp)
         if self.double_sided is not None:
             _c_tmp = ET.Element("double_sided")
@@ -815,7 +829,7 @@ class Material(BaseModel):
             el.append(_c_tmp)
         if self.emissive is not None:
             _c_tmp = ET.Element("emissive")
-            _c_tmp.text = self.emissive.to_sdf(version)
+            _c_tmp.text = str(self.emissive)
             el.append(_c_tmp)
         if self.lighting is not None:
             _c_tmp = ET.Element("lighting")
@@ -864,7 +878,7 @@ class Material(BaseModel):
             el.append(_c_tmp)
         if self.specular is not None:
             _c_tmp = ET.Element("specular")
-            _c_tmp.text = self.specular.to_sdf(version)
+            _c_tmp.text = str(self.specular)
             el.append(_c_tmp)
         return el
 
@@ -873,7 +887,7 @@ class Material(BaseModel):
         _c_tmp = el.find("ambient")
         if _c_tmp is not None:
             _text = _c_tmp.text if _c_tmp.text is not None else "0 0 0 1"
-            _val = _SDFColor._from_sdf(_text, version)
+            _val = _parse_color(_text)
             if isinstance(_val, SDFError):
                 return _val.extend("ambient")
             _ambient = _val
@@ -882,7 +896,7 @@ class Material(BaseModel):
         _c_tmp = el.find("diffuse")
         if _c_tmp is not None:
             _text = _c_tmp.text if _c_tmp.text is not None else "0 0 0 1"
-            _val = _SDFColor._from_sdf(_text, version)
+            _val = _parse_color(_text)
             if isinstance(_val, SDFError):
                 return _val.extend("diffuse")
             _diffuse = _val
@@ -902,7 +916,7 @@ class Material(BaseModel):
         _c_tmp = el.find("emissive")
         if _c_tmp is not None:
             _text = _c_tmp.text if _c_tmp.text is not None else "0 0 0 1"
-            _val = _SDFColor._from_sdf(_text, version)
+            _val = _parse_color(_text)
             if isinstance(_val, SDFError):
                 return _val.extend("emissive")
             _emissive = _val
@@ -968,7 +982,7 @@ class Material(BaseModel):
         _c_tmp = el.find("specular")
         if _c_tmp is not None:
             _text = _c_tmp.text if _c_tmp.text is not None else "0 0 0 1"
-            _val = _SDFColor._from_sdf(_text, version)
+            _val = _parse_color(_text)
             if isinstance(_val, SDFError):
                 return _val.extend("specular")
             _specular = _val

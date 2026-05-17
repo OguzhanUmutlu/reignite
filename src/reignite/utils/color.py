@@ -1,12 +1,34 @@
 from __future__ import annotations
 
-from xml.etree import ElementTree as ET
+from typing import Sequence, Union
 
-from .errors import SDFError
+_ColorT = Union[Sequence[float], str, "Color"]
+
+
+def _color(value: _ColorT | None) -> Color | None:
+    if value is None:
+        return None
+    if isinstance(value, Color):
+        return value
+    if isinstance(value, str):
+        value = value.strip()
+        if value.startswith("#"):
+            return Color(value)
+        parts = value.split()
+        if len(parts) == 3:
+            parts.append("1.0")
+        if len(parts) == 4:
+            try:
+                r, g, b, a = (int(float(x) * 255) for x in parts)
+                return Color(r, g, b, a)
+            except ValueError:
+                pass
+        return Color(value)
+    return Color(*value)
 
 
 class Color:
-    def __init__(self, r: int | float | str, g: int | float = None, b: int | float = None, a: int | float = 1.0):
+    def __init__(self, r: int | str, g: int = None, b: int = None, a: int = 255):
         if isinstance(r, str):
             if r.startswith("#"):
                 r = r[1:]
@@ -22,43 +44,10 @@ class Color:
                     raise ValueError(f"Invalid hex color: #{r}")
             else:
                 raise ValueError(f"Invalid color string: {r}")
-        if isinstance(r, float):
-            r = int(r * 255)
-        if isinstance(g, float):
-            g = int(g * 255)
-        if isinstance(b, float):
-            b = int(b * 255)
-        if isinstance(a, float):
-            a = int(a * 255)
-        self.r = r
-        self.g = g
-        self.b = b
-        self.a = a
+        self.r = int(r)
+        self.g = int(g)
+        self.b = int(b)
+        self.a = int(a)
 
-    def to_sdf(self, version: str = None) -> str:
+    def __str__(self) -> str:
         return f"{self.r / 255.0} {self.g / 255.0} {self.b / 255.0} {self.a / 255.0}"
-
-    @classmethod
-    def _from_sdf(cls, source: str | ET.Element, _version: str = None) -> Color | SDFError:
-        text = source.text if isinstance(source, ET.Element) else source
-        if text is None:
-            return cls(0, 0, 0, 255)
-        try:
-            parts = text.split()
-            if len(parts) == 0:
-                return cls(0, 0, 0, 255)
-            if len(parts) == 3:
-                parts = [*parts, "1.0"]
-            if len(parts) != 4:
-                return SDFError(f"Color expects 3 or 4 values, got {len(parts)}")
-            r, g, b, a = (int(float(x) * 255) for x in parts)
-            return cls(r, g, b, a)
-        except ValueError:
-            return SDFError(f"Invalid Color value: {text}")
-
-    @classmethod
-    def from_sdf(cls, source: str | ET.Element, version: str = None) -> Color:
-        res = cls._from_sdf(source, version)
-        if isinstance(res, SDFError):
-            raise ValueError(str(res))
-        return res

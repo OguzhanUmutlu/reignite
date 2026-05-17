@@ -8,7 +8,7 @@ from typing import List
 
 from ..utils.model import BaseModel
 from ..utils.errors import SDFError
-from ..utils.vector2d import Vector2d as _SDFVector2d
+from ..utils.vector2d import Vector2d as _SDFVector2d, _Vector2dT, _vector2d
 from ..utils.version import cmp_version
 
 if typing.TYPE_CHECKING:
@@ -47,6 +47,12 @@ def _parse_double(raw: str) -> float | SDFError:
     except ValueError:
         return SDFError(f"Invalid double: {raw}")
 
+
+def _parse_vector2d(raw: str) -> _Vector2dT | SDFError:
+    try:
+        return _vector2d(raw)
+    except ValueError as e:
+        return SDFError(str(e))
 
 
 class Camera(BaseModel):
@@ -212,7 +218,7 @@ class Camera(BaseModel):
         def __init__(
             self,
             sdf_version: str | None = None,
-            center: _SDFVector2d = None,
+            center: _Vector2dT = None,
             k1: float = 0.0,
             k2: float = 0.0,
             k3: float = 0.0,
@@ -221,7 +227,9 @@ class Camera(BaseModel):
         ):
             super().__init__(sdf_version)
             if center is None:
-                center = _SDFVector2d.from_sdf("0.5 0.5", version=sdf_version)
+                center = _vector2d("0.5 0.5")
+            else:
+                center = _vector2d(center)
             self.center = center
             self.k1 = k1
             self.k2 = k2
@@ -249,7 +257,7 @@ class Camera(BaseModel):
             el = ET.Element("distortion")
             if self.center is not None:
                 _c_tmp = ET.Element("center")
-                _c_tmp.text = self.center.to_sdf(version)
+                _c_tmp.text = str(self.center)
                 el.append(_c_tmp)
             if self.k1 is not None:
                 _c_tmp = ET.Element("k1")
@@ -278,7 +286,7 @@ class Camera(BaseModel):
             _c_tmp = el.find("center")
             if _c_tmp is not None:
                 _text = _c_tmp.text if _c_tmp.text is not None else "0.5 0.5"
-                _val = _SDFVector2d._from_sdf(_text, version)
+                _val = _parse_vector2d(_text)
                 if isinstance(_val, SDFError):
                     return _val.extend("center")
                 _center = _val

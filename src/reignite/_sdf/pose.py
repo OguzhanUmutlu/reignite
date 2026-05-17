@@ -6,9 +6,48 @@ from xml.etree import ElementTree as ET
 
 from ..utils.model import BaseModel
 from ..utils.errors import SDFError
-from ..utils.pose import Pose as _SDFPose
+from ..utils.pose import Pose as _SDFPose, _PoseT, _pose
 from ..utils.version import cmp_version
 from ..utils.migration import apply_migrations
+
+
+import math
+
+def _parse_int32(raw: str) -> int | SDFError:
+    try:
+        v = int(raw)
+        if not (-2147483648 <= v <= 2147483647):
+            return SDFError(f"int32 out of range: {v}")
+        return v
+    except ValueError:
+        return SDFError(f"Invalid int32: {raw}")
+
+
+def _parse_uint32(raw: str) -> int | SDFError:
+    try:
+        v = int(raw)
+        if not (0 <= v <= 4294967295):
+            return SDFError(f"uint32 out of range: {v}")
+        return v
+    except ValueError:
+        return SDFError(f"Invalid uint32: {raw}")
+
+
+def _parse_double(raw: str) -> float | SDFError:
+    try:
+        v = float(raw)
+        if not math.isfinite(v) or abs(v) > math.inf:
+            return SDFError(f"double out of range: {raw}")
+        return v
+    except ValueError:
+        return SDFError(f"Invalid double: {raw}")
+
+
+def _parse_pose(raw: str) -> _PoseT | SDFError:
+    try:
+        return _pose(raw)
+    except ValueError as e:
+        return SDFError(str(e))
 
 
 class Pose(BaseModel):
@@ -19,13 +58,15 @@ class Pose(BaseModel):
         sdf_version: str | None = None,
         degrees: bool = False,
         frame: str = "",
-        pose: _SDFPose = None,
+        pose: _PoseT = None,
         relative_to: str = "",
         rotation_format: str = "euler_rpy"
     ):
         super().__init__(sdf_version)
         if pose is None:
-            pose = _SDFPose.from_sdf("0 0 0 0 0 0", version=sdf_version)
+            pose = _pose("0 0 0 0 0 0")
+        else:
+            pose = _pose(pose)
         self.degrees = degrees
         self.frame = frame
         self.pose = pose
@@ -65,7 +106,7 @@ class Pose(BaseModel):
         if self.frame is not None:
             el.set("frame", self.frame)
         if self.pose is not None:
-            el.text = self.pose.to_sdf(version)
+            el.text = str(self.pose)
         if self.relative_to is not None:
             el.set("relative_to", self.relative_to)
         if self.rotation_format is not None:
@@ -84,7 +125,7 @@ class Pose(BaseModel):
         if isinstance(_frame, SDFError):
             return _frame.extend("@frame")
         _text = el.text or "0 0 0 0 0 0"
-        _pose = _SDFPose._from_sdf(_text, version)
+        _pose = _parse_pose(_text)
         if isinstance(_pose, SDFError):
             return _pose
         if _pose is not None and cmp_version(version, "1.5") < 0:

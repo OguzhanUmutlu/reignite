@@ -97,12 +97,13 @@ def resolve_type(sdf_type: Optional[str]) -> tuple[str, str, str, str, Optional[
 
     _require_type_file(t)
     cls = _to_classname(t)
-    alias = f"_SDF{cls}"
+    type_alias = f"_{cls}T"
+    class_ref = f"_SDF{cls}"
     return (
-        alias,
-        f"{alias}()",
-        "{val}.to_sdf(version)",
-        f"{alias}._from_sdf({{raw}}, version)",
+        type_alias,
+        f"{class_ref}()",
+        "str({val})",
+        f"_parse_{t}({{raw}})",
         t,
     )
 
@@ -541,6 +542,7 @@ def _collect_class_spec(
     type_imports: dict[str, str] = {}
     needs_int_helpers = False
     needs_float_helpers = False
+    custom_helpers: set[str] = set()
     seen_py_names: set[str] = set()
 
     for aname, ameta in (node.get("_attributes") or {}).items():
@@ -564,12 +566,14 @@ def _collect_class_spec(
             needs_int_helpers = True
         if "_parse_double" in from_expr:
             needs_float_helpers = True
+        if mod and f"_parse_{mod}" in from_expr:
+            custom_helpers.add(mod)
         schema_default = ameta.get("default", "")
         if schema_default != "":
             raw_default = _format_default(hint, schema_default)
             if mod:
                 default = "None"
-                init_default_expr = f"{hint}.from_sdf({raw_default}, version=sdf_version)"
+                init_default_expr = f"_{mod}({raw_default})"
             else:
                 default = raw_default
         renames = {}
@@ -591,6 +595,7 @@ def _collect_class_spec(
             py_name, hint, default, raw_default, to_expr, from_expr,
             ameta.get("description", ""), False, "attr", aname,
             init_default_expr, renames, added_in, removed_in, is_required, required_history,
+            mod,
         ))
 
     # Add leaf elements that are single primitives
@@ -621,13 +626,15 @@ def _collect_class_spec(
             needs_int_helpers = True
         if "_parse_double" in from_expr:
             needs_float_helpers = True
+        if mod and f"_parse_{mod}" in from_expr:
+            custom_helpers.add(mod)
 
         schema_default = lnode.get("_default", "")
         if schema_default != "":
             raw_default = _format_default(hint, schema_default)
             if mod:
                 default = "None"
-                init_default_expr = f"{hint}.from_sdf({raw_default}, version=sdf_version)"
+                init_default_expr = f"_{mod}({raw_default})"
             else:
                 default = raw_default
 
@@ -653,6 +660,7 @@ def _collect_class_spec(
             py_name, hint, default, raw_default, to_expr, from_expr,
             lnode.get("_description", ""), is_list, "child_leaf", lname,
             init_default_expr, renames, added_in, removed_in, is_required, required_history,
+            mod,
         ))
 
     # Add full-fledged child objects
@@ -691,6 +699,7 @@ def _collect_class_spec(
         params.append((
             py_name, hint, default, default, "", "", desc,
             is_list, "child", cname, None, renames, added_in, removed_in, is_required, required_history,
+            None,
         ))
 
     if node.get("_type") and not child_items and not leaf_items:
@@ -707,12 +716,14 @@ def _collect_class_spec(
                 needs_int_helpers = True
             if "_parse_double" in from_expr:
                 needs_float_helpers = True
+            if mod and f"_parse_{mod}" in from_expr:
+                custom_helpers.add(mod)
             schema_default = node.get("_default", "")
             if schema_default != "":
                 raw_default = _format_default(hint, schema_default)
                 if mod:
                     default = "None"
-                    init_default_expr = f"{hint}.from_sdf({raw_default}, version=sdf_version)"
+                    init_default_expr = f"_{mod}({raw_default})"
                 else:
                     default = raw_default
             renames = {}
@@ -731,6 +742,7 @@ def _collect_class_spec(
                 name.replace("-", "_"), hint, default, raw_default, to_expr, from_expr,
                 node.get("_description", ""), False, "leaf", name, init_default_expr, renames,
                 added_in, node.get("_removed_in"), is_required, required_history,
+                mod,
             )] + params
 
     class_migrations: dict[str, list] = {}
@@ -761,6 +773,7 @@ def _collect_class_spec(
         "type_imports": type_imports,
         "needs_int_helpers": needs_int_helpers,
         "needs_float_helpers": needs_float_helpers,
+        "_custom_helpers": list(custom_helpers),
         "external_imports": external_imports,
         "child_class_names": child_class_names,
         "child_specs": child_specs,
@@ -862,18 +875,26 @@ def _render_class(spec: dict, file_external_imports: set[str], indent: int = 0,
     for p in params:
         py_name = p[0]
         init_default_expr = p[10]
+        mod = p[16]
         if init_default_expr:
             block.append(f"        if {py_name} is None:")
             block.append(f"            {py_name} = {init_default_expr}")
+            if mod:
+                converter_fn = f"_{mod}"
+                block.append(f"        else:")
+                block.append(f"            {py_name} = {converter_fn}({py_name})")
+        elif mod:
+            converter_fn = f"_{mod}"
+            block.append(f"        {py_name} = {converter_fn}({py_name})")
 
     for p in params:
-        py_name, _, _, _, _, _, _, is_list, _, _, _, _, _, _, _, _ = p
+        py_name, _, _, _, _, _, _, is_list, _, _, _, _, _, _, _, _, _ = p
         block.append(
             f"        self.{py_name} = {py_name}" + (" or []" if is_list else "")
         )
 
     for p in params:
-        py_name, _, _, _, _, _, _, is_list, xml_kind, _, _, _, _, _, _, _ = p
+        py_name, _, _, _, _, _, _, is_list, xml_kind, _, _, _, _, _, _, _, _ = p
         if xml_kind == "child":
             if is_list:
                 block.append(f"        for _i, _c in enumerate(self.{py_name}):")
@@ -920,7 +941,7 @@ def _render_class(spec: dict, file_external_imports: set[str], indent: int = 0,
     if local_import_lines:
         block.extend(local_import_lines)
     for p in params:
-        py_name, _, _, _, _, _, _, is_list, xml_kind, _, _, _, added_in, removed_in, _, _ = p
+        py_name, _, _, _, _, _, _, is_list, xml_kind, _, _, _, added_in, removed_in, _, _, _ = p
         if added_in:
             block.append(f"        if self.{py_name} is not None and cmp_version(target_version, \"{added_in}\") < 0:")
             block.append(
@@ -933,7 +954,7 @@ def _render_class(spec: dict, file_external_imports: set[str], indent: int = 0,
 
     block.append('        kwargs = {"sdf_version": target_version}')
     for p in params:
-        py_name, _, _, _, _, _, _, is_list, xml_kind, _, _, _, added_in, removed_in, _, _ = p
+        py_name, _, _, _, _, _, _, is_list, xml_kind, _, _, _, added_in, removed_in, _, _, _ = p
         if xml_kind == "child":
             if is_list:
                 block.append(
@@ -959,7 +980,7 @@ def _render_class(spec: dict, file_external_imports: set[str], indent: int = 0,
     block.append("        version = self.__version__ or version")
     block.append(f'        el = ET.Element("{name}")')
     for p in params:
-        py_name, _, _, _, to_expr, _, _, is_list, xml_kind, xml_name, _, renames, added_in, removed_in, is_required, required_history = p
+        py_name, _, _, _, to_expr, _, _, is_list, xml_kind, xml_name, _, renames, added_in, removed_in, is_required, required_history, _ = p
         val_ref = f"self.{py_name}"
         if is_required:
             check_conds = []
@@ -1121,7 +1142,7 @@ def _render_class(spec: dict, file_external_imports: set[str], indent: int = 0,
         block.extend(local_import_lines)
     init_args: list[str] = ["sdf_version=version"]
     for p in params:
-        py_name, _, _, raw_default, _, from_expr, _, is_list, xml_kind, xml_name, _, renames, added_in, removed_in, is_required, required_history = p
+        py_name, _, _, raw_default, _, from_expr, _, is_list, xml_kind, xml_name, _, renames, added_in, removed_in, is_required, required_history, _ = p
         if xml_kind in ("attr", "leaf"):
             if is_required:
                 check_conds = []
@@ -1475,13 +1496,19 @@ def generate_element_file(
     needs_helpers = False
     needs_version_cmp = False
 
+    all_custom_helpers: set[str] = set()
+
     for spec in _walk_specs(root_spec):
         if spec.get("_reuse"):
             continue
         all_type_imports.update(spec.get("type_imports", {}))
         if any("List[" in p[1] for p in spec.get("params", [])):
             needs_list = True
-        if spec.get("needs_int_helpers") or spec.get("needs_float_helpers"):
+        
+        spec_custom_helpers = spec.get("_custom_helpers", [])
+        all_custom_helpers.update(spec_custom_helpers)
+        
+        if spec.get("needs_int_helpers") or spec.get("needs_float_helpers") or spec_custom_helpers:
             needs_helpers = True
         if any(len(p[11]) > 0 or p[12] for p in spec.get("params", [])):
             needs_version_cmp = True
@@ -1503,7 +1530,8 @@ def generate_element_file(
     lines.append("from ..utils.errors import SDFError")
 
     for mod, cls in sorted(all_type_imports.items()):
-        lines.append(f"from ..utils.{mod} import {_to_classname(mod)} as _SDF{_to_classname(mod)}")
+        class_name = _to_classname(mod)
+        lines.append(f"from ..utils.{mod} import {class_name} as _SDF{class_name}, _{class_name}T, _{mod}")
 
     if needs_version_cmp:
         lines.append("from ..utils.version import cmp_version")
@@ -1526,6 +1554,15 @@ def generate_element_file(
     if needs_helpers:
         lines.append("")
         lines.append(INT_HELPERS)
+
+    for mod in sorted(all_custom_helpers):
+        class_name = _to_classname(mod)
+        lines.append(f"def _parse_{mod}(raw: str) -> _{class_name}T | SDFError:")
+        lines.append(f"    try:")
+        lines.append(f"        return _{mod}(raw)")
+        lines.append(f"    except ValueError as e:")
+        lines.append(f"        return SDFError(str(e))")
+        lines.append("")
 
     lines.append("")
 

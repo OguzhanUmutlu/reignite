@@ -1,13 +1,23 @@
 from __future__ import annotations
 
-from xml.etree import ElementTree as ET
+from typing import Union
 
-from .errors import SDFError
+_Vector2dT = Union[float, tuple[float, float], "Vector2d"]
 
 
-def _vector2d(x: float | tuple[float, float] | Vector2d, y: float = None) -> Vector2d:
+def _vector2d(x: float | tuple[float, float] | Vector2d | None | str, y: float = None) -> Vector2d | None:
+    if x is None:
+        return None
     if isinstance(x, Vector2d):
         return x
+    if isinstance(x, str):
+        parts = x.split()
+        if len(parts) == 2:
+            try:
+                px, py = (float(p) for p in parts)
+                return Vector2d(px, py)
+            except ValueError:
+                pass
     if isinstance(x, tuple) and len(x) == 2:
         return Vector2d(x[0], x[1])
     if y is not None:
@@ -20,28 +30,5 @@ class Vector2d:
         self.x = x
         self.y = y
 
-    def to_sdf(self, version: str = None) -> str:
+    def __str__(self) -> str:
         return f"{self.x} {self.y}"
-
-    @classmethod
-    def _from_sdf(cls, source: str | ET.Element, version: str = None) -> Vector2d | SDFError:
-        text = source.text if isinstance(source, ET.Element) else source
-        if text is None:
-            return cls()
-        try:
-            parts = text.split()
-            if len(parts) == 0:
-                return cls()
-            if len(parts) != 2:
-                return SDFError(f"Vector2d expects 2 values, got {len(parts)}")
-            x, y = (float(v) for v in parts)
-            return cls(x, y)
-        except ValueError:
-            return SDFError(f"Invalid float in Vector2d: {text}")
-
-    @classmethod
-    def from_sdf(cls, source: str | ET.Element, version: str = None) -> Vector2d:
-        res = cls._from_sdf(source, version)
-        if isinstance(res, SDFError):
-            raise ValueError(str(res))
-        return res

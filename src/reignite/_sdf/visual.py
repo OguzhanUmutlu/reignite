@@ -8,7 +8,7 @@ from typing import List
 
 from ..utils.model import BaseModel
 from ..utils.errors import SDFError
-from ..utils.pose import Pose as _SDFPose
+from ..utils.pose import Pose as _SDFPose, _PoseT, _pose
 from ..utils.version import cmp_version
 
 if typing.TYPE_CHECKING:
@@ -51,6 +51,12 @@ def _parse_double(raw: str) -> float | SDFError:
         return SDFError(f"Invalid double: {raw}")
 
 
+def _parse_pose(raw: str) -> _PoseT | SDFError:
+    try:
+        return _pose(raw)
+    except ValueError as e:
+        return SDFError(str(e))
+
 
 class Visual(BaseModel):
     class Meta(BaseModel):
@@ -91,10 +97,12 @@ class Visual(BaseModel):
             return cls(sdf_version=version, layer=_layer)
 
     class Origin(BaseModel):
-        def __init__(self, sdf_version: str | None = None, pose: _SDFPose = None):
+        def __init__(self, sdf_version: str | None = None, pose: _PoseT = None):
             super().__init__(sdf_version)
             if pose is None:
-                pose = _SDFPose.from_sdf("0 0 0 0 0 0", version=sdf_version)
+                pose = _pose("0 0 0 0 0 0")
+            else:
+                pose = _pose(pose)
             self.pose = pose
 
         def to_version(self, target_version: str) -> "Visual.Origin":
@@ -113,10 +121,10 @@ class Visual(BaseModel):
             if self.pose is not None:
                 if cmp_version(version, "1.2") >= 0:
                     _c_tmp = ET.Element("pose")
-                    _c_tmp.text = self.pose.to_sdf(version)
+                    _c_tmp.text = str(self.pose)
                     el.append(_c_tmp)
                 else:
-                    el.set("pose", self.pose.to_sdf(version))
+                    el.set("pose", str(self.pose))
             return el
 
         @classmethod
@@ -128,7 +136,7 @@ class Visual(BaseModel):
             else:
                 _raw_pose = el.get("pose")
             if _raw_pose is None: _raw_pose = "0 0 0 0 0 0"
-            _pose = _SDFPose._from_sdf(_raw_pose, version)
+            _pose = _parse_pose(_raw_pose)
             if isinstance(_pose, SDFError):
                 return _pose.extend("@pose")
             return cls(sdf_version=version, pose=_pose)

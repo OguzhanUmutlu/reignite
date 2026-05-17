@@ -8,7 +8,7 @@ from typing import List
 
 from ..utils.model import BaseModel
 from ..utils.errors import SDFError
-from ..utils.vector3 import Vector3 as _SDFVector3
+from ..utils.vector3 import Vector3 as _SDFVector3, _Vector3T, _vector3
 
 if typing.TYPE_CHECKING:
     from ..elements.box import Box
@@ -50,6 +50,12 @@ def _parse_double(raw: str) -> float | SDFError:
         return SDFError(f"Invalid double: {raw}")
 
 
+def _parse_vector3(raw: str) -> _Vector3T | SDFError:
+    try:
+        return _vector3(raw)
+    except ValueError as e:
+        return SDFError(str(e))
+
 
 class Population(BaseModel):
     class Distribution(BaseModel):
@@ -58,12 +64,14 @@ class Population(BaseModel):
             sdf_version: str | None = None,
             cols: int = 1,
             rows: int = 1,
-            step: _SDFVector3 = None,
+            step: _Vector3T = None,
             type: str = "random"
         ):
             super().__init__(sdf_version)
             if step is None:
-                step = _SDFVector3.from_sdf("0.5 0.5 0", version=sdf_version)
+                step = _vector3("0.5 0.5 0")
+            else:
+                step = _vector3(step)
             self.cols = cols
             self.rows = rows
             self.step = step
@@ -95,7 +103,7 @@ class Population(BaseModel):
                 el.append(_c_tmp)
             if self.step is not None:
                 _c_tmp = ET.Element("step")
-                _c_tmp.text = self.step.to_sdf(version)
+                _c_tmp.text = str(self.step)
                 el.append(_c_tmp)
             if self.type is not None:
                 _c_tmp = ET.Element("type")
@@ -126,7 +134,7 @@ class Population(BaseModel):
             _c_tmp = el.find("step")
             if _c_tmp is not None:
                 _text = _c_tmp.text if _c_tmp.text is not None else "0.5 0.5 0"
-                _val = _SDFVector3._from_sdf(_text, version)
+                _val = _parse_vector3(_text)
                 if isinstance(_val, SDFError):
                     return _val.extend("step")
                 _step = _val

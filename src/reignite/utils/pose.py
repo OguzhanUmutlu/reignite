@@ -1,8 +1,29 @@
 from __future__ import annotations
 
-from xml.etree import ElementTree as ET
+from typing import Sequence, Union
 
-from .errors import SDFError
+_PoseT = Union[Sequence[float], str, "Pose"]
+
+
+def _pose(value: Pose | Sequence[float] | str | None) -> Pose | None:
+    if value is None:
+        return None
+    if isinstance(value, Pose):
+        return value
+    if isinstance(value, str):
+        parts = value.split()
+        if len(parts) == 6:
+            try:
+                x, y, z, r, p, yw = (float(v) for v in parts)
+                return Pose(x, y, z, r, p, yw)
+            except ValueError:
+                pass
+        elif len(parts) == 0:
+            return Pose()
+    value = list(value) if not isinstance(value, str) else []
+    if len(value) != 6:
+        value += [0.0] * (6 - len(value))
+    return Pose(*value[:6])
 
 
 class Pose:
@@ -15,28 +36,5 @@ class Pose:
         self.pitch = pitch
         self.yaw = yaw
 
-    def to_sdf(self, version: str = None) -> str:
+    def __str__(self) -> str:
         return f"{self.x} {self.y} {self.z} {self.roll} {self.pitch} {self.yaw}"
-
-    @classmethod
-    def _from_sdf(cls, source: str | ET.Element, version: str = None) -> Pose | SDFError:
-        text = source.text if isinstance(source, ET.Element) else source
-        if text is None:
-            return cls()
-        try:
-            parts = text.split()
-            if len(parts) == 0:
-                return cls()
-            if len(parts) != 6:
-                return SDFError(f"Pose expects 6 values, got {len(parts)}")
-            x, y, z, roll, pitch, yaw = (float(v) for v in parts)
-            return cls(x, y, z, roll, pitch, yaw)
-        except ValueError:
-            return SDFError(f"Invalid float in Pose: {text}")
-
-    @classmethod
-    def from_sdf(cls, source: str | ET.Element, version: str = None) -> Pose:
-        res = cls._from_sdf(source, version)
-        if isinstance(res, SDFError):
-            raise ValueError(str(res))
-        return res

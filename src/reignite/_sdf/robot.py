@@ -8,13 +8,52 @@ from typing import List
 
 from ..utils.model import BaseModel
 from ..utils.errors import SDFError
-from ..utils.pose import Pose as _SDFPose
+from ..utils.pose import Pose as _SDFPose, _PoseT, _pose
 
 if typing.TYPE_CHECKING:
     from ..elements.gripper import Gripper
     from ..elements.joint import Joint
     from ..elements.link import Link
     from ..elements.plugin import Plugin
+
+
+import math
+
+def _parse_int32(raw: str) -> int | SDFError:
+    try:
+        v = int(raw)
+        if not (-2147483648 <= v <= 2147483647):
+            return SDFError(f"int32 out of range: {v}")
+        return v
+    except ValueError:
+        return SDFError(f"Invalid int32: {raw}")
+
+
+def _parse_uint32(raw: str) -> int | SDFError:
+    try:
+        v = int(raw)
+        if not (0 <= v <= 4294967295):
+            return SDFError(f"uint32 out of range: {v}")
+        return v
+    except ValueError:
+        return SDFError(f"Invalid uint32: {raw}")
+
+
+def _parse_double(raw: str) -> float | SDFError:
+    try:
+        v = float(raw)
+        if not math.isfinite(v) or abs(v) > math.inf:
+            return SDFError(f"double out of range: {raw}")
+        return v
+    except ValueError:
+        return SDFError(f"Invalid double: {raw}")
+
+
+def _parse_pose(raw: str) -> _PoseT | SDFError:
+    try:
+        return _pose(raw)
+    except ValueError as e:
+        return SDFError(str(e))
 
 
 class Robot(BaseModel):
@@ -26,11 +65,13 @@ class Robot(BaseModel):
         links: List["Link"] = None,
         name: str = "__default__",
         plugins: List["Plugin"] = None,
-        pose: _SDFPose = None
+        pose: _PoseT = None
     ):
         super().__init__(sdf_version)
         if pose is None:
-            pose = _SDFPose.from_sdf("0 0 0 0 0 0", version=sdf_version)
+            pose = _pose("0 0 0 0 0 0")
+        else:
+            pose = _pose(pose)
         self.grippers = grippers or []
         self.joints = joints or []
         self.links = links or []
@@ -156,7 +197,7 @@ class Robot(BaseModel):
             el.append(_item_el)
         if self.pose is not None:
             _c_tmp = ET.Element("pose")
-            _c_tmp.text = self.pose.to_sdf(version)
+            _c_tmp.text = str(self.pose)
             el.append(_c_tmp)
         return el
 
@@ -196,7 +237,7 @@ class Robot(BaseModel):
         _c_tmp = el.find("pose")
         if _c_tmp is not None:
             _text = _c_tmp.text if _c_tmp.text is not None else "0 0 0 0 0 0"
-            _val = _SDFPose._from_sdf(_text, version)
+            _val = _parse_pose(_text)
             if isinstance(_val, SDFError):
                 return _val.extend("pose")
             _pose = _val

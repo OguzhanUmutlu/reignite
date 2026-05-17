@@ -8,7 +8,7 @@ from typing import List
 
 from ..utils.model import BaseModel
 from ..utils.errors import SDFError
-from ..utils.vector2d import Vector2d as _SDFVector2d
+from ..utils.vector2d import Vector2d as _SDFVector2d, _Vector2dT, _vector2d
 
 
 import math
@@ -43,21 +43,29 @@ def _parse_double(raw: str) -> float | SDFError:
         return SDFError(f"Invalid double: {raw}")
 
 
+def _parse_vector2d(raw: str) -> _Vector2dT | SDFError:
+    try:
+        return _vector2d(raw)
+    except ValueError as e:
+        return SDFError(str(e))
+
 
 class Polyline(BaseModel):
     def __init__(
         self,
         sdf_version: str | None = None,
         height: float = 1.0,
-        points: List[_SDFVector2d] = None
+        points: List[_Vector2dT] = None
     ):
         super().__init__(sdf_version)
         if points is None:
-            points = _SDFVector2d.from_sdf("0 0", version=sdf_version)
+            points = _vector2d("0 0")
+        else:
+            points = _vector2d(points)
         self.height = height
         self.points = points or []
 
-    def add_point(self, *items: _SDFVector2d):
+    def add_point(self, *items: _Vector2dT):
         if self.points is None:
             self.points = []
         self.points.extend(items)
@@ -82,7 +90,7 @@ class Polyline(BaseModel):
             el.append(_c_tmp)
         for _v in (self.points or []):
             _c_tmp = ET.Element("point")
-            _c_tmp.text = _v.to_sdf(version)
+            _c_tmp.text = str(_v)
             el.append(_c_tmp)
         return el
 
@@ -100,7 +108,7 @@ class Polyline(BaseModel):
         _points = []
         for c in el.findall("point"):
             _text = c.text if c.text is not None else "0 0"
-            _val = _SDFVector2d._from_sdf(_text, version)
+            _val = _parse_vector2d(_text)
             if isinstance(_val, SDFError):
                 return _val.extend("point")
             _points.append(_val)

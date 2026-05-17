@@ -6,22 +6,71 @@ from xml.etree import ElementTree as ET
 
 from ..utils.model import BaseModel
 from ..utils.errors import SDFError
-from ..utils.vector2d import Vector2d as _SDFVector2d
-from ..utils.vector3 import Vector3 as _SDFVector3
+from ..utils.vector2d import Vector2d as _SDFVector2d, _Vector2dT, _vector2d
+from ..utils.vector3 import Vector3 as _SDFVector3, _Vector3T, _vector3
+
+
+import math
+
+def _parse_int32(raw: str) -> int | SDFError:
+    try:
+        v = int(raw)
+        if not (-2147483648 <= v <= 2147483647):
+            return SDFError(f"int32 out of range: {v}")
+        return v
+    except ValueError:
+        return SDFError(f"Invalid int32: {raw}")
+
+
+def _parse_uint32(raw: str) -> int | SDFError:
+    try:
+        v = int(raw)
+        if not (0 <= v <= 4294967295):
+            return SDFError(f"uint32 out of range: {v}")
+        return v
+    except ValueError:
+        return SDFError(f"Invalid uint32: {raw}")
+
+
+def _parse_double(raw: str) -> float | SDFError:
+    try:
+        v = float(raw)
+        if not math.isfinite(v) or abs(v) > math.inf:
+            return SDFError(f"double out of range: {raw}")
+        return v
+    except ValueError:
+        return SDFError(f"Invalid double: {raw}")
+
+
+def _parse_vector2d(raw: str) -> _Vector2dT | SDFError:
+    try:
+        return _vector2d(raw)
+    except ValueError as e:
+        return SDFError(str(e))
+
+def _parse_vector3(raw: str) -> _Vector3T | SDFError:
+    try:
+        return _vector3(raw)
+    except ValueError as e:
+        return SDFError(str(e))
 
 
 class Plane(BaseModel):
     def __init__(
         self,
         sdf_version: str | None = None,
-        normal: _SDFVector3 = None,
-        size: _SDFVector2d = None
+        normal: _Vector3T = None,
+        size: _Vector2dT = None
     ):
         super().__init__(sdf_version)
         if normal is None:
-            normal = _SDFVector3.from_sdf("0 0 1", version=sdf_version)
+            normal = _vector3("0 0 1")
+        else:
+            normal = _vector3(normal)
         if size is None:
-            size = _SDFVector2d.from_sdf("1 1", version=sdf_version)
+            size = _vector2d("1 1")
+        else:
+            size = _vector2d(size)
         self.normal = normal
         self.size = size
 
@@ -41,11 +90,11 @@ class Plane(BaseModel):
         el = ET.Element("plane")
         if self.normal is not None:
             _c_tmp = ET.Element("normal")
-            _c_tmp.text = self.normal.to_sdf(version)
+            _c_tmp.text = str(self.normal)
             el.append(_c_tmp)
         if self.size is not None:
             _c_tmp = ET.Element("size")
-            _c_tmp.text = self.size.to_sdf(version)
+            _c_tmp.text = str(self.size)
             el.append(_c_tmp)
         return el
 
@@ -54,7 +103,7 @@ class Plane(BaseModel):
         _c_tmp = el.find("normal")
         if _c_tmp is not None:
             _text = _c_tmp.text if _c_tmp.text is not None else "0 0 1"
-            _val = _SDFVector3._from_sdf(_text, version)
+            _val = _parse_vector3(_text)
             if isinstance(_val, SDFError):
                 return _val.extend("normal")
             _normal = _val
@@ -63,7 +112,7 @@ class Plane(BaseModel):
         _c_tmp = el.find("size")
         if _c_tmp is not None:
             _text = _c_tmp.text if _c_tmp.text is not None else "1 1"
-            _val = _SDFVector2d._from_sdf(_text, version)
+            _val = _parse_vector2d(_text)
             if isinstance(_val, SDFError):
                 return _val.extend("size")
             _size = _val

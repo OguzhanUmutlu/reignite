@@ -8,8 +8,8 @@ from typing import List
 
 from ..utils.model import BaseModel
 from ..utils.errors import SDFError
-from ..utils.pose import Pose as _SDFPose
-from ..utils.vector3 import Vector3 as _SDFVector3
+from ..utils.pose import Pose as _SDFPose, _PoseT, _pose
+from ..utils.vector3 import Vector3 as _SDFVector3, _Vector3T, _vector3
 from ..utils.version import cmp_version
 from ..utils.migration import apply_migrations
 
@@ -51,6 +51,18 @@ def _parse_double(raw: str) -> float | SDFError:
     except ValueError:
         return SDFError(f"Invalid double: {raw}")
 
+
+def _parse_pose(raw: str) -> _PoseT | SDFError:
+    try:
+        return _pose(raw)
+    except ValueError as e:
+        return SDFError(str(e))
+
+def _parse_vector3(raw: str) -> _Vector3T | SDFError:
+    try:
+        return _vector3(raw)
+    except ValueError as e:
+        return SDFError(str(e))
 
 
 class Joint(BaseModel):
@@ -250,11 +262,13 @@ class Joint(BaseModel):
                 self,
                 sdf_version: str | None = None,
                 expressed_in: str = "",
-                xyz: _SDFVector3 = None
+                xyz: _Vector3T = None
             ):
                 super().__init__(sdf_version)
                 if xyz is None:
-                    xyz = _SDFVector3.from_sdf("0 0 1", version=sdf_version)
+                    xyz = _vector3("0 0 1")
+                else:
+                    xyz = _vector3(xyz)
                 self.expressed_in = expressed_in
                 self.xyz = xyz
 
@@ -279,7 +293,7 @@ class Joint(BaseModel):
                 if self.expressed_in is not None:
                     el.set("expressed_in", self.expressed_in)
                 if self.xyz is not None:
-                    el.text = self.xyz.to_sdf(version)
+                    el.text = str(self.xyz)
                 return el
 
             @classmethod
@@ -291,7 +305,7 @@ class Joint(BaseModel):
                     if _expressed_in != "":
                         return SDFError(f"'expressed_in' is not supported in SDF version {version} (added in 1.7)")
                 _text = el.text or "0 0 1"
-                _xyz = _SDFVector3._from_sdf(_text, version)
+                _xyz = _parse_vector3(_text)
                 if isinstance(_xyz, SDFError):
                     return _xyz
                 if _xyz is not None and cmp_version(version, "1.2") < 0:
@@ -309,11 +323,13 @@ class Joint(BaseModel):
             limit: "Joint.Axis.Limit" = None,
             mimic: "Mimic" = None,
             use_parent_model_frame: bool = False,
-            xyz: _SDFVector3 = None
+            xyz: _Vector3T = None
         ):
             super().__init__(sdf_version)
             if xyz is None:
-                xyz = _SDFVector3.from_sdf("0 0 1", version=sdf_version)
+                xyz = _vector3("0 0 1")
+            else:
+                xyz = _vector3(xyz)
             self.dynamics = dynamics
             self.initial_position = initial_position
             self.limit = limit
@@ -413,7 +429,7 @@ class Joint(BaseModel):
                 _c_tmp.text = str(self.use_parent_model_frame).lower()
                 el.append(_c_tmp)
             if self.xyz is not None:
-                el.set("xyz", self.xyz.to_sdf(version))
+                el.set("xyz", str(self.xyz))
             return el
 
         @classmethod
@@ -470,7 +486,7 @@ class Joint(BaseModel):
                 _use_parent_model_frame = None
             if _use_parent_model_frame is not None and cmp_version(version, "1.5") < 0:
                 return SDFError(f"'use_parent_model_frame' is not supported in SDF version {version} (added in 1.5)")
-            _xyz = _SDFVector3._from_sdf(el.get("xyz", "0 0 1"), version)
+            _xyz = _parse_vector3(el.get("xyz", "0 0 1"))
             if isinstance(_xyz, SDFError):
                 return _xyz.extend("@xyz")
             return cls(sdf_version=version, dynamics=_dynamics, initial_position=_initial_position, limit=_limit, mimic=_mimic, use_parent_model_frame=_use_parent_model_frame, xyz=_xyz)
@@ -591,11 +607,13 @@ class Joint(BaseModel):
             limit: "Joint.Axis2.Axis2Limit" = None,
             mimic: "Mimic" = None,
             use_parent_model_frame: bool = False,
-            xyz: _SDFVector3 = None
+            xyz: _Vector3T = None
         ):
             super().__init__(sdf_version)
             if xyz is None:
-                xyz = _SDFVector3.from_sdf("0 0 1", version=sdf_version)
+                xyz = _vector3("0 0 1")
+            else:
+                xyz = _vector3(xyz)
             self.dynamics = dynamics
             self.initial_position = initial_position
             self.limit = limit
@@ -696,7 +714,7 @@ class Joint(BaseModel):
                 _c_tmp.text = str(self.use_parent_model_frame).lower()
                 el.append(_c_tmp)
             if self.xyz is not None:
-                el.set("xyz", self.xyz.to_sdf(version))
+                el.set("xyz", str(self.xyz))
             return el
 
         @classmethod
@@ -753,7 +771,7 @@ class Joint(BaseModel):
                 _use_parent_model_frame = None
             if _use_parent_model_frame is not None and cmp_version(version, "1.5") < 0:
                 return SDFError(f"'use_parent_model_frame' is not supported in SDF version {version} (added in 1.5)")
-            _xyz = _SDFVector3._from_sdf(el.get("xyz", "0 0 1"), version)
+            _xyz = _parse_vector3(el.get("xyz", "0 0 1"))
             if isinstance(_xyz, SDFError):
                 return _xyz.extend("@xyz")
             return cls(sdf_version=version, dynamics=_dynamics, initial_position=_initial_position, limit=_limit, mimic=_mimic, use_parent_model_frame=_use_parent_model_frame, xyz=_xyz)
@@ -812,10 +830,12 @@ class Joint(BaseModel):
             return cls(sdf_version=version, child=_child, link=_link)
 
     class Origin(BaseModel):
-        def __init__(self, sdf_version: str | None = None, pose: _SDFPose = None):
+        def __init__(self, sdf_version: str | None = None, pose: _PoseT = None):
             super().__init__(sdf_version)
             if pose is None:
-                pose = _SDFPose.from_sdf("0 0 0 0 0 0", version=sdf_version)
+                pose = _pose("0 0 0 0 0 0")
+            else:
+                pose = _pose(pose)
             self.pose = pose
 
         def to_version(self, target_version: str) -> "Joint.Origin":
@@ -834,10 +854,10 @@ class Joint(BaseModel):
             if self.pose is not None:
                 if cmp_version(version, "1.2") >= 0:
                     _c_tmp = ET.Element("pose")
-                    _c_tmp.text = self.pose.to_sdf(version)
+                    _c_tmp.text = str(self.pose)
                     el.append(_c_tmp)
                 else:
-                    el.set("pose", self.pose.to_sdf(version))
+                    el.set("pose", str(self.pose))
             return el
 
         @classmethod
@@ -849,7 +869,7 @@ class Joint(BaseModel):
             else:
                 _raw_pose = el.get("pose")
             if _raw_pose is None: _raw_pose = "0 0 0 0 0 0"
-            _pose = _SDFPose._from_sdf(_raw_pose, version)
+            _pose = _parse_pose(_raw_pose)
             if isinstance(_pose, SDFError):
                 return _pose.extend("@pose")
             return cls(sdf_version=version, pose=_pose)

@@ -8,11 +8,56 @@ from typing import List
 
 from ..utils.model import BaseModel
 from ..utils.errors import SDFError
-from ..utils.pose import Pose as _SDFPose
-from ..utils.vector3 import Vector3 as _SDFVector3
+from ..utils.pose import Pose as _SDFPose, _PoseT, _pose
+from ..utils.vector3 import Vector3 as _SDFVector3, _Vector3T, _vector3
 
 if typing.TYPE_CHECKING:
     from ..elements.pose import Pose
+
+
+import math
+
+def _parse_int32(raw: str) -> int | SDFError:
+    try:
+        v = int(raw)
+        if not (-2147483648 <= v <= 2147483647):
+            return SDFError(f"int32 out of range: {v}")
+        return v
+    except ValueError:
+        return SDFError(f"Invalid int32: {raw}")
+
+
+def _parse_uint32(raw: str) -> int | SDFError:
+    try:
+        v = int(raw)
+        if not (0 <= v <= 4294967295):
+            return SDFError(f"uint32 out of range: {v}")
+        return v
+    except ValueError:
+        return SDFError(f"Invalid uint32: {raw}")
+
+
+def _parse_double(raw: str) -> float | SDFError:
+    try:
+        v = float(raw)
+        if not math.isfinite(v) or abs(v) > math.inf:
+            return SDFError(f"double out of range: {raw}")
+        return v
+    except ValueError:
+        return SDFError(f"Invalid double: {raw}")
+
+
+def _parse_pose(raw: str) -> _PoseT | SDFError:
+    try:
+        return _pose(raw)
+    except ValueError as e:
+        return SDFError(str(e))
+
+def _parse_vector3(raw: str) -> _Vector3T | SDFError:
+    try:
+        return _vector3(raw)
+    except ValueError as e:
+        return SDFError(str(e))
 
 
 class LinkState(BaseModel):
@@ -20,12 +65,14 @@ class LinkState(BaseModel):
         def __init__(
             self,
             sdf_version: str | None = None,
-            angular_acceleration: _SDFVector3 = None,
+            angular_acceleration: _Vector3T = None,
             degrees: bool = False
         ):
             super().__init__(sdf_version)
             if angular_acceleration is None:
-                angular_acceleration = _SDFVector3.from_sdf("0 0 0", version=sdf_version)
+                angular_acceleration = _vector3("0 0 0")
+            else:
+                angular_acceleration = _vector3(angular_acceleration)
             self.angular_acceleration = angular_acceleration
             self.degrees = degrees
 
@@ -44,7 +91,7 @@ class LinkState(BaseModel):
             version = self.__version__ or version
             el = ET.Element("angular_acceleration")
             if self.angular_acceleration is not None:
-                el.text = self.angular_acceleration.to_sdf(version)
+                el.text = str(self.angular_acceleration)
             if self.degrees is not None:
                 el.set("degrees", str(self.degrees).lower())
             return el
@@ -52,7 +99,7 @@ class LinkState(BaseModel):
         @classmethod
         def _from_sdf(cls, el: ET.Element, version: str) -> "LinkState.AngularAcceleration | SDFError":
             _text = el.text or "0 0 0"
-            _angular_acceleration = _SDFVector3._from_sdf(_text, version)
+            _angular_acceleration = _parse_vector3(_text)
             if isinstance(_angular_acceleration, SDFError):
                 return _angular_acceleration
             _degrees = str(el.get("degrees", False)).strip().lower() == 'true'
@@ -64,12 +111,14 @@ class LinkState(BaseModel):
         def __init__(
             self,
             sdf_version: str | None = None,
-            angular_velocity: _SDFVector3 = None,
+            angular_velocity: _Vector3T = None,
             degrees: bool = False
         ):
             super().__init__(sdf_version)
             if angular_velocity is None:
-                angular_velocity = _SDFVector3.from_sdf("0 0 0", version=sdf_version)
+                angular_velocity = _vector3("0 0 0")
+            else:
+                angular_velocity = _vector3(angular_velocity)
             self.angular_velocity = angular_velocity
             self.degrees = degrees
 
@@ -88,7 +137,7 @@ class LinkState(BaseModel):
             version = self.__version__ or version
             el = ET.Element("angular_velocity")
             if self.angular_velocity is not None:
-                el.text = self.angular_velocity.to_sdf(version)
+                el.text = str(self.angular_velocity)
             if self.degrees is not None:
                 el.set("degrees", str(self.degrees).lower())
             return el
@@ -96,7 +145,7 @@ class LinkState(BaseModel):
         @classmethod
         def _from_sdf(cls, el: ET.Element, version: str) -> "LinkState.AngularVelocity | SDFError":
             _text = el.text or "0 0 0"
-            _angular_velocity = _SDFVector3._from_sdf(_text, version)
+            _angular_velocity = _parse_vector3(_text)
             if isinstance(_angular_velocity, SDFError):
                 return _angular_velocity
             _degrees = str(el.get("degrees", False)).strip().lower() == 'true'
@@ -136,34 +185,48 @@ class LinkState(BaseModel):
     def __init__(
         self,
         sdf_version: str | None = None,
-        acceleration: _SDFPose = None,
+        acceleration: _PoseT = None,
         angular_acceleration: "LinkState.AngularAcceleration" = None,
         angular_velocity: "LinkState.AngularVelocity" = None,
         collision_states: List["LinkState.CollisionState"] = None,
-        force: _SDFVector3 = None,
-        linear_acceleration: _SDFVector3 = None,
-        linear_velocity: _SDFVector3 = None,
+        force: _Vector3T = None,
+        linear_acceleration: _Vector3T = None,
+        linear_velocity: _Vector3T = None,
         name: str = "__default__",
         pose: "Pose" = None,
-        torque: _SDFVector3 = None,
-        velocity: _SDFPose = None,
-        wrench: _SDFPose = None
+        torque: _Vector3T = None,
+        velocity: _PoseT = None,
+        wrench: _PoseT = None
     ):
         super().__init__(sdf_version)
         if acceleration is None:
-            acceleration = _SDFPose.from_sdf("0 0 0 0 0 0", version=sdf_version)
+            acceleration = _pose("0 0 0 0 0 0")
+        else:
+            acceleration = _pose(acceleration)
         if force is None:
-            force = _SDFVector3.from_sdf("0 0 0", version=sdf_version)
+            force = _vector3("0 0 0")
+        else:
+            force = _vector3(force)
         if linear_acceleration is None:
-            linear_acceleration = _SDFVector3.from_sdf("0 0 0", version=sdf_version)
+            linear_acceleration = _vector3("0 0 0")
+        else:
+            linear_acceleration = _vector3(linear_acceleration)
         if linear_velocity is None:
-            linear_velocity = _SDFVector3.from_sdf("0 0 0", version=sdf_version)
+            linear_velocity = _vector3("0 0 0")
+        else:
+            linear_velocity = _vector3(linear_velocity)
         if torque is None:
-            torque = _SDFVector3.from_sdf("0 0 0", version=sdf_version)
+            torque = _vector3("0 0 0")
+        else:
+            torque = _vector3(torque)
         if velocity is None:
-            velocity = _SDFPose.from_sdf("0 0 0 0 0 0", version=sdf_version)
+            velocity = _pose("0 0 0 0 0 0")
+        else:
+            velocity = _pose(velocity)
         if wrench is None:
-            wrench = _SDFPose.from_sdf("0 0 0 0 0 0", version=sdf_version)
+            wrench = _pose("0 0 0 0 0 0")
+        else:
+            wrench = _pose(wrench)
         self.acceleration = acceleration
         self.angular_acceleration = angular_acceleration
         self.angular_velocity = angular_velocity
@@ -231,7 +294,7 @@ class LinkState(BaseModel):
         el = ET.Element("link_state")
         if self.acceleration is not None:
             _c_tmp = ET.Element("acceleration")
-            _c_tmp.text = self.acceleration.to_sdf(version)
+            _c_tmp.text = str(self.acceleration)
             el.append(_c_tmp)
         if self.angular_acceleration is not None:
             if hasattr(self.angular_acceleration, 'to_sdf'):
@@ -268,15 +331,15 @@ class LinkState(BaseModel):
             el.append(_item_el)
         if self.force is not None:
             _c_tmp = ET.Element("force")
-            _c_tmp.text = self.force.to_sdf(version)
+            _c_tmp.text = str(self.force)
             el.append(_c_tmp)
         if self.linear_acceleration is not None:
             _c_tmp = ET.Element("linear_acceleration")
-            _c_tmp.text = self.linear_acceleration.to_sdf(version)
+            _c_tmp.text = str(self.linear_acceleration)
             el.append(_c_tmp)
         if self.linear_velocity is not None:
             _c_tmp = ET.Element("linear_velocity")
-            _c_tmp.text = self.linear_velocity.to_sdf(version)
+            _c_tmp.text = str(self.linear_velocity)
             el.append(_c_tmp)
         if self.name is not None:
             el.set("name", self.name)
@@ -293,15 +356,15 @@ class LinkState(BaseModel):
             el.append(_item_el)
         if self.torque is not None:
             _c_tmp = ET.Element("torque")
-            _c_tmp.text = self.torque.to_sdf(version)
+            _c_tmp.text = str(self.torque)
             el.append(_c_tmp)
         if self.velocity is not None:
             _c_tmp = ET.Element("velocity")
-            _c_tmp.text = self.velocity.to_sdf(version)
+            _c_tmp.text = str(self.velocity)
             el.append(_c_tmp)
         if self.wrench is not None:
             _c_tmp = ET.Element("wrench")
-            _c_tmp.text = self.wrench.to_sdf(version)
+            _c_tmp.text = str(self.wrench)
             el.append(_c_tmp)
         return el
 
@@ -311,7 +374,7 @@ class LinkState(BaseModel):
         _c_tmp = el.find("acceleration")
         if _c_tmp is not None:
             _text = _c_tmp.text if _c_tmp.text is not None else "0 0 0 0 0 0"
-            _val = _SDFPose._from_sdf(_text, version)
+            _val = _parse_pose(_text)
             if isinstance(_val, SDFError):
                 return _val.extend("acceleration")
             _acceleration = _val
@@ -342,7 +405,7 @@ class LinkState(BaseModel):
         _c_tmp = el.find("force")
         if _c_tmp is not None:
             _text = _c_tmp.text if _c_tmp.text is not None else "0 0 0"
-            _val = _SDFVector3._from_sdf(_text, version)
+            _val = _parse_vector3(_text)
             if isinstance(_val, SDFError):
                 return _val.extend("force")
             _force = _val
@@ -351,7 +414,7 @@ class LinkState(BaseModel):
         _c_tmp = el.find("linear_acceleration")
         if _c_tmp is not None:
             _text = _c_tmp.text if _c_tmp.text is not None else "0 0 0"
-            _val = _SDFVector3._from_sdf(_text, version)
+            _val = _parse_vector3(_text)
             if isinstance(_val, SDFError):
                 return _val.extend("linear_acceleration")
             _linear_acceleration = _val
@@ -360,7 +423,7 @@ class LinkState(BaseModel):
         _c_tmp = el.find("linear_velocity")
         if _c_tmp is not None:
             _text = _c_tmp.text if _c_tmp.text is not None else "0 0 0"
-            _val = _SDFVector3._from_sdf(_text, version)
+            _val = _parse_vector3(_text)
             if isinstance(_val, SDFError):
                 return _val.extend("linear_velocity")
             _linear_velocity = _val
@@ -380,7 +443,7 @@ class LinkState(BaseModel):
         _c_tmp = el.find("torque")
         if _c_tmp is not None:
             _text = _c_tmp.text if _c_tmp.text is not None else "0 0 0"
-            _val = _SDFVector3._from_sdf(_text, version)
+            _val = _parse_vector3(_text)
             if isinstance(_val, SDFError):
                 return _val.extend("torque")
             _torque = _val
@@ -389,7 +452,7 @@ class LinkState(BaseModel):
         _c_tmp = el.find("velocity")
         if _c_tmp is not None:
             _text = _c_tmp.text if _c_tmp.text is not None else "0 0 0 0 0 0"
-            _val = _SDFPose._from_sdf(_text, version)
+            _val = _parse_pose(_text)
             if isinstance(_val, SDFError):
                 return _val.extend("velocity")
             _velocity = _val
@@ -398,7 +461,7 @@ class LinkState(BaseModel):
         _c_tmp = el.find("wrench")
         if _c_tmp is not None:
             _text = _c_tmp.text if _c_tmp.text is not None else "0 0 0 0 0 0"
-            _val = _SDFPose._from_sdf(_text, version)
+            _val = _parse_pose(_text)
             if isinstance(_val, SDFError):
                 return _val.extend("wrench")
             _wrench = _val

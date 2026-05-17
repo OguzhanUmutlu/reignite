@@ -8,7 +8,7 @@ from typing import List
 
 from ..utils.model import BaseModel
 from ..utils.errors import SDFError
-from ..utils.pose import Pose as _SDFPose
+from ..utils.pose import Pose as _SDFPose, _PoseT, _pose
 from ..utils.version import cmp_version
 
 if typing.TYPE_CHECKING:
@@ -50,6 +50,12 @@ def _parse_double(raw: str) -> float | SDFError:
     except ValueError:
         return SDFError(f"Invalid double: {raw}")
 
+
+def _parse_pose(raw: str) -> _PoseT | SDFError:
+    try:
+        return _pose(raw)
+    except ValueError as e:
+        return SDFError(str(e))
 
 
 class Actor(BaseModel):
@@ -117,10 +123,12 @@ class Actor(BaseModel):
             return cls(sdf_version=version, filename=_filename, interpolate_x=_interpolate_x, name=_name, scale=_scale)
 
     class Origin(BaseModel):
-        def __init__(self, sdf_version: str | None = None, pose: _SDFPose = None):
+        def __init__(self, sdf_version: str | None = None, pose: _PoseT = None):
             super().__init__(sdf_version)
             if pose is None:
-                pose = _SDFPose.from_sdf("0 0 0 0 0 0", version=sdf_version)
+                pose = _pose("0 0 0 0 0 0")
+            else:
+                pose = _pose(pose)
             self.pose = pose
 
         def to_version(self, target_version: str) -> "Actor.Origin":
@@ -139,10 +147,10 @@ class Actor(BaseModel):
             if self.pose is not None:
                 if cmp_version(version, "1.2") >= 0:
                     _c_tmp = ET.Element("pose")
-                    _c_tmp.text = self.pose.to_sdf(version)
+                    _c_tmp.text = str(self.pose)
                     el.append(_c_tmp)
                 else:
-                    el.set("pose", self.pose.to_sdf(version))
+                    el.set("pose", str(self.pose))
             return el
 
         @classmethod
@@ -154,7 +162,7 @@ class Actor(BaseModel):
             else:
                 _raw_pose = el.get("pose")
             if _raw_pose is None: _raw_pose = "0 0 0 0 0 0"
-            _pose = _SDFPose._from_sdf(_raw_pose, version)
+            _pose = _parse_pose(_raw_pose)
             if isinstance(_pose, SDFError):
                 return _pose.extend("@pose")
             return cls(sdf_version=version, pose=_pose)
@@ -162,10 +170,12 @@ class Actor(BaseModel):
     class Script(BaseModel):
         class Trajectory(BaseModel):
             class Waypoint(BaseModel):
-                def __init__(self, sdf_version: str | None = None, pose: _SDFPose = None, time: float = 0.0):
+                def __init__(self, sdf_version: str | None = None, pose: _PoseT = None, time: float = 0.0):
                     super().__init__(sdf_version)
                     if pose is None:
-                        pose = _SDFPose.from_sdf("0 0 0 0 0 0", version=sdf_version)
+                        pose = _pose("0 0 0 0 0 0")
+                    else:
+                        pose = _pose(pose)
                     self.pose = pose
                     self.time = time
 
@@ -188,14 +198,14 @@ class Actor(BaseModel):
                     version = self.__version__ or version
                     el = ET.Element("waypoint")
                     if self.pose is not None:
-                        el.set("pose", self.pose.to_sdf(version))
+                        el.set("pose", str(self.pose))
                     if self.time is not None:
                         el.set("time", str(self.time))
                     return el
 
                 @classmethod
                 def _from_sdf(cls, el: ET.Element, version: str) -> "Actor.Script.Trajectory.Waypoint | SDFError":
-                    _pose = _SDFPose._from_sdf(el.get("pose", "0 0 0 0 0 0"), version)
+                    _pose = _parse_pose(el.get("pose", "0 0 0 0 0 0"))
                     if isinstance(_pose, SDFError):
                         return _pose.extend("@pose")
                     _time = _parse_double(el.get("time", 0.0))

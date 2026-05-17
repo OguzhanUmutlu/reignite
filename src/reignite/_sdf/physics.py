@@ -6,7 +6,7 @@ from xml.etree import ElementTree as ET
 
 from ..utils.model import BaseModel
 from ..utils.errors import SDFError
-from ..utils.vector3 import Vector3 as _SDFVector3
+from ..utils.vector3 import Vector3 as _SDFVector3, _Vector3T, _vector3
 from ..utils.version import cmp_version
 from ..utils.migration import apply_migrations
 
@@ -42,6 +42,12 @@ def _parse_double(raw: str) -> float | SDFError:
     except ValueError:
         return SDFError(f"Invalid double: {raw}")
 
+
+def _parse_vector3(raw: str) -> _Vector3T | SDFError:
+    try:
+        return _vector3(raw)
+    except ValueError as e:
+        return SDFError(str(e))
 
 
 class Physics(BaseModel):
@@ -470,14 +476,18 @@ class Physics(BaseModel):
         def __init__(
             self,
             sdf_version: str | None = None,
-            gravity: _SDFVector3 = None,
-            xyz: _SDFVector3 = None
+            gravity: _Vector3T = None,
+            xyz: _Vector3T = None
         ):
             super().__init__(sdf_version)
             if gravity is None:
-                gravity = _SDFVector3.from_sdf("0 0 -9.8", version=sdf_version)
+                gravity = _vector3("0 0 -9.8")
+            else:
+                gravity = _vector3(gravity)
             if xyz is None:
-                xyz = _SDFVector3.from_sdf("0 0 -9.8", version=sdf_version)
+                xyz = _vector3("0 0 -9.8")
+            else:
+                xyz = _vector3(xyz)
             self.gravity = gravity
             self.xyz = xyz
 
@@ -500,18 +510,18 @@ class Physics(BaseModel):
             version = self.__version__ or version
             el = ET.Element("gravity")
             if self.gravity is not None:
-                el.text = self.gravity.to_sdf(version)
+                el.text = str(self.gravity)
             if self.xyz is not None:
                 if cmp_version(version, "1.2") >= 0:
-                    el.text = self.xyz.to_sdf(version)
+                    el.text = str(self.xyz)
                 else:
-                    el.set("xyz", self.xyz.to_sdf(version))
+                    el.set("xyz", str(self.xyz))
             return el
 
         @classmethod
         def _from_sdf(cls, el: ET.Element, version: str) -> "Physics.Gravity | SDFError":
             _text = el.text or "0 0 -9.8"
-            _gravity = _SDFVector3._from_sdf(_text, version)
+            _gravity = _parse_vector3(_text)
             if isinstance(_gravity, SDFError):
                 return _gravity
             _raw_xyz = None
@@ -520,7 +530,7 @@ class Physics(BaseModel):
             else:
                 _raw_xyz = el.get("xyz")
             if _raw_xyz is None: _raw_xyz = "0 0 -9.8"
-            _xyz = _SDFVector3._from_sdf(_raw_xyz, version)
+            _xyz = _parse_vector3(_raw_xyz)
             if isinstance(_xyz, SDFError):
                 return _xyz.extend("@xyz")
             return cls(sdf_version=version, gravity=_gravity, xyz=_xyz)
@@ -1132,7 +1142,7 @@ class Physics(BaseModel):
         dart: "Physics.Dart" = None,
         default: bool = False,
         gravity: "Physics.Gravity" = None,
-        magnetic_field: _SDFVector3 = None,
+        magnetic_field: _Vector3T = None,
         max_contacts: int = 20,
         max_step_size: float = 0.001,
         name: str = "default_physics",
@@ -1145,7 +1155,9 @@ class Physics(BaseModel):
     ):
         super().__init__(sdf_version)
         if magnetic_field is None:
-            magnetic_field = _SDFVector3.from_sdf("5.5645e-6 22.8758e-6 -42.3884e-6", version=sdf_version)
+            magnetic_field = _vector3("5.5645e-6 22.8758e-6 -42.3884e-6")
+        else:
+            magnetic_field = _vector3(magnetic_field)
         self.bullet = bullet
         self.dart = dart
         self.default = default
@@ -1272,7 +1284,7 @@ class Physics(BaseModel):
             el.append(_item_el)
         if self.magnetic_field is not None:
             _c_tmp = ET.Element("magnetic_field")
-            _c_tmp.text = self.magnetic_field.to_sdf(version)
+            _c_tmp.text = str(self.magnetic_field)
             el.append(_c_tmp)
         if self.max_contacts is not None:
             _c_tmp = ET.Element("max_contacts")
@@ -1357,7 +1369,7 @@ class Physics(BaseModel):
         _c_tmp = el.find("magnetic_field")
         if _c_tmp is not None:
             _text = _c_tmp.text if _c_tmp.text is not None else "5.5645e-6 22.8758e-6 -42.3884e-6"
-            _val = _SDFVector3._from_sdf(_text, version)
+            _val = _parse_vector3(_text)
             if isinstance(_val, SDFError):
                 return _val.extend("magnetic_field")
             _magnetic_field = _val
