@@ -21,6 +21,5 @@ class WorldStatsPlugin(Plugin):
                         GzGui.Anchor("right", "right"),
                         GzGui.Anchor("bottom", "bottom")
                     ], **gui_kwargs})
-        ], sim_time=str(sim_time).lower(), real_time=str(real_time).lower(),
-                         real_time_factor=str(real_time_factor).lower(), iterations=str(iterations).lower(),
+        ], sim_time=sim_time, real_time=real_time, real_time_factor=real_time_factor, iterations=iterations,
                          topic=topic)

@@ -1,4 +1,4 @@
-from typing import Union
+from __future__ import annotations
 
 from .box import Box
 from .capsule import Capsule
@@ -11,13 +11,13 @@ from .polyline import Polyline
 from .sphere import Sphere
 from .._sdf.geometry import Geometry
 from ..utils import Vector3, Vector2d
+from ..utils.vector2d import _vector2d
+from ..utils.vector3 import _vector3
 
 
 class BoxGeometry(Geometry):
-    def __init__(self, size: Union[Vector3, float], y: float = None, z: float = None):
-        if isinstance(size, (int, float)):
-            size = Vector3(size, y if y is not None else size, z if z is not None else size)
-        super().__init__(box=Box(size=size))
+    def __init__(self, size: Vector3 | tuple[float, float, float] | float, y: float = None, z: float = None):
+        super().__init__(box=Box(size=_vector3(size, y, z)))
 
 
 class CapsuleGeometry(Geometry):
@@ -36,10 +36,8 @@ class CylinderGeometry(Geometry):
 
 
 class EllipsoidGeometry(Geometry):
-    def __init__(self, radii: Union[Vector3, float], y: float = None, z: float = None):
-        if isinstance(radii, (int, float)):
-            radii = Vector3(radii, y if y is not None else radii, z if z is not None else radii)
-        super().__init__(ellipsoid=Ellipsoid(radii=radii))
+    def __init__(self, radii: Vector3 | tuple[float, float, float] | float, y: float = None, z: float = None):
+        super().__init__(ellipsoid=Ellipsoid(radii=_vector3(radii, y, z)))
 
 
 class EmptyGeometry(Geometry):
@@ -48,18 +46,20 @@ class EmptyGeometry(Geometry):
 
 
 class MeshGeometry(Geometry):
-    def __init__(self, uri: str, scale: Vector3 = Vector3(1.0, 1.0, 1.0)):
-        super().__init__(mesh=Mesh(uri=uri, scale=scale))
+    def __init__(self, uri: str, scale: float | tuple[float, float, float] | Vector3 = 1.0, sy: float = None,
+                 sz: float = None):
+        super().__init__(mesh=Mesh(uri=uri, scale=_vector3(scale, sy, sz)))
 
 
 class PlaneGeometry(Geometry):
-    def __init__(self, normal: Vector3, size: Vector2d):
-        super().__init__(plane=Plane(normal=normal, size=size))
+    def __init__(self, size: Vector2d | tuple[float, float],
+                 normal: Vector3 | tuple[float, float, float] = Vector3(0, 0, 1)):
+        super().__init__(plane=Plane(normal=_vector3(normal), size=_vector2d(size)))
 
 
 class PolylineGeometry(Geometry):
-    def __init__(self, points: list[Vector2d], height: float = 0.01):
-        super().__init__(polyline=Polyline(points=points, height=height))
+    def __init__(self, points: list[Vector2d | tuple[float, float]], height: float = 0.01):
+        super().__init__(polyline=Polyline(points=list(map(_vector2d, points)), height=height))
 
 
 class SphereGeometry(Geometry):

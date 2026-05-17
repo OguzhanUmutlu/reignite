@@ -1,1 +1,5 @@
-from .._sdf.gui import *  # noqa: F401
+from .._sdf.gui import Gui as _Gui
+
+
+class Gui(_Gui):
+    pass

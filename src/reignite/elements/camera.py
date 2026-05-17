@@ -1,1 +1,5 @@
-from .._sdf.camera import *  # noqa: F401
+from .._sdf.camera import Camera as _Camera
+
+
+class Camera(_Camera):
+    pass

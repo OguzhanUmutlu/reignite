@@ -1,1 +1,5 @@
-from .._sdf.sensor import *  # noqa: F401
+from .._sdf.sensor import Sensor as _Sensor
+
+
+class Sensor(_Sensor):
+    pass

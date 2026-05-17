@@ -1,1 +1,5 @@
-from .._sdf.sdf import *  # noqa: F401
+from .._sdf.sdf import Sdf as _Sdf
+
+
+class Sdf(_Sdf):
+    pass

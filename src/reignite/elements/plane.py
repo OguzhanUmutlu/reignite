@@ -1,1 +1,5 @@
-from .._sdf.plane import *  # noqa: F401
+from .._sdf.plane import Plane as _Plane
+
+
+class Plane(_Plane):
+    pass

@@ -5,6 +5,16 @@ from xml.etree import ElementTree as ET
 from .errors import SDFError
 
 
+def _vector2d(x: float | tuple[float, float] | Vector2d, y: float = None) -> Vector2d:
+    if isinstance(x, Vector2d):
+        return x
+    if isinstance(x, tuple) and len(x) == 2:
+        return Vector2d(x[0], x[1])
+    if y is not None:
+        return Vector2d(float(x), float(y))
+    raise ValueError(f"Invalid input for Vector2d: {x}, {y}")
+
+
 class Vector2d:
     def __init__(self, x: float = 0.0, y: float = 0.0):
         self.x = x

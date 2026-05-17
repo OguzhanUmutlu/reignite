@@ -1,1 +1,5 @@
-from .._sdf.frame import *  # noqa: F401
+from .._sdf.frame import Frame as _Frame
+
+
+class Frame(_Frame):
+    pass

@@ -1,1 +1,5 @@
-from .._sdf.physics import *  # noqa: F401
+from .._sdf.physics import Physics as _Physics
+
+
+class Physics(_Physics):
+    pass

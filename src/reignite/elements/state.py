@@ -1,1 +1,5 @@
-from .._sdf.state import *  # noqa: F401
+from .._sdf.state import State as _State
+
+
+class State(_State):
+    pass

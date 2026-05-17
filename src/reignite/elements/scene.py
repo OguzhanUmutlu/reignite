@@ -1,1 +1,5 @@
-from .._sdf.scene import *  # noqa: F401
+from .._sdf.scene import Scene as _Scene
+
+
+class Scene(_Scene):
+    pass

@@ -293,24 +293,24 @@ class Actor(BaseModel):
             auto_start: bool = True,
             delay_start: float = 0.0,
             loop: bool = True,
-            trajectorys: List["Actor.Script.Trajectory"] = None
+            trajectories: List["Actor.Script.Trajectory"] = None
         ):
             super().__init__(sdf_version)
             self.auto_start = auto_start
             self.delay_start = delay_start
             self.loop = loop
-            self.trajectorys = trajectorys or []
-            for _i, _c in enumerate(self.trajectorys):
+            self.trajectories = trajectories or []
+            for _i, _c in enumerate(self.trajectories):
                 if not hasattr(_c, 'to_version'): continue
                 if getattr(_c, '__version__', None) is None:
                     _c.__version__ = self.__version__
                 elif getattr(_c, '__version__', None) != self.__version__ and self.__version__ is not None:
-                    self.trajectorys[_i] = _c.to_version(self.__version__)
+                    self.trajectories[_i] = _c.to_version(self.__version__)
 
         def add_trajectory(self, *items: "Actor.Script.Trajectory"):
-            if self.trajectorys is None:
-                self.trajectorys = []
-            self.trajectorys.extend(items)
+            if self.trajectories is None:
+                self.trajectories = []
+            self.trajectories.extend(items)
 
         def to_version(self, target_version: str) -> "Actor.Script":
             if self.auto_start is not None and cmp_version(target_version, "1.2") >= 0:
@@ -323,7 +323,7 @@ class Actor(BaseModel):
             kwargs["auto_start"] = self.auto_start
             kwargs["delay_start"] = self.delay_start
             kwargs["loop"] = self.loop
-            kwargs["trajectorys"] = [c.to_version(target_version) if hasattr(c, "to_version") else c for c in (self.trajectorys or [])]
+            kwargs["trajectories"] = [c.to_version(target_version) if hasattr(c, "to_version") else c for c in (self.trajectories or [])]
             new_obj = self.__class__(**kwargs)
             return new_obj
 
@@ -340,7 +340,7 @@ class Actor(BaseModel):
                 el.set("delay_start", str(self.delay_start))
             if self.loop is not None:
                 el.set("loop", str(self.loop).lower())
-            for item in (self.trajectorys or []):
+            for item in (self.trajectories or []):
                 if hasattr(item, 'to_sdf'):
                     _child_res = item.to_sdf(version)
                 else:
@@ -364,13 +364,13 @@ class Actor(BaseModel):
             _loop = str(el.get("loop", True)).strip().lower() == 'true'
             if isinstance(_loop, SDFError):
                 return _loop.extend("@loop")
-            _trajectorys = []
+            _trajectories = []
             for c in el.findall("trajectory"):
                 _res = cls.Trajectory._from_sdf(c, version)
                 if isinstance(_res, SDFError):
                     return _res.extend("trajectory")
-                _trajectorys.append(_res)
-            return cls(sdf_version=version, auto_start=_auto_start, delay_start=_delay_start, loop=_loop, trajectorys=_trajectorys)
+                _trajectories.append(_res)
+            return cls(sdf_version=version, auto_start=_auto_start, delay_start=_delay_start, loop=_loop, trajectories=_trajectories)
 
     class Skin(BaseModel):
         def __init__(

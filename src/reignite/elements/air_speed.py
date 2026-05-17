@@ -1,1 +1,5 @@
-from .._sdf.air_speed import *  # noqa: F401
+from .._sdf.air_speed import AirSpeed as _AirSpeed
+
+
+class AirSpeed(_AirSpeed):
+    pass

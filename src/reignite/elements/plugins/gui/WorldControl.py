@@ -1,7 +1,6 @@
 from typing import Optional
 
 from reignite.elements import Plugin
-from reignite.elements.plugin import TextElement
 from reignite.elements.plugins.gui.GzGui import GzGui
 
 
@@ -21,5 +20,4 @@ class WorldControlPlugin(Plugin):
                     GzGui.Anchor("left", "left"),
                     GzGui.Anchor("bottom", "bottom")
                 ], **gui_kwargs})
-        ], play_pause=str(play_pause).lower(), step=str(step).lower(), start_paused=str(start_paused).lower(),
-                         use_event=str(use_event).lower(), stats_topic=stats_topic)
+        ], play_pause=play_pause, step=step, start_paused=start_paused, use_event=use_event, stats_topic=stats_topic)

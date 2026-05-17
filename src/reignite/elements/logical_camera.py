@@ -1,1 +1,5 @@
-from .._sdf.logical_camera import *  # noqa: F401
+from .._sdf.logical_camera import LogicalCamera as _LogicalCamera
+
+
+class LogicalCamera(_LogicalCamera):
+    pass

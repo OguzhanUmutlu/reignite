@@ -1,1 +1,5 @@
-from .._sdf.mesh import *  # noqa: F401
+from .._sdf.mesh import Mesh as _Mesh
+
+
+class Mesh(_Mesh):
+    pass

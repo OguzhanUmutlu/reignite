@@ -1,1 +1,5 @@
-from .._sdf.navsat import *  # noqa: F401
+from .._sdf.navsat import Navsat as _Navsat
+
+
+class Navsat(_Navsat):
+    pass

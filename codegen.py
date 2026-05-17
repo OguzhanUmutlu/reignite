@@ -18,6 +18,14 @@ SDF_REPO_URL = "https://github.com/gazebosim/sdformat.git"
 BASE_VERSION = "1.0"
 
 
+def make_plural(s: str) -> str:
+    if s.endswith("s"):
+        return s + "es"
+    if s.endswith("y") and s[-2] not in "aeiou":
+        return s[:-1] + "ies"
+    return s + "s"
+
+
 def cmp_version(v1: str, v2: str) -> int:
     t1 = tuple(int(x) for x in v1.split("."))
     t2 = tuple(int(x) for x in v2.split("."))
@@ -591,7 +599,7 @@ def _collect_class_spec(
         required = lnode.get("_required", "0")
         is_list = required in ("*", "+")
         if is_list and not py_name.endswith("s"):
-            py_name += "s"
+            py_name = make_plural(py_name)
         if py_name in seen_py_names:
             continue
         seen_py_names.add(py_name)
@@ -653,7 +661,7 @@ def _collect_class_spec(
         required = cnode.get("_required", "0")
         is_list = required in ("*", "+")
         if is_list and not py_name.endswith("s"):
-            py_name += "s"
+            py_name = make_plural(py_name)
         if py_name in seen_py_names:
             continue
         seen_py_names.add(py_name)
@@ -1090,7 +1098,8 @@ def _render_class(spec: dict, file_external_imports: set[str], indent: int = 0,
             if not renames:
                 block.append(f"{indent_child}el.append(_item_el)")
             else:
-                sorted_versions = sorted(renames.keys(), key=lambda v: tuple(int(x) for x in v.split(".")), reverse=True)
+                sorted_versions = sorted(renames.keys(), key=lambda v: tuple(int(x) for x in v.split(".")),
+                                         reverse=True)
                 first = True
                 for v in sorted_versions:
                     loc = renames[v]
@@ -1608,8 +1617,14 @@ def main():
         out_path.write_text(py_src, encoding="utf-8")
         out_el_path = ELEMENTS_SRC_DIR / f"{_module_name_for(element_name)}.py"
         if not out_el_path.exists():
-            out_el_path.write_text(f"from .._sdf.{_module_name_for(element_name)} import *  # noqa: F401\n",
-                                   encoding="utf-8")
+            out_el_path.write_text(
+                f"""from .._sdf.{_module_name_for(element_name)} import {_to_classname(element_name)} as _{_to_classname(element_name)}
+
+
+class {_to_classname(element_name)}(_{_to_classname(element_name)}):
+    pass
+""",
+                encoding="utf-8")
         print(f"  Wrote {out_path}")
 
     init_path = SDF_SRC_DIR / "__init__.py"

@@ -1,1 +1,5 @@
-from .._sdf.gazebo import *  # noqa: F401
+from .._sdf.gazebo import Gazebo as _Gazebo
+
+
+class Gazebo(_Gazebo):
+    pass

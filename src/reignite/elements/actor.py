@@ -1,1 +1,5 @@
-from .._sdf.actor import *  # noqa: F401
+from .._sdf.actor import Actor as _Actor
+
+
+class Actor(_Actor):
+    pass

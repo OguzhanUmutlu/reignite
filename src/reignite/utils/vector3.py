@@ -5,6 +5,16 @@ from xml.etree import ElementTree as ET
 from .errors import SDFError
 
 
+def _vector3(v: float | tuple[float, float, float] | Vector3, y: float = None, z: float = None) -> Vector3:
+    if isinstance(v, Vector3):
+        return v
+    if isinstance(v, tuple) and len(v) == 3:
+        return Vector3(v[0], v[1], v[2])
+    if y is not None and z is not None:
+        return Vector3(float(v), float(y), float(z))
+    raise ValueError(f"Invalid input for Vector3: {v}, {y}, {z}")
+
+
 class Vector3:
     def __init__(self, x: float = 0.0, y: float = 0.0, z: float = 0.0):
         self.x = x

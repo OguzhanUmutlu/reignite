@@ -1,1 +1,5 @@
-from .._sdf.visual import *  # noqa: F401
+from .._sdf.visual import Visual as _Visual
+
+
+class Visual(_Visual):
+    pass

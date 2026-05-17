@@ -213,7 +213,7 @@ class Link(BaseModel):
         acceleration: _SDFPose = None,
         audio_sinks: List["AudioSink"] = None,
         audio_sources: List["AudioSource"] = None,
-        batterys: List["Battery"] = None,
+        batteries: List["Battery"] = None,
         collisions: List["Collision"] = None,
         damping: "Link.Damping" = None,
         enable_wind: bool = False,
@@ -245,7 +245,7 @@ class Link(BaseModel):
         self.acceleration = acceleration
         self.audio_sinks = audio_sinks or []
         self.audio_sources = audio_sources or []
-        self.batterys = batterys or []
+        self.batteries = batteries or []
         self.collisions = collisions or []
         self.damping = damping
         self.enable_wind = enable_wind
@@ -278,12 +278,12 @@ class Link(BaseModel):
                 _c.__version__ = self.__version__
             elif getattr(_c, '__version__', None) != self.__version__ and self.__version__ is not None:
                 self.audio_sources[_i] = _c.to_version(self.__version__)
-        for _i, _c in enumerate(self.batterys):
+        for _i, _c in enumerate(self.batteries):
             if not hasattr(_c, 'to_version'): continue
             if getattr(_c, '__version__', None) is None:
                 _c.__version__ = self.__version__
             elif getattr(_c, '__version__', None) != self.__version__ and self.__version__ is not None:
-                self.batterys[_i] = _c.to_version(self.__version__)
+                self.batteries[_i] = _c.to_version(self.__version__)
         for _i, _c in enumerate(self.collisions):
             if not hasattr(_c, 'to_version'): continue
             if getattr(_c, '__version__', None) is None:
@@ -361,9 +361,9 @@ class Link(BaseModel):
         self.audio_sources.extend(items)
 
     def add_battery(self, *items: "Battery"):
-        if self.batterys is None:
-            self.batterys = []
-        self.batterys.extend(items)
+        if self.batteries is None:
+            self.batteries = []
+        self.batteries.extend(items)
 
     def add_collision(self, *items: "Collision"):
         if self.collisions is None:
@@ -415,8 +415,8 @@ class Link(BaseModel):
             raise ValueError(f"'audio_sources' is not supported in SDF version {target_version} (added in 1.4)")
         if self.audio_sources is not None and cmp_version(target_version, "1.5") >= 0:
             raise ValueError(f"'audio_sources' is not supported in SDF version {target_version} (removed in 1.5)")
-        if self.batterys is not None and cmp_version(target_version, "1.12") < 0:
-            raise ValueError(f"'batterys' is not supported in SDF version {target_version} (added in 1.12)")
+        if self.batteries is not None and cmp_version(target_version, "1.12") < 0:
+            raise ValueError(f"'batteries' is not supported in SDF version {target_version} (added in 1.12)")
         if self.damping is not None and cmp_version(target_version, "1.2") >= 0:
             raise ValueError(f"'damping' is not supported in SDF version {target_version} (removed in 1.2)")
         if self.enable_wind is not None and cmp_version(target_version, "1.12") < 0:
@@ -467,7 +467,7 @@ class Link(BaseModel):
         kwargs["acceleration"] = self.acceleration
         kwargs["audio_sinks"] = [c.to_version(target_version) if hasattr(c, "to_version") else c for c in (self.audio_sinks or [])]
         kwargs["audio_sources"] = [c.to_version(target_version) if hasattr(c, "to_version") else c for c in (self.audio_sources or [])]
-        kwargs["batterys"] = [c.to_version(target_version) if hasattr(c, "to_version") else c for c in (self.batterys or [])]
+        kwargs["batteries"] = [c.to_version(target_version) if hasattr(c, "to_version") else c for c in (self.batteries or [])]
         kwargs["collisions"] = [c.to_version(target_version) if hasattr(c, "to_version") else c for c in (self.collisions or [])]
         kwargs["damping"] = self.damping.to_version(target_version) if hasattr(self.damping, "to_version") else self.damping
         kwargs["enable_wind"] = self.enable_wind
@@ -536,7 +536,7 @@ class Link(BaseModel):
             else:
                 _item_el = _child_res
             el.append(_item_el)
-        for item in (self.batterys or []):
+        for item in (self.batteries or []):
             if hasattr(item, 'to_sdf'):
                 _child_res = item.to_sdf(version)
             else:
@@ -753,14 +753,14 @@ class Link(BaseModel):
             _audio_sources.append(_res)
         if _audio_sources and cmp_version(version, "1.4") < 0:
             return SDFError(f"'audio_sources' is not supported in SDF version {version} (added in 1.4)")
-        _batterys = []
+        _batteries = []
         for c in el.findall("battery"):
             _res = Battery._from_sdf(c, version)
             if isinstance(_res, SDFError):
                 return _res.extend("battery")
-            _batterys.append(_res)
-        if _batterys and cmp_version(version, "1.12") < 0:
-            return SDFError(f"'batterys' is not supported in SDF version {version} (added in 1.12)")
+            _batteries.append(_res)
+        if _batteries and cmp_version(version, "1.12") < 0:
+            return SDFError(f"'batteries' is not supported in SDF version {version} (added in 1.12)")
         _collisions = []
         for c in el.findall("collision"):
             _res = Collision._from_sdf(c, version)
@@ -920,4 +920,4 @@ class Link(BaseModel):
             _wrench = None
         if _wrench is not None and cmp_version(version, "1.5") < 0:
             return SDFError(f"'wrench' is not supported in SDF version {version} (added in 1.5)")
-        return cls(sdf_version=version, acceleration=_acceleration, audio_sinks=_audio_sinks, audio_sources=_audio_sources, batterys=_batterys, collisions=_collisions, damping=_damping, enable_wind=_enable_wind, frames=_frames, gravity=_gravity, inertial=_inertial, kinematic=_kinematic, lights=_lights, must_be_base_link=_must_be_base_link, name=_name, origin=_origin, particle_emitters=_particle_emitters, pose=_pose, projector=_projector, self_collide=_self_collide, sensor=_sensor, velocity=_velocity, velocity_decay=_velocity_decay, visuals=_visuals, wrench=_wrench)
+        return cls(sdf_version=version, acceleration=_acceleration, audio_sinks=_audio_sinks, audio_sources=_audio_sources, batteries=_batteries, collisions=_collisions, damping=_damping, enable_wind=_enable_wind, frames=_frames, gravity=_gravity, inertial=_inertial, kinematic=_kinematic, lights=_lights, must_be_base_link=_must_be_base_link, name=_name, origin=_origin, particle_emitters=_particle_emitters, pose=_pose, projector=_projector, self_collide=_self_collide, sensor=_sensor, velocity=_velocity, velocity_decay=_velocity_decay, visuals=_visuals, wrench=_wrench)
