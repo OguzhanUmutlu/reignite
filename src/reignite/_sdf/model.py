@@ -1,15 +1,15 @@
 ### THIS FILE WAS AUTO-GENERATED ###
 from __future__ import annotations
 
-import typing
 from xml.etree import ElementTree as ET
 
+import typing
 from typing import List
 
 from ..utils.model import BaseModel
 from ..utils.errors import SDFError
-from ..utils.pose import Pose as _SDFPose, _PoseT, _pose
-from ..utils.vector3 import Vector3 as _SDFVector3, _Vector3T, _vector3
+from ..utils.pose import Pose as _PoseT, _pose
+from ..utils.vector3 import Vector3 as _Vector3T, _vector3
 from ..utils.version import cmp_version
 
 if typing.TYPE_CHECKING:
@@ -20,39 +20,6 @@ if typing.TYPE_CHECKING:
     from ..elements.model_state import ModelState
     from ..elements.plugin import Plugin
     from ..elements.pose import Pose
-
-
-import math
-
-def _parse_int32(raw: str) -> int | SDFError:
-    try:
-        v = int(raw)
-        if not (-2147483648 <= v <= 2147483647):
-            return SDFError(f"int32 out of range: {v}")
-        return v
-    except ValueError:
-        return SDFError(f"Invalid int32: {raw}")
-
-
-def _parse_uint32(raw: str) -> int | SDFError:
-    try:
-        v = int(raw)
-        if not (0 <= v <= 4294967295):
-            return SDFError(f"uint32 out of range: {v}")
-        return v
-    except ValueError:
-        return SDFError(f"Invalid uint32: {raw}")
-
-
-def _parse_double(raw: str) -> float | SDFError:
-    try:
-        v = float(raw)
-        if not math.isfinite(v) or abs(v) > math.inf:
-            return SDFError(f"double out of range: {raw}")
-        return v
-    except ValueError:
-        return SDFError(f"Invalid double: {raw}")
-
 
 def _parse_pose(raw: str) -> _PoseT | SDFError:
     try:
@@ -67,46 +34,47 @@ def _parse_vector3(raw: str) -> _Vector3T | SDFError:
         return SDFError(str(e))
 
 
+# noinspection PyUnusedImports
 class Model(BaseModel):
     class Include(BaseModel):
         def __init__(
             self,
             sdf_version: str | None = None,
-            merge: bool = False,
+            merge: bool | None = False,
             model_states: List["ModelState"] = None,
-            name: str = "",
-            placement_frame: str = "",
+            name: str | None = "",
+            placement_frame: str | None = "",
             plugins: List["Plugin"] = None,
             pose: "Pose" = None,
-            static: bool = False,
-            uri: str = "__default__"
+            static: bool | None = False,
+            uri: str | None = "__default__"
         ):
             super().__init__(sdf_version)
-            self.merge = merge
+            self.merge = merge if merge is not None else False
             self.model_states = model_states or []
-            self.name = name
-            self.placement_frame = placement_frame
+            self.name = name if name is not None else ""
+            self.placement_frame = placement_frame if placement_frame is not None else ""
             self.plugins = plugins or []
             self.pose = pose
-            self.static = static
-            self.uri = uri
+            self.static = static if static is not None else False
+            self.uri = uri if uri is not None else "__default__"
             for _i, _c in enumerate(self.model_states):
                 if not hasattr(_c, 'to_version'): continue
-                if getattr(_c, '__version__', None) is None:
-                    _c.__version__ = self.__version__
-                elif getattr(_c, '__version__', None) != self.__version__ and self.__version__ is not None:
-                    self.model_states[_i] = _c.to_version(self.__version__)
+                if getattr(_c, 'sdfversion', None) is None:
+                    _c.sdfversion = self.sdfversion
+                elif getattr(_c, 'sdfversion', None) != self.sdfversion and self.sdfversion is not None:
+                    self.model_states[_i] = _c.to_version(self.sdfversion)
             for _i, _c in enumerate(self.plugins):
                 if not hasattr(_c, 'to_version'): continue
-                if getattr(_c, '__version__', None) is None:
-                    _c.__version__ = self.__version__
-                elif getattr(_c, '__version__', None) != self.__version__ and self.__version__ is not None:
-                    self.plugins[_i] = _c.to_version(self.__version__)
+                if getattr(_c, 'sdfversion', None) is None:
+                    _c.sdfversion = self.sdfversion
+                elif getattr(_c, 'sdfversion', None) != self.sdfversion and self.sdfversion is not None:
+                    self.plugins[_i] = _c.to_version(self.sdfversion)
             if self.pose is not None and hasattr(self.pose, 'to_version'):
-                if getattr(self.pose, '__version__', None) is None:
-                    self.pose.__version__ = self.__version__
-                elif getattr(self.pose, '__version__', None) != self.__version__ and self.__version__ is not None:
-                    self.pose = self.pose.to_version(self.__version__)
+                if getattr(self.pose, 'sdfversion', None) is None:
+                    self.pose.sdfversion = self.sdfversion
+                elif getattr(self.pose, 'sdfversion', None) != self.sdfversion and self.sdfversion is not None:
+                    self.pose = self.pose.to_version(self.sdfversion)
 
         def add_model_state(self, *items: "ModelState"):
             if self.model_states is None:
@@ -128,35 +96,22 @@ class Model(BaseModel):
                 raise ValueError(f"'model_states' is not supported in SDF version {target_version} (added in 1.12)")
             if self.placement_frame is not None and cmp_version(target_version, "1.12") < 0:
                 raise ValueError(f"'placement_frame' is not supported in SDF version {target_version} (added in 1.12)")
-            kwargs = {"sdf_version": target_version}
-            kwargs["merge"] = self.merge
-            kwargs["model_states"] = [c.to_version(target_version) if hasattr(c, "to_version") else c for c in (self.model_states or [])]
-            kwargs["name"] = self.name
-            kwargs["placement_frame"] = self.placement_frame
-            kwargs["plugins"] = [c.to_version(target_version) if hasattr(c, "to_version") else c for c in (self.plugins or [])]
-            kwargs["pose"] = self.pose.to_version(target_version) if hasattr(self.pose, "to_version") else self.pose
-            kwargs["static"] = self.static
-            kwargs["uri"] = self.uri
-            new_obj = self.__class__(**kwargs)
-            return new_obj
+            kwargs: dict = {"sdf_version": target_version, "merge": self.merge, "model_states": [c.to_version(target_version) if hasattr(c, "to_version") else c for c in (self.model_states or [])], "name": self.name, "placement_frame": self.placement_frame, "plugins": [c.to_version(target_version) if hasattr(c, "to_version") else c for c in (self.plugins or [])], "pose": self.pose.to_version(target_version) if self.pose is not None and hasattr(self.pose, "to_version") else self.pose, "static": self.static, "uri": self.uri}
+            return self.__class__(**kwargs)
 
         def to_sdf(self, version: str | None = None) -> ET.Element:
             from ..elements.model_state import ModelState
             from ..elements.plugin import Plugin
             from ..elements.pose import Pose
-            if self.__version__ is None and version is not None:
-                self.__version__ = version
-            elif version is not None and version != self.__version__:
-                return self.to_version(version).to_sdf()
-            version = self.__version__ or version
+            if self.sdfversion is None and version is not None:
+                self.sdfversion = version
+            elif version is not None and version != self.sdfversion:
+                return self.to_version(str(version)).to_sdf()
             el = ET.Element("include")
             if self.merge is not None:
                 el.set("merge", str(self.merge).lower())
             for item in (self.model_states or []):
-                if hasattr(item, 'to_sdf'):
-                    _child_res = item.to_sdf(version)
-                else:
-                    _child_res = str(item)
+                _child_res = item.to_sdf(version)
                 if isinstance(_child_res, str):
                     _item_el = ET.Element('model_state')
                     _item_el.text = _child_res
@@ -172,10 +127,7 @@ class Model(BaseModel):
                 _c_tmp.text = self.placement_frame
                 el.append(_c_tmp)
             for item in (self.plugins or []):
-                if hasattr(item, 'to_sdf'):
-                    _child_res = item.to_sdf(version)
-                else:
-                    _child_res = str(item)
+                _child_res = item.to_sdf(version)
                 if isinstance(_child_res, str):
                     _item_el = ET.Element('plugin')
                     _item_el.text = _child_res
@@ -183,10 +135,7 @@ class Model(BaseModel):
                     _item_el = _child_res
                 el.append(_item_el)
             if self.pose is not None:
-                if hasattr(self.pose, 'to_sdf'):
-                    _child_res = self.pose.to_sdf(version)
-                else:
-                    _child_res = str(self.pose)
+                _child_res = self.pose.to_sdf(version)
                 if isinstance(_child_res, str):
                     _item_el = ET.Element('pose')
                     _item_el.text = _child_res
@@ -276,56 +225,20 @@ class Model(BaseModel):
                 _uri = None
             return cls(sdf_version=version, merge=_merge, model_states=_model_states, name=_name, placement_frame=_placement_frame, plugins=_plugins, pose=_pose, static=_static, uri=_uri)
 
-    class ModelModel(BaseModel):
-        def __init__(self, sdf_version: str | None = None, name: str = "__default__"):
-            super().__init__(sdf_version)
-            self.name = name
-
-        def to_version(self, target_version: str) -> "Model.ModelModel":
-            kwargs = {"sdf_version": target_version}
-            kwargs["name"] = self.name
-            new_obj = self.__class__(**kwargs)
-            return new_obj
-
-        def to_sdf(self, version: str | None = None) -> ET.Element:
-            if self.__version__ is None and version is not None:
-                self.__version__ = version
-            elif version is not None and version != self.__version__:
-                return self.to_version(version).to_sdf()
-            version = self.__version__ or version
-            el = ET.Element("model")
-            if self.name is not None:
-                el.set("name", self.name)
-            return el
-
-        @classmethod
-        def _from_sdf(cls, el: ET.Element, version: str) -> "Model.ModelModel | SDFError":
-            _name = el.get("name", "__default__")
-            if isinstance(_name, SDFError):
-                return _name.extend("@name")
-            return cls(sdf_version=version, name=_name)
-
     class Origin(BaseModel):
-        def __init__(self, sdf_version: str | None = None, pose: _PoseT = None):
+        def __init__(self, sdf_version: str | None = None, pose: _PoseT | None = None):
             super().__init__(sdf_version)
-            if pose is None:
-                pose = _pose("0 0 0 0 0 0")
-            else:
-                pose = _pose(pose)
-            self.pose = pose
+            self.pose = _pose("0 0 0 0 0 0") if pose is None else _pose(pose)
 
         def to_version(self, target_version: str) -> "Model.Origin":
-            kwargs = {"sdf_version": target_version}
-            kwargs["pose"] = self.pose
-            new_obj = self.__class__(**kwargs)
-            return new_obj
+            kwargs: dict = {"sdf_version": target_version, "pose": self.pose}
+            return self.__class__(**kwargs)
 
         def to_sdf(self, version: str | None = None) -> ET.Element:
-            if self.__version__ is None and version is not None:
-                self.__version__ = version
-            elif version is not None and version != self.__version__:
-                return self.to_version(version).to_sdf()
-            version = self.__version__ or version
+            if self.sdfversion is None and version is not None:
+                self.sdfversion = version
+            elif version is not None and version != self.sdfversion:
+                return self.to_version(str(version)).to_sdf()
             el = ET.Element("origin")
             if self.pose is not None:
                 if cmp_version(version, "1.2") >= 0:
@@ -353,33 +266,29 @@ class Model(BaseModel):
     def __init__(
         self,
         sdf_version: str | None = None,
-        allow_auto_disable: bool = True,
-        canonical_link: str = "",
-        enable_wind: bool = False,
+        allow_auto_disable: bool | None = True,
+        canonical_link: str | None = "",
+        enable_wind: bool | None = False,
         frames: List["Frame"] = None,
         grippers: List["Gripper"] = None,
         includes: List["Model.Include"] = None,
         joints: List["Joint"] = None,
         links: List["Link"] = None,
         model_states: List["ModelState"] = None,
-        models: List["Model.ModelModel"] = None,
-        name: str = "__default__",
+        models: List["ModelState"] = None,
+        name: str | None = "__default__",
         origin: "Model.Origin" = None,
-        placement_frame: str = "",
+        placement_frame: str | None = "",
         plugins: List["Plugin"] = None,
         pose: "Pose" = None,
-        scale: _Vector3T = None,
-        self_collide: bool = False,
-        static: bool = False
+        scale: _Vector3T | None = None,
+        self_collide: bool | None = False,
+        static: bool | None = False
     ):
         super().__init__(sdf_version)
-        if scale is None:
-            scale = _vector3("1 1 1")
-        else:
-            scale = _vector3(scale)
-        self.allow_auto_disable = allow_auto_disable
-        self.canonical_link = canonical_link
-        self.enable_wind = enable_wind
+        self.allow_auto_disable = allow_auto_disable if allow_auto_disable is not None else True
+        self.canonical_link = canonical_link if canonical_link is not None else ""
+        self.enable_wind = enable_wind if enable_wind is not None else False
         self.frames = frames or []
         self.grippers = grippers or []
         self.includes = includes or []
@@ -387,72 +296,72 @@ class Model(BaseModel):
         self.links = links or []
         self.model_states = model_states or []
         self.models = models or []
-        self.name = name
+        self.name = name if name is not None else "__default__"
         self.origin = origin
-        self.placement_frame = placement_frame
+        self.placement_frame = placement_frame if placement_frame is not None else ""
         self.plugins = plugins or []
         self.pose = pose
-        self.scale = scale
-        self.self_collide = self_collide
-        self.static = static
+        self.scale = _vector3("1 1 1") if scale is None else _vector3(scale)
+        self.self_collide = self_collide if self_collide is not None else False
+        self.static = static if static is not None else False
         for _i, _c in enumerate(self.frames):
             if not hasattr(_c, 'to_version'): continue
-            if getattr(_c, '__version__', None) is None:
-                _c.__version__ = self.__version__
-            elif getattr(_c, '__version__', None) != self.__version__ and self.__version__ is not None:
-                self.frames[_i] = _c.to_version(self.__version__)
+            if getattr(_c, 'sdfversion', None) is None:
+                _c.sdfversion = self.sdfversion
+            elif getattr(_c, 'sdfversion', None) != self.sdfversion and self.sdfversion is not None:
+                self.frames[_i] = _c.to_version(self.sdfversion)
         for _i, _c in enumerate(self.grippers):
             if not hasattr(_c, 'to_version'): continue
-            if getattr(_c, '__version__', None) is None:
-                _c.__version__ = self.__version__
-            elif getattr(_c, '__version__', None) != self.__version__ and self.__version__ is not None:
-                self.grippers[_i] = _c.to_version(self.__version__)
+            if getattr(_c, 'sdfversion', None) is None:
+                _c.sdfversion = self.sdfversion
+            elif getattr(_c, 'sdfversion', None) != self.sdfversion and self.sdfversion is not None:
+                self.grippers[_i] = _c.to_version(self.sdfversion)
         for _i, _c in enumerate(self.includes):
             if not hasattr(_c, 'to_version'): continue
-            if getattr(_c, '__version__', None) is None:
-                _c.__version__ = self.__version__
-            elif getattr(_c, '__version__', None) != self.__version__ and self.__version__ is not None:
-                self.includes[_i] = _c.to_version(self.__version__)
+            if getattr(_c, 'sdfversion', None) is None:
+                _c.sdfversion = self.sdfversion
+            elif getattr(_c, 'sdfversion', None) != self.sdfversion and self.sdfversion is not None:
+                self.includes[_i] = _c.to_version(self.sdfversion)
         for _i, _c in enumerate(self.joints):
             if not hasattr(_c, 'to_version'): continue
-            if getattr(_c, '__version__', None) is None:
-                _c.__version__ = self.__version__
-            elif getattr(_c, '__version__', None) != self.__version__ and self.__version__ is not None:
-                self.joints[_i] = _c.to_version(self.__version__)
+            if getattr(_c, 'sdfversion', None) is None:
+                _c.sdfversion = self.sdfversion
+            elif getattr(_c, 'sdfversion', None) != self.sdfversion and self.sdfversion is not None:
+                self.joints[_i] = _c.to_version(self.sdfversion)
         for _i, _c in enumerate(self.links):
             if not hasattr(_c, 'to_version'): continue
-            if getattr(_c, '__version__', None) is None:
-                _c.__version__ = self.__version__
-            elif getattr(_c, '__version__', None) != self.__version__ and self.__version__ is not None:
-                self.links[_i] = _c.to_version(self.__version__)
+            if getattr(_c, 'sdfversion', None) is None:
+                _c.sdfversion = self.sdfversion
+            elif getattr(_c, 'sdfversion', None) != self.sdfversion and self.sdfversion is not None:
+                self.links[_i] = _c.to_version(self.sdfversion)
         for _i, _c in enumerate(self.model_states):
             if not hasattr(_c, 'to_version'): continue
-            if getattr(_c, '__version__', None) is None:
-                _c.__version__ = self.__version__
-            elif getattr(_c, '__version__', None) != self.__version__ and self.__version__ is not None:
-                self.model_states[_i] = _c.to_version(self.__version__)
+            if getattr(_c, 'sdfversion', None) is None:
+                _c.sdfversion = self.sdfversion
+            elif getattr(_c, 'sdfversion', None) != self.sdfversion and self.sdfversion is not None:
+                self.model_states[_i] = _c.to_version(self.sdfversion)
         for _i, _c in enumerate(self.models):
             if not hasattr(_c, 'to_version'): continue
-            if getattr(_c, '__version__', None) is None:
-                _c.__version__ = self.__version__
-            elif getattr(_c, '__version__', None) != self.__version__ and self.__version__ is not None:
-                self.models[_i] = _c.to_version(self.__version__)
+            if getattr(_c, 'sdfversion', None) is None:
+                _c.sdfversion = self.sdfversion
+            elif getattr(_c, 'sdfversion', None) != self.sdfversion and self.sdfversion is not None:
+                self.models[_i] = _c.to_version(self.sdfversion)
         if self.origin is not None and hasattr(self.origin, 'to_version'):
-            if getattr(self.origin, '__version__', None) is None:
-                self.origin.__version__ = self.__version__
-            elif getattr(self.origin, '__version__', None) != self.__version__ and self.__version__ is not None:
-                self.origin = self.origin.to_version(self.__version__)
+            if getattr(self.origin, 'sdfversion', None) is None:
+                self.origin.sdfversion = self.sdfversion
+            elif getattr(self.origin, 'sdfversion', None) != self.sdfversion and self.sdfversion is not None:
+                self.origin = self.origin.to_version(self.sdfversion)
         for _i, _c in enumerate(self.plugins):
             if not hasattr(_c, 'to_version'): continue
-            if getattr(_c, '__version__', None) is None:
-                _c.__version__ = self.__version__
-            elif getattr(_c, '__version__', None) != self.__version__ and self.__version__ is not None:
-                self.plugins[_i] = _c.to_version(self.__version__)
+            if getattr(_c, 'sdfversion', None) is None:
+                _c.sdfversion = self.sdfversion
+            elif getattr(_c, 'sdfversion', None) != self.sdfversion and self.sdfversion is not None:
+                self.plugins[_i] = _c.to_version(self.sdfversion)
         if self.pose is not None and hasattr(self.pose, 'to_version'):
-            if getattr(self.pose, '__version__', None) is None:
-                self.pose.__version__ = self.__version__
-            elif getattr(self.pose, '__version__', None) != self.__version__ and self.__version__ is not None:
-                self.pose = self.pose.to_version(self.__version__)
+            if getattr(self.pose, 'sdfversion', None) is None:
+                self.pose.sdfversion = self.sdfversion
+            elif getattr(self.pose, 'sdfversion', None) != self.sdfversion and self.sdfversion is not None:
+                self.pose = self.pose.to_version(self.sdfversion)
 
     def add_frame(self, *items: "Frame"):
         if self.frames is None:
@@ -484,7 +393,7 @@ class Model(BaseModel):
             self.model_states = []
         self.model_states.extend(items)
 
-    def add_model(self, *items: "Model.ModelModel"):
+    def add_model(self, *items: "ModelState"):
         if self.models is None:
             self.models = []
         self.models.extend(items)
@@ -544,27 +453,8 @@ class Model(BaseModel):
             raise ValueError(f"'self_collide' is not supported in SDF version {target_version} (removed in 1.8)")
         if self.static is not None and cmp_version(target_version, "1.2") >= 0:
             raise ValueError(f"'static' is not supported in SDF version {target_version} (removed in 1.2)")
-        kwargs = {"sdf_version": target_version}
-        kwargs["allow_auto_disable"] = self.allow_auto_disable
-        kwargs["canonical_link"] = self.canonical_link
-        kwargs["enable_wind"] = self.enable_wind
-        kwargs["frames"] = [c.to_version(target_version) if hasattr(c, "to_version") else c for c in (self.frames or [])]
-        kwargs["grippers"] = [c.to_version(target_version) if hasattr(c, "to_version") else c for c in (self.grippers or [])]
-        kwargs["includes"] = [c.to_version(target_version) if hasattr(c, "to_version") else c for c in (self.includes or [])]
-        kwargs["joints"] = [c.to_version(target_version) if hasattr(c, "to_version") else c for c in (self.joints or [])]
-        kwargs["links"] = [c.to_version(target_version) if hasattr(c, "to_version") else c for c in (self.links or [])]
-        kwargs["model_states"] = [c.to_version(target_version) if hasattr(c, "to_version") else c for c in (self.model_states or [])]
-        kwargs["models"] = [c.to_version(target_version) if hasattr(c, "to_version") else c for c in (self.models or [])]
-        kwargs["name"] = self.name
-        kwargs["origin"] = self.origin.to_version(target_version) if hasattr(self.origin, "to_version") else self.origin
-        kwargs["placement_frame"] = self.placement_frame
-        kwargs["plugins"] = [c.to_version(target_version) if hasattr(c, "to_version") else c for c in (self.plugins or [])]
-        kwargs["pose"] = self.pose.to_version(target_version) if hasattr(self.pose, "to_version") else self.pose
-        kwargs["scale"] = self.scale
-        kwargs["self_collide"] = self.self_collide
-        kwargs["static"] = self.static
-        new_obj = self.__class__(**kwargs)
-        return new_obj
+        kwargs: dict = {"sdf_version": target_version, "allow_auto_disable": self.allow_auto_disable, "canonical_link": self.canonical_link, "enable_wind": self.enable_wind, "frames": [c.to_version(target_version) if hasattr(c, "to_version") else c for c in (self.frames or [])], "grippers": [c.to_version(target_version) if hasattr(c, "to_version") else c for c in (self.grippers or [])], "includes": [c.to_version(target_version) if hasattr(c, "to_version") else c for c in (self.includes or [])], "joints": [c.to_version(target_version) if hasattr(c, "to_version") else c for c in (self.joints or [])], "links": [c.to_version(target_version) if hasattr(c, "to_version") else c for c in (self.links or [])], "model_states": [c.to_version(target_version) if hasattr(c, "to_version") else c for c in (self.model_states or [])], "models": [c.to_version(target_version) if hasattr(c, "to_version") else c for c in (self.models or [])], "name": self.name, "origin": self.origin.to_version(target_version) if self.origin is not None and hasattr(self.origin, "to_version") else self.origin, "placement_frame": self.placement_frame, "plugins": [c.to_version(target_version) if hasattr(c, "to_version") else c for c in (self.plugins or [])], "pose": self.pose.to_version(target_version) if self.pose is not None and hasattr(self.pose, "to_version") else self.pose, "scale": self.scale, "self_collide": self.self_collide, "static": self.static}
+        return self.__class__(**kwargs)
 
     def to_sdf(self, version: str | None = None) -> ET.Element:
         from ..elements.frame import Frame
@@ -574,11 +464,10 @@ class Model(BaseModel):
         from ..elements.model_state import ModelState
         from ..elements.plugin import Plugin
         from ..elements.pose import Pose
-        if self.__version__ is None and version is not None:
-            self.__version__ = version
-        elif version is not None and version != self.__version__:
-            return self.to_version(version).to_sdf()
-        version = self.__version__ or version
+        if self.sdfversion is None and version is not None:
+            self.sdfversion = version
+        elif version is not None and version != self.sdfversion:
+            return self.to_version(str(version)).to_sdf()
         el = ET.Element("model")
         if self.allow_auto_disable is not None:
             _c_tmp = ET.Element("allow_auto_disable")
@@ -591,10 +480,7 @@ class Model(BaseModel):
             _c_tmp.text = str(self.enable_wind).lower()
             el.append(_c_tmp)
         for item in (self.frames or []):
-            if hasattr(item, 'to_sdf'):
-                _child_res = item.to_sdf(version)
-            else:
-                _child_res = str(item)
+            _child_res = item.to_sdf(version)
             if isinstance(_child_res, str):
                 _item_el = ET.Element('frame')
                 _item_el.text = _child_res
@@ -602,10 +488,7 @@ class Model(BaseModel):
                 _item_el = _child_res
             el.append(_item_el)
         for item in (self.grippers or []):
-            if hasattr(item, 'to_sdf'):
-                _child_res = item.to_sdf(version)
-            else:
-                _child_res = str(item)
+            _child_res = item.to_sdf(version)
             if isinstance(_child_res, str):
                 _item_el = ET.Element('gripper')
                 _item_el.text = _child_res
@@ -613,10 +496,7 @@ class Model(BaseModel):
                 _item_el = _child_res
             el.append(_item_el)
         for item in (self.includes or []):
-            if hasattr(item, 'to_sdf'):
-                _child_res = item.to_sdf(version)
-            else:
-                _child_res = str(item)
+            _child_res = item.to_sdf(version)
             if isinstance(_child_res, str):
                 _item_el = ET.Element('include')
                 _item_el.text = _child_res
@@ -624,10 +504,7 @@ class Model(BaseModel):
                 _item_el = _child_res
             el.append(_item_el)
         for item in (self.joints or []):
-            if hasattr(item, 'to_sdf'):
-                _child_res = item.to_sdf(version)
-            else:
-                _child_res = str(item)
+            _child_res = item.to_sdf(version)
             if isinstance(_child_res, str):
                 _item_el = ET.Element('joint')
                 _item_el.text = _child_res
@@ -635,10 +512,7 @@ class Model(BaseModel):
                 _item_el = _child_res
             el.append(_item_el)
         for item in (self.links or []):
-            if hasattr(item, 'to_sdf'):
-                _child_res = item.to_sdf(version)
-            else:
-                _child_res = str(item)
+            _child_res = item.to_sdf(version)
             if isinstance(_child_res, str):
                 _item_el = ET.Element('link')
                 _item_el.text = _child_res
@@ -646,10 +520,7 @@ class Model(BaseModel):
                 _item_el = _child_res
             el.append(_item_el)
         for item in (self.model_states or []):
-            if hasattr(item, 'to_sdf'):
-                _child_res = item.to_sdf(version)
-            else:
-                _child_res = str(item)
+            _child_res = item.to_sdf(version)
             if isinstance(_child_res, str):
                 _item_el = ET.Element('model_state')
                 _item_el.text = _child_res
@@ -657,10 +528,7 @@ class Model(BaseModel):
                 _item_el = _child_res
             el.append(_item_el)
         for item in (self.models or []):
-            if hasattr(item, 'to_sdf'):
-                _child_res = item.to_sdf(version)
-            else:
-                _child_res = str(item)
+            _child_res = item.to_sdf(version)
             if isinstance(_child_res, str):
                 _item_el = ET.Element('model')
                 _item_el.text = _child_res
@@ -670,10 +538,7 @@ class Model(BaseModel):
         if self.name is not None:
             el.set("name", self.name)
         if self.origin is not None:
-            if hasattr(self.origin, 'to_sdf'):
-                _child_res = self.origin.to_sdf(version)
-            else:
-                _child_res = str(self.origin)
+            _child_res = self.origin.to_sdf(version)
             if isinstance(_child_res, str):
                 _item_el = ET.Element('origin')
                 _item_el.text = _child_res
@@ -683,10 +548,7 @@ class Model(BaseModel):
         if self.placement_frame is not None:
             el.set("placement_frame", self.placement_frame)
         for item in (self.plugins or []):
-            if hasattr(item, 'to_sdf'):
-                _child_res = item.to_sdf(version)
-            else:
-                _child_res = str(item)
+            _child_res = item.to_sdf(version)
             if isinstance(_child_res, str):
                 _item_el = ET.Element('plugin')
                 _item_el.text = _child_res
@@ -694,10 +556,7 @@ class Model(BaseModel):
                 _item_el = _child_res
             el.append(_item_el)
         if self.pose is not None:
-            if hasattr(self.pose, 'to_sdf'):
-                _child_res = self.pose.to_sdf(version)
-            else:
-                _child_res = str(self.pose)
+            _child_res = self.pose.to_sdf(version)
             if isinstance(_child_res, str):
                 _item_el = ET.Element('pose')
                 _item_el.text = _child_res
@@ -797,7 +656,7 @@ class Model(BaseModel):
             return SDFError(f"'model_states' is not supported in SDF version {version} (added in 1.12)")
         _models = []
         for c in el.findall("model"):
-            _res = cls.ModelModel._from_sdf(c, version)
+            _res = ModelState._from_sdf(c, version)
             if isinstance(_res, SDFError):
                 return _res.extend("model")
             _models.append(_res)

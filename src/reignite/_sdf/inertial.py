@@ -1,52 +1,20 @@
 ### THIS FILE WAS AUTO-GENERATED ###
 from __future__ import annotations
 
-import typing
 from xml.etree import ElementTree as ET
 
+from ..utils.utils import _parse_double
+import typing
 from typing import List
 
 from ..utils.model import BaseModel
 from ..utils.errors import SDFError
-from ..utils.pose import Pose as _SDFPose, _PoseT, _pose
+from ..utils.pose import Pose as _PoseT, _pose
 from ..utils.version import cmp_version
 
 if typing.TYPE_CHECKING:
     from ..elements.frame import Frame
     from ..elements.pose import Pose
-
-
-import math
-
-def _parse_int32(raw: str) -> int | SDFError:
-    try:
-        v = int(raw)
-        if not (-2147483648 <= v <= 2147483647):
-            return SDFError(f"int32 out of range: {v}")
-        return v
-    except ValueError:
-        return SDFError(f"Invalid int32: {raw}")
-
-
-def _parse_uint32(raw: str) -> int | SDFError:
-    try:
-        v = int(raw)
-        if not (0 <= v <= 4294967295):
-            return SDFError(f"uint32 out of range: {v}")
-        return v
-    except ValueError:
-        return SDFError(f"Invalid uint32: {raw}")
-
-
-def _parse_double(raw: str) -> float | SDFError:
-    try:
-        v = float(raw)
-        if not math.isfinite(v) or abs(v) > math.inf:
-            return SDFError(f"double out of range: {raw}")
-        return v
-    except ValueError:
-        return SDFError(f"Invalid double: {raw}")
-
 
 def _parse_pose(raw: str) -> _PoseT | SDFError:
     try:
@@ -55,88 +23,66 @@ def _parse_pose(raw: str) -> _PoseT | SDFError:
         return SDFError(str(e))
 
 
+# noinspection PyUnusedImports
 class Inertial(BaseModel):
     class FluidAddedMass(BaseModel):
         def __init__(
             self,
             sdf_version: str | None = None,
-            pp: float = 0.0,
-            pq: float = 0.0,
-            pr: float = 0.0,
-            qq: float = 0.0,
-            qr: float = 0.0,
-            rr: float = 0.0,
-            xp: float = 0.0,
-            xq: float = 0.0,
-            xr: float = 0.0,
-            xx: float = 0.0,
-            xy: float = 0.0,
-            xz: float = 0.0,
-            yp: float = 0.0,
-            yq: float = 0.0,
-            yr: float = 0.0,
-            yy: float = 0.0,
-            yz: float = 0.0,
-            zp: float = 0.0,
-            zq: float = 0.0,
-            zr: float = 0.0,
-            zz: float = 0.0
+            pp: float | None = 0.0,
+            pq: float | None = 0.0,
+            pr: float | None = 0.0,
+            qq: float | None = 0.0,
+            qr: float | None = 0.0,
+            rr: float | None = 0.0,
+            xp: float | None = 0.0,
+            xq: float | None = 0.0,
+            xr: float | None = 0.0,
+            xx: float | None = 0.0,
+            xy: float | None = 0.0,
+            xz: float | None = 0.0,
+            yp: float | None = 0.0,
+            yq: float | None = 0.0,
+            yr: float | None = 0.0,
+            yy: float | None = 0.0,
+            yz: float | None = 0.0,
+            zp: float | None = 0.0,
+            zq: float | None = 0.0,
+            zr: float | None = 0.0,
+            zz: float | None = 0.0
         ):
             super().__init__(sdf_version)
-            self.pp = pp
-            self.pq = pq
-            self.pr = pr
-            self.qq = qq
-            self.qr = qr
-            self.rr = rr
-            self.xp = xp
-            self.xq = xq
-            self.xr = xr
-            self.xx = xx
-            self.xy = xy
-            self.xz = xz
-            self.yp = yp
-            self.yq = yq
-            self.yr = yr
-            self.yy = yy
-            self.yz = yz
-            self.zp = zp
-            self.zq = zq
-            self.zr = zr
-            self.zz = zz
+            self.pp = pp if pp is not None else 0.0
+            self.pq = pq if pq is not None else 0.0
+            self.pr = pr if pr is not None else 0.0
+            self.qq = qq if qq is not None else 0.0
+            self.qr = qr if qr is not None else 0.0
+            self.rr = rr if rr is not None else 0.0
+            self.xp = xp if xp is not None else 0.0
+            self.xq = xq if xq is not None else 0.0
+            self.xr = xr if xr is not None else 0.0
+            self.xx = xx if xx is not None else 0.0
+            self.xy = xy if xy is not None else 0.0
+            self.xz = xz if xz is not None else 0.0
+            self.yp = yp if yp is not None else 0.0
+            self.yq = yq if yq is not None else 0.0
+            self.yr = yr if yr is not None else 0.0
+            self.yy = yy if yy is not None else 0.0
+            self.yz = yz if yz is not None else 0.0
+            self.zp = zp if zp is not None else 0.0
+            self.zq = zq if zq is not None else 0.0
+            self.zr = zr if zr is not None else 0.0
+            self.zz = zz if zz is not None else 0.0
 
         def to_version(self, target_version: str) -> "Inertial.FluidAddedMass":
-            kwargs = {"sdf_version": target_version}
-            kwargs["pp"] = self.pp
-            kwargs["pq"] = self.pq
-            kwargs["pr"] = self.pr
-            kwargs["qq"] = self.qq
-            kwargs["qr"] = self.qr
-            kwargs["rr"] = self.rr
-            kwargs["xp"] = self.xp
-            kwargs["xq"] = self.xq
-            kwargs["xr"] = self.xr
-            kwargs["xx"] = self.xx
-            kwargs["xy"] = self.xy
-            kwargs["xz"] = self.xz
-            kwargs["yp"] = self.yp
-            kwargs["yq"] = self.yq
-            kwargs["yr"] = self.yr
-            kwargs["yy"] = self.yy
-            kwargs["yz"] = self.yz
-            kwargs["zp"] = self.zp
-            kwargs["zq"] = self.zq
-            kwargs["zr"] = self.zr
-            kwargs["zz"] = self.zz
-            new_obj = self.__class__(**kwargs)
-            return new_obj
+            kwargs: dict = {"sdf_version": target_version, "pp": self.pp, "pq": self.pq, "pr": self.pr, "qq": self.qq, "qr": self.qr, "rr": self.rr, "xp": self.xp, "xq": self.xq, "xr": self.xr, "xx": self.xx, "xy": self.xy, "xz": self.xz, "yp": self.yp, "yq": self.yq, "yr": self.yr, "yy": self.yy, "yz": self.yz, "zp": self.zp, "zq": self.zq, "zr": self.zr, "zz": self.zz}
+            return self.__class__(**kwargs)
 
         def to_sdf(self, version: str | None = None) -> ET.Element:
-            if self.__version__ is None and version is not None:
-                self.__version__ = version
-            elif version is not None and version != self.__version__:
-                return self.to_version(version).to_sdf()
-            version = self.__version__ or version
+            if self.sdfversion is None and version is not None:
+                self.sdfversion = version
+            elif version is not None and version != self.sdfversion:
+                return self.to_version(str(version)).to_sdf()
             el = ET.Element("fluid_added_mass")
             if self.pp is not None:
                 _c_tmp = ET.Element("pp")
@@ -421,20 +367,20 @@ class Inertial(BaseModel):
         def __init__(
             self,
             sdf_version: str | None = None,
-            ixx: float = 0.0,
-            ixy: float = 0.0,
-            ixz: float = 0.0,
-            iyy: float = 0.0,
-            iyz: float = 0.0,
-            izz: float = 0.0
+            ixx: float | None = 0.0,
+            ixy: float | None = 0.0,
+            ixz: float | None = 0.0,
+            iyy: float | None = 0.0,
+            iyz: float | None = 0.0,
+            izz: float | None = 0.0
         ):
             super().__init__(sdf_version)
-            self.ixx = ixx
-            self.ixy = ixy
-            self.ixz = ixz
-            self.iyy = iyy
-            self.iyz = iyz
-            self.izz = izz
+            self.ixx = ixx if ixx is not None else 0.0
+            self.ixy = ixy if ixy is not None else 0.0
+            self.ixz = ixz if ixz is not None else 0.0
+            self.iyy = iyy if iyy is not None else 0.0
+            self.iyz = iyz if iyz is not None else 0.0
+            self.izz = izz if izz is not None else 0.0
 
         def to_version(self, target_version: str) -> "Inertial.Inertia":
             if self.ixx is not None and cmp_version(target_version, "1.2") >= 0:
@@ -449,22 +395,14 @@ class Inertial(BaseModel):
                 raise ValueError(f"'iyz' is not supported in SDF version {target_version} (removed in 1.2)")
             if self.izz is not None and cmp_version(target_version, "1.2") >= 0:
                 raise ValueError(f"'izz' is not supported in SDF version {target_version} (removed in 1.2)")
-            kwargs = {"sdf_version": target_version}
-            kwargs["ixx"] = self.ixx
-            kwargs["ixy"] = self.ixy
-            kwargs["ixz"] = self.ixz
-            kwargs["iyy"] = self.iyy
-            kwargs["iyz"] = self.iyz
-            kwargs["izz"] = self.izz
-            new_obj = self.__class__(**kwargs)
-            return new_obj
+            kwargs: dict = {"sdf_version": target_version, "ixx": self.ixx, "ixy": self.ixy, "ixz": self.ixz, "iyy": self.iyy, "iyz": self.iyz, "izz": self.izz}
+            return self.__class__(**kwargs)
 
         def to_sdf(self, version: str | None = None) -> ET.Element:
-            if self.__version__ is None and version is not None:
-                self.__version__ = version
-            elif version is not None and version != self.__version__:
-                return self.to_version(version).to_sdf()
-            version = self.__version__ or version
+            if self.sdfversion is None and version is not None:
+                self.sdfversion = version
+            elif version is not None and version != self.sdfversion:
+                return self.to_version(str(version)).to_sdf()
             el = ET.Element("inertia")
             if self.ixx is not None:
                 el.set("ixx", str(self.ixx))
@@ -503,26 +441,19 @@ class Inertial(BaseModel):
             return cls(sdf_version=version, ixx=_ixx, ixy=_ixy, ixz=_ixz, iyy=_iyy, iyz=_iyz, izz=_izz)
 
     class Origin(BaseModel):
-        def __init__(self, sdf_version: str | None = None, pose: _PoseT = None):
+        def __init__(self, sdf_version: str | None = None, pose: _PoseT | None = None):
             super().__init__(sdf_version)
-            if pose is None:
-                pose = _pose("0 0 0 0 0 0")
-            else:
-                pose = _pose(pose)
-            self.pose = pose
+            self.pose = _pose("0 0 0 0 0 0") if pose is None else _pose(pose)
 
         def to_version(self, target_version: str) -> "Inertial.Origin":
-            kwargs = {"sdf_version": target_version}
-            kwargs["pose"] = self.pose
-            new_obj = self.__class__(**kwargs)
-            return new_obj
+            kwargs: dict = {"sdf_version": target_version, "pose": self.pose}
+            return self.__class__(**kwargs)
 
         def to_sdf(self, version: str | None = None) -> ET.Element:
-            if self.__version__ is None and version is not None:
-                self.__version__ = version
-            elif version is not None and version != self.__version__:
-                return self.to_version(version).to_sdf()
-            version = self.__version__ or version
+            if self.sdfversion is None and version is not None:
+                self.sdfversion = version
+            elif version is not None and version != self.sdfversion:
+                return self.to_version(str(version)).to_sdf()
             el = ET.Element("origin")
             if self.pose is not None:
                 if cmp_version(version, "1.2") >= 0:
@@ -550,52 +481,52 @@ class Inertial(BaseModel):
     def __init__(
         self,
         sdf_version: str | None = None,
-        auto: bool = False,
-        auto_inertia_params: None = None,
-        density: float = 1.0,
+        auto: bool | None = False,
+        auto_inertia_params: None | None = None,
+        density: float | None = 1.0,
         fluid_added_mass: "Inertial.FluidAddedMass" = None,
         frames: List["Frame"] = None,
         inertia: "Inertial.Inertia" = None,
-        mass: float = 1.0,
+        mass: float | None = 1.0,
         origin: "Inertial.Origin" = None,
         pose: "Pose" = None
     ):
         super().__init__(sdf_version)
-        self.auto = auto
+        self.auto = auto if auto is not None else False
         self.auto_inertia_params = auto_inertia_params
-        self.density = density
+        self.density = density if density is not None else 1.0
         self.fluid_added_mass = fluid_added_mass
         self.frames = frames or []
         self.inertia = inertia
-        self.mass = mass
+        self.mass = mass if mass is not None else 1.0
         self.origin = origin
         self.pose = pose
         if self.fluid_added_mass is not None and hasattr(self.fluid_added_mass, 'to_version'):
-            if getattr(self.fluid_added_mass, '__version__', None) is None:
-                self.fluid_added_mass.__version__ = self.__version__
-            elif getattr(self.fluid_added_mass, '__version__', None) != self.__version__ and self.__version__ is not None:
-                self.fluid_added_mass = self.fluid_added_mass.to_version(self.__version__)
+            if getattr(self.fluid_added_mass, 'sdfversion', None) is None:
+                self.fluid_added_mass.sdfversion = self.sdfversion
+            elif getattr(self.fluid_added_mass, 'sdfversion', None) != self.sdfversion and self.sdfversion is not None:
+                self.fluid_added_mass = self.fluid_added_mass.to_version(self.sdfversion)
         for _i, _c in enumerate(self.frames):
             if not hasattr(_c, 'to_version'): continue
-            if getattr(_c, '__version__', None) is None:
-                _c.__version__ = self.__version__
-            elif getattr(_c, '__version__', None) != self.__version__ and self.__version__ is not None:
-                self.frames[_i] = _c.to_version(self.__version__)
+            if getattr(_c, 'sdfversion', None) is None:
+                _c.sdfversion = self.sdfversion
+            elif getattr(_c, 'sdfversion', None) != self.sdfversion and self.sdfversion is not None:
+                self.frames[_i] = _c.to_version(self.sdfversion)
         if self.inertia is not None and hasattr(self.inertia, 'to_version'):
-            if getattr(self.inertia, '__version__', None) is None:
-                self.inertia.__version__ = self.__version__
-            elif getattr(self.inertia, '__version__', None) != self.__version__ and self.__version__ is not None:
-                self.inertia = self.inertia.to_version(self.__version__)
+            if getattr(self.inertia, 'sdfversion', None) is None:
+                self.inertia.sdfversion = self.sdfversion
+            elif getattr(self.inertia, 'sdfversion', None) != self.sdfversion and self.sdfversion is not None:
+                self.inertia = self.inertia.to_version(self.sdfversion)
         if self.origin is not None and hasattr(self.origin, 'to_version'):
-            if getattr(self.origin, '__version__', None) is None:
-                self.origin.__version__ = self.__version__
-            elif getattr(self.origin, '__version__', None) != self.__version__ and self.__version__ is not None:
-                self.origin = self.origin.to_version(self.__version__)
+            if getattr(self.origin, 'sdfversion', None) is None:
+                self.origin.sdfversion = self.sdfversion
+            elif getattr(self.origin, 'sdfversion', None) != self.sdfversion and self.sdfversion is not None:
+                self.origin = self.origin.to_version(self.sdfversion)
         if self.pose is not None and hasattr(self.pose, 'to_version'):
-            if getattr(self.pose, '__version__', None) is None:
-                self.pose.__version__ = self.__version__
-            elif getattr(self.pose, '__version__', None) != self.__version__ and self.__version__ is not None:
-                self.pose = self.pose.to_version(self.__version__)
+            if getattr(self.pose, 'sdfversion', None) is None:
+                self.pose.sdfversion = self.sdfversion
+            elif getattr(self.pose, 'sdfversion', None) != self.sdfversion and self.sdfversion is not None:
+                self.pose = self.pose.to_version(self.sdfversion)
 
     def add_frame(self, *items: "Frame"):
         if self.frames is None:
@@ -623,27 +554,16 @@ class Inertial(BaseModel):
             raise ValueError(f"'origin' is not supported in SDF version {target_version} (removed in 1.2)")
         if self.pose is not None and cmp_version(target_version, "1.2") < 0:
             raise ValueError(f"'pose' is not supported in SDF version {target_version} (added in 1.2)")
-        kwargs = {"sdf_version": target_version}
-        kwargs["auto"] = self.auto
-        kwargs["auto_inertia_params"] = self.auto_inertia_params
-        kwargs["density"] = self.density
-        kwargs["fluid_added_mass"] = self.fluid_added_mass.to_version(target_version) if hasattr(self.fluid_added_mass, "to_version") else self.fluid_added_mass
-        kwargs["frames"] = [c.to_version(target_version) if hasattr(c, "to_version") else c for c in (self.frames or [])]
-        kwargs["inertia"] = self.inertia.to_version(target_version) if hasattr(self.inertia, "to_version") else self.inertia
-        kwargs["mass"] = self.mass
-        kwargs["origin"] = self.origin.to_version(target_version) if hasattr(self.origin, "to_version") else self.origin
-        kwargs["pose"] = self.pose.to_version(target_version) if hasattr(self.pose, "to_version") else self.pose
-        new_obj = self.__class__(**kwargs)
-        return new_obj
+        kwargs: dict = {"sdf_version": target_version, "auto": self.auto, "auto_inertia_params": self.auto_inertia_params, "density": self.density, "fluid_added_mass": self.fluid_added_mass.to_version(target_version) if self.fluid_added_mass is not None and hasattr(self.fluid_added_mass, "to_version") else self.fluid_added_mass, "frames": [c.to_version(target_version) if hasattr(c, "to_version") else c for c in (self.frames or [])], "inertia": self.inertia.to_version(target_version) if self.inertia is not None and hasattr(self.inertia, "to_version") else self.inertia, "mass": self.mass, "origin": self.origin.to_version(target_version) if self.origin is not None and hasattr(self.origin, "to_version") else self.origin, "pose": self.pose.to_version(target_version) if self.pose is not None and hasattr(self.pose, "to_version") else self.pose}
+        return self.__class__(**kwargs)
 
     def to_sdf(self, version: str | None = None) -> ET.Element:
         from ..elements.frame import Frame
         from ..elements.pose import Pose
-        if self.__version__ is None and version is not None:
-            self.__version__ = version
-        elif version is not None and version != self.__version__:
-            return self.to_version(version).to_sdf()
-        version = self.__version__ or version
+        if self.sdfversion is None and version is not None:
+            self.sdfversion = version
+        elif version is not None and version != self.sdfversion:
+            return self.to_version(str(version)).to_sdf()
         el = ET.Element("inertial")
         if self.auto is not None:
             el.set("auto", str(self.auto).lower())
@@ -654,10 +574,7 @@ class Inertial(BaseModel):
         if self.density is not None:
             el.set("density", str(self.density))
         if self.fluid_added_mass is not None:
-            if hasattr(self.fluid_added_mass, 'to_sdf'):
-                _child_res = self.fluid_added_mass.to_sdf(version)
-            else:
-                _child_res = str(self.fluid_added_mass)
+            _child_res = self.fluid_added_mass.to_sdf(version)
             if isinstance(_child_res, str):
                 _item_el = ET.Element('fluid_added_mass')
                 _item_el.text = _child_res
@@ -665,10 +582,7 @@ class Inertial(BaseModel):
                 _item_el = _child_res
             el.append(_item_el)
         for item in (self.frames or []):
-            if hasattr(item, 'to_sdf'):
-                _child_res = item.to_sdf(version)
-            else:
-                _child_res = str(item)
+            _child_res = item.to_sdf(version)
             if isinstance(_child_res, str):
                 _item_el = ET.Element('frame')
                 _item_el.text = _child_res
@@ -676,10 +590,7 @@ class Inertial(BaseModel):
                 _item_el = _child_res
             el.append(_item_el)
         if self.inertia is not None:
-            if hasattr(self.inertia, 'to_sdf'):
-                _child_res = self.inertia.to_sdf(version)
-            else:
-                _child_res = str(self.inertia)
+            _child_res = self.inertia.to_sdf(version)
             if isinstance(_child_res, str):
                 _item_el = ET.Element('inertia')
                 _item_el.text = _child_res
@@ -689,10 +600,7 @@ class Inertial(BaseModel):
         if self.mass is not None:
             el.set("mass", str(self.mass))
         if self.origin is not None:
-            if hasattr(self.origin, 'to_sdf'):
-                _child_res = self.origin.to_sdf(version)
-            else:
-                _child_res = str(self.origin)
+            _child_res = self.origin.to_sdf(version)
             if isinstance(_child_res, str):
                 _item_el = ET.Element('origin')
                 _item_el.text = _child_res
@@ -700,10 +608,7 @@ class Inertial(BaseModel):
                 _item_el = _child_res
             el.append(_item_el)
         if self.pose is not None:
-            if hasattr(self.pose, 'to_sdf'):
-                _child_res = self.pose.to_sdf(version)
-            else:
-                _child_res = str(self.pose)
+            _child_res = self.pose.to_sdf(version)
             if isinstance(_child_res, str):
                 _item_el = ET.Element('pose')
                 _item_el.text = _child_res

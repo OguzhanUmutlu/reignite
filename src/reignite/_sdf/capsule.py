@@ -1,65 +1,34 @@
 ### THIS FILE WAS AUTO-GENERATED ###
 from __future__ import annotations
 
-import typing
 from xml.etree import ElementTree as ET
 
+from ..utils.utils import _parse_double
 from ..utils.model import BaseModel
 from ..utils.errors import SDFError
 
 
-import math
-
-def _parse_int32(raw: str) -> int | SDFError:
-    try:
-        v = int(raw)
-        if not (-2147483648 <= v <= 2147483647):
-            return SDFError(f"int32 out of range: {v}")
-        return v
-    except ValueError:
-        return SDFError(f"Invalid int32: {raw}")
-
-
-def _parse_uint32(raw: str) -> int | SDFError:
-    try:
-        v = int(raw)
-        if not (0 <= v <= 4294967295):
-            return SDFError(f"uint32 out of range: {v}")
-        return v
-    except ValueError:
-        return SDFError(f"Invalid uint32: {raw}")
-
-
-def _parse_double(raw: str) -> float | SDFError:
-    try:
-        v = float(raw)
-        if not math.isfinite(v) or abs(v) > math.inf:
-            return SDFError(f"double out of range: {raw}")
-        return v
-    except ValueError:
-        return SDFError(f"Invalid double: {raw}")
-
-
-
+# noinspection PyUnusedImports
 class Capsule(BaseModel):
-    def __init__(self, sdf_version: str | None = None, length: float = 1, radius: float = 0.5):
+    def __init__(
+        self,
+        sdf_version: str | None = None,
+        length: float | None = 1,
+        radius: float | None = 0.5
+    ):
         super().__init__(sdf_version)
-        self.length = length
-        self.radius = radius
+        self.length = length if length is not None else 1
+        self.radius = radius if radius is not None else 0.5
 
     def to_version(self, target_version: str) -> "Capsule":
-        kwargs = {"sdf_version": target_version}
-        kwargs["length"] = self.length
-        kwargs["radius"] = self.radius
-        new_obj = self.__class__(**kwargs)
-        return new_obj
+        kwargs: dict = {"sdf_version": target_version, "length": self.length, "radius": self.radius}
+        return self.__class__(**kwargs)
 
     def to_sdf(self, version: str | None = None) -> ET.Element:
-        if self.__version__ is None and version is not None:
-            self.__version__ = version
-        elif version is not None and version != self.__version__:
-            return self.to_version(version).to_sdf()
-        version = self.__version__ or version
+        if self.sdfversion is None and version is not None:
+            self.sdfversion = version
+        elif version is not None and version != self.sdfversion:
+            return self.to_version(str(version)).to_sdf()
         el = ET.Element("capsule")
         if self.length is not None:
             _c_tmp = ET.Element("length")

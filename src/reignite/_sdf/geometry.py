@@ -1,9 +1,9 @@
 ### THIS FILE WAS AUTO-GENERATED ###
 from __future__ import annotations
 
-import typing
 from xml.etree import ElementTree as ET
 
+import typing
 from ..utils.model import BaseModel
 from ..utils.errors import SDFError
 from ..utils.version import cmp_version
@@ -22,6 +22,7 @@ if typing.TYPE_CHECKING:
     from ..elements.sphere import Sphere
 
 
+# noinspection PyUnusedImports
 class Geometry(BaseModel):
     def __init__(
         self,
@@ -31,7 +32,7 @@ class Geometry(BaseModel):
         cone: "Cone" = None,
         cylinder: "Cylinder" = None,
         ellipsoid: "Ellipsoid" = None,
-        empty: None = None,
+        empty: None | None = None,
         heightmap: "Heightmap" = None,
         image: "Image" = None,
         mesh: "Mesh" = None,
@@ -53,60 +54,60 @@ class Geometry(BaseModel):
         self.polyline = polyline
         self.sphere = sphere
         if self.box is not None and hasattr(self.box, 'to_version'):
-            if getattr(self.box, '__version__', None) is None:
-                self.box.__version__ = self.__version__
-            elif getattr(self.box, '__version__', None) != self.__version__ and self.__version__ is not None:
-                self.box = self.box.to_version(self.__version__)
+            if getattr(self.box, 'sdfversion', None) is None:
+                self.box.sdfversion = self.sdfversion
+            elif getattr(self.box, 'sdfversion', None) != self.sdfversion and self.sdfversion is not None:
+                self.box = self.box.to_version(self.sdfversion)
         if self.capsule is not None and hasattr(self.capsule, 'to_version'):
-            if getattr(self.capsule, '__version__', None) is None:
-                self.capsule.__version__ = self.__version__
-            elif getattr(self.capsule, '__version__', None) != self.__version__ and self.__version__ is not None:
-                self.capsule = self.capsule.to_version(self.__version__)
+            if getattr(self.capsule, 'sdfversion', None) is None:
+                self.capsule.sdfversion = self.sdfversion
+            elif getattr(self.capsule, 'sdfversion', None) != self.sdfversion and self.sdfversion is not None:
+                self.capsule = self.capsule.to_version(self.sdfversion)
         if self.cone is not None and hasattr(self.cone, 'to_version'):
-            if getattr(self.cone, '__version__', None) is None:
-                self.cone.__version__ = self.__version__
-            elif getattr(self.cone, '__version__', None) != self.__version__ and self.__version__ is not None:
-                self.cone = self.cone.to_version(self.__version__)
+            if getattr(self.cone, 'sdfversion', None) is None:
+                self.cone.sdfversion = self.sdfversion
+            elif getattr(self.cone, 'sdfversion', None) != self.sdfversion and self.sdfversion is not None:
+                self.cone = self.cone.to_version(self.sdfversion)
         if self.cylinder is not None and hasattr(self.cylinder, 'to_version'):
-            if getattr(self.cylinder, '__version__', None) is None:
-                self.cylinder.__version__ = self.__version__
-            elif getattr(self.cylinder, '__version__', None) != self.__version__ and self.__version__ is not None:
-                self.cylinder = self.cylinder.to_version(self.__version__)
+            if getattr(self.cylinder, 'sdfversion', None) is None:
+                self.cylinder.sdfversion = self.sdfversion
+            elif getattr(self.cylinder, 'sdfversion', None) != self.sdfversion and self.sdfversion is not None:
+                self.cylinder = self.cylinder.to_version(self.sdfversion)
         if self.ellipsoid is not None and hasattr(self.ellipsoid, 'to_version'):
-            if getattr(self.ellipsoid, '__version__', None) is None:
-                self.ellipsoid.__version__ = self.__version__
-            elif getattr(self.ellipsoid, '__version__', None) != self.__version__ and self.__version__ is not None:
-                self.ellipsoid = self.ellipsoid.to_version(self.__version__)
+            if getattr(self.ellipsoid, 'sdfversion', None) is None:
+                self.ellipsoid.sdfversion = self.sdfversion
+            elif getattr(self.ellipsoid, 'sdfversion', None) != self.sdfversion and self.sdfversion is not None:
+                self.ellipsoid = self.ellipsoid.to_version(self.sdfversion)
         if self.heightmap is not None and hasattr(self.heightmap, 'to_version'):
-            if getattr(self.heightmap, '__version__', None) is None:
-                self.heightmap.__version__ = self.__version__
-            elif getattr(self.heightmap, '__version__', None) != self.__version__ and self.__version__ is not None:
-                self.heightmap = self.heightmap.to_version(self.__version__)
+            if getattr(self.heightmap, 'sdfversion', None) is None:
+                self.heightmap.sdfversion = self.sdfversion
+            elif getattr(self.heightmap, 'sdfversion', None) != self.sdfversion and self.sdfversion is not None:
+                self.heightmap = self.heightmap.to_version(self.sdfversion)
         if self.image is not None and hasattr(self.image, 'to_version'):
-            if getattr(self.image, '__version__', None) is None:
-                self.image.__version__ = self.__version__
-            elif getattr(self.image, '__version__', None) != self.__version__ and self.__version__ is not None:
-                self.image = self.image.to_version(self.__version__)
+            if getattr(self.image, 'sdfversion', None) is None:
+                self.image.sdfversion = self.sdfversion
+            elif getattr(self.image, 'sdfversion', None) != self.sdfversion and self.sdfversion is not None:
+                self.image = self.image.to_version(self.sdfversion)
         if self.mesh is not None and hasattr(self.mesh, 'to_version'):
-            if getattr(self.mesh, '__version__', None) is None:
-                self.mesh.__version__ = self.__version__
-            elif getattr(self.mesh, '__version__', None) != self.__version__ and self.__version__ is not None:
-                self.mesh = self.mesh.to_version(self.__version__)
+            if getattr(self.mesh, 'sdfversion', None) is None:
+                self.mesh.sdfversion = self.sdfversion
+            elif getattr(self.mesh, 'sdfversion', None) != self.sdfversion and self.sdfversion is not None:
+                self.mesh = self.mesh.to_version(self.sdfversion)
         if self.plane is not None and hasattr(self.plane, 'to_version'):
-            if getattr(self.plane, '__version__', None) is None:
-                self.plane.__version__ = self.__version__
-            elif getattr(self.plane, '__version__', None) != self.__version__ and self.__version__ is not None:
-                self.plane = self.plane.to_version(self.__version__)
+            if getattr(self.plane, 'sdfversion', None) is None:
+                self.plane.sdfversion = self.sdfversion
+            elif getattr(self.plane, 'sdfversion', None) != self.sdfversion and self.sdfversion is not None:
+                self.plane = self.plane.to_version(self.sdfversion)
         if self.polyline is not None and hasattr(self.polyline, 'to_version'):
-            if getattr(self.polyline, '__version__', None) is None:
-                self.polyline.__version__ = self.__version__
-            elif getattr(self.polyline, '__version__', None) != self.__version__ and self.__version__ is not None:
-                self.polyline = self.polyline.to_version(self.__version__)
+            if getattr(self.polyline, 'sdfversion', None) is None:
+                self.polyline.sdfversion = self.sdfversion
+            elif getattr(self.polyline, 'sdfversion', None) != self.sdfversion and self.sdfversion is not None:
+                self.polyline = self.polyline.to_version(self.sdfversion)
         if self.sphere is not None and hasattr(self.sphere, 'to_version'):
-            if getattr(self.sphere, '__version__', None) is None:
-                self.sphere.__version__ = self.__version__
-            elif getattr(self.sphere, '__version__', None) != self.__version__ and self.__version__ is not None:
-                self.sphere = self.sphere.to_version(self.__version__)
+            if getattr(self.sphere, 'sdfversion', None) is None:
+                self.sphere.sdfversion = self.sdfversion
+            elif getattr(self.sphere, 'sdfversion', None) != self.sdfversion and self.sdfversion is not None:
+                self.sphere = self.sphere.to_version(self.sdfversion)
 
     def to_version(self, target_version: str) -> "Geometry":
         from ..elements.box import Box
@@ -130,21 +131,8 @@ class Geometry(BaseModel):
             raise ValueError(f"'empty' is not supported in SDF version {target_version} (added in 1.3)")
         if self.polyline is not None and cmp_version(target_version, "1.5") < 0:
             raise ValueError(f"'polyline' is not supported in SDF version {target_version} (added in 1.5)")
-        kwargs = {"sdf_version": target_version}
-        kwargs["box"] = self.box.to_version(target_version) if hasattr(self.box, "to_version") else self.box
-        kwargs["capsule"] = self.capsule.to_version(target_version) if hasattr(self.capsule, "to_version") else self.capsule
-        kwargs["cone"] = self.cone.to_version(target_version) if hasattr(self.cone, "to_version") else self.cone
-        kwargs["cylinder"] = self.cylinder.to_version(target_version) if hasattr(self.cylinder, "to_version") else self.cylinder
-        kwargs["ellipsoid"] = self.ellipsoid.to_version(target_version) if hasattr(self.ellipsoid, "to_version") else self.ellipsoid
-        kwargs["empty"] = self.empty
-        kwargs["heightmap"] = self.heightmap.to_version(target_version) if hasattr(self.heightmap, "to_version") else self.heightmap
-        kwargs["image"] = self.image.to_version(target_version) if hasattr(self.image, "to_version") else self.image
-        kwargs["mesh"] = self.mesh.to_version(target_version) if hasattr(self.mesh, "to_version") else self.mesh
-        kwargs["plane"] = self.plane.to_version(target_version) if hasattr(self.plane, "to_version") else self.plane
-        kwargs["polyline"] = self.polyline.to_version(target_version) if hasattr(self.polyline, "to_version") else self.polyline
-        kwargs["sphere"] = self.sphere.to_version(target_version) if hasattr(self.sphere, "to_version") else self.sphere
-        new_obj = self.__class__(**kwargs)
-        return new_obj
+        kwargs: dict = {"sdf_version": target_version, "box": self.box.to_version(target_version) if self.box is not None and hasattr(self.box, "to_version") else self.box, "capsule": self.capsule.to_version(target_version) if self.capsule is not None and hasattr(self.capsule, "to_version") else self.capsule, "cone": self.cone.to_version(target_version) if self.cone is not None and hasattr(self.cone, "to_version") else self.cone, "cylinder": self.cylinder.to_version(target_version) if self.cylinder is not None and hasattr(self.cylinder, "to_version") else self.cylinder, "ellipsoid": self.ellipsoid.to_version(target_version) if self.ellipsoid is not None and hasattr(self.ellipsoid, "to_version") else self.ellipsoid, "empty": self.empty, "heightmap": self.heightmap.to_version(target_version) if self.heightmap is not None and hasattr(self.heightmap, "to_version") else self.heightmap, "image": self.image.to_version(target_version) if self.image is not None and hasattr(self.image, "to_version") else self.image, "mesh": self.mesh.to_version(target_version) if self.mesh is not None and hasattr(self.mesh, "to_version") else self.mesh, "plane": self.plane.to_version(target_version) if self.plane is not None and hasattr(self.plane, "to_version") else self.plane, "polyline": self.polyline.to_version(target_version) if self.polyline is not None and hasattr(self.polyline, "to_version") else self.polyline, "sphere": self.sphere.to_version(target_version) if self.sphere is not None and hasattr(self.sphere, "to_version") else self.sphere}
+        return self.__class__(**kwargs)
 
     def to_sdf(self, version: str | None = None) -> ET.Element:
         from ..elements.box import Box
@@ -158,17 +146,13 @@ class Geometry(BaseModel):
         from ..elements.plane import Plane
         from ..elements.polyline import Polyline
         from ..elements.sphere import Sphere
-        if self.__version__ is None and version is not None:
-            self.__version__ = version
-        elif version is not None and version != self.__version__:
-            return self.to_version(version).to_sdf()
-        version = self.__version__ or version
+        if self.sdfversion is None and version is not None:
+            self.sdfversion = version
+        elif version is not None and version != self.sdfversion:
+            return self.to_version(str(version)).to_sdf()
         el = ET.Element("geometry")
         if self.box is not None:
-            if hasattr(self.box, 'to_sdf'):
-                _child_res = self.box.to_sdf(version)
-            else:
-                _child_res = str(self.box)
+            _child_res = self.box.to_sdf(version)
             if isinstance(_child_res, str):
                 _item_el = ET.Element('box')
                 _item_el.text = _child_res
@@ -176,10 +160,7 @@ class Geometry(BaseModel):
                 _item_el = _child_res
             el.append(_item_el)
         if self.capsule is not None:
-            if hasattr(self.capsule, 'to_sdf'):
-                _child_res = self.capsule.to_sdf(version)
-            else:
-                _child_res = str(self.capsule)
+            _child_res = self.capsule.to_sdf(version)
             if isinstance(_child_res, str):
                 _item_el = ET.Element('capsule')
                 _item_el.text = _child_res
@@ -187,10 +168,7 @@ class Geometry(BaseModel):
                 _item_el = _child_res
             el.append(_item_el)
         if self.cone is not None:
-            if hasattr(self.cone, 'to_sdf'):
-                _child_res = self.cone.to_sdf(version)
-            else:
-                _child_res = str(self.cone)
+            _child_res = self.cone.to_sdf(version)
             if isinstance(_child_res, str):
                 _item_el = ET.Element('cone')
                 _item_el.text = _child_res
@@ -198,10 +176,7 @@ class Geometry(BaseModel):
                 _item_el = _child_res
             el.append(_item_el)
         if self.cylinder is not None:
-            if hasattr(self.cylinder, 'to_sdf'):
-                _child_res = self.cylinder.to_sdf(version)
-            else:
-                _child_res = str(self.cylinder)
+            _child_res = self.cylinder.to_sdf(version)
             if isinstance(_child_res, str):
                 _item_el = ET.Element('cylinder')
                 _item_el.text = _child_res
@@ -209,10 +184,7 @@ class Geometry(BaseModel):
                 _item_el = _child_res
             el.append(_item_el)
         if self.ellipsoid is not None:
-            if hasattr(self.ellipsoid, 'to_sdf'):
-                _child_res = self.ellipsoid.to_sdf(version)
-            else:
-                _child_res = str(self.ellipsoid)
+            _child_res = self.ellipsoid.to_sdf(version)
             if isinstance(_child_res, str):
                 _item_el = ET.Element('ellipsoid')
                 _item_el.text = _child_res
@@ -224,10 +196,7 @@ class Geometry(BaseModel):
             _c_tmp.text = str(self.empty)
             el.append(_c_tmp)
         if self.heightmap is not None:
-            if hasattr(self.heightmap, 'to_sdf'):
-                _child_res = self.heightmap.to_sdf(version)
-            else:
-                _child_res = str(self.heightmap)
+            _child_res = self.heightmap.to_sdf(version)
             if isinstance(_child_res, str):
                 _item_el = ET.Element('heightmap')
                 _item_el.text = _child_res
@@ -235,10 +204,7 @@ class Geometry(BaseModel):
                 _item_el = _child_res
             el.append(_item_el)
         if self.image is not None:
-            if hasattr(self.image, 'to_sdf'):
-                _child_res = self.image.to_sdf(version)
-            else:
-                _child_res = str(self.image)
+            _child_res = self.image.to_sdf(version)
             if isinstance(_child_res, str):
                 _item_el = ET.Element('image')
                 _item_el.text = _child_res
@@ -246,10 +212,7 @@ class Geometry(BaseModel):
                 _item_el = _child_res
             el.append(_item_el)
         if self.mesh is not None:
-            if hasattr(self.mesh, 'to_sdf'):
-                _child_res = self.mesh.to_sdf(version)
-            else:
-                _child_res = str(self.mesh)
+            _child_res = self.mesh.to_sdf(version)
             if isinstance(_child_res, str):
                 _item_el = ET.Element('mesh')
                 _item_el.text = _child_res
@@ -257,10 +220,7 @@ class Geometry(BaseModel):
                 _item_el = _child_res
             el.append(_item_el)
         if self.plane is not None:
-            if hasattr(self.plane, 'to_sdf'):
-                _child_res = self.plane.to_sdf(version)
-            else:
-                _child_res = str(self.plane)
+            _child_res = self.plane.to_sdf(version)
             if isinstance(_child_res, str):
                 _item_el = ET.Element('plane')
                 _item_el.text = _child_res
@@ -268,10 +228,7 @@ class Geometry(BaseModel):
                 _item_el = _child_res
             el.append(_item_el)
         if self.polyline is not None:
-            if hasattr(self.polyline, 'to_sdf'):
-                _child_res = self.polyline.to_sdf(version)
-            else:
-                _child_res = str(self.polyline)
+            _child_res = self.polyline.to_sdf(version)
             if isinstance(_child_res, str):
                 _item_el = ET.Element('polyline')
                 _item_el.text = _child_res
@@ -279,10 +236,7 @@ class Geometry(BaseModel):
                 _item_el = _child_res
             el.append(_item_el)
         if self.sphere is not None:
-            if hasattr(self.sphere, 'to_sdf'):
-                _child_res = self.sphere.to_sdf(version)
-            else:
-                _child_res = str(self.sphere)
+            _child_res = self.sphere.to_sdf(version)
             if isinstance(_child_res, str):
                 _item_el = ET.Element('sphere')
                 _item_el.text = _child_res

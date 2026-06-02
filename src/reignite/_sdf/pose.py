@@ -1,47 +1,13 @@
 ### THIS FILE WAS AUTO-GENERATED ###
 from __future__ import annotations
 
-import typing
 from xml.etree import ElementTree as ET
 
 from ..utils.model import BaseModel
 from ..utils.errors import SDFError
-from ..utils.pose import Pose as _SDFPose, _PoseT, _pose
+from ..utils.pose import Pose as _PoseT, _pose
 from ..utils.version import cmp_version
 from ..utils.migration import apply_migrations
-
-
-import math
-
-def _parse_int32(raw: str) -> int | SDFError:
-    try:
-        v = int(raw)
-        if not (-2147483648 <= v <= 2147483647):
-            return SDFError(f"int32 out of range: {v}")
-        return v
-    except ValueError:
-        return SDFError(f"Invalid int32: {raw}")
-
-
-def _parse_uint32(raw: str) -> int | SDFError:
-    try:
-        v = int(raw)
-        if not (0 <= v <= 4294967295):
-            return SDFError(f"uint32 out of range: {v}")
-        return v
-    except ValueError:
-        return SDFError(f"Invalid uint32: {raw}")
-
-
-def _parse_double(raw: str) -> float | SDFError:
-    try:
-        v = float(raw)
-        if not math.isfinite(v) or abs(v) > math.inf:
-            return SDFError(f"double out of range: {raw}")
-        return v
-    except ValueError:
-        return SDFError(f"Invalid double: {raw}")
-
 
 def _parse_pose(raw: str) -> _PoseT | SDFError:
     try:
@@ -50,28 +16,25 @@ def _parse_pose(raw: str) -> _PoseT | SDFError:
         return SDFError(str(e))
 
 
+# noinspection PyUnusedImports
 class Pose(BaseModel):
     _MIGRATIONS = [{"version": "1.7", "ops": [{"type": "move", "from": "frame", "to": "relative_to"}]}]
 
     def __init__(
         self,
         sdf_version: str | None = None,
-        degrees: bool = False,
-        frame: str = "",
-        pose: _PoseT = None,
-        relative_to: str = "",
-        rotation_format: str = "euler_rpy"
+        degrees: bool | None = False,
+        frame: str | None = "",
+        pose: _PoseT | None = None,
+        relative_to: str | None = "",
+        rotation_format: str | None = "euler_rpy"
     ):
         super().__init__(sdf_version)
-        if pose is None:
-            pose = _pose("0 0 0 0 0 0")
-        else:
-            pose = _pose(pose)
-        self.degrees = degrees
-        self.frame = frame
-        self.pose = pose
-        self.relative_to = relative_to
-        self.rotation_format = rotation_format
+        self.degrees = degrees if degrees is not None else False
+        self.frame = frame if frame is not None else ""
+        self.pose = _pose("0 0 0 0 0 0") if pose is None else _pose(pose)
+        self.relative_to = relative_to if relative_to is not None else ""
+        self.rotation_format = rotation_format if rotation_format is not None else "euler_rpy"
 
     def to_version(self, target_version: str) -> "Pose":
         if self.degrees is not None and cmp_version(target_version, "1.9") < 0:
@@ -84,22 +47,16 @@ class Pose(BaseModel):
             raise ValueError(f"'relative_to' is not supported in SDF version {target_version} (added in 1.7)")
         if self.rotation_format is not None and cmp_version(target_version, "1.9") < 0:
             raise ValueError(f"'rotation_format' is not supported in SDF version {target_version} (added in 1.9)")
-        kwargs = {"sdf_version": target_version}
-        kwargs["degrees"] = self.degrees
-        kwargs["frame"] = self.frame
-        kwargs["pose"] = self.pose
-        kwargs["relative_to"] = self.relative_to
-        kwargs["rotation_format"] = self.rotation_format
+        kwargs: dict = {"sdf_version": target_version, "degrees": self.degrees, "frame": self.frame, "pose": self.pose, "relative_to": self.relative_to, "rotation_format": self.rotation_format}
         new_obj = self.__class__(**kwargs)
         apply_migrations(new_obj, target_version)
         return new_obj
 
     def to_sdf(self, version: str | None = None) -> ET.Element:
-        if self.__version__ is None and version is not None:
-            self.__version__ = version
-        elif version is not None and version != self.__version__:
-            return self.to_version(version).to_sdf()
-        version = self.__version__ or version
+        if self.sdfversion is None and version is not None:
+            self.sdfversion = version
+        elif version is not None and version != self.sdfversion:
+            return self.to_version(str(version)).to_sdf()
         el = ET.Element("pose")
         if self.degrees is not None:
             el.set("degrees", str(self.degrees).lower())

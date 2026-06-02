@@ -5,10 +5,8 @@ from typing import Union
 _Vector3T = Union[float, tuple[float, float, float], "Vector3"]
 
 
-def _vector3(v: float | tuple[float, float, float] | Vector3 | None | str, y: float = None,
-             z: float = None) -> Vector3 | None:
-    if v is None:
-        return None
+def _vector3(v: float | tuple[float, float, float] | Vector3 | str, y: float = None,
+             z: float = None) -> Vector3:
     if isinstance(v, Vector3):
         return v
     if isinstance(v, str):
@@ -31,6 +29,9 @@ class Vector3:
         self.x = x
         self.y = y
         self.z = z
+
+    def to_sdf(self, _):
+        return str(self)
 
     def __str__(self) -> str:
         return f"{self.x} {self.y} {self.z}"

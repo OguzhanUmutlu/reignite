@@ -1,51 +1,18 @@
 ### THIS FILE WAS AUTO-GENERATED ###
 from __future__ import annotations
 
-import typing
 from xml.etree import ElementTree as ET
 
+import typing
 from typing import List
 
 from ..utils.model import BaseModel
 from ..utils.errors import SDFError
-from ..utils.pose import Pose as _SDFPose, _PoseT, _pose
-from ..utils.vector3 import Vector3 as _SDFVector3, _Vector3T, _vector3
+from ..utils.pose import Pose as _PoseT, _pose
+from ..utils.vector3 import Vector3 as _Vector3T, _vector3
 
 if typing.TYPE_CHECKING:
     from ..elements.pose import Pose
-
-
-import math
-
-def _parse_int32(raw: str) -> int | SDFError:
-    try:
-        v = int(raw)
-        if not (-2147483648 <= v <= 2147483647):
-            return SDFError(f"int32 out of range: {v}")
-        return v
-    except ValueError:
-        return SDFError(f"Invalid int32: {raw}")
-
-
-def _parse_uint32(raw: str) -> int | SDFError:
-    try:
-        v = int(raw)
-        if not (0 <= v <= 4294967295):
-            return SDFError(f"uint32 out of range: {v}")
-        return v
-    except ValueError:
-        return SDFError(f"Invalid uint32: {raw}")
-
-
-def _parse_double(raw: str) -> float | SDFError:
-    try:
-        v = float(raw)
-        if not math.isfinite(v) or abs(v) > math.inf:
-            return SDFError(f"double out of range: {raw}")
-        return v
-    except ValueError:
-        return SDFError(f"Invalid double: {raw}")
-
 
 def _parse_pose(raw: str) -> _PoseT | SDFError:
     try:
@@ -60,35 +27,28 @@ def _parse_vector3(raw: str) -> _Vector3T | SDFError:
         return SDFError(str(e))
 
 
+# noinspection PyUnusedImports
 class LinkState(BaseModel):
     class AngularAcceleration(BaseModel):
         def __init__(
             self,
             sdf_version: str | None = None,
-            angular_acceleration: _Vector3T = None,
-            degrees: bool = False
+            angular_acceleration: _Vector3T | None = None,
+            degrees: bool | None = False
         ):
             super().__init__(sdf_version)
-            if angular_acceleration is None:
-                angular_acceleration = _vector3("0 0 0")
-            else:
-                angular_acceleration = _vector3(angular_acceleration)
-            self.angular_acceleration = angular_acceleration
-            self.degrees = degrees
+            self.angular_acceleration = _vector3("0 0 0") if angular_acceleration is None else _vector3(angular_acceleration)
+            self.degrees = degrees if degrees is not None else False
 
         def to_version(self, target_version: str) -> "LinkState.AngularAcceleration":
-            kwargs = {"sdf_version": target_version}
-            kwargs["angular_acceleration"] = self.angular_acceleration
-            kwargs["degrees"] = self.degrees
-            new_obj = self.__class__(**kwargs)
-            return new_obj
+            kwargs: dict = {"sdf_version": target_version, "angular_acceleration": self.angular_acceleration, "degrees": self.degrees}
+            return self.__class__(**kwargs)
 
         def to_sdf(self, version: str | None = None) -> ET.Element:
-            if self.__version__ is None and version is not None:
-                self.__version__ = version
-            elif version is not None and version != self.__version__:
-                return self.to_version(version).to_sdf()
-            version = self.__version__ or version
+            if self.sdfversion is None and version is not None:
+                self.sdfversion = version
+            elif version is not None and version != self.sdfversion:
+                return self.to_version(str(version)).to_sdf()
             el = ET.Element("angular_acceleration")
             if self.angular_acceleration is not None:
                 el.text = str(self.angular_acceleration)
@@ -111,30 +71,22 @@ class LinkState(BaseModel):
         def __init__(
             self,
             sdf_version: str | None = None,
-            angular_velocity: _Vector3T = None,
-            degrees: bool = False
+            angular_velocity: _Vector3T | None = None,
+            degrees: bool | None = False
         ):
             super().__init__(sdf_version)
-            if angular_velocity is None:
-                angular_velocity = _vector3("0 0 0")
-            else:
-                angular_velocity = _vector3(angular_velocity)
-            self.angular_velocity = angular_velocity
-            self.degrees = degrees
+            self.angular_velocity = _vector3("0 0 0") if angular_velocity is None else _vector3(angular_velocity)
+            self.degrees = degrees if degrees is not None else False
 
         def to_version(self, target_version: str) -> "LinkState.AngularVelocity":
-            kwargs = {"sdf_version": target_version}
-            kwargs["angular_velocity"] = self.angular_velocity
-            kwargs["degrees"] = self.degrees
-            new_obj = self.__class__(**kwargs)
-            return new_obj
+            kwargs: dict = {"sdf_version": target_version, "angular_velocity": self.angular_velocity, "degrees": self.degrees}
+            return self.__class__(**kwargs)
 
         def to_sdf(self, version: str | None = None) -> ET.Element:
-            if self.__version__ is None and version is not None:
-                self.__version__ = version
-            elif version is not None and version != self.__version__:
-                return self.to_version(version).to_sdf()
-            version = self.__version__ or version
+            if self.sdfversion is None and version is not None:
+                self.sdfversion = version
+            elif version is not None and version != self.sdfversion:
+                return self.to_version(str(version)).to_sdf()
             el = ET.Element("angular_velocity")
             if self.angular_velocity is not None:
                 el.text = str(self.angular_velocity)
@@ -154,22 +106,19 @@ class LinkState(BaseModel):
             return cls(sdf_version=version, angular_velocity=_angular_velocity, degrees=_degrees)
 
     class CollisionState(BaseModel):
-        def __init__(self, sdf_version: str | None = None, name: str = "__default__"):
+        def __init__(self, sdf_version: str | None = None, name: str | None = "__default__"):
             super().__init__(sdf_version)
-            self.name = name
+            self.name = name if name is not None else "__default__"
 
         def to_version(self, target_version: str) -> "LinkState.CollisionState":
-            kwargs = {"sdf_version": target_version}
-            kwargs["name"] = self.name
-            new_obj = self.__class__(**kwargs)
-            return new_obj
+            kwargs: dict = {"sdf_version": target_version, "name": self.name}
+            return self.__class__(**kwargs)
 
         def to_sdf(self, version: str | None = None) -> ET.Element:
-            if self.__version__ is None and version is not None:
-                self.__version__ = version
-            elif version is not None and version != self.__version__:
-                return self.to_version(version).to_sdf()
-            version = self.__version__ or version
+            if self.sdfversion is None and version is not None:
+                self.sdfversion = version
+            elif version is not None and version != self.sdfversion:
+                return self.to_version(str(version)).to_sdf()
             el = ET.Element("collision_state")
             if self.name is not None:
                 el.set("name", self.name)
@@ -185,81 +134,53 @@ class LinkState(BaseModel):
     def __init__(
         self,
         sdf_version: str | None = None,
-        acceleration: _PoseT = None,
+        acceleration: _PoseT | None = None,
         angular_acceleration: "LinkState.AngularAcceleration" = None,
         angular_velocity: "LinkState.AngularVelocity" = None,
         collision_states: List["LinkState.CollisionState"] = None,
-        force: _Vector3T = None,
-        linear_acceleration: _Vector3T = None,
-        linear_velocity: _Vector3T = None,
-        name: str = "__default__",
+        force: _Vector3T | None = None,
+        linear_acceleration: _Vector3T | None = None,
+        linear_velocity: _Vector3T | None = None,
+        name: str | None = "__default__",
         pose: "Pose" = None,
-        torque: _Vector3T = None,
-        velocity: _PoseT = None,
-        wrench: _PoseT = None
+        torque: _Vector3T | None = None,
+        velocity: _PoseT | None = None,
+        wrench: _PoseT | None = None
     ):
         super().__init__(sdf_version)
-        if acceleration is None:
-            acceleration = _pose("0 0 0 0 0 0")
-        else:
-            acceleration = _pose(acceleration)
-        if force is None:
-            force = _vector3("0 0 0")
-        else:
-            force = _vector3(force)
-        if linear_acceleration is None:
-            linear_acceleration = _vector3("0 0 0")
-        else:
-            linear_acceleration = _vector3(linear_acceleration)
-        if linear_velocity is None:
-            linear_velocity = _vector3("0 0 0")
-        else:
-            linear_velocity = _vector3(linear_velocity)
-        if torque is None:
-            torque = _vector3("0 0 0")
-        else:
-            torque = _vector3(torque)
-        if velocity is None:
-            velocity = _pose("0 0 0 0 0 0")
-        else:
-            velocity = _pose(velocity)
-        if wrench is None:
-            wrench = _pose("0 0 0 0 0 0")
-        else:
-            wrench = _pose(wrench)
-        self.acceleration = acceleration
+        self.acceleration = _pose("0 0 0 0 0 0") if acceleration is None else _pose(acceleration)
         self.angular_acceleration = angular_acceleration
         self.angular_velocity = angular_velocity
         self.collision_states = collision_states or []
-        self.force = force
-        self.linear_acceleration = linear_acceleration
-        self.linear_velocity = linear_velocity
-        self.name = name
+        self.force = _vector3("0 0 0") if force is None else _vector3(force)
+        self.linear_acceleration = _vector3("0 0 0") if linear_acceleration is None else _vector3(linear_acceleration)
+        self.linear_velocity = _vector3("0 0 0") if linear_velocity is None else _vector3(linear_velocity)
+        self.name = name if name is not None else "__default__"
         self.pose = pose
-        self.torque = torque
-        self.velocity = velocity
-        self.wrench = wrench
+        self.torque = _vector3("0 0 0") if torque is None else _vector3(torque)
+        self.velocity = _pose("0 0 0 0 0 0") if velocity is None else _pose(velocity)
+        self.wrench = _pose("0 0 0 0 0 0") if wrench is None else _pose(wrench)
         if self.angular_acceleration is not None and hasattr(self.angular_acceleration, 'to_version'):
-            if getattr(self.angular_acceleration, '__version__', None) is None:
-                self.angular_acceleration.__version__ = self.__version__
-            elif getattr(self.angular_acceleration, '__version__', None) != self.__version__ and self.__version__ is not None:
-                self.angular_acceleration = self.angular_acceleration.to_version(self.__version__)
+            if getattr(self.angular_acceleration, 'sdfversion', None) is None:
+                self.angular_acceleration.sdfversion = self.sdfversion
+            elif getattr(self.angular_acceleration, 'sdfversion', None) != self.sdfversion and self.sdfversion is not None:
+                self.angular_acceleration = self.angular_acceleration.to_version(self.sdfversion)
         if self.angular_velocity is not None and hasattr(self.angular_velocity, 'to_version'):
-            if getattr(self.angular_velocity, '__version__', None) is None:
-                self.angular_velocity.__version__ = self.__version__
-            elif getattr(self.angular_velocity, '__version__', None) != self.__version__ and self.__version__ is not None:
-                self.angular_velocity = self.angular_velocity.to_version(self.__version__)
+            if getattr(self.angular_velocity, 'sdfversion', None) is None:
+                self.angular_velocity.sdfversion = self.sdfversion
+            elif getattr(self.angular_velocity, 'sdfversion', None) != self.sdfversion and self.sdfversion is not None:
+                self.angular_velocity = self.angular_velocity.to_version(self.sdfversion)
         for _i, _c in enumerate(self.collision_states):
             if not hasattr(_c, 'to_version'): continue
-            if getattr(_c, '__version__', None) is None:
-                _c.__version__ = self.__version__
-            elif getattr(_c, '__version__', None) != self.__version__ and self.__version__ is not None:
-                self.collision_states[_i] = _c.to_version(self.__version__)
+            if getattr(_c, 'sdfversion', None) is None:
+                _c.sdfversion = self.sdfversion
+            elif getattr(_c, 'sdfversion', None) != self.sdfversion and self.sdfversion is not None:
+                self.collision_states[_i] = _c.to_version(self.sdfversion)
         if self.pose is not None and hasattr(self.pose, 'to_version'):
-            if getattr(self.pose, '__version__', None) is None:
-                self.pose.__version__ = self.__version__
-            elif getattr(self.pose, '__version__', None) != self.__version__ and self.__version__ is not None:
-                self.pose = self.pose.to_version(self.__version__)
+            if getattr(self.pose, 'sdfversion', None) is None:
+                self.pose.sdfversion = self.sdfversion
+            elif getattr(self.pose, 'sdfversion', None) != self.sdfversion and self.sdfversion is not None:
+                self.pose = self.pose.to_version(self.sdfversion)
 
     def add_collision_state(self, *items: "LinkState.CollisionState"):
         if self.collision_states is None:
@@ -268,39 +189,22 @@ class LinkState(BaseModel):
 
     def to_version(self, target_version: str) -> "LinkState":
         from ..elements.pose import Pose
-        kwargs = {"sdf_version": target_version}
-        kwargs["acceleration"] = self.acceleration
-        kwargs["angular_acceleration"] = self.angular_acceleration.to_version(target_version) if hasattr(self.angular_acceleration, "to_version") else self.angular_acceleration
-        kwargs["angular_velocity"] = self.angular_velocity.to_version(target_version) if hasattr(self.angular_velocity, "to_version") else self.angular_velocity
-        kwargs["collision_states"] = [c.to_version(target_version) if hasattr(c, "to_version") else c for c in (self.collision_states or [])]
-        kwargs["force"] = self.force
-        kwargs["linear_acceleration"] = self.linear_acceleration
-        kwargs["linear_velocity"] = self.linear_velocity
-        kwargs["name"] = self.name
-        kwargs["pose"] = self.pose.to_version(target_version) if hasattr(self.pose, "to_version") else self.pose
-        kwargs["torque"] = self.torque
-        kwargs["velocity"] = self.velocity
-        kwargs["wrench"] = self.wrench
-        new_obj = self.__class__(**kwargs)
-        return new_obj
+        kwargs: dict = {"sdf_version": target_version, "acceleration": self.acceleration, "angular_acceleration": self.angular_acceleration.to_version(target_version) if self.angular_acceleration is not None and hasattr(self.angular_acceleration, "to_version") else self.angular_acceleration, "angular_velocity": self.angular_velocity.to_version(target_version) if self.angular_velocity is not None and hasattr(self.angular_velocity, "to_version") else self.angular_velocity, "collision_states": [c.to_version(target_version) if hasattr(c, "to_version") else c for c in (self.collision_states or [])], "force": self.force, "linear_acceleration": self.linear_acceleration, "linear_velocity": self.linear_velocity, "name": self.name, "pose": self.pose.to_version(target_version) if self.pose is not None and hasattr(self.pose, "to_version") else self.pose, "torque": self.torque, "velocity": self.velocity, "wrench": self.wrench}
+        return self.__class__(**kwargs)
 
     def to_sdf(self, version: str | None = None) -> ET.Element:
         from ..elements.pose import Pose
-        if self.__version__ is None and version is not None:
-            self.__version__ = version
-        elif version is not None and version != self.__version__:
-            return self.to_version(version).to_sdf()
-        version = self.__version__ or version
+        if self.sdfversion is None and version is not None:
+            self.sdfversion = version
+        elif version is not None and version != self.sdfversion:
+            return self.to_version(str(version)).to_sdf()
         el = ET.Element("link_state")
         if self.acceleration is not None:
             _c_tmp = ET.Element("acceleration")
             _c_tmp.text = str(self.acceleration)
             el.append(_c_tmp)
         if self.angular_acceleration is not None:
-            if hasattr(self.angular_acceleration, 'to_sdf'):
-                _child_res = self.angular_acceleration.to_sdf(version)
-            else:
-                _child_res = str(self.angular_acceleration)
+            _child_res = self.angular_acceleration.to_sdf(version)
             if isinstance(_child_res, str):
                 _item_el = ET.Element('angular_acceleration')
                 _item_el.text = _child_res
@@ -308,10 +212,7 @@ class LinkState(BaseModel):
                 _item_el = _child_res
             el.append(_item_el)
         if self.angular_velocity is not None:
-            if hasattr(self.angular_velocity, 'to_sdf'):
-                _child_res = self.angular_velocity.to_sdf(version)
-            else:
-                _child_res = str(self.angular_velocity)
+            _child_res = self.angular_velocity.to_sdf(version)
             if isinstance(_child_res, str):
                 _item_el = ET.Element('angular_velocity')
                 _item_el.text = _child_res
@@ -319,10 +220,7 @@ class LinkState(BaseModel):
                 _item_el = _child_res
             el.append(_item_el)
         for item in (self.collision_states or []):
-            if hasattr(item, 'to_sdf'):
-                _child_res = item.to_sdf(version)
-            else:
-                _child_res = str(item)
+            _child_res = item.to_sdf(version)
             if isinstance(_child_res, str):
                 _item_el = ET.Element('collision_state')
                 _item_el.text = _child_res
@@ -344,10 +242,7 @@ class LinkState(BaseModel):
         if self.name is not None:
             el.set("name", self.name)
         if self.pose is not None:
-            if hasattr(self.pose, 'to_sdf'):
-                _child_res = self.pose.to_sdf(version)
-            else:
-                _child_res = str(self.pose)
+            _child_res = self.pose.to_sdf(version)
             if isinstance(_child_res, str):
                 _item_el = ET.Element('pose')
                 _item_el.text = _child_res

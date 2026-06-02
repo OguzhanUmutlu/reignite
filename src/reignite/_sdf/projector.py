@@ -1,9 +1,10 @@
 ### THIS FILE WAS AUTO-GENERATED ###
 from __future__ import annotations
 
-import typing
 from xml.etree import ElementTree as ET
 
+from ..utils.utils import _parse_double, _parse_uint32
+import typing
 from typing import List
 
 from ..utils.model import BaseModel
@@ -16,80 +17,48 @@ if typing.TYPE_CHECKING:
     from ..elements.pose import Pose
 
 
-import math
-
-def _parse_int32(raw: str) -> int | SDFError:
-    try:
-        v = int(raw)
-        if not (-2147483648 <= v <= 2147483647):
-            return SDFError(f"int32 out of range: {v}")
-        return v
-    except ValueError:
-        return SDFError(f"Invalid int32: {raw}")
-
-
-def _parse_uint32(raw: str) -> int | SDFError:
-    try:
-        v = int(raw)
-        if not (0 <= v <= 4294967295):
-            return SDFError(f"uint32 out of range: {v}")
-        return v
-    except ValueError:
-        return SDFError(f"Invalid uint32: {raw}")
-
-
-def _parse_double(raw: str) -> float | SDFError:
-    try:
-        v = float(raw)
-        if not math.isfinite(v) or abs(v) > math.inf:
-            return SDFError(f"double out of range: {raw}")
-        return v
-    except ValueError:
-        return SDFError(f"Invalid double: {raw}")
-
-
-
+# noinspection PyUnusedImports
 class Projector(BaseModel):
     def __init__(
         self,
         sdf_version: str | None = None,
-        far_clip: float = 10.0,
-        fov: float = 0.785,
+        far_clip: float | None = 10.0,
+        fov: float | None = 0.785,
         frames: List["Frame"] = None,
-        name: str = "__default__",
-        near_clip: float = 0.1,
+        name: str | None = "__default__",
+        near_clip: float | None = 0.1,
         plugins: List["Plugin"] = None,
         pose: "Pose" = None,
-        texture: str = "__default__",
-        visibility_flags: int = 4294967295
+        texture: str | None = "__default__",
+        visibility_flags: int | None = 4294967295
     ):
         super().__init__(sdf_version)
-        self.far_clip = far_clip
-        self.fov = fov
+        self.far_clip = far_clip if far_clip is not None else 10.0
+        self.fov = fov if fov is not None else 0.785
         self.frames = frames or []
-        self.name = name
-        self.near_clip = near_clip
+        self.name = name if name is not None else "__default__"
+        self.near_clip = near_clip if near_clip is not None else 0.1
         self.plugins = plugins or []
         self.pose = pose
-        self.texture = texture
-        self.visibility_flags = visibility_flags
+        self.texture = texture if texture is not None else "__default__"
+        self.visibility_flags = visibility_flags if visibility_flags is not None else 4294967295
         for _i, _c in enumerate(self.frames):
             if not hasattr(_c, 'to_version'): continue
-            if getattr(_c, '__version__', None) is None:
-                _c.__version__ = self.__version__
-            elif getattr(_c, '__version__', None) != self.__version__ and self.__version__ is not None:
-                self.frames[_i] = _c.to_version(self.__version__)
+            if getattr(_c, 'sdfversion', None) is None:
+                _c.sdfversion = self.sdfversion
+            elif getattr(_c, 'sdfversion', None) != self.sdfversion and self.sdfversion is not None:
+                self.frames[_i] = _c.to_version(self.sdfversion)
         for _i, _c in enumerate(self.plugins):
             if not hasattr(_c, 'to_version'): continue
-            if getattr(_c, '__version__', None) is None:
-                _c.__version__ = self.__version__
-            elif getattr(_c, '__version__', None) != self.__version__ and self.__version__ is not None:
-                self.plugins[_i] = _c.to_version(self.__version__)
+            if getattr(_c, 'sdfversion', None) is None:
+                _c.sdfversion = self.sdfversion
+            elif getattr(_c, 'sdfversion', None) != self.sdfversion and self.sdfversion is not None:
+                self.plugins[_i] = _c.to_version(self.sdfversion)
         if self.pose is not None and hasattr(self.pose, 'to_version'):
-            if getattr(self.pose, '__version__', None) is None:
-                self.pose.__version__ = self.__version__
-            elif getattr(self.pose, '__version__', None) != self.__version__ and self.__version__ is not None:
-                self.pose = self.pose.to_version(self.__version__)
+            if getattr(self.pose, 'sdfversion', None) is None:
+                self.pose.sdfversion = self.sdfversion
+            elif getattr(self.pose, 'sdfversion', None) != self.sdfversion and self.sdfversion is not None:
+                self.pose = self.pose.to_version(self.sdfversion)
 
     def add_frame(self, *items: "Frame"):
         if self.frames is None:
@@ -111,28 +80,17 @@ class Projector(BaseModel):
             raise ValueError(f"'frames' is not supported in SDF version {target_version} (removed in 1.7)")
         if self.visibility_flags is not None and cmp_version(target_version, "1.7") < 0:
             raise ValueError(f"'visibility_flags' is not supported in SDF version {target_version} (added in 1.7)")
-        kwargs = {"sdf_version": target_version}
-        kwargs["far_clip"] = self.far_clip
-        kwargs["fov"] = self.fov
-        kwargs["frames"] = [c.to_version(target_version) if hasattr(c, "to_version") else c for c in (self.frames or [])]
-        kwargs["name"] = self.name
-        kwargs["near_clip"] = self.near_clip
-        kwargs["plugins"] = [c.to_version(target_version) if hasattr(c, "to_version") else c for c in (self.plugins or [])]
-        kwargs["pose"] = self.pose.to_version(target_version) if hasattr(self.pose, "to_version") else self.pose
-        kwargs["texture"] = self.texture
-        kwargs["visibility_flags"] = self.visibility_flags
-        new_obj = self.__class__(**kwargs)
-        return new_obj
+        kwargs: dict = {"sdf_version": target_version, "far_clip": self.far_clip, "fov": self.fov, "frames": [c.to_version(target_version) if hasattr(c, "to_version") else c for c in (self.frames or [])], "name": self.name, "near_clip": self.near_clip, "plugins": [c.to_version(target_version) if hasattr(c, "to_version") else c for c in (self.plugins or [])], "pose": self.pose.to_version(target_version) if self.pose is not None and hasattr(self.pose, "to_version") else self.pose, "texture": self.texture, "visibility_flags": self.visibility_flags}
+        return self.__class__(**kwargs)
 
     def to_sdf(self, version: str | None = None) -> ET.Element:
         from ..elements.frame import Frame
         from ..elements.plugin import Plugin
         from ..elements.pose import Pose
-        if self.__version__ is None and version is not None:
-            self.__version__ = version
-        elif version is not None and version != self.__version__:
-            return self.to_version(version).to_sdf()
-        version = self.__version__ or version
+        if self.sdfversion is None and version is not None:
+            self.sdfversion = version
+        elif version is not None and version != self.sdfversion:
+            return self.to_version(str(version)).to_sdf()
         el = ET.Element("projector")
         if self.far_clip is not None:
             _c_tmp = ET.Element("far_clip")
@@ -143,10 +101,7 @@ class Projector(BaseModel):
             _c_tmp.text = str(self.fov)
             el.append(_c_tmp)
         for item in (self.frames or []):
-            if hasattr(item, 'to_sdf'):
-                _child_res = item.to_sdf(version)
-            else:
-                _child_res = str(item)
+            _child_res = item.to_sdf(version)
             if isinstance(_child_res, str):
                 _item_el = ET.Element('frame')
                 _item_el.text = _child_res
@@ -160,10 +115,7 @@ class Projector(BaseModel):
             _c_tmp.text = str(self.near_clip)
             el.append(_c_tmp)
         for item in (self.plugins or []):
-            if hasattr(item, 'to_sdf'):
-                _child_res = item.to_sdf(version)
-            else:
-                _child_res = str(item)
+            _child_res = item.to_sdf(version)
             if isinstance(_child_res, str):
                 _item_el = ET.Element('plugin')
                 _item_el.text = _child_res
@@ -171,10 +123,7 @@ class Projector(BaseModel):
                 _item_el = _child_res
             el.append(_item_el)
         if self.pose is not None:
-            if hasattr(self.pose, 'to_sdf'):
-                _child_res = self.pose.to_sdf(version)
-            else:
-                _child_res = str(self.pose)
+            _child_res = self.pose.to_sdf(version)
             if isinstance(_child_res, str):
                 _item_el = ET.Element('pose')
                 _item_el.text = _child_res

@@ -1,75 +1,38 @@
 ### THIS FILE WAS AUTO-GENERATED ###
 from __future__ import annotations
 
-import typing
 from xml.etree import ElementTree as ET
 
+from ..utils.utils import _parse_double, _parse_uint32
 from ..utils.model import BaseModel
 from ..utils.errors import SDFError
 from ..utils.version import cmp_version
 
 
-import math
-
-def _parse_int32(raw: str) -> int | SDFError:
-    try:
-        v = int(raw)
-        if not (-2147483648 <= v <= 2147483647):
-            return SDFError(f"int32 out of range: {v}")
-        return v
-    except ValueError:
-        return SDFError(f"Invalid int32: {raw}")
-
-
-def _parse_uint32(raw: str) -> int | SDFError:
-    try:
-        v = int(raw)
-        if not (0 <= v <= 4294967295):
-            return SDFError(f"uint32 out of range: {v}")
-        return v
-    except ValueError:
-        return SDFError(f"Invalid uint32: {raw}")
-
-
-def _parse_double(raw: str) -> float | SDFError:
-    try:
-        v = float(raw)
-        if not math.isfinite(v) or abs(v) > math.inf:
-            return SDFError(f"double out of range: {raw}")
-        return v
-    except ValueError:
-        return SDFError(f"Invalid double: {raw}")
-
-
-
+# noinspection PyUnusedImports
 class Ray(BaseModel):
     class Noise(BaseModel):
         def __init__(
             self,
             sdf_version: str | None = None,
-            mean: float = 0.0,
-            stddev: float = 0.0,
-            type: str = "gaussian"
+            mean: float | None = 0.0,
+            stddev: float | None = 0.0,
+            type: str | None = "gaussian"
         ):
             super().__init__(sdf_version)
-            self.mean = mean
-            self.stddev = stddev
-            self.type = type
+            self.mean = mean if mean is not None else 0.0
+            self.stddev = stddev if stddev is not None else 0.0
+            self.type = type if type is not None else "gaussian"
 
         def to_version(self, target_version: str) -> "Ray.Noise":
-            kwargs = {"sdf_version": target_version}
-            kwargs["mean"] = self.mean
-            kwargs["stddev"] = self.stddev
-            kwargs["type"] = self.type
-            new_obj = self.__class__(**kwargs)
-            return new_obj
+            kwargs: dict = {"sdf_version": target_version, "mean": self.mean, "stddev": self.stddev, "type": self.type}
+            return self.__class__(**kwargs)
 
         def to_sdf(self, version: str | None = None) -> ET.Element:
-            if self.__version__ is None and version is not None:
-                self.__version__ = version
-            elif version is not None and version != self.__version__:
-                return self.to_version(version).to_sdf()
-            version = self.__version__ or version
+            if self.sdfversion is None and version is not None:
+                self.sdfversion = version
+            elif version is not None and version != self.sdfversion:
+                return self.to_version(str(version)).to_sdf()
             el = ET.Element("noise")
             if self.mean is not None:
                 _c_tmp = ET.Element("mean")
@@ -120,14 +83,14 @@ class Ray(BaseModel):
         def __init__(
             self,
             sdf_version: str | None = None,
-            max: float = 0,
-            min: float = 0,
-            resolution: float = 0
+            max: float | None = 0,
+            min: float | None = 0,
+            resolution: float | None = 0
         ):
             super().__init__(sdf_version)
-            self.max = max
-            self.min = min
-            self.resolution = resolution
+            self.max = max if max is not None else 0
+            self.min = min if min is not None else 0
+            self.resolution = resolution if resolution is not None else 0
 
         def to_version(self, target_version: str) -> "Ray.Range":
             if self.max is not None and cmp_version(target_version, "1.2") >= 0:
@@ -136,19 +99,14 @@ class Ray(BaseModel):
                 raise ValueError(f"'min' is not supported in SDF version {target_version} (removed in 1.2)")
             if self.resolution is not None and cmp_version(target_version, "1.2") >= 0:
                 raise ValueError(f"'resolution' is not supported in SDF version {target_version} (removed in 1.2)")
-            kwargs = {"sdf_version": target_version}
-            kwargs["max"] = self.max
-            kwargs["min"] = self.min
-            kwargs["resolution"] = self.resolution
-            new_obj = self.__class__(**kwargs)
-            return new_obj
+            kwargs: dict = {"sdf_version": target_version, "max": self.max, "min": self.min, "resolution": self.resolution}
+            return self.__class__(**kwargs)
 
         def to_sdf(self, version: str | None = None) -> ET.Element:
-            if self.__version__ is None and version is not None:
-                self.__version__ = version
-            elif version is not None and version != self.__version__:
-                return self.to_version(version).to_sdf()
-            version = self.__version__ or version
+            if self.sdfversion is None and version is not None:
+                self.sdfversion = version
+            elif version is not None and version != self.sdfversion:
+                return self.to_version(str(version)).to_sdf()
             el = ET.Element("range")
             if self.max is not None:
                 el.set("max", str(self.max))
@@ -176,16 +134,16 @@ class Ray(BaseModel):
             def __init__(
                 self,
                 sdf_version: str | None = None,
-                max_angle: float = 0,
-                min_angle: float = 0,
-                resolution: float = 1,
-                samples: int = 1
+                max_angle: float | None = 0,
+                min_angle: float | None = 0,
+                resolution: float | None = 1,
+                samples: int | None = 1
             ):
                 super().__init__(sdf_version)
-                self.max_angle = max_angle
-                self.min_angle = min_angle
-                self.resolution = resolution
-                self.samples = samples
+                self.max_angle = max_angle if max_angle is not None else 0
+                self.min_angle = min_angle if min_angle is not None else 0
+                self.resolution = resolution if resolution is not None else 1
+                self.samples = samples if samples is not None else 1
 
             def to_version(self, target_version: str) -> "Ray.Scan.Horizontal":
                 if self.max_angle is not None and cmp_version(target_version, "1.2") >= 0:
@@ -196,20 +154,14 @@ class Ray(BaseModel):
                     raise ValueError(f"'resolution' is not supported in SDF version {target_version} (removed in 1.2)")
                 if self.samples is not None and cmp_version(target_version, "1.2") >= 0:
                     raise ValueError(f"'samples' is not supported in SDF version {target_version} (removed in 1.2)")
-                kwargs = {"sdf_version": target_version}
-                kwargs["max_angle"] = self.max_angle
-                kwargs["min_angle"] = self.min_angle
-                kwargs["resolution"] = self.resolution
-                kwargs["samples"] = self.samples
-                new_obj = self.__class__(**kwargs)
-                return new_obj
+                kwargs: dict = {"sdf_version": target_version, "max_angle": self.max_angle, "min_angle": self.min_angle, "resolution": self.resolution, "samples": self.samples}
+                return self.__class__(**kwargs)
 
             def to_sdf(self, version: str | None = None) -> ET.Element:
-                if self.__version__ is None and version is not None:
-                    self.__version__ = version
-                elif version is not None and version != self.__version__:
-                    return self.to_version(version).to_sdf()
-                version = self.__version__ or version
+                if self.sdfversion is None and version is not None:
+                    self.sdfversion = version
+                elif version is not None and version != self.sdfversion:
+                    return self.to_version(str(version)).to_sdf()
                 el = ET.Element("horizontal")
                 if self.max_angle is not None:
                     el.set("max_angle", str(self.max_angle))
@@ -241,16 +193,16 @@ class Ray(BaseModel):
             def __init__(
                 self,
                 sdf_version: str | None = None,
-                max_angle: float = 0,
-                min_angle: float = 0,
-                resolution: float = 1,
-                samples: int = 1
+                max_angle: float | None = 0,
+                min_angle: float | None = 0,
+                resolution: float | None = 1,
+                samples: int | None = 1
             ):
                 super().__init__(sdf_version)
-                self.max_angle = max_angle
-                self.min_angle = min_angle
-                self.resolution = resolution
-                self.samples = samples
+                self.max_angle = max_angle if max_angle is not None else 0
+                self.min_angle = min_angle if min_angle is not None else 0
+                self.resolution = resolution if resolution is not None else 1
+                self.samples = samples if samples is not None else 1
 
             def to_version(self, target_version: str) -> "Ray.Scan.Vertical":
                 if self.max_angle is not None and cmp_version(target_version, "1.2") >= 0:
@@ -261,20 +213,14 @@ class Ray(BaseModel):
                     raise ValueError(f"'resolution' is not supported in SDF version {target_version} (removed in 1.2)")
                 if self.samples is not None and cmp_version(target_version, "1.2") >= 0:
                     raise ValueError(f"'samples' is not supported in SDF version {target_version} (removed in 1.2)")
-                kwargs = {"sdf_version": target_version}
-                kwargs["max_angle"] = self.max_angle
-                kwargs["min_angle"] = self.min_angle
-                kwargs["resolution"] = self.resolution
-                kwargs["samples"] = self.samples
-                new_obj = self.__class__(**kwargs)
-                return new_obj
+                kwargs: dict = {"sdf_version": target_version, "max_angle": self.max_angle, "min_angle": self.min_angle, "resolution": self.resolution, "samples": self.samples}
+                return self.__class__(**kwargs)
 
             def to_sdf(self, version: str | None = None) -> ET.Element:
-                if self.__version__ is None and version is not None:
-                    self.__version__ = version
-                elif version is not None and version != self.__version__:
-                    return self.to_version(version).to_sdf()
-                version = self.__version__ or version
+                if self.sdfversion is None and version is not None:
+                    self.sdfversion = version
+                elif version is not None and version != self.sdfversion:
+                    return self.to_version(str(version)).to_sdf()
                 el = ET.Element("vertical")
                 if self.max_angle is not None:
                     el.set("max_angle", str(self.max_angle))
@@ -312,37 +258,30 @@ class Ray(BaseModel):
             self.horizontal = horizontal
             self.vertical = vertical
             if self.horizontal is not None and hasattr(self.horizontal, 'to_version'):
-                if getattr(self.horizontal, '__version__', None) is None:
-                    self.horizontal.__version__ = self.__version__
-                elif getattr(self.horizontal, '__version__', None) != self.__version__ and self.__version__ is not None:
-                    self.horizontal = self.horizontal.to_version(self.__version__)
+                if getattr(self.horizontal, 'sdfversion', None) is None:
+                    self.horizontal.sdfversion = self.sdfversion
+                elif getattr(self.horizontal, 'sdfversion', None) != self.sdfversion and self.sdfversion is not None:
+                    self.horizontal = self.horizontal.to_version(self.sdfversion)
             if self.vertical is not None and hasattr(self.vertical, 'to_version'):
-                if getattr(self.vertical, '__version__', None) is None:
-                    self.vertical.__version__ = self.__version__
-                elif getattr(self.vertical, '__version__', None) != self.__version__ and self.__version__ is not None:
-                    self.vertical = self.vertical.to_version(self.__version__)
+                if getattr(self.vertical, 'sdfversion', None) is None:
+                    self.vertical.sdfversion = self.sdfversion
+                elif getattr(self.vertical, 'sdfversion', None) != self.sdfversion and self.sdfversion is not None:
+                    self.vertical = self.vertical.to_version(self.sdfversion)
 
         def to_version(self, target_version: str) -> "Ray.Scan":
-            kwargs = {"sdf_version": target_version}
-            kwargs["horizontal"] = self.horizontal.to_version(target_version) if hasattr(self.horizontal, "to_version") else self.horizontal
-            kwargs["vertical"] = self.vertical.to_version(target_version) if hasattr(self.vertical, "to_version") else self.vertical
-            new_obj = self.__class__(**kwargs)
-            return new_obj
+            kwargs: dict = {"sdf_version": target_version, "horizontal": self.horizontal.to_version(target_version) if self.horizontal is not None and hasattr(self.horizontal, "to_version") else self.horizontal, "vertical": self.vertical.to_version(target_version) if self.vertical is not None and hasattr(self.vertical, "to_version") else self.vertical}
+            return self.__class__(**kwargs)
 
         def to_sdf(self, version: str | None = None) -> ET.Element:
-            if self.__version__ is None and version is not None:
-                self.__version__ = version
-            elif version is not None and version != self.__version__:
-                return self.to_version(version).to_sdf()
-            version = self.__version__ or version
+            if self.sdfversion is None and version is not None:
+                self.sdfversion = version
+            elif version is not None and version != self.sdfversion:
+                return self.to_version(str(version)).to_sdf()
             el = ET.Element("scan")
             if self.horizontal is None:
                 self.horizontal = self.__class__.Horizontal(sdf_version=version)
             if self.horizontal is not None:
-                if hasattr(self.horizontal, 'to_sdf'):
-                    _child_res = self.horizontal.to_sdf(version)
-                else:
-                    _child_res = str(self.horizontal)
+                _child_res = self.horizontal.to_sdf(version)
                 if isinstance(_child_res, str):
                     _item_el = ET.Element('horizontal')
                     _item_el.text = _child_res
@@ -350,10 +289,7 @@ class Ray(BaseModel):
                     _item_el = _child_res
                 el.append(_item_el)
             if self.vertical is not None:
-                if hasattr(self.vertical, 'to_sdf'):
-                    _child_res = self.vertical.to_sdf(version)
-                else:
-                    _child_res = str(self.vertical)
+                _child_res = self.vertical.to_sdf(version)
                 if isinstance(_child_res, str):
                     _item_el = ET.Element('vertical')
                     _item_el.text = _child_res
@@ -391,54 +327,45 @@ class Ray(BaseModel):
         noise: "Ray.Noise" = None,
         range: "Ray.Range" = None,
         scan: "Ray.Scan" = None,
-        visibility_mask: int = 4294967295
+        visibility_mask: int | None = 4294967295
     ):
         super().__init__(sdf_version)
         self.noise = noise
         self.range = range
         self.scan = scan
-        self.visibility_mask = visibility_mask
+        self.visibility_mask = visibility_mask if visibility_mask is not None else 4294967295
         if self.noise is not None and hasattr(self.noise, 'to_version'):
-            if getattr(self.noise, '__version__', None) is None:
-                self.noise.__version__ = self.__version__
-            elif getattr(self.noise, '__version__', None) != self.__version__ and self.__version__ is not None:
-                self.noise = self.noise.to_version(self.__version__)
+            if getattr(self.noise, 'sdfversion', None) is None:
+                self.noise.sdfversion = self.sdfversion
+            elif getattr(self.noise, 'sdfversion', None) != self.sdfversion and self.sdfversion is not None:
+                self.noise = self.noise.to_version(self.sdfversion)
         if self.range is not None and hasattr(self.range, 'to_version'):
-            if getattr(self.range, '__version__', None) is None:
-                self.range.__version__ = self.__version__
-            elif getattr(self.range, '__version__', None) != self.__version__ and self.__version__ is not None:
-                self.range = self.range.to_version(self.__version__)
+            if getattr(self.range, 'sdfversion', None) is None:
+                self.range.sdfversion = self.sdfversion
+            elif getattr(self.range, 'sdfversion', None) != self.sdfversion and self.sdfversion is not None:
+                self.range = self.range.to_version(self.sdfversion)
         if self.scan is not None and hasattr(self.scan, 'to_version'):
-            if getattr(self.scan, '__version__', None) is None:
-                self.scan.__version__ = self.__version__
-            elif getattr(self.scan, '__version__', None) != self.__version__ and self.__version__ is not None:
-                self.scan = self.scan.to_version(self.__version__)
+            if getattr(self.scan, 'sdfversion', None) is None:
+                self.scan.sdfversion = self.sdfversion
+            elif getattr(self.scan, 'sdfversion', None) != self.sdfversion and self.sdfversion is not None:
+                self.scan = self.scan.to_version(self.sdfversion)
 
     def to_version(self, target_version: str) -> "Ray":
         if self.noise is not None and cmp_version(target_version, "1.4") < 0:
             raise ValueError(f"'noise' is not supported in SDF version {target_version} (added in 1.4)")
         if self.visibility_mask is not None and cmp_version(target_version, "1.9") < 0:
             raise ValueError(f"'visibility_mask' is not supported in SDF version {target_version} (added in 1.9)")
-        kwargs = {"sdf_version": target_version}
-        kwargs["noise"] = self.noise.to_version(target_version) if hasattr(self.noise, "to_version") else self.noise
-        kwargs["range"] = self.range.to_version(target_version) if hasattr(self.range, "to_version") else self.range
-        kwargs["scan"] = self.scan.to_version(target_version) if hasattr(self.scan, "to_version") else self.scan
-        kwargs["visibility_mask"] = self.visibility_mask
-        new_obj = self.__class__(**kwargs)
-        return new_obj
+        kwargs: dict = {"sdf_version": target_version, "noise": self.noise.to_version(target_version) if self.noise is not None and hasattr(self.noise, "to_version") else self.noise, "range": self.range.to_version(target_version) if self.range is not None and hasattr(self.range, "to_version") else self.range, "scan": self.scan.to_version(target_version) if self.scan is not None and hasattr(self.scan, "to_version") else self.scan, "visibility_mask": self.visibility_mask}
+        return self.__class__(**kwargs)
 
     def to_sdf(self, version: str | None = None) -> ET.Element:
-        if self.__version__ is None and version is not None:
-            self.__version__ = version
-        elif version is not None and version != self.__version__:
-            return self.to_version(version).to_sdf()
-        version = self.__version__ or version
+        if self.sdfversion is None and version is not None:
+            self.sdfversion = version
+        elif version is not None and version != self.sdfversion:
+            return self.to_version(str(version)).to_sdf()
         el = ET.Element("ray")
         if self.noise is not None:
-            if hasattr(self.noise, 'to_sdf'):
-                _child_res = self.noise.to_sdf(version)
-            else:
-                _child_res = str(self.noise)
+            _child_res = self.noise.to_sdf(version)
             if isinstance(_child_res, str):
                 _item_el = ET.Element('noise')
                 _item_el.text = _child_res
@@ -448,10 +375,7 @@ class Ray(BaseModel):
         if self.range is None:
             self.range = self.__class__.Range(sdf_version=version)
         if self.range is not None:
-            if hasattr(self.range, 'to_sdf'):
-                _child_res = self.range.to_sdf(version)
-            else:
-                _child_res = str(self.range)
+            _child_res = self.range.to_sdf(version)
             if isinstance(_child_res, str):
                 _item_el = ET.Element('range')
                 _item_el.text = _child_res
@@ -461,10 +385,7 @@ class Ray(BaseModel):
         if self.scan is None:
             self.scan = self.__class__.Scan(sdf_version=version)
         if self.scan is not None:
-            if hasattr(self.scan, 'to_sdf'):
-                _child_res = self.scan.to_sdf(version)
-            else:
-                _child_res = str(self.scan)
+            _child_res = self.scan.to_sdf(version)
             if isinstance(_child_res, str):
                 _item_el = ET.Element('scan')
                 _item_el.text = _child_res

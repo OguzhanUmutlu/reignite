@@ -1,15 +1,16 @@
 ### THIS FILE WAS AUTO-GENERATED ###
 from __future__ import annotations
 
-import typing
 from xml.etree import ElementTree as ET
 
+from ..utils.utils import _parse_double
+import typing
 from typing import List
 
 from ..utils.model import BaseModel
 from ..utils.errors import SDFError
-from ..utils.pose import Pose as _SDFPose, _PoseT, _pose
-from ..utils.vector3 import Vector3 as _SDFVector3, _Vector3T, _vector3
+from ..utils.pose import Pose as _PoseT, _pose
+from ..utils.vector3 import Vector3 as _Vector3T, _vector3
 from ..utils.version import cmp_version
 from ..utils.migration import apply_migrations
 
@@ -18,39 +19,6 @@ if typing.TYPE_CHECKING:
     from ..elements.mimic import Mimic
     from ..elements.pose import Pose
     from ..elements.sensor import Sensor
-
-
-import math
-
-def _parse_int32(raw: str) -> int | SDFError:
-    try:
-        v = int(raw)
-        if not (-2147483648 <= v <= 2147483647):
-            return SDFError(f"int32 out of range: {v}")
-        return v
-    except ValueError:
-        return SDFError(f"Invalid int32: {raw}")
-
-
-def _parse_uint32(raw: str) -> int | SDFError:
-    try:
-        v = int(raw)
-        if not (0 <= v <= 4294967295):
-            return SDFError(f"uint32 out of range: {v}")
-        return v
-    except ValueError:
-        return SDFError(f"Invalid uint32: {raw}")
-
-
-def _parse_double(raw: str) -> float | SDFError:
-    try:
-        v = float(raw)
-        if not math.isfinite(v) or abs(v) > math.inf:
-            return SDFError(f"double out of range: {raw}")
-        return v
-    except ValueError:
-        return SDFError(f"Invalid double: {raw}")
-
 
 def _parse_pose(raw: str) -> _PoseT | SDFError:
     try:
@@ -65,22 +33,23 @@ def _parse_vector3(raw: str) -> _Vector3T | SDFError:
         return SDFError(str(e))
 
 
+# noinspection PyUnusedImports
 class Joint(BaseModel):
     class Axis(BaseModel):
         class Dynamics(BaseModel):
             def __init__(
                 self,
                 sdf_version: str | None = None,
-                damping: float = 0,
-                friction: float = 0,
-                spring_reference: float = 0,
-                spring_stiffness: float = 0
+                damping: float | None = 0,
+                friction: float | None = 0,
+                spring_reference: float | None = 0,
+                spring_stiffness: float | None = 0
             ):
                 super().__init__(sdf_version)
-                self.damping = damping
-                self.friction = friction
-                self.spring_reference = spring_reference
-                self.spring_stiffness = spring_stiffness
+                self.damping = damping if damping is not None else 0
+                self.friction = friction if friction is not None else 0
+                self.spring_reference = spring_reference if spring_reference is not None else 0
+                self.spring_stiffness = spring_stiffness if spring_stiffness is not None else 0
 
             def to_version(self, target_version: str) -> "Joint.Axis.Dynamics":
                 if self.damping is not None and cmp_version(target_version, "1.2") >= 0:
@@ -91,20 +60,14 @@ class Joint(BaseModel):
                     raise ValueError(f"'spring_reference' is not supported in SDF version {target_version} (added in 1.5)")
                 if self.spring_stiffness is not None and cmp_version(target_version, "1.5") < 0:
                     raise ValueError(f"'spring_stiffness' is not supported in SDF version {target_version} (added in 1.5)")
-                kwargs = {"sdf_version": target_version}
-                kwargs["damping"] = self.damping
-                kwargs["friction"] = self.friction
-                kwargs["spring_reference"] = self.spring_reference
-                kwargs["spring_stiffness"] = self.spring_stiffness
-                new_obj = self.__class__(**kwargs)
-                return new_obj
+                kwargs: dict = {"sdf_version": target_version, "damping": self.damping, "friction": self.friction, "spring_reference": self.spring_reference, "spring_stiffness": self.spring_stiffness}
+                return self.__class__(**kwargs)
 
             def to_sdf(self, version: str | None = None) -> ET.Element:
-                if self.__version__ is None and version is not None:
-                    self.__version__ = version
-                elif version is not None and version != self.__version__:
-                    return self.to_version(version).to_sdf()
-                version = self.__version__ or version
+                if self.sdfversion is None and version is not None:
+                    self.sdfversion = version
+                elif version is not None and version != self.sdfversion:
+                    return self.to_version(str(version)).to_sdf()
                 el = ET.Element("dynamics")
                 if self.damping is not None:
                     el.set("damping", str(self.damping))
@@ -156,20 +119,20 @@ class Joint(BaseModel):
             def __init__(
                 self,
                 sdf_version: str | None = None,
-                dissipation: float = 1.0,
-                effort: float = 0,
-                lower: float = -1e16,
-                stiffness: float = 1e8,
-                upper: float = 1e16,
-                velocity: float = 0
+                dissipation: float | None = 1.0,
+                effort: float | None = 0,
+                lower: float | None = -1e16,
+                stiffness: float | None = 1e8,
+                upper: float | None = 1e16,
+                velocity: float | None = 0
             ):
                 super().__init__(sdf_version)
-                self.dissipation = dissipation
-                self.effort = effort
-                self.lower = lower
-                self.stiffness = stiffness
-                self.upper = upper
-                self.velocity = velocity
+                self.dissipation = dissipation if dissipation is not None else 1.0
+                self.effort = effort if effort is not None else 0
+                self.lower = lower if lower is not None else -1e16
+                self.stiffness = stiffness if stiffness is not None else 1e8
+                self.upper = upper if upper is not None else 1e16
+                self.velocity = velocity if velocity is not None else 0
 
             def to_version(self, target_version: str) -> "Joint.Axis.Limit":
                 if self.dissipation is not None and cmp_version(target_version, "1.4") < 0:
@@ -184,22 +147,14 @@ class Joint(BaseModel):
                     raise ValueError(f"'upper' is not supported in SDF version {target_version} (removed in 1.2)")
                 if self.velocity is not None and cmp_version(target_version, "1.2") >= 0:
                     raise ValueError(f"'velocity' is not supported in SDF version {target_version} (removed in 1.2)")
-                kwargs = {"sdf_version": target_version}
-                kwargs["dissipation"] = self.dissipation
-                kwargs["effort"] = self.effort
-                kwargs["lower"] = self.lower
-                kwargs["stiffness"] = self.stiffness
-                kwargs["upper"] = self.upper
-                kwargs["velocity"] = self.velocity
-                new_obj = self.__class__(**kwargs)
-                return new_obj
+                kwargs: dict = {"sdf_version": target_version, "dissipation": self.dissipation, "effort": self.effort, "lower": self.lower, "stiffness": self.stiffness, "upper": self.upper, "velocity": self.velocity}
+                return self.__class__(**kwargs)
 
             def to_sdf(self, version: str | None = None) -> ET.Element:
-                if self.__version__ is None and version is not None:
-                    self.__version__ = version
-                elif version is not None and version != self.__version__:
-                    return self.to_version(version).to_sdf()
-                version = self.__version__ or version
+                if self.sdfversion is None and version is not None:
+                    self.sdfversion = version
+                elif version is not None and version != self.sdfversion:
+                    return self.to_version(str(version)).to_sdf()
                 el = ET.Element("limit")
                 if self.dissipation is not None:
                     _c_tmp = ET.Element("dissipation")
@@ -261,34 +216,26 @@ class Joint(BaseModel):
             def __init__(
                 self,
                 sdf_version: str | None = None,
-                expressed_in: str = "",
-                xyz: _Vector3T = None
+                expressed_in: str | None = "",
+                xyz: _Vector3T | None = None
             ):
                 super().__init__(sdf_version)
-                if xyz is None:
-                    xyz = _vector3("0 0 1")
-                else:
-                    xyz = _vector3(xyz)
-                self.expressed_in = expressed_in
-                self.xyz = xyz
+                self.expressed_in = expressed_in if expressed_in is not None else ""
+                self.xyz = _vector3("0 0 1") if xyz is None else _vector3(xyz)
 
             def to_version(self, target_version: str) -> "Joint.Axis.Xyz":
                 if self.expressed_in is not None and cmp_version(target_version, "1.7") < 0:
                     raise ValueError(f"'expressed_in' is not supported in SDF version {target_version} (added in 1.7)")
                 if self.xyz is not None and cmp_version(target_version, "1.2") < 0:
                     raise ValueError(f"'xyz' is not supported in SDF version {target_version} (added in 1.2)")
-                kwargs = {"sdf_version": target_version}
-                kwargs["expressed_in"] = self.expressed_in
-                kwargs["xyz"] = self.xyz
-                new_obj = self.__class__(**kwargs)
-                return new_obj
+                kwargs: dict = {"sdf_version": target_version, "expressed_in": self.expressed_in, "xyz": self.xyz}
+                return self.__class__(**kwargs)
 
             def to_sdf(self, version: str | None = None) -> ET.Element:
-                if self.__version__ is None and version is not None:
-                    self.__version__ = version
-                elif version is not None and version != self.__version__:
-                    return self.to_version(version).to_sdf()
-                version = self.__version__ or version
+                if self.sdfversion is None and version is not None:
+                    self.sdfversion = version
+                elif version is not None and version != self.sdfversion:
+                    return self.to_version(str(version)).to_sdf()
                 el = ET.Element("xyz")
                 if self.expressed_in is not None:
                     el.set("expressed_in", self.expressed_in)
@@ -319,38 +266,34 @@ class Joint(BaseModel):
             self,
             sdf_version: str | None = None,
             dynamics: "Joint.Axis.Dynamics" = None,
-            initial_position: float = 0,
+            initial_position: float | None = 0,
             limit: "Joint.Axis.Limit" = None,
             mimic: "Mimic" = None,
-            use_parent_model_frame: bool = False,
-            xyz: _Vector3T = None
+            use_parent_model_frame: bool | None = False,
+            xyz: _Vector3T | None = None
         ):
             super().__init__(sdf_version)
-            if xyz is None:
-                xyz = _vector3("0 0 1")
-            else:
-                xyz = _vector3(xyz)
             self.dynamics = dynamics
-            self.initial_position = initial_position
+            self.initial_position = initial_position if initial_position is not None else 0
             self.limit = limit
             self.mimic = mimic
-            self.use_parent_model_frame = use_parent_model_frame
-            self.xyz = xyz
+            self.use_parent_model_frame = use_parent_model_frame if use_parent_model_frame is not None else False
+            self.xyz = _vector3("0 0 1") if xyz is None else _vector3(xyz)
             if self.dynamics is not None and hasattr(self.dynamics, 'to_version'):
-                if getattr(self.dynamics, '__version__', None) is None:
-                    self.dynamics.__version__ = self.__version__
-                elif getattr(self.dynamics, '__version__', None) != self.__version__ and self.__version__ is not None:
-                    self.dynamics = self.dynamics.to_version(self.__version__)
+                if getattr(self.dynamics, 'sdfversion', None) is None:
+                    self.dynamics.sdfversion = self.sdfversion
+                elif getattr(self.dynamics, 'sdfversion', None) != self.sdfversion and self.sdfversion is not None:
+                    self.dynamics = self.dynamics.to_version(self.sdfversion)
             if self.limit is not None and hasattr(self.limit, 'to_version'):
-                if getattr(self.limit, '__version__', None) is None:
-                    self.limit.__version__ = self.__version__
-                elif getattr(self.limit, '__version__', None) != self.__version__ and self.__version__ is not None:
-                    self.limit = self.limit.to_version(self.__version__)
+                if getattr(self.limit, 'sdfversion', None) is None:
+                    self.limit.sdfversion = self.sdfversion
+                elif getattr(self.limit, 'sdfversion', None) != self.sdfversion and self.sdfversion is not None:
+                    self.limit = self.limit.to_version(self.sdfversion)
             if self.mimic is not None and hasattr(self.mimic, 'to_version'):
-                if getattr(self.mimic, '__version__', None) is None:
-                    self.mimic.__version__ = self.__version__
-                elif getattr(self.mimic, '__version__', None) != self.__version__ and self.__version__ is not None:
-                    self.mimic = self.mimic.to_version(self.__version__)
+                if getattr(self.mimic, 'sdfversion', None) is None:
+                    self.mimic.sdfversion = self.sdfversion
+                elif getattr(self.mimic, 'sdfversion', None) != self.sdfversion and self.sdfversion is not None:
+                    self.mimic = self.mimic.to_version(self.sdfversion)
 
         def to_version(self, target_version: str) -> "Joint.Axis":
             from ..elements.mimic import Mimic
@@ -366,30 +309,20 @@ class Joint(BaseModel):
                 raise ValueError(f"'use_parent_model_frame' is not supported in SDF version {target_version} (removed in 1.7)")
             if self.xyz is not None and cmp_version(target_version, "1.2") >= 0:
                 raise ValueError(f"'xyz' is not supported in SDF version {target_version} (removed in 1.2)")
-            kwargs = {"sdf_version": target_version}
-            kwargs["dynamics"] = self.dynamics.to_version(target_version) if hasattr(self.dynamics, "to_version") else self.dynamics
-            kwargs["initial_position"] = self.initial_position
-            kwargs["limit"] = self.limit.to_version(target_version) if hasattr(self.limit, "to_version") else self.limit
-            kwargs["mimic"] = self.mimic.to_version(target_version) if hasattr(self.mimic, "to_version") else self.mimic
-            kwargs["use_parent_model_frame"] = self.use_parent_model_frame
-            kwargs["xyz"] = self.xyz
+            kwargs: dict = {"sdf_version": target_version, "dynamics": self.dynamics.to_version(target_version) if self.dynamics is not None and hasattr(self.dynamics, "to_version") else self.dynamics, "initial_position": self.initial_position, "limit": self.limit.to_version(target_version) if self.limit is not None and hasattr(self.limit, "to_version") else self.limit, "mimic": self.mimic.to_version(target_version) if self.mimic is not None and hasattr(self.mimic, "to_version") else self.mimic, "use_parent_model_frame": self.use_parent_model_frame, "xyz": self.xyz}
             new_obj = self.__class__(**kwargs)
             apply_migrations(new_obj, target_version)
             return new_obj
 
         def to_sdf(self, version: str | None = None) -> ET.Element:
             from ..elements.mimic import Mimic
-            if self.__version__ is None and version is not None:
-                self.__version__ = version
-            elif version is not None and version != self.__version__:
-                return self.to_version(version).to_sdf()
-            version = self.__version__ or version
+            if self.sdfversion is None and version is not None:
+                self.sdfversion = version
+            elif version is not None and version != self.sdfversion:
+                return self.to_version(str(version)).to_sdf()
             el = ET.Element("axis")
             if self.dynamics is not None:
-                if hasattr(self.dynamics, 'to_sdf'):
-                    _child_res = self.dynamics.to_sdf(version)
-                else:
-                    _child_res = str(self.dynamics)
+                _child_res = self.dynamics.to_sdf(version)
                 if isinstance(_child_res, str):
                     _item_el = ET.Element('dynamics')
                     _item_el.text = _child_res
@@ -403,10 +336,7 @@ class Joint(BaseModel):
             if self.limit is None:
                 self.limit = self.__class__.Limit(sdf_version=version)
             if self.limit is not None:
-                if hasattr(self.limit, 'to_sdf'):
-                    _child_res = self.limit.to_sdf(version)
-                else:
-                    _child_res = str(self.limit)
+                _child_res = self.limit.to_sdf(version)
                 if isinstance(_child_res, str):
                     _item_el = ET.Element('limit')
                     _item_el.text = _child_res
@@ -414,10 +344,7 @@ class Joint(BaseModel):
                     _item_el = _child_res
                 el.append(_item_el)
             if self.mimic is not None:
-                if hasattr(self.mimic, 'to_sdf'):
-                    _child_res = self.mimic.to_sdf(version)
-                else:
-                    _child_res = str(self.mimic)
+                _child_res = self.mimic.to_sdf(version)
                 if isinstance(_child_res, str):
                     _item_el = ET.Element('mimic')
                     _item_el.text = _child_res
@@ -496,20 +423,20 @@ class Joint(BaseModel):
             def __init__(
                 self,
                 sdf_version: str | None = None,
-                dissipation: float = 1.0,
-                effort: float = 0,
-                lower: float = -1e16,
-                stiffness: float = 1e8,
-                upper: float = 1e16,
-                velocity: float = 0
+                dissipation: float | None = 1.0,
+                effort: float | None = 0,
+                lower: float | None = -1e16,
+                stiffness: float | None = 1e8,
+                upper: float | None = 1e16,
+                velocity: float | None = 0
             ):
                 super().__init__(sdf_version)
-                self.dissipation = dissipation
-                self.effort = effort
-                self.lower = lower
-                self.stiffness = stiffness
-                self.upper = upper
-                self.velocity = velocity
+                self.dissipation = dissipation if dissipation is not None else 1.0
+                self.effort = effort if effort is not None else 0
+                self.lower = lower if lower is not None else -1e16
+                self.stiffness = stiffness if stiffness is not None else 1e8
+                self.upper = upper if upper is not None else 1e16
+                self.velocity = velocity if velocity is not None else 0
 
             def to_version(self, target_version: str) -> "Joint.Axis2.Axis2Limit":
                 if self.dissipation is not None and cmp_version(target_version, "1.4") < 0:
@@ -524,22 +451,14 @@ class Joint(BaseModel):
                     raise ValueError(f"'upper' is not supported in SDF version {target_version} (removed in 1.2)")
                 if self.velocity is not None and cmp_version(target_version, "1.2") >= 0:
                     raise ValueError(f"'velocity' is not supported in SDF version {target_version} (removed in 1.2)")
-                kwargs = {"sdf_version": target_version}
-                kwargs["dissipation"] = self.dissipation
-                kwargs["effort"] = self.effort
-                kwargs["lower"] = self.lower
-                kwargs["stiffness"] = self.stiffness
-                kwargs["upper"] = self.upper
-                kwargs["velocity"] = self.velocity
-                new_obj = self.__class__(**kwargs)
-                return new_obj
+                kwargs: dict = {"sdf_version": target_version, "dissipation": self.dissipation, "effort": self.effort, "lower": self.lower, "stiffness": self.stiffness, "upper": self.upper, "velocity": self.velocity}
+                return self.__class__(**kwargs)
 
             def to_sdf(self, version: str | None = None) -> ET.Element:
-                if self.__version__ is None and version is not None:
-                    self.__version__ = version
-                elif version is not None and version != self.__version__:
-                    return self.to_version(version).to_sdf()
-                version = self.__version__ or version
+                if self.sdfversion is None and version is not None:
+                    self.sdfversion = version
+                elif version is not None and version != self.sdfversion:
+                    return self.to_version(str(version)).to_sdf()
                 el = ET.Element("limit")
                 if self.dissipation is not None:
                     _c_tmp = ET.Element("dissipation")
@@ -603,38 +522,34 @@ class Joint(BaseModel):
             self,
             sdf_version: str | None = None,
             dynamics: "Dynamics" = None,
-            initial_position: float = 0,
+            initial_position: float | None = 0,
             limit: "Joint.Axis2.Axis2Limit" = None,
             mimic: "Mimic" = None,
-            use_parent_model_frame: bool = False,
-            xyz: _Vector3T = None
+            use_parent_model_frame: bool | None = False,
+            xyz: _Vector3T | None = None
         ):
             super().__init__(sdf_version)
-            if xyz is None:
-                xyz = _vector3("0 0 1")
-            else:
-                xyz = _vector3(xyz)
             self.dynamics = dynamics
-            self.initial_position = initial_position
+            self.initial_position = initial_position if initial_position is not None else 0
             self.limit = limit
             self.mimic = mimic
-            self.use_parent_model_frame = use_parent_model_frame
-            self.xyz = xyz
+            self.use_parent_model_frame = use_parent_model_frame if use_parent_model_frame is not None else False
+            self.xyz = _vector3("0 0 1") if xyz is None else _vector3(xyz)
             if self.dynamics is not None and hasattr(self.dynamics, 'to_version'):
-                if getattr(self.dynamics, '__version__', None) is None:
-                    self.dynamics.__version__ = self.__version__
-                elif getattr(self.dynamics, '__version__', None) != self.__version__ and self.__version__ is not None:
-                    self.dynamics = self.dynamics.to_version(self.__version__)
+                if getattr(self.dynamics, 'sdfversion', None) is None:
+                    self.dynamics.sdfversion = self.sdfversion
+                elif getattr(self.dynamics, 'sdfversion', None) != self.sdfversion and self.sdfversion is not None:
+                    self.dynamics = self.dynamics.to_version(self.sdfversion)
             if self.limit is not None and hasattr(self.limit, 'to_version'):
-                if getattr(self.limit, '__version__', None) is None:
-                    self.limit.__version__ = self.__version__
-                elif getattr(self.limit, '__version__', None) != self.__version__ and self.__version__ is not None:
-                    self.limit = self.limit.to_version(self.__version__)
+                if getattr(self.limit, 'sdfversion', None) is None:
+                    self.limit.sdfversion = self.sdfversion
+                elif getattr(self.limit, 'sdfversion', None) != self.sdfversion and self.sdfversion is not None:
+                    self.limit = self.limit.to_version(self.sdfversion)
             if self.mimic is not None and hasattr(self.mimic, 'to_version'):
-                if getattr(self.mimic, '__version__', None) is None:
-                    self.mimic.__version__ = self.__version__
-                elif getattr(self.mimic, '__version__', None) != self.__version__ and self.__version__ is not None:
-                    self.mimic = self.mimic.to_version(self.__version__)
+                if getattr(self.mimic, 'sdfversion', None) is None:
+                    self.mimic.sdfversion = self.sdfversion
+                elif getattr(self.mimic, 'sdfversion', None) != self.sdfversion and self.sdfversion is not None:
+                    self.mimic = self.mimic.to_version(self.sdfversion)
 
         def to_version(self, target_version: str) -> "Joint.Axis2":
             from ..elements.mimic import Mimic
@@ -650,30 +565,20 @@ class Joint(BaseModel):
                 raise ValueError(f"'use_parent_model_frame' is not supported in SDF version {target_version} (removed in 1.7)")
             if self.xyz is not None and cmp_version(target_version, "1.2") >= 0:
                 raise ValueError(f"'xyz' is not supported in SDF version {target_version} (removed in 1.2)")
-            kwargs = {"sdf_version": target_version}
-            kwargs["dynamics"] = self.dynamics.to_version(target_version) if hasattr(self.dynamics, "to_version") else self.dynamics
-            kwargs["initial_position"] = self.initial_position
-            kwargs["limit"] = self.limit.to_version(target_version) if hasattr(self.limit, "to_version") else self.limit
-            kwargs["mimic"] = self.mimic.to_version(target_version) if hasattr(self.mimic, "to_version") else self.mimic
-            kwargs["use_parent_model_frame"] = self.use_parent_model_frame
-            kwargs["xyz"] = self.xyz
+            kwargs: dict = {"sdf_version": target_version, "dynamics": self.dynamics.to_version(target_version) if self.dynamics is not None and hasattr(self.dynamics, "to_version") else self.dynamics, "initial_position": self.initial_position, "limit": self.limit.to_version(target_version) if self.limit is not None and hasattr(self.limit, "to_version") else self.limit, "mimic": self.mimic.to_version(target_version) if self.mimic is not None and hasattr(self.mimic, "to_version") else self.mimic, "use_parent_model_frame": self.use_parent_model_frame, "xyz": self.xyz}
             new_obj = self.__class__(**kwargs)
             apply_migrations(new_obj, target_version)
             return new_obj
 
         def to_sdf(self, version: str | None = None) -> ET.Element:
             from ..elements.mimic import Mimic
-            if self.__version__ is None and version is not None:
-                self.__version__ = version
-            elif version is not None and version != self.__version__:
-                return self.to_version(version).to_sdf()
-            version = self.__version__ or version
+            if self.sdfversion is None and version is not None:
+                self.sdfversion = version
+            elif version is not None and version != self.sdfversion:
+                return self.to_version(str(version)).to_sdf()
             el = ET.Element("axis2")
             if self.dynamics is not None:
-                if hasattr(self.dynamics, 'to_sdf'):
-                    _child_res = self.dynamics.to_sdf(version)
-                else:
-                    _child_res = str(self.dynamics)
+                _child_res = self.dynamics.to_sdf(version)
                 if isinstance(_child_res, str):
                     _item_el = ET.Element('dynamics')
                     _item_el.text = _child_res
@@ -688,10 +593,7 @@ class Joint(BaseModel):
                 if self.limit is None:
                     self.limit = self.__class__.Axis2Limit(sdf_version=version)
             if self.limit is not None:
-                if hasattr(self.limit, 'to_sdf'):
-                    _child_res = self.limit.to_sdf(version)
-                else:
-                    _child_res = str(self.limit)
+                _child_res = self.limit.to_sdf(version)
                 if isinstance(_child_res, str):
                     _item_el = ET.Element('limit')
                     _item_el.text = _child_res
@@ -699,10 +601,7 @@ class Joint(BaseModel):
                     _item_el = _child_res
                 el.append(_item_el)
             if self.mimic is not None:
-                if hasattr(self.mimic, 'to_sdf'):
-                    _child_res = self.mimic.to_sdf(version)
-                else:
-                    _child_res = str(self.mimic)
+                _child_res = self.mimic.to_sdf(version)
                 if isinstance(_child_res, str):
                     _item_el = ET.Element('mimic')
                     _item_el.text = _child_res
@@ -780,28 +679,24 @@ class Joint(BaseModel):
         def __init__(
             self,
             sdf_version: str | None = None,
-            child: str = "__default__",
-            link: str = "__default__"
+            child: str | None = "__default__",
+            link: str | None = "__default__"
         ):
             super().__init__(sdf_version)
-            self.child = child
-            self.link = link
+            self.child = child if child is not None else "__default__"
+            self.link = link if link is not None else "__default__"
 
         def to_version(self, target_version: str) -> "Joint.Child":
             if self.link is not None and cmp_version(target_version, "1.2") >= 0:
                 raise ValueError(f"'link' is not supported in SDF version {target_version} (removed in 1.2)")
-            kwargs = {"sdf_version": target_version}
-            kwargs["child"] = self.child
-            kwargs["link"] = self.link
-            new_obj = self.__class__(**kwargs)
-            return new_obj
+            kwargs: dict = {"sdf_version": target_version, "child": self.child, "link": self.link}
+            return self.__class__(**kwargs)
 
         def to_sdf(self, version: str | None = None) -> ET.Element:
-            if self.__version__ is None and version is not None:
-                self.__version__ = version
-            elif version is not None and version != self.__version__:
-                return self.to_version(version).to_sdf()
-            version = self.__version__ or version
+            if self.sdfversion is None and version is not None:
+                self.sdfversion = version
+            elif version is not None and version != self.sdfversion:
+                return self.to_version(str(version)).to_sdf()
             el = ET.Element("child")
             if self.child is not None:
                 el.text = self.child
@@ -830,26 +725,19 @@ class Joint(BaseModel):
             return cls(sdf_version=version, child=_child, link=_link)
 
     class Origin(BaseModel):
-        def __init__(self, sdf_version: str | None = None, pose: _PoseT = None):
+        def __init__(self, sdf_version: str | None = None, pose: _PoseT | None = None):
             super().__init__(sdf_version)
-            if pose is None:
-                pose = _pose("0 0 0 0 0 0")
-            else:
-                pose = _pose(pose)
-            self.pose = pose
+            self.pose = _pose("0 0 0 0 0 0") if pose is None else _pose(pose)
 
         def to_version(self, target_version: str) -> "Joint.Origin":
-            kwargs = {"sdf_version": target_version}
-            kwargs["pose"] = self.pose
-            new_obj = self.__class__(**kwargs)
-            return new_obj
+            kwargs: dict = {"sdf_version": target_version, "pose": self.pose}
+            return self.__class__(**kwargs)
 
         def to_sdf(self, version: str | None = None) -> ET.Element:
-            if self.__version__ is None and version is not None:
-                self.__version__ = version
-            elif version is not None and version != self.__version__:
-                return self.to_version(version).to_sdf()
-            version = self.__version__ or version
+            if self.sdfversion is None and version is not None:
+                self.sdfversion = version
+            elif version is not None and version != self.sdfversion:
+                return self.to_version(str(version)).to_sdf()
             el = ET.Element("origin")
             if self.pose is not None:
                 if cmp_version(version, "1.2") >= 0:
@@ -878,28 +766,24 @@ class Joint(BaseModel):
         def __init__(
             self,
             sdf_version: str | None = None,
-            link: str = "__default__",
-            parent: str = "__default__"
+            link: str | None = "__default__",
+            parent: str | None = "__default__"
         ):
             super().__init__(sdf_version)
-            self.link = link
-            self.parent = parent
+            self.link = link if link is not None else "__default__"
+            self.parent = parent if parent is not None else "__default__"
 
         def to_version(self, target_version: str) -> "Joint.Parent":
             if self.link is not None and cmp_version(target_version, "1.2") >= 0:
                 raise ValueError(f"'link' is not supported in SDF version {target_version} (removed in 1.2)")
-            kwargs = {"sdf_version": target_version}
-            kwargs["link"] = self.link
-            kwargs["parent"] = self.parent
-            new_obj = self.__class__(**kwargs)
-            return new_obj
+            kwargs: dict = {"sdf_version": target_version, "link": self.link, "parent": self.parent}
+            return self.__class__(**kwargs)
 
         def to_sdf(self, version: str | None = None) -> ET.Element:
-            if self.__version__ is None and version is not None:
-                self.__version__ = version
-            elif version is not None and version != self.__version__:
-                return self.to_version(version).to_sdf()
-            version = self.__version__ or version
+            if self.sdfversion is None and version is not None:
+                self.sdfversion = version
+            elif version is not None and version != self.sdfversion:
+                return self.to_version(str(version)).to_sdf()
             el = ET.Element("parent")
             if self.link is not None:
                 if cmp_version(version, "1.2") >= 0:
@@ -930,28 +814,29 @@ class Joint(BaseModel):
     class Physics(BaseModel):
         class Ode(BaseModel):
             class OdeLimit(BaseModel):
-                def __init__(self, sdf_version: str | None = None, cfm: float = 0.0, erp: float = 0.2):
+                def __init__(
+                    self,
+                    sdf_version: str | None = None,
+                    cfm: float | None = 0.0,
+                    erp: float | None = 0.2
+                ):
                     super().__init__(sdf_version)
-                    self.cfm = cfm
-                    self.erp = erp
+                    self.cfm = cfm if cfm is not None else 0.0
+                    self.erp = erp if erp is not None else 0.2
 
                 def to_version(self, target_version: str) -> "Joint.Physics.Ode.OdeLimit":
                     if self.cfm is not None and cmp_version(target_version, "1.2") >= 0:
                         raise ValueError(f"'cfm' is not supported in SDF version {target_version} (removed in 1.2)")
                     if self.erp is not None and cmp_version(target_version, "1.2") >= 0:
                         raise ValueError(f"'erp' is not supported in SDF version {target_version} (removed in 1.2)")
-                    kwargs = {"sdf_version": target_version}
-                    kwargs["cfm"] = self.cfm
-                    kwargs["erp"] = self.erp
-                    new_obj = self.__class__(**kwargs)
-                    return new_obj
+                    kwargs: dict = {"sdf_version": target_version, "cfm": self.cfm, "erp": self.erp}
+                    return self.__class__(**kwargs)
 
                 def to_sdf(self, version: str | None = None) -> ET.Element:
-                    if self.__version__ is None and version is not None:
-                        self.__version__ = version
-                    elif version is not None and version != self.__version__:
-                        return self.to_version(version).to_sdf()
-                    version = self.__version__ or version
+                    if self.sdfversion is None and version is not None:
+                        self.sdfversion = version
+                    elif version is not None and version != self.sdfversion:
+                        return self.to_version(str(version)).to_sdf()
                     el = ET.Element("limit")
                     if self.cfm is not None:
                         el.set("cfm", str(self.cfm))
@@ -970,28 +855,29 @@ class Joint(BaseModel):
                     return cls(sdf_version=version, cfm=_cfm, erp=_erp)
 
             class Suspension(BaseModel):
-                def __init__(self, sdf_version: str | None = None, cfm: float = 0.0, erp: float = 0.2):
+                def __init__(
+                    self,
+                    sdf_version: str | None = None,
+                    cfm: float | None = 0.0,
+                    erp: float | None = 0.2
+                ):
                     super().__init__(sdf_version)
-                    self.cfm = cfm
-                    self.erp = erp
+                    self.cfm = cfm if cfm is not None else 0.0
+                    self.erp = erp if erp is not None else 0.2
 
                 def to_version(self, target_version: str) -> "Joint.Physics.Ode.Suspension":
                     if self.cfm is not None and cmp_version(target_version, "1.2") >= 0:
                         raise ValueError(f"'cfm' is not supported in SDF version {target_version} (removed in 1.2)")
                     if self.erp is not None and cmp_version(target_version, "1.2") >= 0:
                         raise ValueError(f"'erp' is not supported in SDF version {target_version} (removed in 1.2)")
-                    kwargs = {"sdf_version": target_version}
-                    kwargs["cfm"] = self.cfm
-                    kwargs["erp"] = self.erp
-                    new_obj = self.__class__(**kwargs)
-                    return new_obj
+                    kwargs: dict = {"sdf_version": target_version, "cfm": self.cfm, "erp": self.erp}
+                    return self.__class__(**kwargs)
 
                 def to_sdf(self, version: str | None = None) -> ET.Element:
-                    if self.__version__ is None and version is not None:
-                        self.__version__ = version
-                    elif version is not None and version != self.__version__:
-                        return self.to_version(version).to_sdf()
-                    version = self.__version__ or version
+                    if self.sdfversion is None and version is not None:
+                        self.sdfversion = version
+                    elif version is not None and version != self.sdfversion:
+                        return self.to_version(str(version)).to_sdf()
                     el = ET.Element("suspension")
                     if self.cfm is not None:
                         el.set("cfm", str(self.cfm))
@@ -1012,40 +898,40 @@ class Joint(BaseModel):
             def __init__(
                 self,
                 sdf_version: str | None = None,
-                bounce: float = 0,
-                cfm: float = 0,
-                cfm_damping: bool = False,
-                erp: float = 0.2,
-                fudge_factor: float = 0,
-                implicit_spring_damper: bool = False,
+                bounce: float | None = 0,
+                cfm: float | None = 0,
+                cfm_damping: bool | None = False,
+                erp: float | None = 0.2,
+                fudge_factor: float | None = 0,
+                implicit_spring_damper: bool | None = False,
                 limit: "Joint.Physics.Ode.OdeLimit" = None,
-                max_force: float = 0,
-                provide_feedback: bool = False,
+                max_force: float | None = 0,
+                provide_feedback: bool | None = False,
                 suspension: "Joint.Physics.Ode.Suspension" = None,
-                velocity: float = 0
+                velocity: float | None = 0
             ):
                 super().__init__(sdf_version)
-                self.bounce = bounce
-                self.cfm = cfm
-                self.cfm_damping = cfm_damping
-                self.erp = erp
-                self.fudge_factor = fudge_factor
-                self.implicit_spring_damper = implicit_spring_damper
+                self.bounce = bounce if bounce is not None else 0
+                self.cfm = cfm if cfm is not None else 0
+                self.cfm_damping = cfm_damping if cfm_damping is not None else False
+                self.erp = erp if erp is not None else 0.2
+                self.fudge_factor = fudge_factor if fudge_factor is not None else 0
+                self.implicit_spring_damper = implicit_spring_damper if implicit_spring_damper is not None else False
                 self.limit = limit
-                self.max_force = max_force
-                self.provide_feedback = provide_feedback
+                self.max_force = max_force if max_force is not None else 0
+                self.provide_feedback = provide_feedback if provide_feedback is not None else False
                 self.suspension = suspension
-                self.velocity = velocity
+                self.velocity = velocity if velocity is not None else 0
                 if self.limit is not None and hasattr(self.limit, 'to_version'):
-                    if getattr(self.limit, '__version__', None) is None:
-                        self.limit.__version__ = self.__version__
-                    elif getattr(self.limit, '__version__', None) != self.__version__ and self.__version__ is not None:
-                        self.limit = self.limit.to_version(self.__version__)
+                    if getattr(self.limit, 'sdfversion', None) is None:
+                        self.limit.sdfversion = self.sdfversion
+                    elif getattr(self.limit, 'sdfversion', None) != self.sdfversion and self.sdfversion is not None:
+                        self.limit = self.limit.to_version(self.sdfversion)
                 if self.suspension is not None and hasattr(self.suspension, 'to_version'):
-                    if getattr(self.suspension, '__version__', None) is None:
-                        self.suspension.__version__ = self.__version__
-                    elif getattr(self.suspension, '__version__', None) != self.__version__ and self.__version__ is not None:
-                        self.suspension = self.suspension.to_version(self.__version__)
+                    if getattr(self.suspension, 'sdfversion', None) is None:
+                        self.suspension.sdfversion = self.sdfversion
+                    elif getattr(self.suspension, 'sdfversion', None) != self.sdfversion and self.sdfversion is not None:
+                        self.suspension = self.suspension.to_version(self.sdfversion)
 
             def to_version(self, target_version: str) -> "Joint.Physics.Ode":
                 if self.cfm_damping is not None and cmp_version(target_version, "1.3") < 0:
@@ -1058,27 +944,14 @@ class Joint(BaseModel):
                     raise ValueError(f"'provide_feedback' is not supported in SDF version {target_version} (added in 1.3)")
                 if self.provide_feedback is not None and cmp_version(target_version, "1.7") >= 0:
                     raise ValueError(f"'provide_feedback' is not supported in SDF version {target_version} (removed in 1.7)")
-                kwargs = {"sdf_version": target_version}
-                kwargs["bounce"] = self.bounce
-                kwargs["cfm"] = self.cfm
-                kwargs["cfm_damping"] = self.cfm_damping
-                kwargs["erp"] = self.erp
-                kwargs["fudge_factor"] = self.fudge_factor
-                kwargs["implicit_spring_damper"] = self.implicit_spring_damper
-                kwargs["limit"] = self.limit.to_version(target_version) if hasattr(self.limit, "to_version") else self.limit
-                kwargs["max_force"] = self.max_force
-                kwargs["provide_feedback"] = self.provide_feedback
-                kwargs["suspension"] = self.suspension.to_version(target_version) if hasattr(self.suspension, "to_version") else self.suspension
-                kwargs["velocity"] = self.velocity
-                new_obj = self.__class__(**kwargs)
-                return new_obj
+                kwargs: dict = {"sdf_version": target_version, "bounce": self.bounce, "cfm": self.cfm, "cfm_damping": self.cfm_damping, "erp": self.erp, "fudge_factor": self.fudge_factor, "implicit_spring_damper": self.implicit_spring_damper, "limit": self.limit.to_version(target_version) if self.limit is not None and hasattr(self.limit, "to_version") else self.limit, "max_force": self.max_force, "provide_feedback": self.provide_feedback, "suspension": self.suspension.to_version(target_version) if self.suspension is not None and hasattr(self.suspension, "to_version") else self.suspension, "velocity": self.velocity}
+                return self.__class__(**kwargs)
 
             def to_sdf(self, version: str | None = None) -> ET.Element:
-                if self.__version__ is None and version is not None:
-                    self.__version__ = version
-                elif version is not None and version != self.__version__:
-                    return self.to_version(version).to_sdf()
-                version = self.__version__ or version
+                if self.sdfversion is None and version is not None:
+                    self.sdfversion = version
+                elif version is not None and version != self.sdfversion:
+                    return self.to_version(str(version)).to_sdf()
                 el = ET.Element("ode")
                 if self.bounce is not None:
                     _c_tmp = ET.Element("bounce")
@@ -1105,10 +978,7 @@ class Joint(BaseModel):
                     _c_tmp.text = str(self.implicit_spring_damper).lower()
                     el.append(_c_tmp)
                 if self.limit is not None:
-                    if hasattr(self.limit, 'to_sdf'):
-                        _child_res = self.limit.to_sdf(version)
-                    else:
-                        _child_res = str(self.limit)
+                    _child_res = self.limit.to_sdf(version)
                     if isinstance(_child_res, str):
                         _item_el = ET.Element('limit')
                         _item_el.text = _child_res
@@ -1124,10 +994,7 @@ class Joint(BaseModel):
                     _c_tmp.text = str(self.provide_feedback).lower()
                     el.append(_c_tmp)
                 if self.suspension is not None:
-                    if hasattr(self.suspension, 'to_sdf'):
-                        _child_res = self.suspension.to_sdf(version)
-                    else:
-                        _child_res = str(self.suspension)
+                    _child_res = self.suspension.to_sdf(version)
                     if isinstance(_child_res, str):
                         _item_el = ET.Element('suspension')
                         _item_el.text = _child_res
@@ -1250,22 +1117,19 @@ class Joint(BaseModel):
                 return cls(sdf_version=version, bounce=_bounce, cfm=_cfm, cfm_damping=_cfm_damping, erp=_erp, fudge_factor=_fudge_factor, implicit_spring_damper=_implicit_spring_damper, limit=_limit, max_force=_max_force, provide_feedback=_provide_feedback, suspension=_suspension, velocity=_velocity)
 
         class Simbody(BaseModel):
-            def __init__(self, sdf_version: str | None = None, must_be_loop_joint: bool = False):
+            def __init__(self, sdf_version: str | None = None, must_be_loop_joint: bool | None = False):
                 super().__init__(sdf_version)
-                self.must_be_loop_joint = must_be_loop_joint
+                self.must_be_loop_joint = must_be_loop_joint if must_be_loop_joint is not None else False
 
             def to_version(self, target_version: str) -> "Joint.Physics.Simbody":
-                kwargs = {"sdf_version": target_version}
-                kwargs["must_be_loop_joint"] = self.must_be_loop_joint
-                new_obj = self.__class__(**kwargs)
-                return new_obj
+                kwargs: dict = {"sdf_version": target_version, "must_be_loop_joint": self.must_be_loop_joint}
+                return self.__class__(**kwargs)
 
             def to_sdf(self, version: str | None = None) -> ET.Element:
-                if self.__version__ is None and version is not None:
-                    self.__version__ = version
-                elif version is not None and version != self.__version__:
-                    return self.to_version(version).to_sdf()
-                version = self.__version__ or version
+                if self.sdfversion is None and version is not None:
+                    self.sdfversion = version
+                elif version is not None and version != self.sdfversion:
+                    return self.to_version(str(version)).to_sdf()
                 el = ET.Element("simbody")
                 if self.must_be_loop_joint is not None:
                     _c_tmp = ET.Element("must_be_loop_joint")
@@ -1292,49 +1156,42 @@ class Joint(BaseModel):
             self,
             sdf_version: str | None = None,
             ode: "Joint.Physics.Ode" = None,
-            provide_feedback: bool = False,
+            provide_feedback: bool | None = False,
             simbody: "Joint.Physics.Simbody" = None
         ):
             super().__init__(sdf_version)
             self.ode = ode
-            self.provide_feedback = provide_feedback
+            self.provide_feedback = provide_feedback if provide_feedback is not None else False
             self.simbody = simbody
             if self.ode is not None and hasattr(self.ode, 'to_version'):
-                if getattr(self.ode, '__version__', None) is None:
-                    self.ode.__version__ = self.__version__
-                elif getattr(self.ode, '__version__', None) != self.__version__ and self.__version__ is not None:
-                    self.ode = self.ode.to_version(self.__version__)
+                if getattr(self.ode, 'sdfversion', None) is None:
+                    self.ode.sdfversion = self.sdfversion
+                elif getattr(self.ode, 'sdfversion', None) != self.sdfversion and self.sdfversion is not None:
+                    self.ode = self.ode.to_version(self.sdfversion)
             if self.simbody is not None and hasattr(self.simbody, 'to_version'):
-                if getattr(self.simbody, '__version__', None) is None:
-                    self.simbody.__version__ = self.__version__
-                elif getattr(self.simbody, '__version__', None) != self.__version__ and self.__version__ is not None:
-                    self.simbody = self.simbody.to_version(self.__version__)
+                if getattr(self.simbody, 'sdfversion', None) is None:
+                    self.simbody.sdfversion = self.sdfversion
+                elif getattr(self.simbody, 'sdfversion', None) != self.sdfversion and self.sdfversion is not None:
+                    self.simbody = self.simbody.to_version(self.sdfversion)
 
         def to_version(self, target_version: str) -> "Joint.Physics":
             if self.provide_feedback is not None and cmp_version(target_version, "1.4") < 0:
                 raise ValueError(f"'provide_feedback' is not supported in SDF version {target_version} (added in 1.4)")
             if self.simbody is not None and cmp_version(target_version, "1.4") < 0:
                 raise ValueError(f"'simbody' is not supported in SDF version {target_version} (added in 1.4)")
-            kwargs = {"sdf_version": target_version}
-            kwargs["ode"] = self.ode.to_version(target_version) if hasattr(self.ode, "to_version") else self.ode
-            kwargs["provide_feedback"] = self.provide_feedback
-            kwargs["simbody"] = self.simbody.to_version(target_version) if hasattr(self.simbody, "to_version") else self.simbody
+            kwargs: dict = {"sdf_version": target_version, "ode": self.ode.to_version(target_version) if self.ode is not None and hasattr(self.ode, "to_version") else self.ode, "provide_feedback": self.provide_feedback, "simbody": self.simbody.to_version(target_version) if self.simbody is not None and hasattr(self.simbody, "to_version") else self.simbody}
             new_obj = self.__class__(**kwargs)
             apply_migrations(new_obj, target_version)
             return new_obj
 
         def to_sdf(self, version: str | None = None) -> ET.Element:
-            if self.__version__ is None and version is not None:
-                self.__version__ = version
-            elif version is not None and version != self.__version__:
-                return self.to_version(version).to_sdf()
-            version = self.__version__ or version
+            if self.sdfversion is None and version is not None:
+                self.sdfversion = version
+            elif version is not None and version != self.sdfversion:
+                return self.to_version(str(version)).to_sdf()
             el = ET.Element("physics")
             if self.ode is not None:
-                if hasattr(self.ode, 'to_sdf'):
-                    _child_res = self.ode.to_sdf(version)
-                else:
-                    _child_res = str(self.ode)
+                _child_res = self.ode.to_sdf(version)
                 if isinstance(_child_res, str):
                     _item_el = ET.Element('ode')
                     _item_el.text = _child_res
@@ -1346,10 +1203,7 @@ class Joint(BaseModel):
                 _c_tmp.text = str(self.provide_feedback).lower()
                 el.append(_c_tmp)
             if self.simbody is not None:
-                if hasattr(self.simbody, 'to_sdf'):
-                    _child_res = self.simbody.to_sdf(version)
-                else:
-                    _child_res = str(self.simbody)
+                _child_res = self.simbody.to_sdf(version)
                 if isinstance(_child_res, str):
                     _item_el = ET.Element('simbody')
                     _item_el.text = _child_res
@@ -1398,80 +1252,80 @@ class Joint(BaseModel):
         axis2: "Joint.Axis2" = None,
         child: "Joint.Child" = None,
         frames: List["Frame"] = None,
-        gearbox_ratio: float = 1.0,
-        gearbox_reference_body: str = "__default__",
-        name: str = "__default__",
+        gearbox_ratio: float | None = 1.0,
+        gearbox_reference_body: str | None = "__default__",
+        name: str | None = "__default__",
         origin: "Joint.Origin" = None,
         parent: "Joint.Parent" = None,
         physics: "Joint.Physics" = None,
         pose: "Pose" = None,
-        screw_thread_pitch: float = 1.0,
+        screw_thread_pitch: float | None = 1.0,
         sensor: "Sensor" = None,
-        thread_pitch: float = 1.0,
-        type: str = "__default__"
+        thread_pitch: float | None = 1.0,
+        type: str | None = "__default__"
     ):
         super().__init__(sdf_version)
         self.axis = axis
         self.axis2 = axis2
         self.child = child
         self.frames = frames or []
-        self.gearbox_ratio = gearbox_ratio
-        self.gearbox_reference_body = gearbox_reference_body
-        self.name = name
+        self.gearbox_ratio = gearbox_ratio if gearbox_ratio is not None else 1.0
+        self.gearbox_reference_body = gearbox_reference_body if gearbox_reference_body is not None else "__default__"
+        self.name = name if name is not None else "__default__"
         self.origin = origin
         self.parent = parent
         self.physics = physics
         self.pose = pose
-        self.screw_thread_pitch = screw_thread_pitch
+        self.screw_thread_pitch = screw_thread_pitch if screw_thread_pitch is not None else 1.0
         self.sensor = sensor
-        self.thread_pitch = thread_pitch
-        self.type = type
+        self.thread_pitch = thread_pitch if thread_pitch is not None else 1.0
+        self.type = type if type is not None else "__default__"
         if self.axis is not None and hasattr(self.axis, 'to_version'):
-            if getattr(self.axis, '__version__', None) is None:
-                self.axis.__version__ = self.__version__
-            elif getattr(self.axis, '__version__', None) != self.__version__ and self.__version__ is not None:
-                self.axis = self.axis.to_version(self.__version__)
+            if getattr(self.axis, 'sdfversion', None) is None:
+                self.axis.sdfversion = self.sdfversion
+            elif getattr(self.axis, 'sdfversion', None) != self.sdfversion and self.sdfversion is not None:
+                self.axis = self.axis.to_version(self.sdfversion)
         if self.axis2 is not None and hasattr(self.axis2, 'to_version'):
-            if getattr(self.axis2, '__version__', None) is None:
-                self.axis2.__version__ = self.__version__
-            elif getattr(self.axis2, '__version__', None) != self.__version__ and self.__version__ is not None:
-                self.axis2 = self.axis2.to_version(self.__version__)
+            if getattr(self.axis2, 'sdfversion', None) is None:
+                self.axis2.sdfversion = self.sdfversion
+            elif getattr(self.axis2, 'sdfversion', None) != self.sdfversion and self.sdfversion is not None:
+                self.axis2 = self.axis2.to_version(self.sdfversion)
         if self.child is not None and hasattr(self.child, 'to_version'):
-            if getattr(self.child, '__version__', None) is None:
-                self.child.__version__ = self.__version__
-            elif getattr(self.child, '__version__', None) != self.__version__ and self.__version__ is not None:
-                self.child = self.child.to_version(self.__version__)
+            if getattr(self.child, 'sdfversion', None) is None:
+                self.child.sdfversion = self.sdfversion
+            elif getattr(self.child, 'sdfversion', None) != self.sdfversion and self.sdfversion is not None:
+                self.child = self.child.to_version(self.sdfversion)
         for _i, _c in enumerate(self.frames):
             if not hasattr(_c, 'to_version'): continue
-            if getattr(_c, '__version__', None) is None:
-                _c.__version__ = self.__version__
-            elif getattr(_c, '__version__', None) != self.__version__ and self.__version__ is not None:
-                self.frames[_i] = _c.to_version(self.__version__)
+            if getattr(_c, 'sdfversion', None) is None:
+                _c.sdfversion = self.sdfversion
+            elif getattr(_c, 'sdfversion', None) != self.sdfversion and self.sdfversion is not None:
+                self.frames[_i] = _c.to_version(self.sdfversion)
         if self.origin is not None and hasattr(self.origin, 'to_version'):
-            if getattr(self.origin, '__version__', None) is None:
-                self.origin.__version__ = self.__version__
-            elif getattr(self.origin, '__version__', None) != self.__version__ and self.__version__ is not None:
-                self.origin = self.origin.to_version(self.__version__)
+            if getattr(self.origin, 'sdfversion', None) is None:
+                self.origin.sdfversion = self.sdfversion
+            elif getattr(self.origin, 'sdfversion', None) != self.sdfversion and self.sdfversion is not None:
+                self.origin = self.origin.to_version(self.sdfversion)
         if self.parent is not None and hasattr(self.parent, 'to_version'):
-            if getattr(self.parent, '__version__', None) is None:
-                self.parent.__version__ = self.__version__
-            elif getattr(self.parent, '__version__', None) != self.__version__ and self.__version__ is not None:
-                self.parent = self.parent.to_version(self.__version__)
+            if getattr(self.parent, 'sdfversion', None) is None:
+                self.parent.sdfversion = self.sdfversion
+            elif getattr(self.parent, 'sdfversion', None) != self.sdfversion and self.sdfversion is not None:
+                self.parent = self.parent.to_version(self.sdfversion)
         if self.physics is not None and hasattr(self.physics, 'to_version'):
-            if getattr(self.physics, '__version__', None) is None:
-                self.physics.__version__ = self.__version__
-            elif getattr(self.physics, '__version__', None) != self.__version__ and self.__version__ is not None:
-                self.physics = self.physics.to_version(self.__version__)
+            if getattr(self.physics, 'sdfversion', None) is None:
+                self.physics.sdfversion = self.sdfversion
+            elif getattr(self.physics, 'sdfversion', None) != self.sdfversion and self.sdfversion is not None:
+                self.physics = self.physics.to_version(self.sdfversion)
         if self.pose is not None and hasattr(self.pose, 'to_version'):
-            if getattr(self.pose, '__version__', None) is None:
-                self.pose.__version__ = self.__version__
-            elif getattr(self.pose, '__version__', None) != self.__version__ and self.__version__ is not None:
-                self.pose = self.pose.to_version(self.__version__)
+            if getattr(self.pose, 'sdfversion', None) is None:
+                self.pose.sdfversion = self.sdfversion
+            elif getattr(self.pose, 'sdfversion', None) != self.sdfversion and self.sdfversion is not None:
+                self.pose = self.pose.to_version(self.sdfversion)
         if self.sensor is not None and hasattr(self.sensor, 'to_version'):
-            if getattr(self.sensor, '__version__', None) is None:
-                self.sensor.__version__ = self.__version__
-            elif getattr(self.sensor, '__version__', None) != self.__version__ and self.__version__ is not None:
-                self.sensor = self.sensor.to_version(self.__version__)
+            if getattr(self.sensor, 'sdfversion', None) is None:
+                self.sensor.sdfversion = self.sdfversion
+            elif getattr(self.sensor, 'sdfversion', None) != self.sdfversion and self.sdfversion is not None:
+                self.sensor = self.sensor.to_version(self.sdfversion)
 
     def add_frame(self, *items: "Frame"):
         if self.frames is None:
@@ -1498,40 +1352,20 @@ class Joint(BaseModel):
             raise ValueError(f"'screw_thread_pitch' is not supported in SDF version {target_version} (added in 1.10)")
         if self.sensor is not None and cmp_version(target_version, "1.4") < 0:
             raise ValueError(f"'sensor' is not supported in SDF version {target_version} (added in 1.4)")
-        kwargs = {"sdf_version": target_version}
-        kwargs["axis"] = self.axis.to_version(target_version) if hasattr(self.axis, "to_version") else self.axis
-        kwargs["axis2"] = self.axis2.to_version(target_version) if hasattr(self.axis2, "to_version") else self.axis2
-        kwargs["child"] = self.child.to_version(target_version) if hasattr(self.child, "to_version") else self.child
-        kwargs["frames"] = [c.to_version(target_version) if hasattr(c, "to_version") else c for c in (self.frames or [])]
-        kwargs["gearbox_ratio"] = self.gearbox_ratio
-        kwargs["gearbox_reference_body"] = self.gearbox_reference_body
-        kwargs["name"] = self.name
-        kwargs["origin"] = self.origin.to_version(target_version) if hasattr(self.origin, "to_version") else self.origin
-        kwargs["parent"] = self.parent.to_version(target_version) if hasattr(self.parent, "to_version") else self.parent
-        kwargs["physics"] = self.physics.to_version(target_version) if hasattr(self.physics, "to_version") else self.physics
-        kwargs["pose"] = self.pose.to_version(target_version) if hasattr(self.pose, "to_version") else self.pose
-        kwargs["screw_thread_pitch"] = self.screw_thread_pitch
-        kwargs["sensor"] = self.sensor.to_version(target_version) if hasattr(self.sensor, "to_version") else self.sensor
-        kwargs["thread_pitch"] = self.thread_pitch
-        kwargs["type"] = self.type
-        new_obj = self.__class__(**kwargs)
-        return new_obj
+        kwargs: dict = {"sdf_version": target_version, "axis": self.axis.to_version(target_version) if self.axis is not None and hasattr(self.axis, "to_version") else self.axis, "axis2": self.axis2.to_version(target_version) if self.axis2 is not None and hasattr(self.axis2, "to_version") else self.axis2, "child": self.child.to_version(target_version) if self.child is not None and hasattr(self.child, "to_version") else self.child, "frames": [c.to_version(target_version) if hasattr(c, "to_version") else c for c in (self.frames or [])], "gearbox_ratio": self.gearbox_ratio, "gearbox_reference_body": self.gearbox_reference_body, "name": self.name, "origin": self.origin.to_version(target_version) if self.origin is not None and hasattr(self.origin, "to_version") else self.origin, "parent": self.parent.to_version(target_version) if self.parent is not None and hasattr(self.parent, "to_version") else self.parent, "physics": self.physics.to_version(target_version) if self.physics is not None and hasattr(self.physics, "to_version") else self.physics, "pose": self.pose.to_version(target_version) if self.pose is not None and hasattr(self.pose, "to_version") else self.pose, "screw_thread_pitch": self.screw_thread_pitch, "sensor": self.sensor.to_version(target_version) if self.sensor is not None and hasattr(self.sensor, "to_version") else self.sensor, "thread_pitch": self.thread_pitch, "type": self.type}
+        return self.__class__(**kwargs)
 
     def to_sdf(self, version: str | None = None) -> ET.Element:
         from ..elements.frame import Frame
         from ..elements.pose import Pose
         from ..elements.sensor import Sensor
-        if self.__version__ is None and version is not None:
-            self.__version__ = version
-        elif version is not None and version != self.__version__:
-            return self.to_version(version).to_sdf()
-        version = self.__version__ or version
+        if self.sdfversion is None and version is not None:
+            self.sdfversion = version
+        elif version is not None and version != self.sdfversion:
+            return self.to_version(str(version)).to_sdf()
         el = ET.Element("joint")
         if self.axis is not None:
-            if hasattr(self.axis, 'to_sdf'):
-                _child_res = self.axis.to_sdf(version)
-            else:
-                _child_res = str(self.axis)
+            _child_res = self.axis.to_sdf(version)
             if isinstance(_child_res, str):
                 _item_el = ET.Element('axis')
                 _item_el.text = _child_res
@@ -1539,10 +1373,7 @@ class Joint(BaseModel):
                 _item_el = _child_res
             el.append(_item_el)
         if self.axis2 is not None:
-            if hasattr(self.axis2, 'to_sdf'):
-                _child_res = self.axis2.to_sdf(version)
-            else:
-                _child_res = str(self.axis2)
+            _child_res = self.axis2.to_sdf(version)
             if isinstance(_child_res, str):
                 _item_el = ET.Element('axis2')
                 _item_el.text = _child_res
@@ -1550,10 +1381,7 @@ class Joint(BaseModel):
                 _item_el = _child_res
             el.append(_item_el)
         if self.child is not None:
-            if hasattr(self.child, 'to_sdf'):
-                _child_res = self.child.to_sdf(version)
-            else:
-                _child_res = str(self.child)
+            _child_res = self.child.to_sdf(version)
             if isinstance(_child_res, str):
                 _item_el = ET.Element('child')
                 _item_el.text = _child_res
@@ -1561,10 +1389,7 @@ class Joint(BaseModel):
                 _item_el = _child_res
             el.append(_item_el)
         for item in (self.frames or []):
-            if hasattr(item, 'to_sdf'):
-                _child_res = item.to_sdf(version)
-            else:
-                _child_res = str(item)
+            _child_res = item.to_sdf(version)
             if isinstance(_child_res, str):
                 _item_el = ET.Element('frame')
                 _item_el.text = _child_res
@@ -1582,10 +1407,7 @@ class Joint(BaseModel):
         if self.name is not None:
             el.set("name", self.name)
         if self.origin is not None:
-            if hasattr(self.origin, 'to_sdf'):
-                _child_res = self.origin.to_sdf(version)
-            else:
-                _child_res = str(self.origin)
+            _child_res = self.origin.to_sdf(version)
             if isinstance(_child_res, str):
                 _item_el = ET.Element('origin')
                 _item_el.text = _child_res
@@ -1593,10 +1415,7 @@ class Joint(BaseModel):
                 _item_el = _child_res
             el.append(_item_el)
         if self.parent is not None:
-            if hasattr(self.parent, 'to_sdf'):
-                _child_res = self.parent.to_sdf(version)
-            else:
-                _child_res = str(self.parent)
+            _child_res = self.parent.to_sdf(version)
             if isinstance(_child_res, str):
                 _item_el = ET.Element('parent')
                 _item_el.text = _child_res
@@ -1604,10 +1423,7 @@ class Joint(BaseModel):
                 _item_el = _child_res
             el.append(_item_el)
         if self.physics is not None:
-            if hasattr(self.physics, 'to_sdf'):
-                _child_res = self.physics.to_sdf(version)
-            else:
-                _child_res = str(self.physics)
+            _child_res = self.physics.to_sdf(version)
             if isinstance(_child_res, str):
                 _item_el = ET.Element('physics')
                 _item_el.text = _child_res
@@ -1615,10 +1431,7 @@ class Joint(BaseModel):
                 _item_el = _child_res
             el.append(_item_el)
         if self.pose is not None:
-            if hasattr(self.pose, 'to_sdf'):
-                _child_res = self.pose.to_sdf(version)
-            else:
-                _child_res = str(self.pose)
+            _child_res = self.pose.to_sdf(version)
             if isinstance(_child_res, str):
                 _item_el = ET.Element('pose')
                 _item_el.text = _child_res
@@ -1630,10 +1443,7 @@ class Joint(BaseModel):
             _c_tmp.text = str(self.screw_thread_pitch)
             el.append(_c_tmp)
         if self.sensor is not None:
-            if hasattr(self.sensor, 'to_sdf'):
-                _child_res = self.sensor.to_sdf(version)
-            else:
-                _child_res = str(self.sensor)
+            _child_res = self.sensor.to_sdf(version)
             if isinstance(_child_res, str):
                 _item_el = ET.Element('sensor')
                 _item_el.text = _child_res

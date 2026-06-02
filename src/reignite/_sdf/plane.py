@@ -1,46 +1,12 @@
 ### THIS FILE WAS AUTO-GENERATED ###
 from __future__ import annotations
 
-import typing
 from xml.etree import ElementTree as ET
 
 from ..utils.model import BaseModel
 from ..utils.errors import SDFError
-from ..utils.vector2d import Vector2d as _SDFVector2d, _Vector2dT, _vector2d
-from ..utils.vector3 import Vector3 as _SDFVector3, _Vector3T, _vector3
-
-
-import math
-
-def _parse_int32(raw: str) -> int | SDFError:
-    try:
-        v = int(raw)
-        if not (-2147483648 <= v <= 2147483647):
-            return SDFError(f"int32 out of range: {v}")
-        return v
-    except ValueError:
-        return SDFError(f"Invalid int32: {raw}")
-
-
-def _parse_uint32(raw: str) -> int | SDFError:
-    try:
-        v = int(raw)
-        if not (0 <= v <= 4294967295):
-            return SDFError(f"uint32 out of range: {v}")
-        return v
-    except ValueError:
-        return SDFError(f"Invalid uint32: {raw}")
-
-
-def _parse_double(raw: str) -> float | SDFError:
-    try:
-        v = float(raw)
-        if not math.isfinite(v) or abs(v) > math.inf:
-            return SDFError(f"double out of range: {raw}")
-        return v
-    except ValueError:
-        return SDFError(f"Invalid double: {raw}")
-
+from ..utils.vector2d import Vector2d as _Vector2dT, _vector2d
+from ..utils.vector3 import Vector3 as _Vector3T, _vector3
 
 def _parse_vector2d(raw: str) -> _Vector2dT | SDFError:
     try:
@@ -55,38 +21,27 @@ def _parse_vector3(raw: str) -> _Vector3T | SDFError:
         return SDFError(str(e))
 
 
+# noinspection PyUnusedImports
 class Plane(BaseModel):
     def __init__(
         self,
         sdf_version: str | None = None,
-        normal: _Vector3T = None,
-        size: _Vector2dT = None
+        normal: _Vector3T | None = None,
+        size: _Vector2dT | None = None
     ):
         super().__init__(sdf_version)
-        if normal is None:
-            normal = _vector3("0 0 1")
-        else:
-            normal = _vector3(normal)
-        if size is None:
-            size = _vector2d("1 1")
-        else:
-            size = _vector2d(size)
-        self.normal = normal
-        self.size = size
+        self.normal = _vector3("0 0 1") if normal is None else _vector3(normal)
+        self.size = _vector2d("1 1") if size is None else _vector2d(size)
 
     def to_version(self, target_version: str) -> "Plane":
-        kwargs = {"sdf_version": target_version}
-        kwargs["normal"] = self.normal
-        kwargs["size"] = self.size
-        new_obj = self.__class__(**kwargs)
-        return new_obj
+        kwargs: dict = {"sdf_version": target_version, "normal": self.normal, "size": self.size}
+        return self.__class__(**kwargs)
 
     def to_sdf(self, version: str | None = None) -> ET.Element:
-        if self.__version__ is None and version is not None:
-            self.__version__ = version
-        elif version is not None and version != self.__version__:
-            return self.to_version(version).to_sdf()
-        version = self.__version__ or version
+        if self.sdfversion is None and version is not None:
+            self.sdfversion = version
+        elif version is not None and version != self.sdfversion:
+            return self.to_version(str(version)).to_sdf()
         el = ET.Element("plane")
         if self.normal is not None:
             _c_tmp = ET.Element("normal")

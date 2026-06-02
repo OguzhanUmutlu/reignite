@@ -1,9 +1,9 @@
 ### THIS FILE WAS AUTO-GENERATED ###
 from __future__ import annotations
 
-import typing
 from xml.etree import ElementTree as ET
 
+import typing
 from typing import List
 
 from ..utils.model import BaseModel
@@ -16,6 +16,7 @@ if typing.TYPE_CHECKING:
     from ..elements.world import World
 
 
+# noinspection PyUnusedImports
 class Gazebo(BaseModel):
     def __init__(
         self,
@@ -23,39 +24,39 @@ class Gazebo(BaseModel):
         actors: List["Actor"] = None,
         lights: List["Light"] = None,
         models: List["Model"] = None,
-        version: str = "1.0",
+        version: str | None = "1.0",
         worlds: List["World"] = None
     ):
         super().__init__(sdf_version)
         self.actors = actors or []
         self.lights = lights or []
         self.models = models or []
-        self.version = version
+        self.version = version if version is not None else "1.0"
         self.worlds = worlds or []
         for _i, _c in enumerate(self.actors):
             if not hasattr(_c, 'to_version'): continue
-            if getattr(_c, '__version__', None) is None:
-                _c.__version__ = self.__version__
-            elif getattr(_c, '__version__', None) != self.__version__ and self.__version__ is not None:
-                self.actors[_i] = _c.to_version(self.__version__)
+            if getattr(_c, 'sdfversion', None) is None:
+                _c.sdfversion = self.sdfversion
+            elif getattr(_c, 'sdfversion', None) != self.sdfversion and self.sdfversion is not None:
+                self.actors[_i] = _c.to_version(self.sdfversion)
         for _i, _c in enumerate(self.lights):
             if not hasattr(_c, 'to_version'): continue
-            if getattr(_c, '__version__', None) is None:
-                _c.__version__ = self.__version__
-            elif getattr(_c, '__version__', None) != self.__version__ and self.__version__ is not None:
-                self.lights[_i] = _c.to_version(self.__version__)
+            if getattr(_c, 'sdfversion', None) is None:
+                _c.sdfversion = self.sdfversion
+            elif getattr(_c, 'sdfversion', None) != self.sdfversion and self.sdfversion is not None:
+                self.lights[_i] = _c.to_version(self.sdfversion)
         for _i, _c in enumerate(self.models):
             if not hasattr(_c, 'to_version'): continue
-            if getattr(_c, '__version__', None) is None:
-                _c.__version__ = self.__version__
-            elif getattr(_c, '__version__', None) != self.__version__ and self.__version__ is not None:
-                self.models[_i] = _c.to_version(self.__version__)
+            if getattr(_c, 'sdfversion', None) is None:
+                _c.sdfversion = self.sdfversion
+            elif getattr(_c, 'sdfversion', None) != self.sdfversion and self.sdfversion is not None:
+                self.models[_i] = _c.to_version(self.sdfversion)
         for _i, _c in enumerate(self.worlds):
             if not hasattr(_c, 'to_version'): continue
-            if getattr(_c, '__version__', None) is None:
-                _c.__version__ = self.__version__
-            elif getattr(_c, '__version__', None) != self.__version__ and self.__version__ is not None:
-                self.worlds[_i] = _c.to_version(self.__version__)
+            if getattr(_c, 'sdfversion', None) is None:
+                _c.sdfversion = self.sdfversion
+            elif getattr(_c, 'sdfversion', None) != self.sdfversion and self.sdfversion is not None:
+                self.worlds[_i] = _c.to_version(self.sdfversion)
 
     def add_actor(self, *items: "Actor"):
         if self.actors is None:
@@ -82,31 +83,21 @@ class Gazebo(BaseModel):
         from ..elements.light import Light
         from ..elements.model import Model
         from ..elements.world import World
-        kwargs = {"sdf_version": target_version}
-        kwargs["actors"] = [c.to_version(target_version) if hasattr(c, "to_version") else c for c in (self.actors or [])]
-        kwargs["lights"] = [c.to_version(target_version) if hasattr(c, "to_version") else c for c in (self.lights or [])]
-        kwargs["models"] = [c.to_version(target_version) if hasattr(c, "to_version") else c for c in (self.models or [])]
-        kwargs["version"] = self.version
-        kwargs["worlds"] = [c.to_version(target_version) if hasattr(c, "to_version") else c for c in (self.worlds or [])]
-        new_obj = self.__class__(**kwargs)
-        return new_obj
+        kwargs: dict = {"sdf_version": target_version, "actors": [c.to_version(target_version) if hasattr(c, "to_version") else c for c in (self.actors or [])], "lights": [c.to_version(target_version) if hasattr(c, "to_version") else c for c in (self.lights or [])], "models": [c.to_version(target_version) if hasattr(c, "to_version") else c for c in (self.models or [])], "version": self.version, "worlds": [c.to_version(target_version) if hasattr(c, "to_version") else c for c in (self.worlds or [])]}
+        return self.__class__(**kwargs)
 
     def to_sdf(self, version: str | None = None) -> ET.Element:
         from ..elements.actor import Actor
         from ..elements.light import Light
         from ..elements.model import Model
         from ..elements.world import World
-        if self.__version__ is None and version is not None:
-            self.__version__ = version
-        elif version is not None and version != self.__version__:
-            return self.to_version(version).to_sdf()
-        version = self.__version__ or version
+        if self.sdfversion is None and version is not None:
+            self.sdfversion = version
+        elif version is not None and version != self.sdfversion:
+            return self.to_version(str(version)).to_sdf()
         el = ET.Element("gazebo")
         for item in (self.actors or []):
-            if hasattr(item, 'to_sdf'):
-                _child_res = item.to_sdf(version)
-            else:
-                _child_res = str(item)
+            _child_res = item.to_sdf(version)
             if isinstance(_child_res, str):
                 _item_el = ET.Element('actor')
                 _item_el.text = _child_res
@@ -114,10 +105,7 @@ class Gazebo(BaseModel):
                 _item_el = _child_res
             el.append(_item_el)
         for item in (self.lights or []):
-            if hasattr(item, 'to_sdf'):
-                _child_res = item.to_sdf(version)
-            else:
-                _child_res = str(item)
+            _child_res = item.to_sdf(version)
             if isinstance(_child_res, str):
                 _item_el = ET.Element('light')
                 _item_el.text = _child_res
@@ -125,10 +113,7 @@ class Gazebo(BaseModel):
                 _item_el = _child_res
             el.append(_item_el)
         for item in (self.models or []):
-            if hasattr(item, 'to_sdf'):
-                _child_res = item.to_sdf(version)
-            else:
-                _child_res = str(item)
+            _child_res = item.to_sdf(version)
             if isinstance(_child_res, str):
                 _item_el = ET.Element('model')
                 _item_el.text = _child_res
@@ -138,10 +123,7 @@ class Gazebo(BaseModel):
         if self.version is not None:
             el.set("version", self.version)
         for item in (self.worlds or []):
-            if hasattr(item, 'to_sdf'):
-                _child_res = item.to_sdf(version)
-            else:
-                _child_res = str(item)
+            _child_res = item.to_sdf(version)
             if isinstance(_child_res, str):
                 _item_el = ET.Element('world')
                 _item_el.text = _child_res

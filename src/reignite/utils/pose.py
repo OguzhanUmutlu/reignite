@@ -5,9 +5,7 @@ from typing import Sequence, Union
 _PoseT = Union[Sequence[float], str, "Pose"]
 
 
-def _pose(value: Pose | Sequence[float] | str | None) -> Pose | None:
-    if value is None:
-        return None
+def _pose(value: Pose | Sequence[float] | str) -> Pose:
     if isinstance(value, Pose):
         return value
     if isinstance(value, str):
@@ -35,6 +33,9 @@ class Pose:
         self.roll = roll
         self.pitch = pitch
         self.yaw = yaw
+
+    def to_sdf(self, _):
+        return str(self)
 
     def __str__(self) -> str:
         return f"{self.x} {self.y} {self.z} {self.roll} {self.pitch} {self.yaw}"

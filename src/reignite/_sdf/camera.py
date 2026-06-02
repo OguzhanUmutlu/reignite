@@ -1,52 +1,20 @@
 ### THIS FILE WAS AUTO-GENERATED ###
 from __future__ import annotations
 
-import typing
 from xml.etree import ElementTree as ET
 
+from ..utils.utils import _parse_double, _parse_int32, _parse_uint32
+import typing
 from typing import List
 
 from ..utils.model import BaseModel
 from ..utils.errors import SDFError
-from ..utils.vector2d import Vector2d as _SDFVector2d, _Vector2dT, _vector2d
+from ..utils.vector2d import Vector2d as _Vector2dT, _vector2d
 from ..utils.version import cmp_version
 
 if typing.TYPE_CHECKING:
     from ..elements.frame import Frame
     from ..elements.pose import Pose
-
-
-import math
-
-def _parse_int32(raw: str) -> int | SDFError:
-    try:
-        v = int(raw)
-        if not (-2147483648 <= v <= 2147483647):
-            return SDFError(f"int32 out of range: {v}")
-        return v
-    except ValueError:
-        return SDFError(f"Invalid int32: {raw}")
-
-
-def _parse_uint32(raw: str) -> int | SDFError:
-    try:
-        v = int(raw)
-        if not (0 <= v <= 4294967295):
-            return SDFError(f"uint32 out of range: {v}")
-        return v
-    except ValueError:
-        return SDFError(f"Invalid uint32: {raw}")
-
-
-def _parse_double(raw: str) -> float | SDFError:
-    try:
-        v = float(raw)
-        if not math.isfinite(v) or abs(v) > math.inf:
-            return SDFError(f"double out of range: {raw}")
-        return v
-    except ValueError:
-        return SDFError(f"Invalid double: {raw}")
-
 
 def _parse_vector2d(raw: str) -> _Vector2dT | SDFError:
     try:
@@ -55,30 +23,32 @@ def _parse_vector2d(raw: str) -> _Vector2dT | SDFError:
         return SDFError(str(e))
 
 
+# noinspection PyUnusedImports
 class Camera(BaseModel):
     class Clip(BaseModel):
-        def __init__(self, sdf_version: str | None = None, far: float = 100, near: float = .1):
+        def __init__(
+            self,
+            sdf_version: str | None = None,
+            far: float | None = 100,
+            near: float | None = .1
+        ):
             super().__init__(sdf_version)
-            self.far = far
-            self.near = near
+            self.far = far if far is not None else 100
+            self.near = near if near is not None else .1
 
         def to_version(self, target_version: str) -> "Camera.Clip":
             if self.far is not None and cmp_version(target_version, "1.2") >= 0:
                 raise ValueError(f"'far' is not supported in SDF version {target_version} (removed in 1.2)")
             if self.near is not None and cmp_version(target_version, "1.2") >= 0:
                 raise ValueError(f"'near' is not supported in SDF version {target_version} (removed in 1.2)")
-            kwargs = {"sdf_version": target_version}
-            kwargs["far"] = self.far
-            kwargs["near"] = self.near
-            new_obj = self.__class__(**kwargs)
-            return new_obj
+            kwargs: dict = {"sdf_version": target_version, "far": self.far, "near": self.near}
+            return self.__class__(**kwargs)
 
         def to_sdf(self, version: str | None = None) -> ET.Element:
-            if self.__version__ is None and version is not None:
-                self.__version__ = version
-            elif version is not None and version != self.__version__:
-                return self.to_version(version).to_sdf()
-            version = self.__version__ or version
+            if self.sdfversion is None and version is not None:
+                self.sdfversion = version
+            elif version is not None and version != self.sdfversion:
+                return self.to_version(str(version)).to_sdf()
             el = ET.Element("clip")
             if self.far is not None:
                 el.set("far", str(self.far))
@@ -98,24 +68,25 @@ class Camera(BaseModel):
 
     class DepthCamera(BaseModel):
         class DepthCameraClip(BaseModel):
-            def __init__(self, sdf_version: str | None = None, far: float = 10.0, near: float = .1):
+            def __init__(
+                self,
+                sdf_version: str | None = None,
+                far: float | None = 10.0,
+                near: float | None = .1
+            ):
                 super().__init__(sdf_version)
-                self.far = far
-                self.near = near
+                self.far = far if far is not None else 10.0
+                self.near = near if near is not None else .1
 
             def to_version(self, target_version: str) -> "Camera.DepthCamera.DepthCameraClip":
-                kwargs = {"sdf_version": target_version}
-                kwargs["far"] = self.far
-                kwargs["near"] = self.near
-                new_obj = self.__class__(**kwargs)
-                return new_obj
+                kwargs: dict = {"sdf_version": target_version, "far": self.far, "near": self.near}
+                return self.__class__(**kwargs)
 
             def to_sdf(self, version: str | None = None) -> ET.Element:
-                if self.__version__ is None and version is not None:
-                    self.__version__ = version
-                elif version is not None and version != self.__version__:
-                    return self.to_version(version).to_sdf()
-                version = self.__version__ or version
+                if self.sdfversion is None and version is not None:
+                    self.sdfversion = version
+                elif version is not None and version != self.sdfversion:
+                    return self.to_version(str(version)).to_sdf()
                 el = ET.Element("clip")
                 if self.far is not None:
                     _c_tmp = ET.Element("far")
@@ -153,40 +124,33 @@ class Camera(BaseModel):
             self,
             sdf_version: str | None = None,
             clip: "Camera.DepthCamera.DepthCameraClip" = None,
-            output: str = "depths"
+            output: str | None = "depths"
         ):
             super().__init__(sdf_version)
             self.clip = clip
-            self.output = output
+            self.output = output if output is not None else "depths"
             if self.clip is not None and hasattr(self.clip, 'to_version'):
-                if getattr(self.clip, '__version__', None) is None:
-                    self.clip.__version__ = self.__version__
-                elif getattr(self.clip, '__version__', None) != self.__version__ and self.__version__ is not None:
-                    self.clip = self.clip.to_version(self.__version__)
+                if getattr(self.clip, 'sdfversion', None) is None:
+                    self.clip.sdfversion = self.sdfversion
+                elif getattr(self.clip, 'sdfversion', None) != self.sdfversion and self.sdfversion is not None:
+                    self.clip = self.clip.to_version(self.sdfversion)
 
         def to_version(self, target_version: str) -> "Camera.DepthCamera":
             if self.clip is not None and cmp_version(target_version, "1.6") < 0:
                 raise ValueError(f"'clip' is not supported in SDF version {target_version} (added in 1.6)")
             if self.output is not None and cmp_version(target_version, "1.2") >= 0:
                 raise ValueError(f"'output' is not supported in SDF version {target_version} (removed in 1.2)")
-            kwargs = {"sdf_version": target_version}
-            kwargs["clip"] = self.clip.to_version(target_version) if hasattr(self.clip, "to_version") else self.clip
-            kwargs["output"] = self.output
-            new_obj = self.__class__(**kwargs)
-            return new_obj
+            kwargs: dict = {"sdf_version": target_version, "clip": self.clip.to_version(target_version) if self.clip is not None and hasattr(self.clip, "to_version") else self.clip, "output": self.output}
+            return self.__class__(**kwargs)
 
         def to_sdf(self, version: str | None = None) -> ET.Element:
-            if self.__version__ is None and version is not None:
-                self.__version__ = version
-            elif version is not None and version != self.__version__:
-                return self.to_version(version).to_sdf()
-            version = self.__version__ or version
+            if self.sdfversion is None and version is not None:
+                self.sdfversion = version
+            elif version is not None and version != self.sdfversion:
+                return self.to_version(str(version)).to_sdf()
             el = ET.Element("depth_camera")
             if self.clip is not None:
-                if hasattr(self.clip, 'to_sdf'):
-                    _child_res = self.clip.to_sdf(version)
-                else:
-                    _child_res = str(self.clip)
+                _child_res = self.clip.to_sdf(version)
                 if isinstance(_child_res, str):
                     _item_el = ET.Element('clip')
                     _item_el.text = _child_res
@@ -218,42 +182,30 @@ class Camera(BaseModel):
         def __init__(
             self,
             sdf_version: str | None = None,
-            center: _Vector2dT = None,
-            k1: float = 0.0,
-            k2: float = 0.0,
-            k3: float = 0.0,
-            p1: float = 0.0,
-            p2: float = 0.0
+            center: _Vector2dT | None = None,
+            k1: float | None = 0.0,
+            k2: float | None = 0.0,
+            k3: float | None = 0.0,
+            p1: float | None = 0.0,
+            p2: float | None = 0.0
         ):
             super().__init__(sdf_version)
-            if center is None:
-                center = _vector2d("0.5 0.5")
-            else:
-                center = _vector2d(center)
-            self.center = center
-            self.k1 = k1
-            self.k2 = k2
-            self.k3 = k3
-            self.p1 = p1
-            self.p2 = p2
+            self.center = _vector2d("0.5 0.5") if center is None else _vector2d(center)
+            self.k1 = k1 if k1 is not None else 0.0
+            self.k2 = k2 if k2 is not None else 0.0
+            self.k3 = k3 if k3 is not None else 0.0
+            self.p1 = p1 if p1 is not None else 0.0
+            self.p2 = p2 if p2 is not None else 0.0
 
         def to_version(self, target_version: str) -> "Camera.Distortion":
-            kwargs = {"sdf_version": target_version}
-            kwargs["center"] = self.center
-            kwargs["k1"] = self.k1
-            kwargs["k2"] = self.k2
-            kwargs["k3"] = self.k3
-            kwargs["p1"] = self.p1
-            kwargs["p2"] = self.p2
-            new_obj = self.__class__(**kwargs)
-            return new_obj
+            kwargs: dict = {"sdf_version": target_version, "center": self.center, "k1": self.k1, "k2": self.k2, "k3": self.k3, "p1": self.p1, "p2": self.p2}
+            return self.__class__(**kwargs)
 
         def to_sdf(self, version: str | None = None) -> ET.Element:
-            if self.__version__ is None and version is not None:
-                self.__version__ = version
-            elif version is not None and version != self.__version__:
-                return self.to_version(version).to_sdf()
-            version = self.__version__ or version
+            if self.sdfversion is None and version is not None:
+                self.sdfversion = version
+            elif version is not None and version != self.sdfversion:
+                return self.to_version(str(version)).to_sdf()
             el = ET.Element("distortion")
             if self.center is not None:
                 _c_tmp = ET.Element("center")
@@ -343,28 +295,24 @@ class Camera(BaseModel):
         def __init__(
             self,
             sdf_version: str | None = None,
-            angle: float = 1.047,
-            horizontal_fov: float = 1.047
+            angle: float | None = 1.047,
+            horizontal_fov: float | None = 1.047
         ):
             super().__init__(sdf_version)
-            self.angle = angle
-            self.horizontal_fov = horizontal_fov
+            self.angle = angle if angle is not None else 1.047
+            self.horizontal_fov = horizontal_fov if horizontal_fov is not None else 1.047
 
         def to_version(self, target_version: str) -> "Camera.HorizontalFov":
             if self.angle is not None and cmp_version(target_version, "1.2") >= 0:
                 raise ValueError(f"'angle' is not supported in SDF version {target_version} (removed in 1.2)")
-            kwargs = {"sdf_version": target_version}
-            kwargs["angle"] = self.angle
-            kwargs["horizontal_fov"] = self.horizontal_fov
-            new_obj = self.__class__(**kwargs)
-            return new_obj
+            kwargs: dict = {"sdf_version": target_version, "angle": self.angle, "horizontal_fov": self.horizontal_fov}
+            return self.__class__(**kwargs)
 
         def to_sdf(self, version: str | None = None) -> ET.Element:
-            if self.__version__ is None and version is not None:
-                self.__version__ = version
-            elif version is not None and version != self.__version__:
-                return self.to_version(version).to_sdf()
-            version = self.__version__ or version
+            if self.sdfversion is None and version is not None:
+                self.sdfversion = version
+            elif version is not None and version != self.sdfversion:
+                return self.to_version(str(version)).to_sdf()
             el = ET.Element("horizontal_fov")
             if self.angle is not None:
                 if cmp_version(version, "1.2") >= 0:
@@ -396,16 +344,16 @@ class Camera(BaseModel):
         def __init__(
             self,
             sdf_version: str | None = None,
-            anti_aliasing: int = 4,
-            format: str = "R8G8B8",
-            height: int = 240,
-            width: int = 320
+            anti_aliasing: int | None = 4,
+            format: str | None = "R8G8B8",
+            height: int | None = 240,
+            width: int | None = 320
         ):
             super().__init__(sdf_version)
-            self.anti_aliasing = anti_aliasing
-            self.format = format
-            self.height = height
-            self.width = width
+            self.anti_aliasing = anti_aliasing if anti_aliasing is not None else 4
+            self.format = format if format is not None else "R8G8B8"
+            self.height = height if height is not None else 240
+            self.width = width if width is not None else 320
 
         def to_version(self, target_version: str) -> "Camera.Image":
             if self.anti_aliasing is not None and cmp_version(target_version, "1.7") < 0:
@@ -416,20 +364,14 @@ class Camera(BaseModel):
                 raise ValueError(f"'height' is not supported in SDF version {target_version} (removed in 1.2)")
             if self.width is not None and cmp_version(target_version, "1.2") >= 0:
                 raise ValueError(f"'width' is not supported in SDF version {target_version} (removed in 1.2)")
-            kwargs = {"sdf_version": target_version}
-            kwargs["anti_aliasing"] = self.anti_aliasing
-            kwargs["format"] = self.format
-            kwargs["height"] = self.height
-            kwargs["width"] = self.width
-            new_obj = self.__class__(**kwargs)
-            return new_obj
+            kwargs: dict = {"sdf_version": target_version, "anti_aliasing": self.anti_aliasing, "format": self.format, "height": self.height, "width": self.width}
+            return self.__class__(**kwargs)
 
         def to_sdf(self, version: str | None = None) -> ET.Element:
-            if self.__version__ is None and version is not None:
-                self.__version__ = version
-            elif version is not None and version != self.__version__:
-                return self.to_version(version).to_sdf()
-            version = self.__version__ or version
+            if self.sdfversion is None and version is not None:
+                self.sdfversion = version
+            elif version is not None and version != self.sdfversion:
+                return self.to_version(str(version)).to_sdf()
             el = ET.Element("image")
             if self.anti_aliasing is not None:
                 _c_tmp = ET.Element("anti_aliasing")
@@ -472,35 +414,28 @@ class Camera(BaseModel):
             def __init__(
                 self,
                 sdf_version: str | None = None,
-                c1: float = 1,
-                c2: float = 1,
-                c3: float = 0,
-                f: float = 1,
-                fun: str = "tan"
+                c1: float | None = 1,
+                c2: float | None = 1,
+                c3: float | None = 0,
+                f: float | None = 1,
+                fun: str | None = "tan"
             ):
                 super().__init__(sdf_version)
-                self.c1 = c1
-                self.c2 = c2
-                self.c3 = c3
-                self.f = f
-                self.fun = fun
+                self.c1 = c1 if c1 is not None else 1
+                self.c2 = c2 if c2 is not None else 1
+                self.c3 = c3 if c3 is not None else 0
+                self.f = f if f is not None else 1
+                self.fun = fun if fun is not None else "tan"
 
             def to_version(self, target_version: str) -> "Camera.Lens.CustomFunction":
-                kwargs = {"sdf_version": target_version}
-                kwargs["c1"] = self.c1
-                kwargs["c2"] = self.c2
-                kwargs["c3"] = self.c3
-                kwargs["f"] = self.f
-                kwargs["fun"] = self.fun
-                new_obj = self.__class__(**kwargs)
-                return new_obj
+                kwargs: dict = {"sdf_version": target_version, "c1": self.c1, "c2": self.c2, "c3": self.c3, "f": self.f, "fun": self.fun}
+                return self.__class__(**kwargs)
 
             def to_sdf(self, version: str | None = None) -> ET.Element:
-                if self.__version__ is None and version is not None:
-                    self.__version__ = version
-                elif version is not None and version != self.__version__:
-                    return self.to_version(version).to_sdf()
-                version = self.__version__ or version
+                if self.sdfversion is None and version is not None:
+                    self.sdfversion = version
+                elif version is not None and version != self.sdfversion:
+                    return self.to_version(str(version)).to_sdf()
                 el = ET.Element("custom_function")
                 if self.c1 is not None:
                     _c_tmp = ET.Element("c1")
@@ -577,35 +512,28 @@ class Camera(BaseModel):
             def __init__(
                 self,
                 sdf_version: str | None = None,
-                cx: float = 160,
-                cy: float = 120,
-                fx: float = 277,
-                fy: float = 277,
-                s: float = 0.0
+                cx: float | None = 160,
+                cy: float | None = 120,
+                fx: float | None = 277,
+                fy: float | None = 277,
+                s: float | None = 0.0
             ):
                 super().__init__(sdf_version)
-                self.cx = cx
-                self.cy = cy
-                self.fx = fx
-                self.fy = fy
-                self.s = s
+                self.cx = cx if cx is not None else 160
+                self.cy = cy if cy is not None else 120
+                self.fx = fx if fx is not None else 277
+                self.fy = fy if fy is not None else 277
+                self.s = s if s is not None else 0.0
 
             def to_version(self, target_version: str) -> "Camera.Lens.Intrinsics":
-                kwargs = {"sdf_version": target_version}
-                kwargs["cx"] = self.cx
-                kwargs["cy"] = self.cy
-                kwargs["fx"] = self.fx
-                kwargs["fy"] = self.fy
-                kwargs["s"] = self.s
-                new_obj = self.__class__(**kwargs)
-                return new_obj
+                kwargs: dict = {"sdf_version": target_version, "cx": self.cx, "cy": self.cy, "fx": self.fx, "fy": self.fy, "s": self.s}
+                return self.__class__(**kwargs)
 
             def to_sdf(self, version: str | None = None) -> ET.Element:
-                if self.__version__ is None and version is not None:
-                    self.__version__ = version
-                elif version is not None and version != self.__version__:
-                    return self.to_version(version).to_sdf()
-                version = self.__version__ or version
+                if self.sdfversion is None and version is not None:
+                    self.sdfversion = version
+                elif version is not None and version != self.sdfversion:
+                    return self.to_version(str(version)).to_sdf()
                 el = ET.Element("intrinsics")
                 if self.cx is not None:
                     _c_tmp = ET.Element("cx")
@@ -682,38 +610,30 @@ class Camera(BaseModel):
             def __init__(
                 self,
                 sdf_version: str | None = None,
-                p_cx: float = 160,
-                p_cy: float = 120,
-                p_fx: float = 277,
-                p_fy: float = 277,
-                tx: float = 0.0,
-                ty: float = 0.0
+                p_cx: float | None = 160,
+                p_cy: float | None = 120,
+                p_fx: float | None = 277,
+                p_fy: float | None = 277,
+                tx: float | None = 0.0,
+                ty: float | None = 0.0
             ):
                 super().__init__(sdf_version)
-                self.p_cx = p_cx
-                self.p_cy = p_cy
-                self.p_fx = p_fx
-                self.p_fy = p_fy
-                self.tx = tx
-                self.ty = ty
+                self.p_cx = p_cx if p_cx is not None else 160
+                self.p_cy = p_cy if p_cy is not None else 120
+                self.p_fx = p_fx if p_fx is not None else 277
+                self.p_fy = p_fy if p_fy is not None else 277
+                self.tx = tx if tx is not None else 0.0
+                self.ty = ty if ty is not None else 0.0
 
             def to_version(self, target_version: str) -> "Camera.Lens.Projection":
-                kwargs = {"sdf_version": target_version}
-                kwargs["p_cx"] = self.p_cx
-                kwargs["p_cy"] = self.p_cy
-                kwargs["p_fx"] = self.p_fx
-                kwargs["p_fy"] = self.p_fy
-                kwargs["tx"] = self.tx
-                kwargs["ty"] = self.ty
-                new_obj = self.__class__(**kwargs)
-                return new_obj
+                kwargs: dict = {"sdf_version": target_version, "p_cx": self.p_cx, "p_cy": self.p_cy, "p_fx": self.p_fx, "p_fy": self.p_fy, "tx": self.tx, "ty": self.ty}
+                return self.__class__(**kwargs)
 
             def to_sdf(self, version: str | None = None) -> ET.Element:
-                if self.__version__ is None and version is not None:
-                    self.__version__ = version
-                elif version is not None and version != self.__version__:
-                    return self.to_version(version).to_sdf()
-                version = self.__version__ or version
+                if self.sdfversion is None and version is not None:
+                    self.sdfversion = version
+                elif version is not None and version != self.sdfversion:
+                    return self.to_version(str(version)).to_sdf()
                 el = ET.Element("projection")
                 if self.p_cx is not None:
                     _c_tmp = ET.Element("p_cx")
@@ -803,65 +723,53 @@ class Camera(BaseModel):
             self,
             sdf_version: str | None = None,
             custom_function: "Camera.Lens.CustomFunction" = None,
-            cutoff_angle: float = 1.5707,
-            env_texture_size: int = 256,
+            cutoff_angle: float | None = 1.5707,
+            env_texture_size: int | None = 256,
             intrinsics: "Camera.Lens.Intrinsics" = None,
             projection: "Camera.Lens.Projection" = None,
-            scale_to_hfov: bool = True,
-            type: str = "stereographic"
+            scale_to_hfov: bool | None = True,
+            type: str | None = "stereographic"
         ):
             super().__init__(sdf_version)
             self.custom_function = custom_function
-            self.cutoff_angle = cutoff_angle
-            self.env_texture_size = env_texture_size
+            self.cutoff_angle = cutoff_angle if cutoff_angle is not None else 1.5707
+            self.env_texture_size = env_texture_size if env_texture_size is not None else 256
             self.intrinsics = intrinsics
             self.projection = projection
-            self.scale_to_hfov = scale_to_hfov
-            self.type = type
+            self.scale_to_hfov = scale_to_hfov if scale_to_hfov is not None else True
+            self.type = type if type is not None else "stereographic"
             if self.custom_function is not None and hasattr(self.custom_function, 'to_version'):
-                if getattr(self.custom_function, '__version__', None) is None:
-                    self.custom_function.__version__ = self.__version__
-                elif getattr(self.custom_function, '__version__', None) != self.__version__ and self.__version__ is not None:
-                    self.custom_function = self.custom_function.to_version(self.__version__)
+                if getattr(self.custom_function, 'sdfversion', None) is None:
+                    self.custom_function.sdfversion = self.sdfversion
+                elif getattr(self.custom_function, 'sdfversion', None) != self.sdfversion and self.sdfversion is not None:
+                    self.custom_function = self.custom_function.to_version(self.sdfversion)
             if self.intrinsics is not None and hasattr(self.intrinsics, 'to_version'):
-                if getattr(self.intrinsics, '__version__', None) is None:
-                    self.intrinsics.__version__ = self.__version__
-                elif getattr(self.intrinsics, '__version__', None) != self.__version__ and self.__version__ is not None:
-                    self.intrinsics = self.intrinsics.to_version(self.__version__)
+                if getattr(self.intrinsics, 'sdfversion', None) is None:
+                    self.intrinsics.sdfversion = self.sdfversion
+                elif getattr(self.intrinsics, 'sdfversion', None) != self.sdfversion and self.sdfversion is not None:
+                    self.intrinsics = self.intrinsics.to_version(self.sdfversion)
             if self.projection is not None and hasattr(self.projection, 'to_version'):
-                if getattr(self.projection, '__version__', None) is None:
-                    self.projection.__version__ = self.__version__
-                elif getattr(self.projection, '__version__', None) != self.__version__ and self.__version__ is not None:
-                    self.projection = self.projection.to_version(self.__version__)
+                if getattr(self.projection, 'sdfversion', None) is None:
+                    self.projection.sdfversion = self.sdfversion
+                elif getattr(self.projection, 'sdfversion', None) != self.sdfversion and self.sdfversion is not None:
+                    self.projection = self.projection.to_version(self.sdfversion)
 
         def to_version(self, target_version: str) -> "Camera.Lens":
             if self.intrinsics is not None and cmp_version(target_version, "1.6") < 0:
                 raise ValueError(f"'intrinsics' is not supported in SDF version {target_version} (added in 1.6)")
             if self.projection is not None and cmp_version(target_version, "1.7") < 0:
                 raise ValueError(f"'projection' is not supported in SDF version {target_version} (added in 1.7)")
-            kwargs = {"sdf_version": target_version}
-            kwargs["custom_function"] = self.custom_function.to_version(target_version) if hasattr(self.custom_function, "to_version") else self.custom_function
-            kwargs["cutoff_angle"] = self.cutoff_angle
-            kwargs["env_texture_size"] = self.env_texture_size
-            kwargs["intrinsics"] = self.intrinsics.to_version(target_version) if hasattr(self.intrinsics, "to_version") else self.intrinsics
-            kwargs["projection"] = self.projection.to_version(target_version) if hasattr(self.projection, "to_version") else self.projection
-            kwargs["scale_to_hfov"] = self.scale_to_hfov
-            kwargs["type"] = self.type
-            new_obj = self.__class__(**kwargs)
-            return new_obj
+            kwargs: dict = {"sdf_version": target_version, "custom_function": self.custom_function.to_version(target_version) if self.custom_function is not None and hasattr(self.custom_function, "to_version") else self.custom_function, "cutoff_angle": self.cutoff_angle, "env_texture_size": self.env_texture_size, "intrinsics": self.intrinsics.to_version(target_version) if self.intrinsics is not None and hasattr(self.intrinsics, "to_version") else self.intrinsics, "projection": self.projection.to_version(target_version) if self.projection is not None and hasattr(self.projection, "to_version") else self.projection, "scale_to_hfov": self.scale_to_hfov, "type": self.type}
+            return self.__class__(**kwargs)
 
         def to_sdf(self, version: str | None = None) -> ET.Element:
-            if self.__version__ is None and version is not None:
-                self.__version__ = version
-            elif version is not None and version != self.__version__:
-                return self.to_version(version).to_sdf()
-            version = self.__version__ or version
+            if self.sdfversion is None and version is not None:
+                self.sdfversion = version
+            elif version is not None and version != self.sdfversion:
+                return self.to_version(str(version)).to_sdf()
             el = ET.Element("lens")
             if self.custom_function is not None:
-                if hasattr(self.custom_function, 'to_sdf'):
-                    _child_res = self.custom_function.to_sdf(version)
-                else:
-                    _child_res = str(self.custom_function)
+                _child_res = self.custom_function.to_sdf(version)
                 if isinstance(_child_res, str):
                     _item_el = ET.Element('custom_function')
                     _item_el.text = _child_res
@@ -877,10 +785,7 @@ class Camera(BaseModel):
                 _c_tmp.text = str(self.env_texture_size)
                 el.append(_c_tmp)
             if self.intrinsics is not None:
-                if hasattr(self.intrinsics, 'to_sdf'):
-                    _child_res = self.intrinsics.to_sdf(version)
-                else:
-                    _child_res = str(self.intrinsics)
+                _child_res = self.intrinsics.to_sdf(version)
                 if isinstance(_child_res, str):
                     _item_el = ET.Element('intrinsics')
                     _item_el.text = _child_res
@@ -888,10 +793,7 @@ class Camera(BaseModel):
                     _item_el = _child_res
                 el.append(_item_el)
             if self.projection is not None:
-                if hasattr(self.projection, 'to_sdf'):
-                    _child_res = self.projection.to_sdf(version)
-                else:
-                    _child_res = str(self.projection)
+                _child_res = self.projection.to_sdf(version)
                 if isinstance(_child_res, str):
                     _item_el = ET.Element('projection')
                     _item_el.text = _child_res
@@ -980,29 +882,24 @@ class Camera(BaseModel):
         def __init__(
             self,
             sdf_version: str | None = None,
-            mean: float = 0.0,
-            stddev: float = 0.0,
-            type: str = "gaussian"
+            mean: float | None = 0.0,
+            stddev: float | None = 0.0,
+            type: str | None = "gaussian"
         ):
             super().__init__(sdf_version)
-            self.mean = mean
-            self.stddev = stddev
-            self.type = type
+            self.mean = mean if mean is not None else 0.0
+            self.stddev = stddev if stddev is not None else 0.0
+            self.type = type if type is not None else "gaussian"
 
         def to_version(self, target_version: str) -> "Camera.Noise":
-            kwargs = {"sdf_version": target_version}
-            kwargs["mean"] = self.mean
-            kwargs["stddev"] = self.stddev
-            kwargs["type"] = self.type
-            new_obj = self.__class__(**kwargs)
-            return new_obj
+            kwargs: dict = {"sdf_version": target_version, "mean": self.mean, "stddev": self.stddev, "type": self.type}
+            return self.__class__(**kwargs)
 
         def to_sdf(self, version: str | None = None) -> ET.Element:
-            if self.__version__ is None and version is not None:
-                self.__version__ = version
-            elif version is not None and version != self.__version__:
-                return self.to_version(version).to_sdf()
-            version = self.__version__ or version
+            if self.sdfversion is None and version is not None:
+                self.sdfversion = version
+            elif version is not None and version != self.sdfversion:
+                return self.to_version(str(version)).to_sdf()
             el = ET.Element("noise")
             if self.mean is not None:
                 _c_tmp = ET.Element("mean")
@@ -1053,28 +950,24 @@ class Camera(BaseModel):
         def __init__(
             self,
             sdf_version: str | None = None,
-            enabled: bool = False,
-            path: str = "__default__"
+            enabled: bool | None = False,
+            path: str | None = "__default__"
         ):
             super().__init__(sdf_version)
-            self.enabled = enabled
-            self.path = path
+            self.enabled = enabled if enabled is not None else False
+            self.path = path if path is not None else "__default__"
 
         def to_version(self, target_version: str) -> "Camera.Save":
             if self.path is not None and cmp_version(target_version, "1.2") >= 0:
                 raise ValueError(f"'path' is not supported in SDF version {target_version} (removed in 1.2)")
-            kwargs = {"sdf_version": target_version}
-            kwargs["enabled"] = self.enabled
-            kwargs["path"] = self.path
-            new_obj = self.__class__(**kwargs)
-            return new_obj
+            kwargs: dict = {"sdf_version": target_version, "enabled": self.enabled, "path": self.path}
+            return self.__class__(**kwargs)
 
         def to_sdf(self, version: str | None = None) -> ET.Element:
-            if self.__version__ is None and version is not None:
-                self.__version__ = version
-            elif version is not None and version != self.__version__:
-                return self.to_version(version).to_sdf()
-            version = self.__version__ or version
+            if self.sdfversion is None and version is not None:
+                self.sdfversion = version
+            elif version is not None and version != self.sdfversion:
+                return self.to_version(str(version)).to_sdf()
             el = ET.Element("save")
             if self.enabled is not None:
                 el.set("enabled", str(self.enabled).lower())
@@ -1095,8 +988,8 @@ class Camera(BaseModel):
     def __init__(
         self,
         sdf_version: str | None = None,
-        box_type: str = "2d",
-        camera_info_topic: str = "__default__",
+        box_type: str | None = "2d",
+        camera_info_topic: str | None = "__default__",
         clip: "Camera.Clip" = None,
         depth_camera: "Camera.DepthCamera" = None,
         distortion: "Camera.Distortion" = None,
@@ -1104,19 +997,19 @@ class Camera(BaseModel):
         horizontal_fov: "Camera.HorizontalFov" = None,
         image: "Camera.Image" = None,
         lens: "Camera.Lens" = None,
-        name: str = "__default__",
+        name: str | None = "__default__",
         noise: "Camera.Noise" = None,
-        optical_frame_id: str = "",
+        optical_frame_id: str | None = "",
         pose: "Pose" = None,
         save: "Camera.Save" = None,
-        segmentation_type: str = "semantic",
-        trigger_topic: str = "",
-        triggered: bool = False,
-        visibility_mask: int = 4294967295
+        segmentation_type: str | None = "semantic",
+        trigger_topic: str | None = "",
+        triggered: bool | None = False,
+        visibility_mask: int | None = 4294967295
     ):
         super().__init__(sdf_version)
-        self.box_type = box_type
-        self.camera_info_topic = camera_info_topic
+        self.box_type = box_type if box_type is not None else "2d"
+        self.camera_info_topic = camera_info_topic if camera_info_topic is not None else "__default__"
         self.clip = clip
         self.depth_camera = depth_camera
         self.distortion = distortion
@@ -1124,66 +1017,66 @@ class Camera(BaseModel):
         self.horizontal_fov = horizontal_fov
         self.image = image
         self.lens = lens
-        self.name = name
+        self.name = name if name is not None else "__default__"
         self.noise = noise
-        self.optical_frame_id = optical_frame_id
+        self.optical_frame_id = optical_frame_id if optical_frame_id is not None else ""
         self.pose = pose
         self.save = save
-        self.segmentation_type = segmentation_type
-        self.trigger_topic = trigger_topic
-        self.triggered = triggered
-        self.visibility_mask = visibility_mask
+        self.segmentation_type = segmentation_type if segmentation_type is not None else "semantic"
+        self.trigger_topic = trigger_topic if trigger_topic is not None else ""
+        self.triggered = triggered if triggered is not None else False
+        self.visibility_mask = visibility_mask if visibility_mask is not None else 4294967295
         if self.clip is not None and hasattr(self.clip, 'to_version'):
-            if getattr(self.clip, '__version__', None) is None:
-                self.clip.__version__ = self.__version__
-            elif getattr(self.clip, '__version__', None) != self.__version__ and self.__version__ is not None:
-                self.clip = self.clip.to_version(self.__version__)
+            if getattr(self.clip, 'sdfversion', None) is None:
+                self.clip.sdfversion = self.sdfversion
+            elif getattr(self.clip, 'sdfversion', None) != self.sdfversion and self.sdfversion is not None:
+                self.clip = self.clip.to_version(self.sdfversion)
         if self.depth_camera is not None and hasattr(self.depth_camera, 'to_version'):
-            if getattr(self.depth_camera, '__version__', None) is None:
-                self.depth_camera.__version__ = self.__version__
-            elif getattr(self.depth_camera, '__version__', None) != self.__version__ and self.__version__ is not None:
-                self.depth_camera = self.depth_camera.to_version(self.__version__)
+            if getattr(self.depth_camera, 'sdfversion', None) is None:
+                self.depth_camera.sdfversion = self.sdfversion
+            elif getattr(self.depth_camera, 'sdfversion', None) != self.sdfversion and self.sdfversion is not None:
+                self.depth_camera = self.depth_camera.to_version(self.sdfversion)
         if self.distortion is not None and hasattr(self.distortion, 'to_version'):
-            if getattr(self.distortion, '__version__', None) is None:
-                self.distortion.__version__ = self.__version__
-            elif getattr(self.distortion, '__version__', None) != self.__version__ and self.__version__ is not None:
-                self.distortion = self.distortion.to_version(self.__version__)
+            if getattr(self.distortion, 'sdfversion', None) is None:
+                self.distortion.sdfversion = self.sdfversion
+            elif getattr(self.distortion, 'sdfversion', None) != self.sdfversion and self.sdfversion is not None:
+                self.distortion = self.distortion.to_version(self.sdfversion)
         for _i, _c in enumerate(self.frames):
             if not hasattr(_c, 'to_version'): continue
-            if getattr(_c, '__version__', None) is None:
-                _c.__version__ = self.__version__
-            elif getattr(_c, '__version__', None) != self.__version__ and self.__version__ is not None:
-                self.frames[_i] = _c.to_version(self.__version__)
+            if getattr(_c, 'sdfversion', None) is None:
+                _c.sdfversion = self.sdfversion
+            elif getattr(_c, 'sdfversion', None) != self.sdfversion and self.sdfversion is not None:
+                self.frames[_i] = _c.to_version(self.sdfversion)
         if self.horizontal_fov is not None and hasattr(self.horizontal_fov, 'to_version'):
-            if getattr(self.horizontal_fov, '__version__', None) is None:
-                self.horizontal_fov.__version__ = self.__version__
-            elif getattr(self.horizontal_fov, '__version__', None) != self.__version__ and self.__version__ is not None:
-                self.horizontal_fov = self.horizontal_fov.to_version(self.__version__)
+            if getattr(self.horizontal_fov, 'sdfversion', None) is None:
+                self.horizontal_fov.sdfversion = self.sdfversion
+            elif getattr(self.horizontal_fov, 'sdfversion', None) != self.sdfversion and self.sdfversion is not None:
+                self.horizontal_fov = self.horizontal_fov.to_version(self.sdfversion)
         if self.image is not None and hasattr(self.image, 'to_version'):
-            if getattr(self.image, '__version__', None) is None:
-                self.image.__version__ = self.__version__
-            elif getattr(self.image, '__version__', None) != self.__version__ and self.__version__ is not None:
-                self.image = self.image.to_version(self.__version__)
+            if getattr(self.image, 'sdfversion', None) is None:
+                self.image.sdfversion = self.sdfversion
+            elif getattr(self.image, 'sdfversion', None) != self.sdfversion and self.sdfversion is not None:
+                self.image = self.image.to_version(self.sdfversion)
         if self.lens is not None and hasattr(self.lens, 'to_version'):
-            if getattr(self.lens, '__version__', None) is None:
-                self.lens.__version__ = self.__version__
-            elif getattr(self.lens, '__version__', None) != self.__version__ and self.__version__ is not None:
-                self.lens = self.lens.to_version(self.__version__)
+            if getattr(self.lens, 'sdfversion', None) is None:
+                self.lens.sdfversion = self.sdfversion
+            elif getattr(self.lens, 'sdfversion', None) != self.sdfversion and self.sdfversion is not None:
+                self.lens = self.lens.to_version(self.sdfversion)
         if self.noise is not None and hasattr(self.noise, 'to_version'):
-            if getattr(self.noise, '__version__', None) is None:
-                self.noise.__version__ = self.__version__
-            elif getattr(self.noise, '__version__', None) != self.__version__ and self.__version__ is not None:
-                self.noise = self.noise.to_version(self.__version__)
+            if getattr(self.noise, 'sdfversion', None) is None:
+                self.noise.sdfversion = self.sdfversion
+            elif getattr(self.noise, 'sdfversion', None) != self.sdfversion and self.sdfversion is not None:
+                self.noise = self.noise.to_version(self.sdfversion)
         if self.pose is not None and hasattr(self.pose, 'to_version'):
-            if getattr(self.pose, '__version__', None) is None:
-                self.pose.__version__ = self.__version__
-            elif getattr(self.pose, '__version__', None) != self.__version__ and self.__version__ is not None:
-                self.pose = self.pose.to_version(self.__version__)
+            if getattr(self.pose, 'sdfversion', None) is None:
+                self.pose.sdfversion = self.sdfversion
+            elif getattr(self.pose, 'sdfversion', None) != self.sdfversion and self.sdfversion is not None:
+                self.pose = self.pose.to_version(self.sdfversion)
         if self.save is not None and hasattr(self.save, 'to_version'):
-            if getattr(self.save, '__version__', None) is None:
-                self.save.__version__ = self.__version__
-            elif getattr(self.save, '__version__', None) != self.__version__ and self.__version__ is not None:
-                self.save = self.save.to_version(self.__version__)
+            if getattr(self.save, 'sdfversion', None) is None:
+                self.save.sdfversion = self.sdfversion
+            elif getattr(self.save, 'sdfversion', None) != self.sdfversion and self.sdfversion is not None:
+                self.save = self.save.to_version(self.sdfversion)
 
     def add_frame(self, *items: "Frame"):
         if self.frames is None:
@@ -1221,36 +1114,16 @@ class Camera(BaseModel):
             raise ValueError(f"'triggered' is not supported in SDF version {target_version} (added in 1.9)")
         if self.visibility_mask is not None and cmp_version(target_version, "1.7") < 0:
             raise ValueError(f"'visibility_mask' is not supported in SDF version {target_version} (added in 1.7)")
-        kwargs = {"sdf_version": target_version}
-        kwargs["box_type"] = self.box_type
-        kwargs["camera_info_topic"] = self.camera_info_topic
-        kwargs["clip"] = self.clip.to_version(target_version) if hasattr(self.clip, "to_version") else self.clip
-        kwargs["depth_camera"] = self.depth_camera.to_version(target_version) if hasattr(self.depth_camera, "to_version") else self.depth_camera
-        kwargs["distortion"] = self.distortion.to_version(target_version) if hasattr(self.distortion, "to_version") else self.distortion
-        kwargs["frames"] = [c.to_version(target_version) if hasattr(c, "to_version") else c for c in (self.frames or [])]
-        kwargs["horizontal_fov"] = self.horizontal_fov.to_version(target_version) if hasattr(self.horizontal_fov, "to_version") else self.horizontal_fov
-        kwargs["image"] = self.image.to_version(target_version) if hasattr(self.image, "to_version") else self.image
-        kwargs["lens"] = self.lens.to_version(target_version) if hasattr(self.lens, "to_version") else self.lens
-        kwargs["name"] = self.name
-        kwargs["noise"] = self.noise.to_version(target_version) if hasattr(self.noise, "to_version") else self.noise
-        kwargs["optical_frame_id"] = self.optical_frame_id
-        kwargs["pose"] = self.pose.to_version(target_version) if hasattr(self.pose, "to_version") else self.pose
-        kwargs["save"] = self.save.to_version(target_version) if hasattr(self.save, "to_version") else self.save
-        kwargs["segmentation_type"] = self.segmentation_type
-        kwargs["trigger_topic"] = self.trigger_topic
-        kwargs["triggered"] = self.triggered
-        kwargs["visibility_mask"] = self.visibility_mask
-        new_obj = self.__class__(**kwargs)
-        return new_obj
+        kwargs: dict = {"sdf_version": target_version, "box_type": self.box_type, "camera_info_topic": self.camera_info_topic, "clip": self.clip.to_version(target_version) if self.clip is not None and hasattr(self.clip, "to_version") else self.clip, "depth_camera": self.depth_camera.to_version(target_version) if self.depth_camera is not None and hasattr(self.depth_camera, "to_version") else self.depth_camera, "distortion": self.distortion.to_version(target_version) if self.distortion is not None and hasattr(self.distortion, "to_version") else self.distortion, "frames": [c.to_version(target_version) if hasattr(c, "to_version") else c for c in (self.frames or [])], "horizontal_fov": self.horizontal_fov.to_version(target_version) if self.horizontal_fov is not None and hasattr(self.horizontal_fov, "to_version") else self.horizontal_fov, "image": self.image.to_version(target_version) if self.image is not None and hasattr(self.image, "to_version") else self.image, "lens": self.lens.to_version(target_version) if self.lens is not None and hasattr(self.lens, "to_version") else self.lens, "name": self.name, "noise": self.noise.to_version(target_version) if self.noise is not None and hasattr(self.noise, "to_version") else self.noise, "optical_frame_id": self.optical_frame_id, "pose": self.pose.to_version(target_version) if self.pose is not None and hasattr(self.pose, "to_version") else self.pose, "save": self.save.to_version(target_version) if self.save is not None and hasattr(self.save, "to_version") else self.save, "segmentation_type": self.segmentation_type, "trigger_topic": self.trigger_topic, "triggered": self.triggered, "visibility_mask": self.visibility_mask}
+        return self.__class__(**kwargs)
 
     def to_sdf(self, version: str | None = None) -> ET.Element:
         from ..elements.frame import Frame
         from ..elements.pose import Pose
-        if self.__version__ is None and version is not None:
-            self.__version__ = version
-        elif version is not None and version != self.__version__:
-            return self.to_version(version).to_sdf()
-        version = self.__version__ or version
+        if self.sdfversion is None and version is not None:
+            self.sdfversion = version
+        elif version is not None and version != self.sdfversion:
+            return self.to_version(str(version)).to_sdf()
         el = ET.Element("camera")
         if self.box_type is not None:
             _c_tmp = ET.Element("box_type")
@@ -1263,10 +1136,7 @@ class Camera(BaseModel):
         if self.clip is None:
             self.clip = self.__class__.Clip(sdf_version=version)
         if self.clip is not None:
-            if hasattr(self.clip, 'to_sdf'):
-                _child_res = self.clip.to_sdf(version)
-            else:
-                _child_res = str(self.clip)
+            _child_res = self.clip.to_sdf(version)
             if isinstance(_child_res, str):
                 _item_el = ET.Element('clip')
                 _item_el.text = _child_res
@@ -1274,10 +1144,7 @@ class Camera(BaseModel):
                 _item_el = _child_res
             el.append(_item_el)
         if self.depth_camera is not None:
-            if hasattr(self.depth_camera, 'to_sdf'):
-                _child_res = self.depth_camera.to_sdf(version)
-            else:
-                _child_res = str(self.depth_camera)
+            _child_res = self.depth_camera.to_sdf(version)
             if isinstance(_child_res, str):
                 _item_el = ET.Element('depth_camera')
                 _item_el.text = _child_res
@@ -1285,10 +1152,7 @@ class Camera(BaseModel):
                 _item_el = _child_res
             el.append(_item_el)
         if self.distortion is not None:
-            if hasattr(self.distortion, 'to_sdf'):
-                _child_res = self.distortion.to_sdf(version)
-            else:
-                _child_res = str(self.distortion)
+            _child_res = self.distortion.to_sdf(version)
             if isinstance(_child_res, str):
                 _item_el = ET.Element('distortion')
                 _item_el.text = _child_res
@@ -1296,10 +1160,7 @@ class Camera(BaseModel):
                 _item_el = _child_res
             el.append(_item_el)
         for item in (self.frames or []):
-            if hasattr(item, 'to_sdf'):
-                _child_res = item.to_sdf(version)
-            else:
-                _child_res = str(item)
+            _child_res = item.to_sdf(version)
             if isinstance(_child_res, str):
                 _item_el = ET.Element('frame')
                 _item_el.text = _child_res
@@ -1307,10 +1168,7 @@ class Camera(BaseModel):
                 _item_el = _child_res
             el.append(_item_el)
         if self.horizontal_fov is not None:
-            if hasattr(self.horizontal_fov, 'to_sdf'):
-                _child_res = self.horizontal_fov.to_sdf(version)
-            else:
-                _child_res = str(self.horizontal_fov)
+            _child_res = self.horizontal_fov.to_sdf(version)
             if isinstance(_child_res, str):
                 _item_el = ET.Element('horizontal_fov')
                 _item_el.text = _child_res
@@ -1320,10 +1178,7 @@ class Camera(BaseModel):
         if self.image is None:
             self.image = self.__class__.Image(sdf_version=version)
         if self.image is not None:
-            if hasattr(self.image, 'to_sdf'):
-                _child_res = self.image.to_sdf(version)
-            else:
-                _child_res = str(self.image)
+            _child_res = self.image.to_sdf(version)
             if isinstance(_child_res, str):
                 _item_el = ET.Element('image')
                 _item_el.text = _child_res
@@ -1331,10 +1186,7 @@ class Camera(BaseModel):
                 _item_el = _child_res
             el.append(_item_el)
         if self.lens is not None:
-            if hasattr(self.lens, 'to_sdf'):
-                _child_res = self.lens.to_sdf(version)
-            else:
-                _child_res = str(self.lens)
+            _child_res = self.lens.to_sdf(version)
             if isinstance(_child_res, str):
                 _item_el = ET.Element('lens')
                 _item_el.text = _child_res
@@ -1344,10 +1196,7 @@ class Camera(BaseModel):
         if self.name is not None:
             el.set("name", self.name)
         if self.noise is not None:
-            if hasattr(self.noise, 'to_sdf'):
-                _child_res = self.noise.to_sdf(version)
-            else:
-                _child_res = str(self.noise)
+            _child_res = self.noise.to_sdf(version)
             if isinstance(_child_res, str):
                 _item_el = ET.Element('noise')
                 _item_el.text = _child_res
@@ -1359,10 +1208,7 @@ class Camera(BaseModel):
             _c_tmp.text = self.optical_frame_id
             el.append(_c_tmp)
         if self.pose is not None:
-            if hasattr(self.pose, 'to_sdf'):
-                _child_res = self.pose.to_sdf(version)
-            else:
-                _child_res = str(self.pose)
+            _child_res = self.pose.to_sdf(version)
             if isinstance(_child_res, str):
                 _item_el = ET.Element('pose')
                 _item_el.text = _child_res
@@ -1370,10 +1216,7 @@ class Camera(BaseModel):
                 _item_el = _child_res
             el.append(_item_el)
         if self.save is not None:
-            if hasattr(self.save, 'to_sdf'):
-                _child_res = self.save.to_sdf(version)
-            else:
-                _child_res = str(self.save)
+            _child_res = self.save.to_sdf(version)
             if isinstance(_child_res, str):
                 _item_el = ET.Element('save')
                 _item_el.text = _child_res

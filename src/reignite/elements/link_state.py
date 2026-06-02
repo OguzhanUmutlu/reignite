@@ -2,4 +2,8 @@ from .._sdf.link_state import LinkState as _LinkState
 
 
 class LinkState(_LinkState):
-    pass
+    def find_element(self, search: str):
+        if not search:
+            return None
+        search, rest = LinkState.__search(search)
+        return LinkState.__find_help(self.collision_states, search, rest)

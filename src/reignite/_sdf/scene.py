@@ -1,46 +1,13 @@
 ### THIS FILE WAS AUTO-GENERATED ###
 from __future__ import annotations
 
-import typing
 from xml.etree import ElementTree as ET
 
+from ..utils.utils import _parse_double
 from ..utils.model import BaseModel
 from ..utils.errors import SDFError
-from ..utils.color import Color as _SDFColor, _ColorT, _color
+from ..utils.color import Color as _ColorT, _color
 from ..utils.version import cmp_version
-
-
-import math
-
-def _parse_int32(raw: str) -> int | SDFError:
-    try:
-        v = int(raw)
-        if not (-2147483648 <= v <= 2147483647):
-            return SDFError(f"int32 out of range: {v}")
-        return v
-    except ValueError:
-        return SDFError(f"Invalid int32: {raw}")
-
-
-def _parse_uint32(raw: str) -> int | SDFError:
-    try:
-        v = int(raw)
-        if not (0 <= v <= 4294967295):
-            return SDFError(f"uint32 out of range: {v}")
-        return v
-    except ValueError:
-        return SDFError(f"Invalid uint32: {raw}")
-
-
-def _parse_double(raw: str) -> float | SDFError:
-    try:
-        v = float(raw)
-        if not math.isfinite(v) or abs(v) > math.inf:
-            return SDFError(f"double out of range: {raw}")
-        return v
-    except ValueError:
-        return SDFError(f"Invalid double: {raw}")
-
 
 def _parse_color(raw: str) -> _ColorT | SDFError:
     try:
@@ -49,41 +16,30 @@ def _parse_color(raw: str) -> _ColorT | SDFError:
         return SDFError(str(e))
 
 
+# noinspection PyUnusedImports
 class Scene(BaseModel):
     class Ambient(BaseModel):
         def __init__(
             self,
             sdf_version: str | None = None,
-            ambient: _ColorT = None,
-            rgba: _ColorT = None
+            ambient: _ColorT | None = None,
+            rgba: _ColorT | None = None
         ):
             super().__init__(sdf_version)
-            if ambient is None:
-                ambient = _color("0.0 0.0 0.0 1.0")
-            else:
-                ambient = _color(ambient)
-            if rgba is None:
-                rgba = _color("0.0 0.0 0.0 1.0")
-            else:
-                rgba = _color(rgba)
-            self.ambient = ambient
-            self.rgba = rgba
+            self.ambient = _color("0.0 0.0 0.0 1.0") if ambient is None else _color(ambient)
+            self.rgba = _color("0.0 0.0 0.0 1.0") if rgba is None else _color(rgba)
 
         def to_version(self, target_version: str) -> "Scene.Ambient":
             if self.rgba is not None and cmp_version(target_version, "1.2") >= 0:
                 raise ValueError(f"'rgba' is not supported in SDF version {target_version} (removed in 1.2)")
-            kwargs = {"sdf_version": target_version}
-            kwargs["ambient"] = self.ambient
-            kwargs["rgba"] = self.rgba
-            new_obj = self.__class__(**kwargs)
-            return new_obj
+            kwargs: dict = {"sdf_version": target_version, "ambient": self.ambient, "rgba": self.rgba}
+            return self.__class__(**kwargs)
 
         def to_sdf(self, version: str | None = None) -> ET.Element:
-            if self.__version__ is None and version is not None:
-                self.__version__ = version
-            elif version is not None and version != self.__version__:
-                return self.to_version(version).to_sdf()
-            version = self.__version__ or version
+            if self.sdfversion is None and version is not None:
+                self.sdfversion = version
+            elif version is not None and version != self.sdfversion:
+                return self.to_version(str(version)).to_sdf()
             el = ET.Element("ambient")
             if self.ambient is not None:
                 el.text = str(self.ambient)
@@ -113,22 +69,19 @@ class Scene(BaseModel):
 
     class Background(BaseModel):
         class Sky(BaseModel):
-            def __init__(self, sdf_version: str | None = None, material: str = "Gazebo/CloudySky"):
+            def __init__(self, sdf_version: str | None = None, material: str | None = "Gazebo/CloudySky"):
                 super().__init__(sdf_version)
-                self.material = material
+                self.material = material if material is not None else "Gazebo/CloudySky"
 
             def to_version(self, target_version: str) -> "Scene.Background.Sky":
-                kwargs = {"sdf_version": target_version}
-                kwargs["material"] = self.material
-                new_obj = self.__class__(**kwargs)
-                return new_obj
+                kwargs: dict = {"sdf_version": target_version, "material": self.material}
+                return self.__class__(**kwargs)
 
             def to_sdf(self, version: str | None = None) -> ET.Element:
-                if self.__version__ is None and version is not None:
-                    self.__version__ = version
-                elif version is not None and version != self.__version__:
-                    return self.to_version(version).to_sdf()
-                version = self.__version__ or version
+                if self.sdfversion is None and version is not None:
+                    self.sdfversion = version
+                elif version is not None and version != self.sdfversion:
+                    return self.to_version(str(version)).to_sdf()
                 el = ET.Element("sky")
                 if self.material is not None:
                     el.set("material", self.material)
@@ -144,39 +97,31 @@ class Scene(BaseModel):
         def __init__(
             self,
             sdf_version: str | None = None,
-            rgba: _ColorT = None,
+            rgba: _ColorT | None = None,
             sky: "Scene.Background.Sky" = None
         ):
             super().__init__(sdf_version)
-            if rgba is None:
-                rgba = _color(".7 .7 .7 1")
-            else:
-                rgba = _color(rgba)
-            self.rgba = rgba
+            self.rgba = _color(".7 .7 .7 1") if rgba is None else _color(rgba)
             self.sky = sky
             if self.sky is not None and hasattr(self.sky, 'to_version'):
-                if getattr(self.sky, '__version__', None) is None:
-                    self.sky.__version__ = self.__version__
-                elif getattr(self.sky, '__version__', None) != self.__version__ and self.__version__ is not None:
-                    self.sky = self.sky.to_version(self.__version__)
+                if getattr(self.sky, 'sdfversion', None) is None:
+                    self.sky.sdfversion = self.sdfversion
+                elif getattr(self.sky, 'sdfversion', None) != self.sdfversion and self.sdfversion is not None:
+                    self.sky = self.sky.to_version(self.sdfversion)
 
         def to_version(self, target_version: str) -> "Scene.Background":
             if self.rgba is not None and cmp_version(target_version, "1.2") >= 0:
                 raise ValueError(f"'rgba' is not supported in SDF version {target_version} (removed in 1.2)")
             if self.sky is not None and cmp_version(target_version, "1.2") >= 0:
                 raise ValueError(f"'sky' is not supported in SDF version {target_version} (removed in 1.2)")
-            kwargs = {"sdf_version": target_version}
-            kwargs["rgba"] = self.rgba
-            kwargs["sky"] = self.sky.to_version(target_version) if hasattr(self.sky, "to_version") else self.sky
-            new_obj = self.__class__(**kwargs)
-            return new_obj
+            kwargs: dict = {"sdf_version": target_version, "rgba": self.rgba, "sky": self.sky.to_version(target_version) if self.sky is not None and hasattr(self.sky, "to_version") else self.sky}
+            return self.__class__(**kwargs)
 
         def to_sdf(self, version: str | None = None) -> ET.Element:
-            if self.__version__ is None and version is not None:
-                self.__version__ = version
-            elif version is not None and version != self.__version__:
-                return self.to_version(version).to_sdf()
-            version = self.__version__ or version
+            if self.sdfversion is None and version is not None:
+                self.sdfversion = version
+            elif version is not None and version != self.sdfversion:
+                return self.to_version(str(version)).to_sdf()
             el = ET.Element("background")
             if self.rgba is not None:
                 if cmp_version(version, "1.2") >= 0:
@@ -184,10 +129,7 @@ class Scene(BaseModel):
                 else:
                     el.set("rgba", str(self.rgba))
             if self.sky is not None:
-                if hasattr(self.sky, 'to_sdf'):
-                    _child_res = self.sky.to_sdf(version)
-                else:
-                    _child_res = str(self.sky)
+                _child_res = self.sky.to_sdf(version)
                 if isinstance(_child_res, str):
                     _item_el = ET.Element('sky')
                     _item_el.text = _child_res
@@ -221,28 +163,20 @@ class Scene(BaseModel):
         def __init__(
             self,
             sdf_version: str | None = None,
-            color: _ColorT = None,
-            density: float = 1.0,
-            end: float = 100.0,
-            rgba: _ColorT = None,
-            start: float = 1.0,
-            type: str = "linear"
+            color: _ColorT | None = None,
+            density: float | None = 1.0,
+            end: float | None = 100.0,
+            rgba: _ColorT | None = None,
+            start: float | None = 1.0,
+            type: str | None = "linear"
         ):
             super().__init__(sdf_version)
-            if color is None:
-                color = _color("1 1 1 1")
-            else:
-                color = _color(color)
-            if rgba is None:
-                rgba = _color("1 1 1 1")
-            else:
-                rgba = _color(rgba)
-            self.color = color
-            self.density = density
-            self.end = end
-            self.rgba = rgba
-            self.start = start
-            self.type = type
+            self.color = _color("1 1 1 1") if color is None else _color(color)
+            self.density = density if density is not None else 1.0
+            self.end = end if end is not None else 100.0
+            self.rgba = _color("1 1 1 1") if rgba is None else _color(rgba)
+            self.start = start if start is not None else 1.0
+            self.type = type if type is not None else "linear"
 
         def to_version(self, target_version: str) -> "Scene.Fog":
             if self.color is not None and cmp_version(target_version, "1.2") < 0:
@@ -257,22 +191,14 @@ class Scene(BaseModel):
                 raise ValueError(f"'start' is not supported in SDF version {target_version} (removed in 1.2)")
             if self.type is not None and cmp_version(target_version, "1.2") >= 0:
                 raise ValueError(f"'type' is not supported in SDF version {target_version} (removed in 1.2)")
-            kwargs = {"sdf_version": target_version}
-            kwargs["color"] = self.color
-            kwargs["density"] = self.density
-            kwargs["end"] = self.end
-            kwargs["rgba"] = self.rgba
-            kwargs["start"] = self.start
-            kwargs["type"] = self.type
-            new_obj = self.__class__(**kwargs)
-            return new_obj
+            kwargs: dict = {"sdf_version": target_version, "color": self.color, "density": self.density, "end": self.end, "rgba": self.rgba, "start": self.start, "type": self.type}
+            return self.__class__(**kwargs)
 
         def to_sdf(self, version: str | None = None) -> ET.Element:
-            if self.__version__ is None and version is not None:
-                self.__version__ = version
-            elif version is not None and version != self.__version__:
-                return self.to_version(version).to_sdf()
-            version = self.__version__ or version
+            if self.sdfversion is None and version is not None:
+                self.sdfversion = version
+            elif version is not None and version != self.sdfversion:
+                return self.to_version(str(version)).to_sdf()
             el = ET.Element("fog")
             if self.color is not None:
                 _c_tmp = ET.Element("color")
@@ -333,26 +259,27 @@ class Scene(BaseModel):
             return cls(sdf_version=version, color=_color, density=_density, end=_end, rgba=_rgba, start=_start, type=_type)
 
     class Grid(BaseModel):
-        def __init__(self, sdf_version: str | None = None, enabled: bool = True, grid: bool = True):
+        def __init__(
+            self,
+            sdf_version: str | None = None,
+            enabled: bool | None = True,
+            grid: bool | None = True
+        ):
             super().__init__(sdf_version)
-            self.enabled = enabled
-            self.grid = grid
+            self.enabled = enabled if enabled is not None else True
+            self.grid = grid if grid is not None else True
 
         def to_version(self, target_version: str) -> "Scene.Grid":
             if self.enabled is not None and cmp_version(target_version, "1.2") >= 0:
                 raise ValueError(f"'enabled' is not supported in SDF version {target_version} (removed in 1.2)")
-            kwargs = {"sdf_version": target_version}
-            kwargs["enabled"] = self.enabled
-            kwargs["grid"] = self.grid
-            new_obj = self.__class__(**kwargs)
-            return new_obj
+            kwargs: dict = {"sdf_version": target_version, "enabled": self.enabled, "grid": self.grid}
+            return self.__class__(**kwargs)
 
         def to_sdf(self, version: str | None = None) -> ET.Element:
-            if self.__version__ is None and version is not None:
-                self.__version__ = version
-            elif version is not None and version != self.__version__:
-                return self.to_version(version).to_sdf()
-            version = self.__version__ or version
+            if self.sdfversion is None and version is not None:
+                self.sdfversion = version
+            elif version is not None and version != self.sdfversion:
+                return self.to_version(str(version)).to_sdf()
             el = ET.Element("grid")
             if self.enabled is not None:
                 if cmp_version(version, "1.2") >= 0:
@@ -385,39 +312,28 @@ class Scene(BaseModel):
             def __init__(
                 self,
                 sdf_version: str | None = None,
-                ambient: _ColorT = None,
-                direction: float = 0.0,
-                humidity: float = 0.5,
-                mean_size: float = 0.5,
-                speed: float = 0.6
+                ambient: _ColorT | None = None,
+                direction: float | None = 0.0,
+                humidity: float | None = 0.5,
+                mean_size: float | None = 0.5,
+                speed: float | None = 0.6
             ):
                 super().__init__(sdf_version)
-                if ambient is None:
-                    ambient = _color(".8 .8 .8 1")
-                else:
-                    ambient = _color(ambient)
-                self.ambient = ambient
-                self.direction = direction
-                self.humidity = humidity
-                self.mean_size = mean_size
-                self.speed = speed
+                self.ambient = _color(".8 .8 .8 1") if ambient is None else _color(ambient)
+                self.direction = direction if direction is not None else 0.0
+                self.humidity = humidity if humidity is not None else 0.5
+                self.mean_size = mean_size if mean_size is not None else 0.5
+                self.speed = speed if speed is not None else 0.6
 
             def to_version(self, target_version: str) -> "Scene.SceneSky.Clouds":
-                kwargs = {"sdf_version": target_version}
-                kwargs["ambient"] = self.ambient
-                kwargs["direction"] = self.direction
-                kwargs["humidity"] = self.humidity
-                kwargs["mean_size"] = self.mean_size
-                kwargs["speed"] = self.speed
-                new_obj = self.__class__(**kwargs)
-                return new_obj
+                kwargs: dict = {"sdf_version": target_version, "ambient": self.ambient, "direction": self.direction, "humidity": self.humidity, "mean_size": self.mean_size, "speed": self.speed}
+                return self.__class__(**kwargs)
 
             def to_sdf(self, version: str | None = None) -> ET.Element:
-                if self.__version__ is None and version is not None:
-                    self.__version__ = version
-                elif version is not None and version != self.__version__:
-                    return self.to_version(version).to_sdf()
-                version = self.__version__ or version
+                if self.sdfversion is None and version is not None:
+                    self.sdfversion = version
+                elif version is not None and version != self.sdfversion:
+                    return self.to_version(str(version)).to_sdf()
                 el = ET.Element("clouds")
                 if self.ambient is not None:
                     _c_tmp = ET.Element("ambient")
@@ -494,47 +410,37 @@ class Scene(BaseModel):
             self,
             sdf_version: str | None = None,
             clouds: "Scene.SceneSky.Clouds" = None,
-            cubemap_uri: str = "",
-            sunrise: float = 6.0,
-            sunset: float = 20.0,
-            time: float = 10.0
+            cubemap_uri: str | None = "",
+            sunrise: float | None = 6.0,
+            sunset: float | None = 20.0,
+            time: float | None = 10.0
         ):
             super().__init__(sdf_version)
             self.clouds = clouds
-            self.cubemap_uri = cubemap_uri
-            self.sunrise = sunrise
-            self.sunset = sunset
-            self.time = time
+            self.cubemap_uri = cubemap_uri if cubemap_uri is not None else ""
+            self.sunrise = sunrise if sunrise is not None else 6.0
+            self.sunset = sunset if sunset is not None else 20.0
+            self.time = time if time is not None else 10.0
             if self.clouds is not None and hasattr(self.clouds, 'to_version'):
-                if getattr(self.clouds, '__version__', None) is None:
-                    self.clouds.__version__ = self.__version__
-                elif getattr(self.clouds, '__version__', None) != self.__version__ and self.__version__ is not None:
-                    self.clouds = self.clouds.to_version(self.__version__)
+                if getattr(self.clouds, 'sdfversion', None) is None:
+                    self.clouds.sdfversion = self.sdfversion
+                elif getattr(self.clouds, 'sdfversion', None) != self.sdfversion and self.sdfversion is not None:
+                    self.clouds = self.clouds.to_version(self.sdfversion)
 
         def to_version(self, target_version: str) -> "Scene.SceneSky":
             if self.cubemap_uri is not None and cmp_version(target_version, "1.9") < 0:
                 raise ValueError(f"'cubemap_uri' is not supported in SDF version {target_version} (added in 1.9)")
-            kwargs = {"sdf_version": target_version}
-            kwargs["clouds"] = self.clouds.to_version(target_version) if hasattr(self.clouds, "to_version") else self.clouds
-            kwargs["cubemap_uri"] = self.cubemap_uri
-            kwargs["sunrise"] = self.sunrise
-            kwargs["sunset"] = self.sunset
-            kwargs["time"] = self.time
-            new_obj = self.__class__(**kwargs)
-            return new_obj
+            kwargs: dict = {"sdf_version": target_version, "clouds": self.clouds.to_version(target_version) if self.clouds is not None and hasattr(self.clouds, "to_version") else self.clouds, "cubemap_uri": self.cubemap_uri, "sunrise": self.sunrise, "sunset": self.sunset, "time": self.time}
+            return self.__class__(**kwargs)
 
         def to_sdf(self, version: str | None = None) -> ET.Element:
-            if self.__version__ is None and version is not None:
-                self.__version__ = version
-            elif version is not None and version != self.__version__:
-                return self.to_version(version).to_sdf()
-            version = self.__version__ or version
+            if self.sdfversion is None and version is not None:
+                self.sdfversion = version
+            elif version is not None and version != self.sdfversion:
+                return self.to_version(str(version)).to_sdf()
             el = ET.Element("sky")
             if self.clouds is not None:
-                if hasattr(self.clouds, 'to_sdf'):
-                    _child_res = self.clouds.to_sdf(version)
-                else:
-                    _child_res = str(self.clouds)
+                _child_res = self.clouds.to_sdf(version)
                 if isinstance(_child_res, str):
                     _item_el = ET.Element('clouds')
                     _item_el.text = _child_res
@@ -610,26 +516,27 @@ class Scene(BaseModel):
             return cls(sdf_version=version, clouds=_clouds, cubemap_uri=_cubemap_uri, sunrise=_sunrise, sunset=_sunset, time=_time)
 
     class Shadows(BaseModel):
-        def __init__(self, sdf_version: str | None = None, enabled: bool = True, shadows: bool = True):
+        def __init__(
+            self,
+            sdf_version: str | None = None,
+            enabled: bool | None = True,
+            shadows: bool | None = True
+        ):
             super().__init__(sdf_version)
-            self.enabled = enabled
-            self.shadows = shadows
+            self.enabled = enabled if enabled is not None else True
+            self.shadows = shadows if shadows is not None else True
 
         def to_version(self, target_version: str) -> "Scene.Shadows":
             if self.enabled is not None and cmp_version(target_version, "1.2") >= 0:
                 raise ValueError(f"'enabled' is not supported in SDF version {target_version} (removed in 1.2)")
-            kwargs = {"sdf_version": target_version}
-            kwargs["enabled"] = self.enabled
-            kwargs["shadows"] = self.shadows
-            new_obj = self.__class__(**kwargs)
-            return new_obj
+            kwargs: dict = {"sdf_version": target_version, "enabled": self.enabled, "shadows": self.shadows}
+            return self.__class__(**kwargs)
 
         def to_sdf(self, version: str | None = None) -> ET.Element:
-            if self.__version__ is None and version is not None:
-                self.__version__ = version
-            elif version is not None and version != self.__version__:
-                return self.to_version(version).to_sdf()
-            version = self.__version__ or version
+            if self.sdfversion is None and version is not None:
+                self.sdfversion = version
+            elif version is not None and version != self.sdfversion:
+                return self.to_version(str(version)).to_sdf()
             el = ET.Element("shadows")
             if self.enabled is not None:
                 if cmp_version(version, "1.2") >= 0:
@@ -664,7 +571,7 @@ class Scene(BaseModel):
         background: "Scene.Background" = None,
         fog: "Scene.Fog" = None,
         grid: "Scene.Grid" = None,
-        origin_visual: bool = True,
+        origin_visual: bool | None = True,
         shadows: "Scene.Shadows" = None,
         sky: "Scene.SceneSky" = None
     ):
@@ -673,68 +580,56 @@ class Scene(BaseModel):
         self.background = background
         self.fog = fog
         self.grid = grid
-        self.origin_visual = origin_visual
+        self.origin_visual = origin_visual if origin_visual is not None else True
         self.shadows = shadows
         self.sky = sky
         if self.ambient is not None and hasattr(self.ambient, 'to_version'):
-            if getattr(self.ambient, '__version__', None) is None:
-                self.ambient.__version__ = self.__version__
-            elif getattr(self.ambient, '__version__', None) != self.__version__ and self.__version__ is not None:
-                self.ambient = self.ambient.to_version(self.__version__)
+            if getattr(self.ambient, 'sdfversion', None) is None:
+                self.ambient.sdfversion = self.sdfversion
+            elif getattr(self.ambient, 'sdfversion', None) != self.sdfversion and self.sdfversion is not None:
+                self.ambient = self.ambient.to_version(self.sdfversion)
         if self.background is not None and hasattr(self.background, 'to_version'):
-            if getattr(self.background, '__version__', None) is None:
-                self.background.__version__ = self.__version__
-            elif getattr(self.background, '__version__', None) != self.__version__ and self.__version__ is not None:
-                self.background = self.background.to_version(self.__version__)
+            if getattr(self.background, 'sdfversion', None) is None:
+                self.background.sdfversion = self.sdfversion
+            elif getattr(self.background, 'sdfversion', None) != self.sdfversion and self.sdfversion is not None:
+                self.background = self.background.to_version(self.sdfversion)
         if self.fog is not None and hasattr(self.fog, 'to_version'):
-            if getattr(self.fog, '__version__', None) is None:
-                self.fog.__version__ = self.__version__
-            elif getattr(self.fog, '__version__', None) != self.__version__ and self.__version__ is not None:
-                self.fog = self.fog.to_version(self.__version__)
+            if getattr(self.fog, 'sdfversion', None) is None:
+                self.fog.sdfversion = self.sdfversion
+            elif getattr(self.fog, 'sdfversion', None) != self.sdfversion and self.sdfversion is not None:
+                self.fog = self.fog.to_version(self.sdfversion)
         if self.grid is not None and hasattr(self.grid, 'to_version'):
-            if getattr(self.grid, '__version__', None) is None:
-                self.grid.__version__ = self.__version__
-            elif getattr(self.grid, '__version__', None) != self.__version__ and self.__version__ is not None:
-                self.grid = self.grid.to_version(self.__version__)
+            if getattr(self.grid, 'sdfversion', None) is None:
+                self.grid.sdfversion = self.sdfversion
+            elif getattr(self.grid, 'sdfversion', None) != self.sdfversion and self.sdfversion is not None:
+                self.grid = self.grid.to_version(self.sdfversion)
         if self.shadows is not None and hasattr(self.shadows, 'to_version'):
-            if getattr(self.shadows, '__version__', None) is None:
-                self.shadows.__version__ = self.__version__
-            elif getattr(self.shadows, '__version__', None) != self.__version__ and self.__version__ is not None:
-                self.shadows = self.shadows.to_version(self.__version__)
+            if getattr(self.shadows, 'sdfversion', None) is None:
+                self.shadows.sdfversion = self.sdfversion
+            elif getattr(self.shadows, 'sdfversion', None) != self.sdfversion and self.sdfversion is not None:
+                self.shadows = self.shadows.to_version(self.sdfversion)
         if self.sky is not None and hasattr(self.sky, 'to_version'):
-            if getattr(self.sky, '__version__', None) is None:
-                self.sky.__version__ = self.__version__
-            elif getattr(self.sky, '__version__', None) != self.__version__ and self.__version__ is not None:
-                self.sky = self.sky.to_version(self.__version__)
+            if getattr(self.sky, 'sdfversion', None) is None:
+                self.sky.sdfversion = self.sdfversion
+            elif getattr(self.sky, 'sdfversion', None) != self.sdfversion and self.sdfversion is not None:
+                self.sky = self.sky.to_version(self.sdfversion)
 
     def to_version(self, target_version: str) -> "Scene":
         if self.origin_visual is not None and cmp_version(target_version, "1.5") < 0:
             raise ValueError(f"'origin_visual' is not supported in SDF version {target_version} (added in 1.5)")
         if self.sky is not None and cmp_version(target_version, "1.2") < 0:
             raise ValueError(f"'sky' is not supported in SDF version {target_version} (added in 1.2)")
-        kwargs = {"sdf_version": target_version}
-        kwargs["ambient"] = self.ambient.to_version(target_version) if hasattr(self.ambient, "to_version") else self.ambient
-        kwargs["background"] = self.background.to_version(target_version) if hasattr(self.background, "to_version") else self.background
-        kwargs["fog"] = self.fog.to_version(target_version) if hasattr(self.fog, "to_version") else self.fog
-        kwargs["grid"] = self.grid.to_version(target_version) if hasattr(self.grid, "to_version") else self.grid
-        kwargs["origin_visual"] = self.origin_visual
-        kwargs["shadows"] = self.shadows.to_version(target_version) if hasattr(self.shadows, "to_version") else self.shadows
-        kwargs["sky"] = self.sky.to_version(target_version) if hasattr(self.sky, "to_version") else self.sky
-        new_obj = self.__class__(**kwargs)
-        return new_obj
+        kwargs: dict = {"sdf_version": target_version, "ambient": self.ambient.to_version(target_version) if self.ambient is not None and hasattr(self.ambient, "to_version") else self.ambient, "background": self.background.to_version(target_version) if self.background is not None and hasattr(self.background, "to_version") else self.background, "fog": self.fog.to_version(target_version) if self.fog is not None and hasattr(self.fog, "to_version") else self.fog, "grid": self.grid.to_version(target_version) if self.grid is not None and hasattr(self.grid, "to_version") else self.grid, "origin_visual": self.origin_visual, "shadows": self.shadows.to_version(target_version) if self.shadows is not None and hasattr(self.shadows, "to_version") else self.shadows, "sky": self.sky.to_version(target_version) if self.sky is not None and hasattr(self.sky, "to_version") else self.sky}
+        return self.__class__(**kwargs)
 
     def to_sdf(self, version: str | None = None) -> ET.Element:
-        if self.__version__ is None and version is not None:
-            self.__version__ = version
-        elif version is not None and version != self.__version__:
-            return self.to_version(version).to_sdf()
-        version = self.__version__ or version
+        if self.sdfversion is None and version is not None:
+            self.sdfversion = version
+        elif version is not None and version != self.sdfversion:
+            return self.to_version(str(version)).to_sdf()
         el = ET.Element("scene")
         if self.ambient is not None:
-            if hasattr(self.ambient, 'to_sdf'):
-                _child_res = self.ambient.to_sdf(version)
-            else:
-                _child_res = str(self.ambient)
+            _child_res = self.ambient.to_sdf(version)
             if isinstance(_child_res, str):
                 _item_el = ET.Element('ambient')
                 _item_el.text = _child_res
@@ -742,10 +637,7 @@ class Scene(BaseModel):
                 _item_el = _child_res
             el.append(_item_el)
         if self.background is not None:
-            if hasattr(self.background, 'to_sdf'):
-                _child_res = self.background.to_sdf(version)
-            else:
-                _child_res = str(self.background)
+            _child_res = self.background.to_sdf(version)
             if isinstance(_child_res, str):
                 _item_el = ET.Element('background')
                 _item_el.text = _child_res
@@ -753,10 +645,7 @@ class Scene(BaseModel):
                 _item_el = _child_res
             el.append(_item_el)
         if self.fog is not None:
-            if hasattr(self.fog, 'to_sdf'):
-                _child_res = self.fog.to_sdf(version)
-            else:
-                _child_res = str(self.fog)
+            _child_res = self.fog.to_sdf(version)
             if isinstance(_child_res, str):
                 _item_el = ET.Element('fog')
                 _item_el.text = _child_res
@@ -764,10 +653,7 @@ class Scene(BaseModel):
                 _item_el = _child_res
             el.append(_item_el)
         if self.grid is not None:
-            if hasattr(self.grid, 'to_sdf'):
-                _child_res = self.grid.to_sdf(version)
-            else:
-                _child_res = str(self.grid)
+            _child_res = self.grid.to_sdf(version)
             if isinstance(_child_res, str):
                 _item_el = ET.Element('grid')
                 _item_el.text = _child_res
@@ -779,10 +665,7 @@ class Scene(BaseModel):
             _c_tmp.text = str(self.origin_visual).lower()
             el.append(_c_tmp)
         if self.shadows is not None:
-            if hasattr(self.shadows, 'to_sdf'):
-                _child_res = self.shadows.to_sdf(version)
-            else:
-                _child_res = str(self.shadows)
+            _child_res = self.shadows.to_sdf(version)
             if isinstance(_child_res, str):
                 _item_el = ET.Element('shadows')
                 _item_el.text = _child_res
@@ -790,10 +673,7 @@ class Scene(BaseModel):
                 _item_el = _child_res
             el.append(_item_el)
         if self.sky is not None:
-            if hasattr(self.sky, 'to_sdf'):
-                _child_res = self.sky.to_sdf(version)
-            else:
-                _child_res = str(self.sky)
+            _child_res = self.sky.to_sdf(version)
             if isinstance(_child_res, str):
                 _item_el = ET.Element('sky')
                 _item_el.text = _child_res

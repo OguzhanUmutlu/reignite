@@ -5,9 +5,7 @@ from typing import Union
 _Vector2dT = Union[float, tuple[float, float], "Vector2d"]
 
 
-def _vector2d(x: float | tuple[float, float] | Vector2d | None | str, y: float = None) -> Vector2d | None:
-    if x is None:
-        return None
+def _vector2d(x: float | tuple[float, float] | Vector2d | str, y: float = None) -> Vector2d:
     if isinstance(x, Vector2d):
         return x
     if isinstance(x, str):
@@ -29,6 +27,9 @@ class Vector2d:
     def __init__(self, x: float = 0.0, y: float = 0.0):
         self.x = x
         self.y = y
+
+    def to_sdf(self, _):
+        return str(self)
 
     def __str__(self) -> str:
         return f"{self.x} {self.y}"

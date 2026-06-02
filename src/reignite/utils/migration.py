@@ -59,9 +59,9 @@ def _set_path(obj, path: str, value):
                 return
             if typing.get_origin(cls) == list:
                 cls = typing.get_args(cls)[0]
-                new_val = [cls(sdf_version=obj.__version__)]
+                new_val = [cls(sdf_version=obj.sdfversion)]
             else:
-                new_val = cls(sdf_version=obj.__version__)
+                new_val = cls(sdf_version=obj.sdfversion)
             setattr(current, part, new_val)
             if isinstance(new_val, list):
                 current = new_val[0]
@@ -73,7 +73,7 @@ def _set_path(obj, path: str, value):
                     mod = sys.modules[current.__module__]
                     hints = typing.get_type_hints(type(current).__init__, globalns=mod.__dict__)
                     cls = typing.get_args(hints[part])[0]
-                    val.append(cls(sdf_version=obj.__version__))
+                    val.append(cls(sdf_version=obj.sdfversion))
                 current = val[0]
             else:
                 current = val
@@ -84,7 +84,7 @@ def _set_path(obj, path: str, value):
 
 
 def apply_migrations(obj, target_version: str):
-    current_version = getattr(obj, "__version__", "1.0")
+    current_version = getattr(obj, "sdfversion", "1.0")
     if current_version == target_version:
         return
 

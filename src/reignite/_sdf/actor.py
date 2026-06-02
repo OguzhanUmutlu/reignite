@@ -1,14 +1,15 @@
 ### THIS FILE WAS AUTO-GENERATED ###
 from __future__ import annotations
 
-import typing
 from xml.etree import ElementTree as ET
 
+from ..utils.utils import _parse_double, _parse_int32
+import typing
 from typing import List
 
 from ..utils.model import BaseModel
 from ..utils.errors import SDFError
-from ..utils.pose import Pose as _SDFPose, _PoseT, _pose
+from ..utils.pose import Pose as _PoseT, _pose
 from ..utils.version import cmp_version
 
 if typing.TYPE_CHECKING:
@@ -18,39 +19,6 @@ if typing.TYPE_CHECKING:
     from ..elements.plugin import Plugin
     from ..elements.pose import Pose
 
-
-import math
-
-def _parse_int32(raw: str) -> int | SDFError:
-    try:
-        v = int(raw)
-        if not (-2147483648 <= v <= 2147483647):
-            return SDFError(f"int32 out of range: {v}")
-        return v
-    except ValueError:
-        return SDFError(f"Invalid int32: {raw}")
-
-
-def _parse_uint32(raw: str) -> int | SDFError:
-    try:
-        v = int(raw)
-        if not (0 <= v <= 4294967295):
-            return SDFError(f"uint32 out of range: {v}")
-        return v
-    except ValueError:
-        return SDFError(f"Invalid uint32: {raw}")
-
-
-def _parse_double(raw: str) -> float | SDFError:
-    try:
-        v = float(raw)
-        if not math.isfinite(v) or abs(v) > math.inf:
-            return SDFError(f"double out of range: {raw}")
-        return v
-    except ValueError:
-        return SDFError(f"Invalid double: {raw}")
-
-
 def _parse_pose(raw: str) -> _PoseT | SDFError:
     try:
         return _pose(raw)
@@ -58,21 +26,22 @@ def _parse_pose(raw: str) -> _PoseT | SDFError:
         return SDFError(str(e))
 
 
+# noinspection PyUnusedImports
 class Actor(BaseModel):
     class Animation(BaseModel):
         def __init__(
             self,
             sdf_version: str | None = None,
-            filename: str = "__default__",
-            interpolate_x: bool = False,
-            name: str = "__default__",
-            scale: float = 1.0
+            filename: str | None = "__default__",
+            interpolate_x: bool | None = False,
+            name: str | None = "__default__",
+            scale: float | None = 1.0
         ):
             super().__init__(sdf_version)
-            self.filename = filename
-            self.interpolate_x = interpolate_x
-            self.name = name
-            self.scale = scale
+            self.filename = filename if filename is not None else "__default__"
+            self.interpolate_x = interpolate_x if interpolate_x is not None else False
+            self.name = name if name is not None else "__default__"
+            self.scale = scale if scale is not None else 1.0
 
         def to_version(self, target_version: str) -> "Actor.Animation":
             if self.filename is not None and cmp_version(target_version, "1.2") >= 0:
@@ -81,20 +50,14 @@ class Actor(BaseModel):
                 raise ValueError(f"'interpolate_x' is not supported in SDF version {target_version} (removed in 1.2)")
             if self.scale is not None and cmp_version(target_version, "1.2") >= 0:
                 raise ValueError(f"'scale' is not supported in SDF version {target_version} (removed in 1.2)")
-            kwargs = {"sdf_version": target_version}
-            kwargs["filename"] = self.filename
-            kwargs["interpolate_x"] = self.interpolate_x
-            kwargs["name"] = self.name
-            kwargs["scale"] = self.scale
-            new_obj = self.__class__(**kwargs)
-            return new_obj
+            kwargs: dict = {"sdf_version": target_version, "filename": self.filename, "interpolate_x": self.interpolate_x, "name": self.name, "scale": self.scale}
+            return self.__class__(**kwargs)
 
         def to_sdf(self, version: str | None = None) -> ET.Element:
-            if self.__version__ is None and version is not None:
-                self.__version__ = version
-            elif version is not None and version != self.__version__:
-                return self.to_version(version).to_sdf()
-            version = self.__version__ or version
+            if self.sdfversion is None and version is not None:
+                self.sdfversion = version
+            elif version is not None and version != self.sdfversion:
+                return self.to_version(str(version)).to_sdf()
             el = ET.Element("animation")
             if self.filename is not None:
                 el.set("filename", self.filename)
@@ -123,26 +86,19 @@ class Actor(BaseModel):
             return cls(sdf_version=version, filename=_filename, interpolate_x=_interpolate_x, name=_name, scale=_scale)
 
     class Origin(BaseModel):
-        def __init__(self, sdf_version: str | None = None, pose: _PoseT = None):
+        def __init__(self, sdf_version: str | None = None, pose: _PoseT | None = None):
             super().__init__(sdf_version)
-            if pose is None:
-                pose = _pose("0 0 0 0 0 0")
-            else:
-                pose = _pose(pose)
-            self.pose = pose
+            self.pose = _pose("0 0 0 0 0 0") if pose is None else _pose(pose)
 
         def to_version(self, target_version: str) -> "Actor.Origin":
-            kwargs = {"sdf_version": target_version}
-            kwargs["pose"] = self.pose
-            new_obj = self.__class__(**kwargs)
-            return new_obj
+            kwargs: dict = {"sdf_version": target_version, "pose": self.pose}
+            return self.__class__(**kwargs)
 
         def to_sdf(self, version: str | None = None) -> ET.Element:
-            if self.__version__ is None and version is not None:
-                self.__version__ = version
-            elif version is not None and version != self.__version__:
-                return self.to_version(version).to_sdf()
-            version = self.__version__ or version
+            if self.sdfversion is None and version is not None:
+                self.sdfversion = version
+            elif version is not None and version != self.sdfversion:
+                return self.to_version(str(version)).to_sdf()
             el = ET.Element("origin")
             if self.pose is not None:
                 if cmp_version(version, "1.2") >= 0:
@@ -170,32 +126,29 @@ class Actor(BaseModel):
     class Script(BaseModel):
         class Trajectory(BaseModel):
             class Waypoint(BaseModel):
-                def __init__(self, sdf_version: str | None = None, pose: _PoseT = None, time: float = 0.0):
+                def __init__(
+                    self,
+                    sdf_version: str | None = None,
+                    pose: _PoseT | None = None,
+                    time: float | None = 0.0
+                ):
                     super().__init__(sdf_version)
-                    if pose is None:
-                        pose = _pose("0 0 0 0 0 0")
-                    else:
-                        pose = _pose(pose)
-                    self.pose = pose
-                    self.time = time
+                    self.pose = _pose("0 0 0 0 0 0") if pose is None else _pose(pose)
+                    self.time = time if time is not None else 0.0
 
                 def to_version(self, target_version: str) -> "Actor.Script.Trajectory.Waypoint":
                     if self.pose is not None and cmp_version(target_version, "1.2") >= 0:
                         raise ValueError(f"'pose' is not supported in SDF version {target_version} (removed in 1.2)")
                     if self.time is not None and cmp_version(target_version, "1.2") >= 0:
                         raise ValueError(f"'time' is not supported in SDF version {target_version} (removed in 1.2)")
-                    kwargs = {"sdf_version": target_version}
-                    kwargs["pose"] = self.pose
-                    kwargs["time"] = self.time
-                    new_obj = self.__class__(**kwargs)
-                    return new_obj
+                    kwargs: dict = {"sdf_version": target_version, "pose": self.pose, "time": self.time}
+                    return self.__class__(**kwargs)
 
                 def to_sdf(self, version: str | None = None) -> ET.Element:
-                    if self.__version__ is None and version is not None:
-                        self.__version__ = version
-                    elif version is not None and version != self.__version__:
-                        return self.to_version(version).to_sdf()
-                    version = self.__version__ or version
+                    if self.sdfversion is None and version is not None:
+                        self.sdfversion = version
+                    elif version is not None and version != self.sdfversion:
+                        return self.to_version(str(version)).to_sdf()
                     el = ET.Element("waypoint")
                     if self.pose is not None:
                         el.set("pose", str(self.pose))
@@ -216,22 +169,22 @@ class Actor(BaseModel):
             def __init__(
                 self,
                 sdf_version: str | None = None,
-                id: int = 0,
-                tension: float = 0.0,
-                type: str = "__default__",
+                id: int | None = 0,
+                tension: float | None = 0.0,
+                type: str | None = "__default__",
                 waypoints: List["Actor.Script.Trajectory.Waypoint"] = None
             ):
                 super().__init__(sdf_version)
-                self.id = id
-                self.tension = tension
-                self.type = type
+                self.id = id if id is not None else 0
+                self.tension = tension if tension is not None else 0.0
+                self.type = type if type is not None else "__default__"
                 self.waypoints = waypoints or []
                 for _i, _c in enumerate(self.waypoints):
                     if not hasattr(_c, 'to_version'): continue
-                    if getattr(_c, '__version__', None) is None:
-                        _c.__version__ = self.__version__
-                    elif getattr(_c, '__version__', None) != self.__version__ and self.__version__ is not None:
-                        self.waypoints[_i] = _c.to_version(self.__version__)
+                    if getattr(_c, 'sdfversion', None) is None:
+                        _c.sdfversion = self.sdfversion
+                    elif getattr(_c, 'sdfversion', None) != self.sdfversion and self.sdfversion is not None:
+                        self.waypoints[_i] = _c.to_version(self.sdfversion)
 
             def add_waypoint(self, *items: "Actor.Script.Trajectory.Waypoint"):
                 if self.waypoints is None:
@@ -241,20 +194,14 @@ class Actor(BaseModel):
             def to_version(self, target_version: str) -> "Actor.Script.Trajectory":
                 if self.tension is not None and cmp_version(target_version, "1.6") < 0:
                     raise ValueError(f"'tension' is not supported in SDF version {target_version} (added in 1.6)")
-                kwargs = {"sdf_version": target_version}
-                kwargs["id"] = self.id
-                kwargs["tension"] = self.tension
-                kwargs["type"] = self.type
-                kwargs["waypoints"] = [c.to_version(target_version) if hasattr(c, "to_version") else c for c in (self.waypoints or [])]
-                new_obj = self.__class__(**kwargs)
-                return new_obj
+                kwargs: dict = {"sdf_version": target_version, "id": self.id, "tension": self.tension, "type": self.type, "waypoints": [c.to_version(target_version) if hasattr(c, "to_version") else c for c in (self.waypoints or [])]}
+                return self.__class__(**kwargs)
 
             def to_sdf(self, version: str | None = None) -> ET.Element:
-                if self.__version__ is None and version is not None:
-                    self.__version__ = version
-                elif version is not None and version != self.__version__:
-                    return self.to_version(version).to_sdf()
-                version = self.__version__ or version
+                if self.sdfversion is None and version is not None:
+                    self.sdfversion = version
+                elif version is not None and version != self.sdfversion:
+                    return self.to_version(str(version)).to_sdf()
                 el = ET.Element("trajectory")
                 if self.id is not None:
                     el.set("id", str(self.id))
@@ -263,10 +210,7 @@ class Actor(BaseModel):
                 if self.type is not None:
                     el.set("type", self.type)
                 for item in (self.waypoints or []):
-                    if hasattr(item, 'to_sdf'):
-                        _child_res = item.to_sdf(version)
-                    else:
-                        _child_res = str(item)
+                    _child_res = item.to_sdf(version)
                     if isinstance(_child_res, str):
                         _item_el = ET.Element('waypoint')
                         _item_el.text = _child_res
@@ -300,22 +244,22 @@ class Actor(BaseModel):
         def __init__(
             self,
             sdf_version: str | None = None,
-            auto_start: bool = True,
-            delay_start: float = 0.0,
-            loop: bool = True,
+            auto_start: bool | None = True,
+            delay_start: float | None = 0.0,
+            loop: bool | None = True,
             trajectories: List["Actor.Script.Trajectory"] = None
         ):
             super().__init__(sdf_version)
-            self.auto_start = auto_start
-            self.delay_start = delay_start
-            self.loop = loop
+            self.auto_start = auto_start if auto_start is not None else True
+            self.delay_start = delay_start if delay_start is not None else 0.0
+            self.loop = loop if loop is not None else True
             self.trajectories = trajectories or []
             for _i, _c in enumerate(self.trajectories):
                 if not hasattr(_c, 'to_version'): continue
-                if getattr(_c, '__version__', None) is None:
-                    _c.__version__ = self.__version__
-                elif getattr(_c, '__version__', None) != self.__version__ and self.__version__ is not None:
-                    self.trajectories[_i] = _c.to_version(self.__version__)
+                if getattr(_c, 'sdfversion', None) is None:
+                    _c.sdfversion = self.sdfversion
+                elif getattr(_c, 'sdfversion', None) != self.sdfversion and self.sdfversion is not None:
+                    self.trajectories[_i] = _c.to_version(self.sdfversion)
 
         def add_trajectory(self, *items: "Actor.Script.Trajectory"):
             if self.trajectories is None:
@@ -329,20 +273,14 @@ class Actor(BaseModel):
                 raise ValueError(f"'delay_start' is not supported in SDF version {target_version} (removed in 1.2)")
             if self.loop is not None and cmp_version(target_version, "1.2") >= 0:
                 raise ValueError(f"'loop' is not supported in SDF version {target_version} (removed in 1.2)")
-            kwargs = {"sdf_version": target_version}
-            kwargs["auto_start"] = self.auto_start
-            kwargs["delay_start"] = self.delay_start
-            kwargs["loop"] = self.loop
-            kwargs["trajectories"] = [c.to_version(target_version) if hasattr(c, "to_version") else c for c in (self.trajectories or [])]
-            new_obj = self.__class__(**kwargs)
-            return new_obj
+            kwargs: dict = {"sdf_version": target_version, "auto_start": self.auto_start, "delay_start": self.delay_start, "loop": self.loop, "trajectories": [c.to_version(target_version) if hasattr(c, "to_version") else c for c in (self.trajectories or [])]}
+            return self.__class__(**kwargs)
 
         def to_sdf(self, version: str | None = None) -> ET.Element:
-            if self.__version__ is None and version is not None:
-                self.__version__ = version
-            elif version is not None and version != self.__version__:
-                return self.to_version(version).to_sdf()
-            version = self.__version__ or version
+            if self.sdfversion is None and version is not None:
+                self.sdfversion = version
+            elif version is not None and version != self.sdfversion:
+                return self.to_version(str(version)).to_sdf()
             el = ET.Element("script")
             if self.auto_start is not None:
                 el.set("auto_start", str(self.auto_start).lower())
@@ -351,10 +289,7 @@ class Actor(BaseModel):
             if self.loop is not None:
                 el.set("loop", str(self.loop).lower())
             for item in (self.trajectories or []):
-                if hasattr(item, 'to_sdf'):
-                    _child_res = item.to_sdf(version)
-                else:
-                    _child_res = str(item)
+                _child_res = item.to_sdf(version)
                 if isinstance(_child_res, str):
                     _item_el = ET.Element('trajectory')
                     _item_el.text = _child_res
@@ -386,30 +321,26 @@ class Actor(BaseModel):
         def __init__(
             self,
             sdf_version: str | None = None,
-            filename: str = "__default__",
-            scale: float = 1.0
+            filename: str | None = "__default__",
+            scale: float | None = 1.0
         ):
             super().__init__(sdf_version)
-            self.filename = filename
-            self.scale = scale
+            self.filename = filename if filename is not None else "__default__"
+            self.scale = scale if scale is not None else 1.0
 
         def to_version(self, target_version: str) -> "Actor.Skin":
             if self.filename is not None and cmp_version(target_version, "1.2") >= 0:
                 raise ValueError(f"'filename' is not supported in SDF version {target_version} (removed in 1.2)")
             if self.scale is not None and cmp_version(target_version, "1.2") >= 0:
                 raise ValueError(f"'scale' is not supported in SDF version {target_version} (removed in 1.2)")
-            kwargs = {"sdf_version": target_version}
-            kwargs["filename"] = self.filename
-            kwargs["scale"] = self.scale
-            new_obj = self.__class__(**kwargs)
-            return new_obj
+            kwargs: dict = {"sdf_version": target_version, "filename": self.filename, "scale": self.scale}
+            return self.__class__(**kwargs)
 
         def to_sdf(self, version: str | None = None) -> ET.Element:
-            if self.__version__ is None and version is not None:
-                self.__version__ = version
-            elif version is not None and version != self.__version__:
-                return self.to_version(version).to_sdf()
-            version = self.__version__ or version
+            if self.sdfversion is None and version is not None:
+                self.sdfversion = version
+            elif version is not None and version != self.sdfversion:
+                return self.to_version(str(version)).to_sdf()
             el = ET.Element("skin")
             if self.filename is not None:
                 el.set("filename", self.filename)
@@ -434,76 +365,76 @@ class Actor(BaseModel):
         frames: List["Frame"] = None,
         joints: List["Joint"] = None,
         links: List["Link"] = None,
-        name: str = "__default__",
+        name: str | None = "__default__",
         origin: "Actor.Origin" = None,
         plugins: List["Plugin"] = None,
         pose: "Pose" = None,
         script: "Actor.Script" = None,
         skin: "Actor.Skin" = None,
-        static: bool = False
+        static: bool | None = False
     ):
         super().__init__(sdf_version)
         self.animations = animations or []
         self.frames = frames or []
         self.joints = joints or []
         self.links = links or []
-        self.name = name
+        self.name = name if name is not None else "__default__"
         self.origin = origin
         self.plugins = plugins or []
         self.pose = pose
         self.script = script
         self.skin = skin
-        self.static = static
+        self.static = static if static is not None else False
         for _i, _c in enumerate(self.animations):
             if not hasattr(_c, 'to_version'): continue
-            if getattr(_c, '__version__', None) is None:
-                _c.__version__ = self.__version__
-            elif getattr(_c, '__version__', None) != self.__version__ and self.__version__ is not None:
-                self.animations[_i] = _c.to_version(self.__version__)
+            if getattr(_c, 'sdfversion', None) is None:
+                _c.sdfversion = self.sdfversion
+            elif getattr(_c, 'sdfversion', None) != self.sdfversion and self.sdfversion is not None:
+                self.animations[_i] = _c.to_version(self.sdfversion)
         for _i, _c in enumerate(self.frames):
             if not hasattr(_c, 'to_version'): continue
-            if getattr(_c, '__version__', None) is None:
-                _c.__version__ = self.__version__
-            elif getattr(_c, '__version__', None) != self.__version__ and self.__version__ is not None:
-                self.frames[_i] = _c.to_version(self.__version__)
+            if getattr(_c, 'sdfversion', None) is None:
+                _c.sdfversion = self.sdfversion
+            elif getattr(_c, 'sdfversion', None) != self.sdfversion and self.sdfversion is not None:
+                self.frames[_i] = _c.to_version(self.sdfversion)
         for _i, _c in enumerate(self.joints):
             if not hasattr(_c, 'to_version'): continue
-            if getattr(_c, '__version__', None) is None:
-                _c.__version__ = self.__version__
-            elif getattr(_c, '__version__', None) != self.__version__ and self.__version__ is not None:
-                self.joints[_i] = _c.to_version(self.__version__)
+            if getattr(_c, 'sdfversion', None) is None:
+                _c.sdfversion = self.sdfversion
+            elif getattr(_c, 'sdfversion', None) != self.sdfversion and self.sdfversion is not None:
+                self.joints[_i] = _c.to_version(self.sdfversion)
         for _i, _c in enumerate(self.links):
             if not hasattr(_c, 'to_version'): continue
-            if getattr(_c, '__version__', None) is None:
-                _c.__version__ = self.__version__
-            elif getattr(_c, '__version__', None) != self.__version__ and self.__version__ is not None:
-                self.links[_i] = _c.to_version(self.__version__)
+            if getattr(_c, 'sdfversion', None) is None:
+                _c.sdfversion = self.sdfversion
+            elif getattr(_c, 'sdfversion', None) != self.sdfversion and self.sdfversion is not None:
+                self.links[_i] = _c.to_version(self.sdfversion)
         if self.origin is not None and hasattr(self.origin, 'to_version'):
-            if getattr(self.origin, '__version__', None) is None:
-                self.origin.__version__ = self.__version__
-            elif getattr(self.origin, '__version__', None) != self.__version__ and self.__version__ is not None:
-                self.origin = self.origin.to_version(self.__version__)
+            if getattr(self.origin, 'sdfversion', None) is None:
+                self.origin.sdfversion = self.sdfversion
+            elif getattr(self.origin, 'sdfversion', None) != self.sdfversion and self.sdfversion is not None:
+                self.origin = self.origin.to_version(self.sdfversion)
         for _i, _c in enumerate(self.plugins):
             if not hasattr(_c, 'to_version'): continue
-            if getattr(_c, '__version__', None) is None:
-                _c.__version__ = self.__version__
-            elif getattr(_c, '__version__', None) != self.__version__ and self.__version__ is not None:
-                self.plugins[_i] = _c.to_version(self.__version__)
+            if getattr(_c, 'sdfversion', None) is None:
+                _c.sdfversion = self.sdfversion
+            elif getattr(_c, 'sdfversion', None) != self.sdfversion and self.sdfversion is not None:
+                self.plugins[_i] = _c.to_version(self.sdfversion)
         if self.pose is not None and hasattr(self.pose, 'to_version'):
-            if getattr(self.pose, '__version__', None) is None:
-                self.pose.__version__ = self.__version__
-            elif getattr(self.pose, '__version__', None) != self.__version__ and self.__version__ is not None:
-                self.pose = self.pose.to_version(self.__version__)
+            if getattr(self.pose, 'sdfversion', None) is None:
+                self.pose.sdfversion = self.sdfversion
+            elif getattr(self.pose, 'sdfversion', None) != self.sdfversion and self.sdfversion is not None:
+                self.pose = self.pose.to_version(self.sdfversion)
         if self.script is not None and hasattr(self.script, 'to_version'):
-            if getattr(self.script, '__version__', None) is None:
-                self.script.__version__ = self.__version__
-            elif getattr(self.script, '__version__', None) != self.__version__ and self.__version__ is not None:
-                self.script = self.script.to_version(self.__version__)
+            if getattr(self.script, 'sdfversion', None) is None:
+                self.script.sdfversion = self.sdfversion
+            elif getattr(self.script, 'sdfversion', None) != self.sdfversion and self.sdfversion is not None:
+                self.script = self.script.to_version(self.sdfversion)
         if self.skin is not None and hasattr(self.skin, 'to_version'):
-            if getattr(self.skin, '__version__', None) is None:
-                self.skin.__version__ = self.__version__
-            elif getattr(self.skin, '__version__', None) != self.__version__ and self.__version__ is not None:
-                self.skin = self.skin.to_version(self.__version__)
+            if getattr(self.skin, 'sdfversion', None) is None:
+                self.skin.sdfversion = self.sdfversion
+            elif getattr(self.skin, 'sdfversion', None) != self.sdfversion and self.sdfversion is not None:
+                self.skin = self.skin.to_version(self.sdfversion)
 
     def add_animation(self, *items: "Actor.Animation"):
         if self.animations is None:
@@ -546,20 +477,8 @@ class Actor(BaseModel):
             raise ValueError(f"'pose' is not supported in SDF version {target_version} (added in 1.2)")
         if self.static is not None and cmp_version(target_version, "1.5") >= 0:
             raise ValueError(f"'static' is not supported in SDF version {target_version} (removed in 1.5)")
-        kwargs = {"sdf_version": target_version}
-        kwargs["animations"] = [c.to_version(target_version) if hasattr(c, "to_version") else c for c in (self.animations or [])]
-        kwargs["frames"] = [c.to_version(target_version) if hasattr(c, "to_version") else c for c in (self.frames or [])]
-        kwargs["joints"] = [c.to_version(target_version) if hasattr(c, "to_version") else c for c in (self.joints or [])]
-        kwargs["links"] = [c.to_version(target_version) if hasattr(c, "to_version") else c for c in (self.links or [])]
-        kwargs["name"] = self.name
-        kwargs["origin"] = self.origin.to_version(target_version) if hasattr(self.origin, "to_version") else self.origin
-        kwargs["plugins"] = [c.to_version(target_version) if hasattr(c, "to_version") else c for c in (self.plugins or [])]
-        kwargs["pose"] = self.pose.to_version(target_version) if hasattr(self.pose, "to_version") else self.pose
-        kwargs["script"] = self.script.to_version(target_version) if hasattr(self.script, "to_version") else self.script
-        kwargs["skin"] = self.skin.to_version(target_version) if hasattr(self.skin, "to_version") else self.skin
-        kwargs["static"] = self.static
-        new_obj = self.__class__(**kwargs)
-        return new_obj
+        kwargs: dict = {"sdf_version": target_version, "animations": [c.to_version(target_version) if hasattr(c, "to_version") else c for c in (self.animations or [])], "frames": [c.to_version(target_version) if hasattr(c, "to_version") else c for c in (self.frames or [])], "joints": [c.to_version(target_version) if hasattr(c, "to_version") else c for c in (self.joints or [])], "links": [c.to_version(target_version) if hasattr(c, "to_version") else c for c in (self.links or [])], "name": self.name, "origin": self.origin.to_version(target_version) if self.origin is not None and hasattr(self.origin, "to_version") else self.origin, "plugins": [c.to_version(target_version) if hasattr(c, "to_version") else c for c in (self.plugins or [])], "pose": self.pose.to_version(target_version) if self.pose is not None and hasattr(self.pose, "to_version") else self.pose, "script": self.script.to_version(target_version) if self.script is not None and hasattr(self.script, "to_version") else self.script, "skin": self.skin.to_version(target_version) if self.skin is not None and hasattr(self.skin, "to_version") else self.skin, "static": self.static}
+        return self.__class__(**kwargs)
 
     def to_sdf(self, version: str | None = None) -> ET.Element:
         from ..elements.frame import Frame
@@ -567,17 +486,13 @@ class Actor(BaseModel):
         from ..elements.link import Link
         from ..elements.plugin import Plugin
         from ..elements.pose import Pose
-        if self.__version__ is None and version is not None:
-            self.__version__ = version
-        elif version is not None and version != self.__version__:
-            return self.to_version(version).to_sdf()
-        version = self.__version__ or version
+        if self.sdfversion is None and version is not None:
+            self.sdfversion = version
+        elif version is not None and version != self.sdfversion:
+            return self.to_version(str(version)).to_sdf()
         el = ET.Element("actor")
         for item in (self.animations or []):
-            if hasattr(item, 'to_sdf'):
-                _child_res = item.to_sdf(version)
-            else:
-                _child_res = str(item)
+            _child_res = item.to_sdf(version)
             if isinstance(_child_res, str):
                 _item_el = ET.Element('animation')
                 _item_el.text = _child_res
@@ -585,10 +500,7 @@ class Actor(BaseModel):
                 _item_el = _child_res
             el.append(_item_el)
         for item in (self.frames or []):
-            if hasattr(item, 'to_sdf'):
-                _child_res = item.to_sdf(version)
-            else:
-                _child_res = str(item)
+            _child_res = item.to_sdf(version)
             if isinstance(_child_res, str):
                 _item_el = ET.Element('frame')
                 _item_el.text = _child_res
@@ -596,10 +508,7 @@ class Actor(BaseModel):
                 _item_el = _child_res
             el.append(_item_el)
         for item in (self.joints or []):
-            if hasattr(item, 'to_sdf'):
-                _child_res = item.to_sdf(version)
-            else:
-                _child_res = str(item)
+            _child_res = item.to_sdf(version)
             if isinstance(_child_res, str):
                 _item_el = ET.Element('joint')
                 _item_el.text = _child_res
@@ -607,10 +516,7 @@ class Actor(BaseModel):
                 _item_el = _child_res
             el.append(_item_el)
         for item in (self.links or []):
-            if hasattr(item, 'to_sdf'):
-                _child_res = item.to_sdf(version)
-            else:
-                _child_res = str(item)
+            _child_res = item.to_sdf(version)
             if isinstance(_child_res, str):
                 _item_el = ET.Element('link')
                 _item_el.text = _child_res
@@ -620,10 +526,7 @@ class Actor(BaseModel):
         if self.name is not None:
             el.set("name", self.name)
         if self.origin is not None:
-            if hasattr(self.origin, 'to_sdf'):
-                _child_res = self.origin.to_sdf(version)
-            else:
-                _child_res = str(self.origin)
+            _child_res = self.origin.to_sdf(version)
             if isinstance(_child_res, str):
                 _item_el = ET.Element('origin')
                 _item_el.text = _child_res
@@ -631,10 +534,7 @@ class Actor(BaseModel):
                 _item_el = _child_res
             el.append(_item_el)
         for item in (self.plugins or []):
-            if hasattr(item, 'to_sdf'):
-                _child_res = item.to_sdf(version)
-            else:
-                _child_res = str(item)
+            _child_res = item.to_sdf(version)
             if isinstance(_child_res, str):
                 _item_el = ET.Element('plugin')
                 _item_el.text = _child_res
@@ -642,10 +542,7 @@ class Actor(BaseModel):
                 _item_el = _child_res
             el.append(_item_el)
         if self.pose is not None:
-            if hasattr(self.pose, 'to_sdf'):
-                _child_res = self.pose.to_sdf(version)
-            else:
-                _child_res = str(self.pose)
+            _child_res = self.pose.to_sdf(version)
             if isinstance(_child_res, str):
                 _item_el = ET.Element('pose')
                 _item_el.text = _child_res
@@ -655,10 +552,7 @@ class Actor(BaseModel):
         if self.script is None:
             self.script = self.__class__.Script(sdf_version=version)
         if self.script is not None:
-            if hasattr(self.script, 'to_sdf'):
-                _child_res = self.script.to_sdf(version)
-            else:
-                _child_res = str(self.script)
+            _child_res = self.script.to_sdf(version)
             if isinstance(_child_res, str):
                 _item_el = ET.Element('script')
                 _item_el.text = _child_res
@@ -666,10 +560,7 @@ class Actor(BaseModel):
                 _item_el = _child_res
             el.append(_item_el)
         if self.skin is not None:
-            if hasattr(self.skin, 'to_sdf'):
-                _child_res = self.skin.to_sdf(version)
-            else:
-                _child_res = str(self.skin)
+            _child_res = self.skin.to_sdf(version)
             if isinstance(_child_res, str):
                 _item_el = ET.Element('skin')
                 _item_el.text = _child_res

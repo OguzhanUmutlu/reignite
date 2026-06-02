@@ -1,4 +1,4 @@
-from .._sdf.material import *  # noqa: F401
+from .._sdf.material import Material
 from ..utils import Color
 
 
@@ -8,5 +8,5 @@ class SimpleMaterial(Material):
             ambient=color,
             diffuse=color,
             emissive=color,
-            specular=Color(0.5, 0.5, 0.5)
+            specular=Color(127, 127, 127)
         )

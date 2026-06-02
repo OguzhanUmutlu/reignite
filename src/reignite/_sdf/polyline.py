@@ -1,47 +1,14 @@
 ### THIS FILE WAS AUTO-GENERATED ###
 from __future__ import annotations
 
-import typing
 from xml.etree import ElementTree as ET
 
+from ..utils.utils import _parse_double
 from typing import List
 
 from ..utils.model import BaseModel
 from ..utils.errors import SDFError
-from ..utils.vector2d import Vector2d as _SDFVector2d, _Vector2dT, _vector2d
-
-
-import math
-
-def _parse_int32(raw: str) -> int | SDFError:
-    try:
-        v = int(raw)
-        if not (-2147483648 <= v <= 2147483647):
-            return SDFError(f"int32 out of range: {v}")
-        return v
-    except ValueError:
-        return SDFError(f"Invalid int32: {raw}")
-
-
-def _parse_uint32(raw: str) -> int | SDFError:
-    try:
-        v = int(raw)
-        if not (0 <= v <= 4294967295):
-            return SDFError(f"uint32 out of range: {v}")
-        return v
-    except ValueError:
-        return SDFError(f"Invalid uint32: {raw}")
-
-
-def _parse_double(raw: str) -> float | SDFError:
-    try:
-        v = float(raw)
-        if not math.isfinite(v) or abs(v) > math.inf:
-            return SDFError(f"double out of range: {raw}")
-        return v
-    except ValueError:
-        return SDFError(f"Invalid double: {raw}")
-
+from ..utils.vector2d import Vector2d as _Vector2dT, _vector2d
 
 def _parse_vector2d(raw: str) -> _Vector2dT | SDFError:
     try:
@@ -50,20 +17,17 @@ def _parse_vector2d(raw: str) -> _Vector2dT | SDFError:
         return SDFError(str(e))
 
 
+# noinspection PyUnusedImports
 class Polyline(BaseModel):
     def __init__(
         self,
         sdf_version: str | None = None,
-        height: float = 1.0,
-        points: List[_Vector2dT] = None
+        height: float | None = 1.0,
+        points: List[_Vector2dT] | None = None
     ):
         super().__init__(sdf_version)
-        if points is None:
-            points = _vector2d("0 0")
-        else:
-            points = _vector2d(points)
-        self.height = height
-        self.points = points or []
+        self.height = height if height is not None else 1.0
+        self.points = list(map(_vector2d, points)) if points is not None else []
 
     def add_point(self, *items: _Vector2dT):
         if self.points is None:
@@ -71,18 +35,14 @@ class Polyline(BaseModel):
         self.points.extend(items)
 
     def to_version(self, target_version: str) -> "Polyline":
-        kwargs = {"sdf_version": target_version}
-        kwargs["height"] = self.height
-        kwargs["points"] = self.points
-        new_obj = self.__class__(**kwargs)
-        return new_obj
+        kwargs: dict = {"sdf_version": target_version, "height": self.height, "points": self.points}
+        return self.__class__(**kwargs)
 
     def to_sdf(self, version: str | None = None) -> ET.Element:
-        if self.__version__ is None and version is not None:
-            self.__version__ = version
-        elif version is not None and version != self.__version__:
-            return self.to_version(version).to_sdf()
-        version = self.__version__ or version
+        if self.sdfversion is None and version is not None:
+            self.sdfversion = version
+        elif version is not None and version != self.sdfversion:
+            return self.to_version(str(version)).to_sdf()
         el = ET.Element("polyline")
         if self.height is not None:
             _c_tmp = ET.Element("height")

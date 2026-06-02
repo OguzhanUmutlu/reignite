@@ -1,50 +1,18 @@
 ### THIS FILE WAS AUTO-GENERATED ###
 from __future__ import annotations
 
-import typing
 from xml.etree import ElementTree as ET
 
+from ..utils.utils import _parse_double
+import typing
 from ..utils.model import BaseModel
 from ..utils.errors import SDFError
-from ..utils.vector3 import Vector3 as _SDFVector3, _Vector3T, _vector3
+from ..utils.vector3 import Vector3 as _Vector3T, _vector3
 from ..utils.version import cmp_version
 from ..utils.migration import apply_migrations
 
 if typing.TYPE_CHECKING:
     from ..elements.noise import Noise
-
-
-import math
-
-def _parse_int32(raw: str) -> int | SDFError:
-    try:
-        v = int(raw)
-        if not (-2147483648 <= v <= 2147483647):
-            return SDFError(f"int32 out of range: {v}")
-        return v
-    except ValueError:
-        return SDFError(f"Invalid int32: {raw}")
-
-
-def _parse_uint32(raw: str) -> int | SDFError:
-    try:
-        v = int(raw)
-        if not (0 <= v <= 4294967295):
-            return SDFError(f"uint32 out of range: {v}")
-        return v
-    except ValueError:
-        return SDFError(f"Invalid uint32: {raw}")
-
-
-def _parse_double(raw: str) -> float | SDFError:
-    try:
-        v = float(raw)
-        if not math.isfinite(v) or abs(v) > math.inf:
-            return SDFError(f"double out of range: {raw}")
-        return v
-    except ValueError:
-        return SDFError(f"Invalid double: {raw}")
-
 
 def _parse_vector3(raw: str) -> _Vector3T | SDFError:
     try:
@@ -53,6 +21,7 @@ def _parse_vector3(raw: str) -> _Vector3T | SDFError:
         return SDFError(str(e))
 
 
+# noinspection PyUnusedImports
 class Imu(BaseModel):
     class AngularVelocity(BaseModel):
         class X(BaseModel):
@@ -60,33 +29,27 @@ class Imu(BaseModel):
                 super().__init__(sdf_version)
                 self.noise = noise
                 if self.noise is not None and hasattr(self.noise, 'to_version'):
-                    if getattr(self.noise, '__version__', None) is None:
-                        self.noise.__version__ = self.__version__
-                    elif getattr(self.noise, '__version__', None) != self.__version__ and self.__version__ is not None:
-                        self.noise = self.noise.to_version(self.__version__)
+                    if getattr(self.noise, 'sdfversion', None) is None:
+                        self.noise.sdfversion = self.sdfversion
+                    elif getattr(self.noise, 'sdfversion', None) != self.sdfversion and self.sdfversion is not None:
+                        self.noise = self.noise.to_version(self.sdfversion)
 
             def to_version(self, target_version: str) -> "Imu.AngularVelocity.X":
                 from ..elements.noise import Noise
-                kwargs = {"sdf_version": target_version}
-                kwargs["noise"] = self.noise.to_version(target_version) if hasattr(self.noise, "to_version") else self.noise
-                new_obj = self.__class__(**kwargs)
-                return new_obj
+                kwargs: dict = {"sdf_version": target_version, "noise": self.noise.to_version(target_version) if self.noise is not None and hasattr(self.noise, "to_version") else self.noise}
+                return self.__class__(**kwargs)
 
             def to_sdf(self, version: str | None = None) -> ET.Element:
                 from ..elements.noise import Noise
-                if self.__version__ is None and version is not None:
-                    self.__version__ = version
-                elif version is not None and version != self.__version__:
-                    return self.to_version(version).to_sdf()
-                version = self.__version__ or version
+                if self.sdfversion is None and version is not None:
+                    self.sdfversion = version
+                elif version is not None and version != self.sdfversion:
+                    return self.to_version(str(version)).to_sdf()
                 el = ET.Element("x")
                 if self.noise is None:
                     self.noise = Noise(sdf_version=version)
                 if self.noise is not None:
-                    if hasattr(self.noise, 'to_sdf'):
-                        _child_res = self.noise.to_sdf(version)
-                    else:
-                        _child_res = str(self.noise)
+                    _child_res = self.noise.to_sdf(version)
                     if isinstance(_child_res, str):
                         _item_el = ET.Element('noise')
                         _item_el.text = _child_res
@@ -116,33 +79,27 @@ class Imu(BaseModel):
                 super().__init__(sdf_version)
                 self.noise = noise
                 if self.noise is not None and hasattr(self.noise, 'to_version'):
-                    if getattr(self.noise, '__version__', None) is None:
-                        self.noise.__version__ = self.__version__
-                    elif getattr(self.noise, '__version__', None) != self.__version__ and self.__version__ is not None:
-                        self.noise = self.noise.to_version(self.__version__)
+                    if getattr(self.noise, 'sdfversion', None) is None:
+                        self.noise.sdfversion = self.sdfversion
+                    elif getattr(self.noise, 'sdfversion', None) != self.sdfversion and self.sdfversion is not None:
+                        self.noise = self.noise.to_version(self.sdfversion)
 
             def to_version(self, target_version: str) -> "Imu.AngularVelocity.Y":
                 from ..elements.noise import Noise
-                kwargs = {"sdf_version": target_version}
-                kwargs["noise"] = self.noise.to_version(target_version) if hasattr(self.noise, "to_version") else self.noise
-                new_obj = self.__class__(**kwargs)
-                return new_obj
+                kwargs: dict = {"sdf_version": target_version, "noise": self.noise.to_version(target_version) if self.noise is not None and hasattr(self.noise, "to_version") else self.noise}
+                return self.__class__(**kwargs)
 
             def to_sdf(self, version: str | None = None) -> ET.Element:
                 from ..elements.noise import Noise
-                if self.__version__ is None and version is not None:
-                    self.__version__ = version
-                elif version is not None and version != self.__version__:
-                    return self.to_version(version).to_sdf()
-                version = self.__version__ or version
+                if self.sdfversion is None and version is not None:
+                    self.sdfversion = version
+                elif version is not None and version != self.sdfversion:
+                    return self.to_version(str(version)).to_sdf()
                 el = ET.Element("y")
                 if self.noise is None:
                     self.noise = Noise(sdf_version=version)
                 if self.noise is not None:
-                    if hasattr(self.noise, 'to_sdf'):
-                        _child_res = self.noise.to_sdf(version)
-                    else:
-                        _child_res = str(self.noise)
+                    _child_res = self.noise.to_sdf(version)
                     if isinstance(_child_res, str):
                         _item_el = ET.Element('noise')
                         _item_el.text = _child_res
@@ -172,33 +129,27 @@ class Imu(BaseModel):
                 super().__init__(sdf_version)
                 self.noise = noise
                 if self.noise is not None and hasattr(self.noise, 'to_version'):
-                    if getattr(self.noise, '__version__', None) is None:
-                        self.noise.__version__ = self.__version__
-                    elif getattr(self.noise, '__version__', None) != self.__version__ and self.__version__ is not None:
-                        self.noise = self.noise.to_version(self.__version__)
+                    if getattr(self.noise, 'sdfversion', None) is None:
+                        self.noise.sdfversion = self.sdfversion
+                    elif getattr(self.noise, 'sdfversion', None) != self.sdfversion and self.sdfversion is not None:
+                        self.noise = self.noise.to_version(self.sdfversion)
 
             def to_version(self, target_version: str) -> "Imu.AngularVelocity.Z":
                 from ..elements.noise import Noise
-                kwargs = {"sdf_version": target_version}
-                kwargs["noise"] = self.noise.to_version(target_version) if hasattr(self.noise, "to_version") else self.noise
-                new_obj = self.__class__(**kwargs)
-                return new_obj
+                kwargs: dict = {"sdf_version": target_version, "noise": self.noise.to_version(target_version) if self.noise is not None and hasattr(self.noise, "to_version") else self.noise}
+                return self.__class__(**kwargs)
 
             def to_sdf(self, version: str | None = None) -> ET.Element:
                 from ..elements.noise import Noise
-                if self.__version__ is None and version is not None:
-                    self.__version__ = version
-                elif version is not None and version != self.__version__:
-                    return self.to_version(version).to_sdf()
-                version = self.__version__ or version
+                if self.sdfversion is None and version is not None:
+                    self.sdfversion = version
+                elif version is not None and version != self.sdfversion:
+                    return self.to_version(str(version)).to_sdf()
                 el = ET.Element("z")
                 if self.noise is None:
                     self.noise = Noise(sdf_version=version)
                 if self.noise is not None:
-                    if hasattr(self.noise, 'to_sdf'):
-                        _child_res = self.noise.to_sdf(version)
-                    else:
-                        _child_res = str(self.noise)
+                    _child_res = self.noise.to_sdf(version)
                     if isinstance(_child_res, str):
                         _item_el = ET.Element('noise')
                         _item_el.text = _child_res
@@ -235,41 +186,33 @@ class Imu(BaseModel):
             self.y = y
             self.z = z
             if self.x is not None and hasattr(self.x, 'to_version'):
-                if getattr(self.x, '__version__', None) is None:
-                    self.x.__version__ = self.__version__
-                elif getattr(self.x, '__version__', None) != self.__version__ and self.__version__ is not None:
-                    self.x = self.x.to_version(self.__version__)
+                if getattr(self.x, 'sdfversion', None) is None:
+                    self.x.sdfversion = self.sdfversion
+                elif getattr(self.x, 'sdfversion', None) != self.sdfversion and self.sdfversion is not None:
+                    self.x = self.x.to_version(self.sdfversion)
             if self.y is not None and hasattr(self.y, 'to_version'):
-                if getattr(self.y, '__version__', None) is None:
-                    self.y.__version__ = self.__version__
-                elif getattr(self.y, '__version__', None) != self.__version__ and self.__version__ is not None:
-                    self.y = self.y.to_version(self.__version__)
+                if getattr(self.y, 'sdfversion', None) is None:
+                    self.y.sdfversion = self.sdfversion
+                elif getattr(self.y, 'sdfversion', None) != self.sdfversion and self.sdfversion is not None:
+                    self.y = self.y.to_version(self.sdfversion)
             if self.z is not None and hasattr(self.z, 'to_version'):
-                if getattr(self.z, '__version__', None) is None:
-                    self.z.__version__ = self.__version__
-                elif getattr(self.z, '__version__', None) != self.__version__ and self.__version__ is not None:
-                    self.z = self.z.to_version(self.__version__)
+                if getattr(self.z, 'sdfversion', None) is None:
+                    self.z.sdfversion = self.sdfversion
+                elif getattr(self.z, 'sdfversion', None) != self.sdfversion and self.sdfversion is not None:
+                    self.z = self.z.to_version(self.sdfversion)
 
         def to_version(self, target_version: str) -> "Imu.AngularVelocity":
-            kwargs = {"sdf_version": target_version}
-            kwargs["x"] = self.x.to_version(target_version) if hasattr(self.x, "to_version") else self.x
-            kwargs["y"] = self.y.to_version(target_version) if hasattr(self.y, "to_version") else self.y
-            kwargs["z"] = self.z.to_version(target_version) if hasattr(self.z, "to_version") else self.z
-            new_obj = self.__class__(**kwargs)
-            return new_obj
+            kwargs: dict = {"sdf_version": target_version, "x": self.x.to_version(target_version) if self.x is not None and hasattr(self.x, "to_version") else self.x, "y": self.y.to_version(target_version) if self.y is not None and hasattr(self.y, "to_version") else self.y, "z": self.z.to_version(target_version) if self.z is not None and hasattr(self.z, "to_version") else self.z}
+            return self.__class__(**kwargs)
 
         def to_sdf(self, version: str | None = None) -> ET.Element:
-            if self.__version__ is None and version is not None:
-                self.__version__ = version
-            elif version is not None and version != self.__version__:
-                return self.to_version(version).to_sdf()
-            version = self.__version__ or version
+            if self.sdfversion is None and version is not None:
+                self.sdfversion = version
+            elif version is not None and version != self.sdfversion:
+                return self.to_version(str(version)).to_sdf()
             el = ET.Element("angular_velocity")
             if self.x is not None:
-                if hasattr(self.x, 'to_sdf'):
-                    _child_res = self.x.to_sdf(version)
-                else:
-                    _child_res = str(self.x)
+                _child_res = self.x.to_sdf(version)
                 if isinstance(_child_res, str):
                     _item_el = ET.Element('x')
                     _item_el.text = _child_res
@@ -277,10 +220,7 @@ class Imu(BaseModel):
                     _item_el = _child_res
                 el.append(_item_el)
             if self.y is not None:
-                if hasattr(self.y, 'to_sdf'):
-                    _child_res = self.y.to_sdf(version)
-                else:
-                    _child_res = str(self.y)
+                _child_res = self.y.to_sdf(version)
                 if isinstance(_child_res, str):
                     _item_el = ET.Element('y')
                     _item_el.text = _child_res
@@ -288,10 +228,7 @@ class Imu(BaseModel):
                     _item_el = _child_res
                 el.append(_item_el)
             if self.z is not None:
-                if hasattr(self.z, 'to_sdf'):
-                    _child_res = self.z.to_sdf(version)
-                else:
-                    _child_res = str(self.z)
+                _child_res = self.z.to_sdf(version)
                 if isinstance(_child_res, str):
                     _item_el = ET.Element('z')
                     _item_el.text = _child_res
@@ -335,41 +272,33 @@ class Imu(BaseModel):
             self.y = y
             self.z = z
             if self.x is not None and hasattr(self.x, 'to_version'):
-                if getattr(self.x, '__version__', None) is None:
-                    self.x.__version__ = self.__version__
-                elif getattr(self.x, '__version__', None) != self.__version__ and self.__version__ is not None:
-                    self.x = self.x.to_version(self.__version__)
+                if getattr(self.x, 'sdfversion', None) is None:
+                    self.x.sdfversion = self.sdfversion
+                elif getattr(self.x, 'sdfversion', None) != self.sdfversion and self.sdfversion is not None:
+                    self.x = self.x.to_version(self.sdfversion)
             if self.y is not None and hasattr(self.y, 'to_version'):
-                if getattr(self.y, '__version__', None) is None:
-                    self.y.__version__ = self.__version__
-                elif getattr(self.y, '__version__', None) != self.__version__ and self.__version__ is not None:
-                    self.y = self.y.to_version(self.__version__)
+                if getattr(self.y, 'sdfversion', None) is None:
+                    self.y.sdfversion = self.sdfversion
+                elif getattr(self.y, 'sdfversion', None) != self.sdfversion and self.sdfversion is not None:
+                    self.y = self.y.to_version(self.sdfversion)
             if self.z is not None and hasattr(self.z, 'to_version'):
-                if getattr(self.z, '__version__', None) is None:
-                    self.z.__version__ = self.__version__
-                elif getattr(self.z, '__version__', None) != self.__version__ and self.__version__ is not None:
-                    self.z = self.z.to_version(self.__version__)
+                if getattr(self.z, 'sdfversion', None) is None:
+                    self.z.sdfversion = self.sdfversion
+                elif getattr(self.z, 'sdfversion', None) != self.sdfversion and self.sdfversion is not None:
+                    self.z = self.z.to_version(self.sdfversion)
 
         def to_version(self, target_version: str) -> "Imu.LinearAcceleration":
-            kwargs = {"sdf_version": target_version}
-            kwargs["x"] = self.x.to_version(target_version) if hasattr(self.x, "to_version") else self.x
-            kwargs["y"] = self.y.to_version(target_version) if hasattr(self.y, "to_version") else self.y
-            kwargs["z"] = self.z.to_version(target_version) if hasattr(self.z, "to_version") else self.z
-            new_obj = self.__class__(**kwargs)
-            return new_obj
+            kwargs: dict = {"sdf_version": target_version, "x": self.x.to_version(target_version) if self.x is not None and hasattr(self.x, "to_version") else self.x, "y": self.y.to_version(target_version) if self.y is not None and hasattr(self.y, "to_version") else self.y, "z": self.z.to_version(target_version) if self.z is not None and hasattr(self.z, "to_version") else self.z}
+            return self.__class__(**kwargs)
 
         def to_sdf(self, version: str | None = None) -> ET.Element:
-            if self.__version__ is None and version is not None:
-                self.__version__ = version
-            elif version is not None and version != self.__version__:
-                return self.to_version(version).to_sdf()
-            version = self.__version__ or version
+            if self.sdfversion is None and version is not None:
+                self.sdfversion = version
+            elif version is not None and version != self.sdfversion:
+                return self.to_version(str(version)).to_sdf()
             el = ET.Element("linear_acceleration")
             if self.x is not None:
-                if hasattr(self.x, 'to_sdf'):
-                    _child_res = self.x.to_sdf(version)
-                else:
-                    _child_res = str(self.x)
+                _child_res = self.x.to_sdf(version)
                 if isinstance(_child_res, str):
                     _item_el = ET.Element('x')
                     _item_el.text = _child_res
@@ -377,10 +306,7 @@ class Imu(BaseModel):
                     _item_el = _child_res
                 el.append(_item_el)
             if self.y is not None:
-                if hasattr(self.y, 'to_sdf'):
-                    _child_res = self.y.to_sdf(version)
-                else:
-                    _child_res = str(self.y)
+                _child_res = self.y.to_sdf(version)
                 if isinstance(_child_res, str):
                     _item_el = ET.Element('y')
                     _item_el.text = _child_res
@@ -388,10 +314,7 @@ class Imu(BaseModel):
                     _item_el = _child_res
                 el.append(_item_el)
             if self.z is not None:
-                if hasattr(self.z, 'to_sdf'):
-                    _child_res = self.z.to_sdf(version)
-                else:
-                    _child_res = str(self.z)
+                _child_res = self.z.to_sdf(version)
                 if isinstance(_child_res, str):
                     _item_el = ET.Element('z')
                     _item_el.text = _child_res
@@ -433,32 +356,26 @@ class Imu(BaseModel):
             def __init__(
                 self,
                 sdf_version: str | None = None,
-                bias_mean: float = 0.0,
-                bias_stddev: float = 0.0,
-                mean: float = 0.0,
-                stddev: float = 0.0
+                bias_mean: float | None = 0.0,
+                bias_stddev: float | None = 0.0,
+                mean: float | None = 0.0,
+                stddev: float | None = 0.0
             ):
                 super().__init__(sdf_version)
-                self.bias_mean = bias_mean
-                self.bias_stddev = bias_stddev
-                self.mean = mean
-                self.stddev = stddev
+                self.bias_mean = bias_mean if bias_mean is not None else 0.0
+                self.bias_stddev = bias_stddev if bias_stddev is not None else 0.0
+                self.mean = mean if mean is not None else 0.0
+                self.stddev = stddev if stddev is not None else 0.0
 
             def to_version(self, target_version: str) -> "Imu.Noise.Accel":
-                kwargs = {"sdf_version": target_version}
-                kwargs["bias_mean"] = self.bias_mean
-                kwargs["bias_stddev"] = self.bias_stddev
-                kwargs["mean"] = self.mean
-                kwargs["stddev"] = self.stddev
-                new_obj = self.__class__(**kwargs)
-                return new_obj
+                kwargs: dict = {"sdf_version": target_version, "bias_mean": self.bias_mean, "bias_stddev": self.bias_stddev, "mean": self.mean, "stddev": self.stddev}
+                return self.__class__(**kwargs)
 
             def to_sdf(self, version: str | None = None) -> ET.Element:
-                if self.__version__ is None and version is not None:
-                    self.__version__ = version
-                elif version is not None and version != self.__version__:
-                    return self.to_version(version).to_sdf()
-                version = self.__version__ or version
+                if self.sdfversion is None and version is not None:
+                    self.sdfversion = version
+                elif version is not None and version != self.sdfversion:
+                    return self.to_version(str(version)).to_sdf()
                 el = ET.Element("accel")
                 if self.bias_mean is not None:
                     _c_tmp = ET.Element("bias_mean")
@@ -522,32 +439,26 @@ class Imu(BaseModel):
             def __init__(
                 self,
                 sdf_version: str | None = None,
-                bias_mean: float = 0.0,
-                bias_stddev: float = 0.0,
-                mean: float = 0.0,
-                stddev: float = 0.0
+                bias_mean: float | None = 0.0,
+                bias_stddev: float | None = 0.0,
+                mean: float | None = 0.0,
+                stddev: float | None = 0.0
             ):
                 super().__init__(sdf_version)
-                self.bias_mean = bias_mean
-                self.bias_stddev = bias_stddev
-                self.mean = mean
-                self.stddev = stddev
+                self.bias_mean = bias_mean if bias_mean is not None else 0.0
+                self.bias_stddev = bias_stddev if bias_stddev is not None else 0.0
+                self.mean = mean if mean is not None else 0.0
+                self.stddev = stddev if stddev is not None else 0.0
 
             def to_version(self, target_version: str) -> "Imu.Noise.Rate":
-                kwargs = {"sdf_version": target_version}
-                kwargs["bias_mean"] = self.bias_mean
-                kwargs["bias_stddev"] = self.bias_stddev
-                kwargs["mean"] = self.mean
-                kwargs["stddev"] = self.stddev
-                new_obj = self.__class__(**kwargs)
-                return new_obj
+                kwargs: dict = {"sdf_version": target_version, "bias_mean": self.bias_mean, "bias_stddev": self.bias_stddev, "mean": self.mean, "stddev": self.stddev}
+                return self.__class__(**kwargs)
 
             def to_sdf(self, version: str | None = None) -> ET.Element:
-                if self.__version__ is None and version is not None:
-                    self.__version__ = version
-                elif version is not None and version != self.__version__:
-                    return self.to_version(version).to_sdf()
-                version = self.__version__ or version
+                if self.sdfversion is None and version is not None:
+                    self.sdfversion = version
+                elif version is not None and version != self.sdfversion:
+                    return self.to_version(str(version)).to_sdf()
                 el = ET.Element("rate")
                 if self.bias_mean is not None:
                     _c_tmp = ET.Element("bias_mean")
@@ -612,45 +523,37 @@ class Imu(BaseModel):
             sdf_version: str | None = None,
             accel: "Imu.Noise.Accel" = None,
             rate: "Imu.Noise.Rate" = None,
-            type: str = "gaussian"
+            type: str | None = "gaussian"
         ):
             super().__init__(sdf_version)
             self.accel = accel
             self.rate = rate
-            self.type = type
+            self.type = type if type is not None else "gaussian"
             if self.accel is not None and hasattr(self.accel, 'to_version'):
-                if getattr(self.accel, '__version__', None) is None:
-                    self.accel.__version__ = self.__version__
-                elif getattr(self.accel, '__version__', None) != self.__version__ and self.__version__ is not None:
-                    self.accel = self.accel.to_version(self.__version__)
+                if getattr(self.accel, 'sdfversion', None) is None:
+                    self.accel.sdfversion = self.sdfversion
+                elif getattr(self.accel, 'sdfversion', None) != self.sdfversion and self.sdfversion is not None:
+                    self.accel = self.accel.to_version(self.sdfversion)
             if self.rate is not None and hasattr(self.rate, 'to_version'):
-                if getattr(self.rate, '__version__', None) is None:
-                    self.rate.__version__ = self.__version__
-                elif getattr(self.rate, '__version__', None) != self.__version__ and self.__version__ is not None:
-                    self.rate = self.rate.to_version(self.__version__)
+                if getattr(self.rate, 'sdfversion', None) is None:
+                    self.rate.sdfversion = self.sdfversion
+                elif getattr(self.rate, 'sdfversion', None) != self.sdfversion and self.sdfversion is not None:
+                    self.rate = self.rate.to_version(self.sdfversion)
 
         def to_version(self, target_version: str) -> "Imu.Noise":
-            kwargs = {"sdf_version": target_version}
-            kwargs["accel"] = self.accel.to_version(target_version) if hasattr(self.accel, "to_version") else self.accel
-            kwargs["rate"] = self.rate.to_version(target_version) if hasattr(self.rate, "to_version") else self.rate
-            kwargs["type"] = self.type
-            new_obj = self.__class__(**kwargs)
-            return new_obj
+            kwargs: dict = {"sdf_version": target_version, "accel": self.accel.to_version(target_version) if self.accel is not None and hasattr(self.accel, "to_version") else self.accel, "rate": self.rate.to_version(target_version) if self.rate is not None and hasattr(self.rate, "to_version") else self.rate, "type": self.type}
+            return self.__class__(**kwargs)
 
         def to_sdf(self, version: str | None = None) -> ET.Element:
-            if self.__version__ is None and version is not None:
-                self.__version__ = version
-            elif version is not None and version != self.__version__:
-                return self.to_version(version).to_sdf()
-            version = self.__version__ or version
+            if self.sdfversion is None and version is not None:
+                self.sdfversion = version
+            elif version is not None and version != self.sdfversion:
+                return self.to_version(str(version)).to_sdf()
             el = ET.Element("noise")
             if self.accel is None:
                 self.accel = self.__class__.Accel(sdf_version=version)
             if self.accel is not None:
-                if hasattr(self.accel, 'to_sdf'):
-                    _child_res = self.accel.to_sdf(version)
-                else:
-                    _child_res = str(self.accel)
+                _child_res = self.accel.to_sdf(version)
                 if isinstance(_child_res, str):
                     _item_el = ET.Element('accel')
                     _item_el.text = _child_res
@@ -660,10 +563,7 @@ class Imu(BaseModel):
             if self.rate is None:
                 self.rate = self.__class__.Rate(sdf_version=version)
             if self.rate is not None:
-                if hasattr(self.rate, 'to_sdf'):
-                    _child_res = self.rate.to_sdf(version)
-                else:
-                    _child_res = str(self.rate)
+                _child_res = self.rate.to_sdf(version)
                 if isinstance(_child_res, str):
                     _item_el = ET.Element('rate')
                     _item_el.text = _child_res
@@ -716,30 +616,22 @@ class Imu(BaseModel):
             def __init__(
                 self,
                 sdf_version: str | None = None,
-                custom_rpy: _Vector3T = None,
-                parent_frame: str = ""
+                custom_rpy: _Vector3T | None = None,
+                parent_frame: str | None = ""
             ):
                 super().__init__(sdf_version)
-                if custom_rpy is None:
-                    custom_rpy = _vector3("0 0 0")
-                else:
-                    custom_rpy = _vector3(custom_rpy)
-                self.custom_rpy = custom_rpy
-                self.parent_frame = parent_frame
+                self.custom_rpy = _vector3("0 0 0") if custom_rpy is None else _vector3(custom_rpy)
+                self.parent_frame = parent_frame if parent_frame is not None else ""
 
             def to_version(self, target_version: str) -> "Imu.OrientationReferenceFrame.CustomRpy":
-                kwargs = {"sdf_version": target_version}
-                kwargs["custom_rpy"] = self.custom_rpy
-                kwargs["parent_frame"] = self.parent_frame
-                new_obj = self.__class__(**kwargs)
-                return new_obj
+                kwargs: dict = {"sdf_version": target_version, "custom_rpy": self.custom_rpy, "parent_frame": self.parent_frame}
+                return self.__class__(**kwargs)
 
             def to_sdf(self, version: str | None = None) -> ET.Element:
-                if self.__version__ is None and version is not None:
-                    self.__version__ = version
-                elif version is not None and version != self.__version__:
-                    return self.to_version(version).to_sdf()
-                version = self.__version__ or version
+                if self.sdfversion is None and version is not None:
+                    self.sdfversion = version
+                elif version is not None and version != self.sdfversion:
+                    return self.to_version(str(version)).to_sdf()
                 el = ET.Element("custom_rpy")
                 if self.custom_rpy is not None:
                     el.text = str(self.custom_rpy)
@@ -762,30 +654,22 @@ class Imu(BaseModel):
             def __init__(
                 self,
                 sdf_version: str | None = None,
-                grav_dir_x: _Vector3T = None,
-                parent_frame: str = ""
+                grav_dir_x: _Vector3T | None = None,
+                parent_frame: str | None = ""
             ):
                 super().__init__(sdf_version)
-                if grav_dir_x is None:
-                    grav_dir_x = _vector3("1 0 0")
-                else:
-                    grav_dir_x = _vector3(grav_dir_x)
-                self.grav_dir_x = grav_dir_x
-                self.parent_frame = parent_frame
+                self.grav_dir_x = _vector3("1 0 0") if grav_dir_x is None else _vector3(grav_dir_x)
+                self.parent_frame = parent_frame if parent_frame is not None else ""
 
             def to_version(self, target_version: str) -> "Imu.OrientationReferenceFrame.GravDirX":
-                kwargs = {"sdf_version": target_version}
-                kwargs["grav_dir_x"] = self.grav_dir_x
-                kwargs["parent_frame"] = self.parent_frame
-                new_obj = self.__class__(**kwargs)
-                return new_obj
+                kwargs: dict = {"sdf_version": target_version, "grav_dir_x": self.grav_dir_x, "parent_frame": self.parent_frame}
+                return self.__class__(**kwargs)
 
             def to_sdf(self, version: str | None = None) -> ET.Element:
-                if self.__version__ is None and version is not None:
-                    self.__version__ = version
-                elif version is not None and version != self.__version__:
-                    return self.to_version(version).to_sdf()
-                version = self.__version__ or version
+                if self.sdfversion is None and version is not None:
+                    self.sdfversion = version
+                elif version is not None and version != self.sdfversion:
+                    return self.to_version(str(version)).to_sdf()
                 el = ET.Element("grav_dir_x")
                 if self.grav_dir_x is not None:
                     el.text = str(self.grav_dir_x)
@@ -809,43 +693,35 @@ class Imu(BaseModel):
             sdf_version: str | None = None,
             custom_rpy: "Imu.OrientationReferenceFrame.CustomRpy" = None,
             grav_dir_x: "Imu.OrientationReferenceFrame.GravDirX" = None,
-            localization: str = "CUSTOM"
+            localization: str | None = "CUSTOM"
         ):
             super().__init__(sdf_version)
             self.custom_rpy = custom_rpy
             self.grav_dir_x = grav_dir_x
-            self.localization = localization
+            self.localization = localization if localization is not None else "CUSTOM"
             if self.custom_rpy is not None and hasattr(self.custom_rpy, 'to_version'):
-                if getattr(self.custom_rpy, '__version__', None) is None:
-                    self.custom_rpy.__version__ = self.__version__
-                elif getattr(self.custom_rpy, '__version__', None) != self.__version__ and self.__version__ is not None:
-                    self.custom_rpy = self.custom_rpy.to_version(self.__version__)
+                if getattr(self.custom_rpy, 'sdfversion', None) is None:
+                    self.custom_rpy.sdfversion = self.sdfversion
+                elif getattr(self.custom_rpy, 'sdfversion', None) != self.sdfversion and self.sdfversion is not None:
+                    self.custom_rpy = self.custom_rpy.to_version(self.sdfversion)
             if self.grav_dir_x is not None and hasattr(self.grav_dir_x, 'to_version'):
-                if getattr(self.grav_dir_x, '__version__', None) is None:
-                    self.grav_dir_x.__version__ = self.__version__
-                elif getattr(self.grav_dir_x, '__version__', None) != self.__version__ and self.__version__ is not None:
-                    self.grav_dir_x = self.grav_dir_x.to_version(self.__version__)
+                if getattr(self.grav_dir_x, 'sdfversion', None) is None:
+                    self.grav_dir_x.sdfversion = self.sdfversion
+                elif getattr(self.grav_dir_x, 'sdfversion', None) != self.sdfversion and self.sdfversion is not None:
+                    self.grav_dir_x = self.grav_dir_x.to_version(self.sdfversion)
 
         def to_version(self, target_version: str) -> "Imu.OrientationReferenceFrame":
-            kwargs = {"sdf_version": target_version}
-            kwargs["custom_rpy"] = self.custom_rpy.to_version(target_version) if hasattr(self.custom_rpy, "to_version") else self.custom_rpy
-            kwargs["grav_dir_x"] = self.grav_dir_x.to_version(target_version) if hasattr(self.grav_dir_x, "to_version") else self.grav_dir_x
-            kwargs["localization"] = self.localization
-            new_obj = self.__class__(**kwargs)
-            return new_obj
+            kwargs: dict = {"sdf_version": target_version, "custom_rpy": self.custom_rpy.to_version(target_version) if self.custom_rpy is not None and hasattr(self.custom_rpy, "to_version") else self.custom_rpy, "grav_dir_x": self.grav_dir_x.to_version(target_version) if self.grav_dir_x is not None and hasattr(self.grav_dir_x, "to_version") else self.grav_dir_x, "localization": self.localization}
+            return self.__class__(**kwargs)
 
         def to_sdf(self, version: str | None = None) -> ET.Element:
-            if self.__version__ is None and version is not None:
-                self.__version__ = version
-            elif version is not None and version != self.__version__:
-                return self.to_version(version).to_sdf()
-            version = self.__version__ or version
+            if self.sdfversion is None and version is not None:
+                self.sdfversion = version
+            elif version is not None and version != self.sdfversion:
+                return self.to_version(str(version)).to_sdf()
             el = ET.Element("orientation_reference_frame")
             if self.custom_rpy is not None:
-                if hasattr(self.custom_rpy, 'to_sdf'):
-                    _child_res = self.custom_rpy.to_sdf(version)
-                else:
-                    _child_res = str(self.custom_rpy)
+                _child_res = self.custom_rpy.to_sdf(version)
                 if isinstance(_child_res, str):
                     _item_el = ET.Element('custom_rpy')
                     _item_el.text = _child_res
@@ -853,10 +729,7 @@ class Imu(BaseModel):
                     _item_el = _child_res
                 el.append(_item_el)
             if self.grav_dir_x is not None:
-                if hasattr(self.grav_dir_x, 'to_sdf'):
-                    _child_res = self.grav_dir_x.to_sdf(version)
-                else:
-                    _child_res = str(self.grav_dir_x)
+                _child_res = self.grav_dir_x.to_sdf(version)
                 if isinstance(_child_res, str):
                     _item_el = ET.Element('grav_dir_x')
                     _item_el.text = _child_res
@@ -904,39 +777,39 @@ class Imu(BaseModel):
         self,
         sdf_version: str | None = None,
         angular_velocity: "Imu.AngularVelocity" = None,
-        enable_orientation: bool = True,
+        enable_orientation: bool | None = True,
         linear_acceleration: "Imu.LinearAcceleration" = None,
         noise: "Imu.Noise" = None,
         orientation_reference_frame: "Imu.OrientationReferenceFrame" = None,
-        topic: str = "__default_topic__"
+        topic: str | None = "__default_topic__"
     ):
         super().__init__(sdf_version)
         self.angular_velocity = angular_velocity
-        self.enable_orientation = enable_orientation
+        self.enable_orientation = enable_orientation if enable_orientation is not None else True
         self.linear_acceleration = linear_acceleration
         self.noise = noise
         self.orientation_reference_frame = orientation_reference_frame
-        self.topic = topic
+        self.topic = topic if topic is not None else "__default_topic__"
         if self.angular_velocity is not None and hasattr(self.angular_velocity, 'to_version'):
-            if getattr(self.angular_velocity, '__version__', None) is None:
-                self.angular_velocity.__version__ = self.__version__
-            elif getattr(self.angular_velocity, '__version__', None) != self.__version__ and self.__version__ is not None:
-                self.angular_velocity = self.angular_velocity.to_version(self.__version__)
+            if getattr(self.angular_velocity, 'sdfversion', None) is None:
+                self.angular_velocity.sdfversion = self.sdfversion
+            elif getattr(self.angular_velocity, 'sdfversion', None) != self.sdfversion and self.sdfversion is not None:
+                self.angular_velocity = self.angular_velocity.to_version(self.sdfversion)
         if self.linear_acceleration is not None and hasattr(self.linear_acceleration, 'to_version'):
-            if getattr(self.linear_acceleration, '__version__', None) is None:
-                self.linear_acceleration.__version__ = self.__version__
-            elif getattr(self.linear_acceleration, '__version__', None) != self.__version__ and self.__version__ is not None:
-                self.linear_acceleration = self.linear_acceleration.to_version(self.__version__)
+            if getattr(self.linear_acceleration, 'sdfversion', None) is None:
+                self.linear_acceleration.sdfversion = self.sdfversion
+            elif getattr(self.linear_acceleration, 'sdfversion', None) != self.sdfversion and self.sdfversion is not None:
+                self.linear_acceleration = self.linear_acceleration.to_version(self.sdfversion)
         if self.noise is not None and hasattr(self.noise, 'to_version'):
-            if getattr(self.noise, '__version__', None) is None:
-                self.noise.__version__ = self.__version__
-            elif getattr(self.noise, '__version__', None) != self.__version__ and self.__version__ is not None:
-                self.noise = self.noise.to_version(self.__version__)
+            if getattr(self.noise, 'sdfversion', None) is None:
+                self.noise.sdfversion = self.sdfversion
+            elif getattr(self.noise, 'sdfversion', None) != self.sdfversion and self.sdfversion is not None:
+                self.noise = self.noise.to_version(self.sdfversion)
         if self.orientation_reference_frame is not None and hasattr(self.orientation_reference_frame, 'to_version'):
-            if getattr(self.orientation_reference_frame, '__version__', None) is None:
-                self.orientation_reference_frame.__version__ = self.__version__
-            elif getattr(self.orientation_reference_frame, '__version__', None) != self.__version__ and self.__version__ is not None:
-                self.orientation_reference_frame = self.orientation_reference_frame.to_version(self.__version__)
+            if getattr(self.orientation_reference_frame, 'sdfversion', None) is None:
+                self.orientation_reference_frame.sdfversion = self.sdfversion
+            elif getattr(self.orientation_reference_frame, 'sdfversion', None) != self.sdfversion and self.sdfversion is not None:
+                self.orientation_reference_frame = self.orientation_reference_frame.to_version(self.sdfversion)
 
     def to_version(self, target_version: str) -> "Imu":
         from ..elements.noise import Noise
@@ -954,30 +827,20 @@ class Imu(BaseModel):
             raise ValueError(f"'orientation_reference_frame' is not supported in SDF version {target_version} (added in 1.6)")
         if self.topic is not None and cmp_version(target_version, "1.7") >= 0:
             raise ValueError(f"'topic' is not supported in SDF version {target_version} (removed in 1.7)")
-        kwargs = {"sdf_version": target_version}
-        kwargs["angular_velocity"] = self.angular_velocity.to_version(target_version) if hasattr(self.angular_velocity, "to_version") else self.angular_velocity
-        kwargs["enable_orientation"] = self.enable_orientation
-        kwargs["linear_acceleration"] = self.linear_acceleration.to_version(target_version) if hasattr(self.linear_acceleration, "to_version") else self.linear_acceleration
-        kwargs["noise"] = self.noise.to_version(target_version) if hasattr(self.noise, "to_version") else self.noise
-        kwargs["orientation_reference_frame"] = self.orientation_reference_frame.to_version(target_version) if hasattr(self.orientation_reference_frame, "to_version") else self.orientation_reference_frame
-        kwargs["topic"] = self.topic
+        kwargs: dict = {"sdf_version": target_version, "angular_velocity": self.angular_velocity.to_version(target_version) if self.angular_velocity is not None and hasattr(self.angular_velocity, "to_version") else self.angular_velocity, "enable_orientation": self.enable_orientation, "linear_acceleration": self.linear_acceleration.to_version(target_version) if self.linear_acceleration is not None and hasattr(self.linear_acceleration, "to_version") else self.linear_acceleration, "noise": self.noise.to_version(target_version) if self.noise is not None and hasattr(self.noise, "to_version") else self.noise, "orientation_reference_frame": self.orientation_reference_frame.to_version(target_version) if self.orientation_reference_frame is not None and hasattr(self.orientation_reference_frame, "to_version") else self.orientation_reference_frame, "topic": self.topic}
         new_obj = self.__class__(**kwargs)
         apply_migrations(new_obj, target_version)
         return new_obj
 
     def to_sdf(self, version: str | None = None) -> ET.Element:
         from ..elements.noise import Noise
-        if self.__version__ is None and version is not None:
-            self.__version__ = version
-        elif version is not None and version != self.__version__:
-            return self.to_version(version).to_sdf()
-        version = self.__version__ or version
+        if self.sdfversion is None and version is not None:
+            self.sdfversion = version
+        elif version is not None and version != self.sdfversion:
+            return self.to_version(str(version)).to_sdf()
         el = ET.Element("imu")
         if self.angular_velocity is not None:
-            if hasattr(self.angular_velocity, 'to_sdf'):
-                _child_res = self.angular_velocity.to_sdf(version)
-            else:
-                _child_res = str(self.angular_velocity)
+            _child_res = self.angular_velocity.to_sdf(version)
             if isinstance(_child_res, str):
                 _item_el = ET.Element('angular_velocity')
                 _item_el.text = _child_res
@@ -989,10 +852,7 @@ class Imu(BaseModel):
             _c_tmp.text = str(self.enable_orientation).lower()
             el.append(_c_tmp)
         if self.linear_acceleration is not None:
-            if hasattr(self.linear_acceleration, 'to_sdf'):
-                _child_res = self.linear_acceleration.to_sdf(version)
-            else:
-                _child_res = str(self.linear_acceleration)
+            _child_res = self.linear_acceleration.to_sdf(version)
             if isinstance(_child_res, str):
                 _item_el = ET.Element('linear_acceleration')
                 _item_el.text = _child_res
@@ -1000,10 +860,7 @@ class Imu(BaseModel):
                 _item_el = _child_res
             el.append(_item_el)
         if self.noise is not None:
-            if hasattr(self.noise, 'to_sdf'):
-                _child_res = self.noise.to_sdf(version)
-            else:
-                _child_res = str(self.noise)
+            _child_res = self.noise.to_sdf(version)
             if isinstance(_child_res, str):
                 _item_el = ET.Element('noise')
                 _item_el.text = _child_res
@@ -1011,10 +868,7 @@ class Imu(BaseModel):
                 _item_el = _child_res
             el.append(_item_el)
         if self.orientation_reference_frame is not None:
-            if hasattr(self.orientation_reference_frame, 'to_sdf'):
-                _child_res = self.orientation_reference_frame.to_sdf(version)
-            else:
-                _child_res = str(self.orientation_reference_frame)
+            _child_res = self.orientation_reference_frame.to_sdf(version)
             if isinstance(_child_res, str):
                 _item_el = ET.Element('orientation_reference_frame')
                 _item_el.text = _child_res

@@ -1,85 +1,44 @@
 ### THIS FILE WAS AUTO-GENERATED ###
 from __future__ import annotations
 
-import typing
 from xml.etree import ElementTree as ET
 
+from ..utils.utils import _parse_double
 from ..utils.model import BaseModel
 from ..utils.errors import SDFError
 
 
-import math
-
-def _parse_int32(raw: str) -> int | SDFError:
-    try:
-        v = int(raw)
-        if not (-2147483648 <= v <= 2147483647):
-            return SDFError(f"int32 out of range: {v}")
-        return v
-    except ValueError:
-        return SDFError(f"Invalid int32: {raw}")
-
-
-def _parse_uint32(raw: str) -> int | SDFError:
-    try:
-        v = int(raw)
-        if not (0 <= v <= 4294967295):
-            return SDFError(f"uint32 out of range: {v}")
-        return v
-    except ValueError:
-        return SDFError(f"Invalid uint32: {raw}")
-
-
-def _parse_double(raw: str) -> float | SDFError:
-    try:
-        v = float(raw)
-        if not math.isfinite(v) or abs(v) > math.inf:
-            return SDFError(f"double out of range: {raw}")
-        return v
-    except ValueError:
-        return SDFError(f"Invalid double: {raw}")
-
-
-
+# noinspection PyUnusedImports
 class Transceiver(BaseModel):
     def __init__(
         self,
         sdf_version: str | None = None,
-        essid: str = "wireless",
-        frequency: float = 2442,
-        gain: float = 2.5,
-        max_frequency: float = 2484,
-        min_frequency: float = 2412,
-        power: float = 14.50,
-        sensitivity: float = -90
+        essid: str | None = "wireless",
+        frequency: float | None = 2442,
+        gain: float | None = 2.5,
+        max_frequency: float | None = 2484,
+        min_frequency: float | None = 2412,
+        power: float | None = 14.50,
+        sensitivity: float | None = -90
     ):
         super().__init__(sdf_version)
-        self.essid = essid
-        self.frequency = frequency
-        self.gain = gain
-        self.max_frequency = max_frequency
-        self.min_frequency = min_frequency
-        self.power = power
-        self.sensitivity = sensitivity
+        self.essid = essid if essid is not None else "wireless"
+        self.frequency = frequency if frequency is not None else 2442
+        self.gain = gain if gain is not None else 2.5
+        self.max_frequency = max_frequency if max_frequency is not None else 2484
+        self.min_frequency = min_frequency if min_frequency is not None else 2412
+        self.power = power if power is not None else 14.50
+        self.sensitivity = sensitivity if sensitivity is not None else -90
 
     def to_version(self, target_version: str) -> "Transceiver":
-        kwargs = {"sdf_version": target_version}
-        kwargs["essid"] = self.essid
-        kwargs["frequency"] = self.frequency
-        kwargs["gain"] = self.gain
-        kwargs["max_frequency"] = self.max_frequency
-        kwargs["min_frequency"] = self.min_frequency
-        kwargs["power"] = self.power
-        kwargs["sensitivity"] = self.sensitivity
-        new_obj = self.__class__(**kwargs)
-        return new_obj
+        kwargs: dict = {"sdf_version": target_version, "essid": self.essid, "frequency": self.frequency, "gain": self.gain, "max_frequency": self.max_frequency, "min_frequency": self.min_frequency, "power": self.power, "sensitivity": self.sensitivity}
+        return self.__class__(**kwargs)
 
     def to_sdf(self, version: str | None = None) -> ET.Element:
-        if self.__version__ is None and version is not None:
-            self.__version__ = version
-        elif version is not None and version != self.__version__:
-            return self.to_version(version).to_sdf()
-        version = self.__version__ or version
+        if self.sdfversion is None and version is not None:
+            self.sdfversion = version
+        elif version is not None and version != self.sdfversion:
+            return self.to_version(str(version)).to_sdf()
         el = ET.Element("transceiver")
         if self.essid is not None:
             _c_tmp = ET.Element("essid")

@@ -1,79 +1,40 @@
 ### THIS FILE WAS AUTO-GENERATED ###
 from __future__ import annotations
 
-import typing
 from xml.etree import ElementTree as ET
 
+from ..utils.utils import _parse_double, _parse_int32
 from ..utils.model import BaseModel
 from ..utils.errors import SDFError
 
 
-import math
-
-def _parse_int32(raw: str) -> int | SDFError:
-    try:
-        v = int(raw)
-        if not (-2147483648 <= v <= 2147483647):
-            return SDFError(f"int32 out of range: {v}")
-        return v
-    except ValueError:
-        return SDFError(f"Invalid int32: {raw}")
-
-
-def _parse_uint32(raw: str) -> int | SDFError:
-    try:
-        v = int(raw)
-        if not (0 <= v <= 4294967295):
-            return SDFError(f"uint32 out of range: {v}")
-        return v
-    except ValueError:
-        return SDFError(f"Invalid uint32: {raw}")
-
-
-def _parse_double(raw: str) -> float | SDFError:
-    try:
-        v = float(raw)
-        if not math.isfinite(v) or abs(v) > math.inf:
-            return SDFError(f"double out of range: {raw}")
-        return v
-    except ValueError:
-        return SDFError(f"Invalid double: {raw}")
-
-
-
+# noinspection PyUnusedImports
 class Image(BaseModel):
     def __init__(
         self,
         sdf_version: str | None = None,
-        granularity: int = 1,
-        height: float = 1,
-        scale: float = 1,
-        threshold: int = 200,
-        uri: str = "__default__"
+        granularity: int | None = 1,
+        height: float | None = 1,
+        scale: float | None = 1,
+        threshold: int | None = 200,
+        uri: str | None = "__default__"
     ):
         super().__init__(sdf_version)
-        self.granularity = granularity
-        self.height = height
-        self.scale = scale
-        self.threshold = threshold
-        self.uri = uri
+        self.granularity = granularity if granularity is not None else 1
+        self.height = height if height is not None else 1
+        self.scale = scale if scale is not None else 1
+        self.threshold = threshold if threshold is not None else 200
+        self.uri = uri if uri is not None else "__default__"
 
     def to_version(self, target_version: str) -> "Image":
-        kwargs = {"sdf_version": target_version}
-        kwargs["granularity"] = self.granularity
-        kwargs["height"] = self.height
-        kwargs["scale"] = self.scale
-        kwargs["threshold"] = self.threshold
-        kwargs["uri"] = self.uri
-        new_obj = self.__class__(**kwargs)
-        return new_obj
+        kwargs: dict = {"sdf_version": target_version, "granularity": self.granularity, "height": self.height, "scale": self.scale, "threshold": self.threshold, "uri": self.uri}
+        return self.__class__(**kwargs)
 
     def to_sdf(self, version: str | None = None) -> ET.Element:
-        if self.__version__ is None and version is not None:
-            self.__version__ = version
-        elif version is not None and version != self.__version__:
-            return self.to_version(version).to_sdf()
-        version = self.__version__ or version
+        if self.sdfversion is None and version is not None:
+            self.sdfversion = version
+        elif version is not None and version != self.sdfversion:
+            return self.to_version(str(version)).to_sdf()
         el = ET.Element("image")
         if self.granularity is not None:
             _c_tmp = ET.Element("granularity")

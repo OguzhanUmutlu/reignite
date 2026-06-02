@@ -1,40 +1,37 @@
 ### THIS FILE WAS AUTO-GENERATED ###
 from __future__ import annotations
 
-import typing
 from xml.etree import ElementTree as ET
 
 from ..utils.model import BaseModel
 from ..utils.errors import SDFError
+from ..utils.version import cmp_version
 
 
+# noinspection PyUnusedImports
 class Contact(BaseModel):
     class Collision(BaseModel):
         def __init__(
             self,
             sdf_version: str | None = None,
-            collision: str = "__default__",
-            name: str = "__default__"
+            collision: str | None = "__default__",
+            name: str | None = "__default__"
         ):
             super().__init__(sdf_version)
-            self.collision = collision
-            self.name = name
+            self.collision = collision if collision is not None else "__default__"
+            self.name = name if name is not None else "__default__"
 
         def to_version(self, target_version: str) -> "Contact.Collision":
             if self.name is not None and cmp_version(target_version, "1.2") >= 0:
                 raise ValueError(f"'name' is not supported in SDF version {target_version} (removed in 1.2)")
-            kwargs = {"sdf_version": target_version}
-            kwargs["collision"] = self.collision
-            kwargs["name"] = self.name
-            new_obj = self.__class__(**kwargs)
-            return new_obj
+            kwargs: dict = {"sdf_version": target_version, "collision": self.collision, "name": self.name}
+            return self.__class__(**kwargs)
 
         def to_sdf(self, version: str | None = None) -> ET.Element:
-            if self.__version__ is None and version is not None:
-                self.__version__ = version
-            elif version is not None and version != self.__version__:
-                return self.to_version(version).to_sdf()
-            version = self.__version__ or version
+            if self.sdfversion is None and version is not None:
+                self.sdfversion = version
+            elif version is not None and version != self.sdfversion:
+                return self.to_version(str(version)).to_sdf()
             el = ET.Element("collision")
             if self.collision is not None:
                 el.text = self.collision
@@ -57,36 +54,29 @@ class Contact(BaseModel):
         self,
         sdf_version: str | None = None,
         collision: "Contact.Collision" = None,
-        topic: str = "__default_topic__"
+        topic: str | None = "__default_topic__"
     ):
         super().__init__(sdf_version)
         self.collision = collision
-        self.topic = topic
+        self.topic = topic if topic is not None else "__default_topic__"
         if self.collision is not None and hasattr(self.collision, 'to_version'):
-            if getattr(self.collision, '__version__', None) is None:
-                self.collision.__version__ = self.__version__
-            elif getattr(self.collision, '__version__', None) != self.__version__ and self.__version__ is not None:
-                self.collision = self.collision.to_version(self.__version__)
+            if getattr(self.collision, 'sdfversion', None) is None:
+                self.collision.sdfversion = self.sdfversion
+            elif getattr(self.collision, 'sdfversion', None) != self.sdfversion and self.sdfversion is not None:
+                self.collision = self.collision.to_version(self.sdfversion)
 
     def to_version(self, target_version: str) -> "Contact":
-        kwargs = {"sdf_version": target_version}
-        kwargs["collision"] = self.collision.to_version(target_version) if hasattr(self.collision, "to_version") else self.collision
-        kwargs["topic"] = self.topic
-        new_obj = self.__class__(**kwargs)
-        return new_obj
+        kwargs: dict = {"sdf_version": target_version, "collision": self.collision.to_version(target_version) if self.collision is not None and hasattr(self.collision, "to_version") else self.collision, "topic": self.topic}
+        return self.__class__(**kwargs)
 
     def to_sdf(self, version: str | None = None) -> ET.Element:
-        if self.__version__ is None and version is not None:
-            self.__version__ = version
-        elif version is not None and version != self.__version__:
-            return self.to_version(version).to_sdf()
-        version = self.__version__ or version
+        if self.sdfversion is None and version is not None:
+            self.sdfversion = version
+        elif version is not None and version != self.sdfversion:
+            return self.to_version(str(version)).to_sdf()
         el = ET.Element("contact")
         if self.collision is not None:
-            if hasattr(self.collision, 'to_sdf'):
-                _child_res = self.collision.to_sdf(version)
-            else:
-                _child_res = str(self.collision)
+            _child_res = self.collision.to_sdf(version)
             if isinstance(_child_res, str):
                 _item_el = ET.Element('collision')
                 _item_el.text = _child_res

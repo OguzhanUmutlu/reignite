@@ -1,61 +1,30 @@
 ### THIS FILE WAS AUTO-GENERATED ###
 from __future__ import annotations
 
-import typing
 from xml.etree import ElementTree as ET
 
+from ..utils.utils import _parse_int32, _parse_uint32
 from typing import List
 
 from ..utils.model import BaseModel
 from ..utils.errors import SDFError
+from ..utils.version import cmp_version
 
 
-import math
-
-def _parse_int32(raw: str) -> int | SDFError:
-    try:
-        v = int(raw)
-        if not (-2147483648 <= v <= 2147483647):
-            return SDFError(f"int32 out of range: {v}")
-        return v
-    except ValueError:
-        return SDFError(f"Invalid int32: {raw}")
-
-
-def _parse_uint32(raw: str) -> int | SDFError:
-    try:
-        v = int(raw)
-        if not (0 <= v <= 4294967295):
-            return SDFError(f"uint32 out of range: {v}")
-        return v
-    except ValueError:
-        return SDFError(f"Invalid uint32: {raw}")
-
-
-def _parse_double(raw: str) -> float | SDFError:
-    try:
-        v = float(raw)
-        if not math.isfinite(v) or abs(v) > math.inf:
-            return SDFError(f"double out of range: {raw}")
-        return v
-    except ValueError:
-        return SDFError(f"Invalid double: {raw}")
-
-
-
+# noinspection PyUnusedImports
 class Gripper(BaseModel):
     class GraspCheck(BaseModel):
         def __init__(
             self,
             sdf_version: str | None = None,
-            attach_steps: int = 20,
-            detach_steps: int = 40,
-            min_contact_count: int = 2
+            attach_steps: int | None = 20,
+            detach_steps: int | None = 40,
+            min_contact_count: int | None = 2
         ):
             super().__init__(sdf_version)
-            self.attach_steps = attach_steps
-            self.detach_steps = detach_steps
-            self.min_contact_count = min_contact_count
+            self.attach_steps = attach_steps if attach_steps is not None else 20
+            self.detach_steps = detach_steps if detach_steps is not None else 40
+            self.min_contact_count = min_contact_count if min_contact_count is not None else 2
 
         def to_version(self, target_version: str) -> "Gripper.GraspCheck":
             if self.attach_steps is not None and cmp_version(target_version, "1.2") >= 0:
@@ -64,19 +33,14 @@ class Gripper(BaseModel):
                 raise ValueError(f"'detach_steps' is not supported in SDF version {target_version} (removed in 1.2)")
             if self.min_contact_count is not None and cmp_version(target_version, "1.2") >= 0:
                 raise ValueError(f"'min_contact_count' is not supported in SDF version {target_version} (removed in 1.2)")
-            kwargs = {"sdf_version": target_version}
-            kwargs["attach_steps"] = self.attach_steps
-            kwargs["detach_steps"] = self.detach_steps
-            kwargs["min_contact_count"] = self.min_contact_count
-            new_obj = self.__class__(**kwargs)
-            return new_obj
+            kwargs: dict = {"sdf_version": target_version, "attach_steps": self.attach_steps, "detach_steps": self.detach_steps, "min_contact_count": self.min_contact_count}
+            return self.__class__(**kwargs)
 
         def to_sdf(self, version: str | None = None) -> ET.Element:
-            if self.__version__ is None and version is not None:
-                self.__version__ = version
-            elif version is not None and version != self.__version__:
-                return self.to_version(version).to_sdf()
-            version = self.__version__ or version
+            if self.sdfversion is None and version is not None:
+                self.sdfversion = version
+            elif version is not None and version != self.sdfversion:
+                return self.to_version(str(version)).to_sdf()
             el = ET.Element("grasp_check")
             if self.attach_steps is not None:
                 el.set("attach_steps", str(self.attach_steps))
@@ -103,20 +67,20 @@ class Gripper(BaseModel):
         self,
         sdf_version: str | None = None,
         grasp_check: "Gripper.GraspCheck" = None,
-        gripper_links: List[str] = None,
-        name: str = "__default__",
-        palm_link: str = "__default__"
+        gripper_links: List[str] | None = None,
+        name: str | None = "__default__",
+        palm_link: str | None = "__default__"
     ):
         super().__init__(sdf_version)
         self.grasp_check = grasp_check
         self.gripper_links = gripper_links or []
-        self.name = name
-        self.palm_link = palm_link
+        self.name = name if name is not None else "__default__"
+        self.palm_link = palm_link if palm_link is not None else "__default__"
         if self.grasp_check is not None and hasattr(self.grasp_check, 'to_version'):
-            if getattr(self.grasp_check, '__version__', None) is None:
-                self.grasp_check.__version__ = self.__version__
-            elif getattr(self.grasp_check, '__version__', None) != self.__version__ and self.__version__ is not None:
-                self.grasp_check = self.grasp_check.to_version(self.__version__)
+            if getattr(self.grasp_check, 'sdfversion', None) is None:
+                self.grasp_check.sdfversion = self.sdfversion
+            elif getattr(self.grasp_check, 'sdfversion', None) != self.sdfversion and self.sdfversion is not None:
+                self.grasp_check = self.grasp_check.to_version(self.sdfversion)
 
     def add_gripper_link(self, *items: str):
         if self.gripper_links is None:
@@ -124,26 +88,17 @@ class Gripper(BaseModel):
         self.gripper_links.extend(items)
 
     def to_version(self, target_version: str) -> "Gripper":
-        kwargs = {"sdf_version": target_version}
-        kwargs["grasp_check"] = self.grasp_check.to_version(target_version) if hasattr(self.grasp_check, "to_version") else self.grasp_check
-        kwargs["gripper_links"] = self.gripper_links
-        kwargs["name"] = self.name
-        kwargs["palm_link"] = self.palm_link
-        new_obj = self.__class__(**kwargs)
-        return new_obj
+        kwargs: dict = {"sdf_version": target_version, "grasp_check": self.grasp_check.to_version(target_version) if self.grasp_check is not None and hasattr(self.grasp_check, "to_version") else self.grasp_check, "gripper_links": self.gripper_links, "name": self.name, "palm_link": self.palm_link}
+        return self.__class__(**kwargs)
 
     def to_sdf(self, version: str | None = None) -> ET.Element:
-        if self.__version__ is None and version is not None:
-            self.__version__ = version
-        elif version is not None and version != self.__version__:
-            return self.to_version(version).to_sdf()
-        version = self.__version__ or version
+        if self.sdfversion is None and version is not None:
+            self.sdfversion = version
+        elif version is not None and version != self.sdfversion:
+            return self.to_version(str(version)).to_sdf()
         el = ET.Element("gripper")
         if self.grasp_check is not None:
-            if hasattr(self.grasp_check, 'to_sdf'):
-                _child_res = self.grasp_check.to_sdf(version)
-            else:
-                _child_res = str(self.grasp_check)
+            _child_res = self.grasp_check.to_sdf(version)
             if isinstance(_child_res, str):
                 _item_el = ET.Element('grasp_check')
                 _item_el.text = _child_res

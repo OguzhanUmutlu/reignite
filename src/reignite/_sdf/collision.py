@@ -1,14 +1,15 @@
 ### THIS FILE WAS AUTO-GENERATED ###
 from __future__ import annotations
 
-import typing
 from xml.etree import ElementTree as ET
 
+from ..utils.utils import _parse_double, _parse_int32
+import typing
 from typing import List
 
 from ..utils.model import BaseModel
 from ..utils.errors import SDFError
-from ..utils.pose import Pose as _SDFPose, _PoseT, _pose
+from ..utils.pose import Pose as _PoseT, _pose
 from ..utils.version import cmp_version
 
 if typing.TYPE_CHECKING:
@@ -17,39 +18,6 @@ if typing.TYPE_CHECKING:
     from ..elements.pose import Pose
     from ..elements.surface import Surface
 
-
-import math
-
-def _parse_int32(raw: str) -> int | SDFError:
-    try:
-        v = int(raw)
-        if not (-2147483648 <= v <= 2147483647):
-            return SDFError(f"int32 out of range: {v}")
-        return v
-    except ValueError:
-        return SDFError(f"Invalid int32: {raw}")
-
-
-def _parse_uint32(raw: str) -> int | SDFError:
-    try:
-        v = int(raw)
-        if not (0 <= v <= 4294967295):
-            return SDFError(f"uint32 out of range: {v}")
-        return v
-    except ValueError:
-        return SDFError(f"Invalid uint32: {raw}")
-
-
-def _parse_double(raw: str) -> float | SDFError:
-    try:
-        v = float(raw)
-        if not math.isfinite(v) or abs(v) > math.inf:
-            return SDFError(f"double out of range: {raw}")
-        return v
-    except ValueError:
-        return SDFError(f"Invalid double: {raw}")
-
-
 def _parse_pose(raw: str) -> _PoseT | SDFError:
     try:
         return _pose(raw)
@@ -57,28 +25,22 @@ def _parse_pose(raw: str) -> _PoseT | SDFError:
         return SDFError(str(e))
 
 
+# noinspection PyUnusedImports
 class Collision(BaseModel):
     class Origin(BaseModel):
-        def __init__(self, sdf_version: str | None = None, pose: _PoseT = None):
+        def __init__(self, sdf_version: str | None = None, pose: _PoseT | None = None):
             super().__init__(sdf_version)
-            if pose is None:
-                pose = _pose("0 0 0 0 0 0")
-            else:
-                pose = _pose(pose)
-            self.pose = pose
+            self.pose = _pose("0 0 0 0 0 0") if pose is None else _pose(pose)
 
         def to_version(self, target_version: str) -> "Collision.Origin":
-            kwargs = {"sdf_version": target_version}
-            kwargs["pose"] = self.pose
-            new_obj = self.__class__(**kwargs)
-            return new_obj
+            kwargs: dict = {"sdf_version": target_version, "pose": self.pose}
+            return self.__class__(**kwargs)
 
         def to_sdf(self, version: str | None = None) -> ET.Element:
-            if self.__version__ is None and version is not None:
-                self.__version__ = version
-            elif version is not None and version != self.__version__:
-                return self.to_version(version).to_sdf()
-            version = self.__version__ or version
+            if self.sdfversion is None and version is not None:
+                self.sdfversion = version
+            elif version is not None and version != self.sdfversion:
+                return self.to_version(str(version)).to_sdf()
             el = ET.Element("origin")
             if self.pose is not None:
                 if cmp_version(version, "1.2") >= 0:
@@ -106,56 +68,56 @@ class Collision(BaseModel):
     def __init__(
         self,
         sdf_version: str | None = None,
-        auto_inertia_params: None = None,
-        density: float = 1000.0,
+        auto_inertia_params: None | None = None,
+        density: float | None = 1000.0,
         frames: List["Frame"] = None,
         geometry: "Geometry" = None,
-        laser_retro: float = 0,
-        mass: float = 0,
-        max_contacts: int = 10,
-        name: str = "__default__",
+        laser_retro: float | None = 0,
+        mass: float | None = 0,
+        max_contacts: int | None = 10,
+        name: str | None = "__default__",
         origin: "Collision.Origin" = None,
         pose: "Pose" = None,
         surface: "Surface" = None
     ):
         super().__init__(sdf_version)
         self.auto_inertia_params = auto_inertia_params
-        self.density = density
+        self.density = density if density is not None else 1000.0
         self.frames = frames or []
         self.geometry = geometry
-        self.laser_retro = laser_retro
-        self.mass = mass
-        self.max_contacts = max_contacts
-        self.name = name
+        self.laser_retro = laser_retro if laser_retro is not None else 0
+        self.mass = mass if mass is not None else 0
+        self.max_contacts = max_contacts if max_contacts is not None else 10
+        self.name = name if name is not None else "__default__"
         self.origin = origin
         self.pose = pose
         self.surface = surface
         for _i, _c in enumerate(self.frames):
             if not hasattr(_c, 'to_version'): continue
-            if getattr(_c, '__version__', None) is None:
-                _c.__version__ = self.__version__
-            elif getattr(_c, '__version__', None) != self.__version__ and self.__version__ is not None:
-                self.frames[_i] = _c.to_version(self.__version__)
+            if getattr(_c, 'sdfversion', None) is None:
+                _c.sdfversion = self.sdfversion
+            elif getattr(_c, 'sdfversion', None) != self.sdfversion and self.sdfversion is not None:
+                self.frames[_i] = _c.to_version(self.sdfversion)
         if self.geometry is not None and hasattr(self.geometry, 'to_version'):
-            if getattr(self.geometry, '__version__', None) is None:
-                self.geometry.__version__ = self.__version__
-            elif getattr(self.geometry, '__version__', None) != self.__version__ and self.__version__ is not None:
-                self.geometry = self.geometry.to_version(self.__version__)
+            if getattr(self.geometry, 'sdfversion', None) is None:
+                self.geometry.sdfversion = self.sdfversion
+            elif getattr(self.geometry, 'sdfversion', None) != self.sdfversion and self.sdfversion is not None:
+                self.geometry = self.geometry.to_version(self.sdfversion)
         if self.origin is not None and hasattr(self.origin, 'to_version'):
-            if getattr(self.origin, '__version__', None) is None:
-                self.origin.__version__ = self.__version__
-            elif getattr(self.origin, '__version__', None) != self.__version__ and self.__version__ is not None:
-                self.origin = self.origin.to_version(self.__version__)
+            if getattr(self.origin, 'sdfversion', None) is None:
+                self.origin.sdfversion = self.sdfversion
+            elif getattr(self.origin, 'sdfversion', None) != self.sdfversion and self.sdfversion is not None:
+                self.origin = self.origin.to_version(self.sdfversion)
         if self.pose is not None and hasattr(self.pose, 'to_version'):
-            if getattr(self.pose, '__version__', None) is None:
-                self.pose.__version__ = self.__version__
-            elif getattr(self.pose, '__version__', None) != self.__version__ and self.__version__ is not None:
-                self.pose = self.pose.to_version(self.__version__)
+            if getattr(self.pose, 'sdfversion', None) is None:
+                self.pose.sdfversion = self.sdfversion
+            elif getattr(self.pose, 'sdfversion', None) != self.sdfversion and self.sdfversion is not None:
+                self.pose = self.pose.to_version(self.sdfversion)
         if self.surface is not None and hasattr(self.surface, 'to_version'):
-            if getattr(self.surface, '__version__', None) is None:
-                self.surface.__version__ = self.__version__
-            elif getattr(self.surface, '__version__', None) != self.__version__ and self.__version__ is not None:
-                self.surface = self.surface.to_version(self.__version__)
+            if getattr(self.surface, 'sdfversion', None) is None:
+                self.surface.sdfversion = self.sdfversion
+            elif getattr(self.surface, 'sdfversion', None) != self.sdfversion and self.sdfversion is not None:
+                self.surface = self.surface.to_version(self.sdfversion)
 
     def add_frame(self, *items: "Frame"):
         if self.frames is None:
@@ -183,31 +145,18 @@ class Collision(BaseModel):
             raise ValueError(f"'origin' is not supported in SDF version {target_version} (removed in 1.2)")
         if self.pose is not None and cmp_version(target_version, "1.2") < 0:
             raise ValueError(f"'pose' is not supported in SDF version {target_version} (added in 1.2)")
-        kwargs = {"sdf_version": target_version}
-        kwargs["auto_inertia_params"] = self.auto_inertia_params
-        kwargs["density"] = self.density
-        kwargs["frames"] = [c.to_version(target_version) if hasattr(c, "to_version") else c for c in (self.frames or [])]
-        kwargs["geometry"] = self.geometry.to_version(target_version) if hasattr(self.geometry, "to_version") else self.geometry
-        kwargs["laser_retro"] = self.laser_retro
-        kwargs["mass"] = self.mass
-        kwargs["max_contacts"] = self.max_contacts
-        kwargs["name"] = self.name
-        kwargs["origin"] = self.origin.to_version(target_version) if hasattr(self.origin, "to_version") else self.origin
-        kwargs["pose"] = self.pose.to_version(target_version) if hasattr(self.pose, "to_version") else self.pose
-        kwargs["surface"] = self.surface.to_version(target_version) if hasattr(self.surface, "to_version") else self.surface
-        new_obj = self.__class__(**kwargs)
-        return new_obj
+        kwargs: dict = {"sdf_version": target_version, "auto_inertia_params": self.auto_inertia_params, "density": self.density, "frames": [c.to_version(target_version) if hasattr(c, "to_version") else c for c in (self.frames or [])], "geometry": self.geometry.to_version(target_version) if self.geometry is not None and hasattr(self.geometry, "to_version") else self.geometry, "laser_retro": self.laser_retro, "mass": self.mass, "max_contacts": self.max_contacts, "name": self.name, "origin": self.origin.to_version(target_version) if self.origin is not None and hasattr(self.origin, "to_version") else self.origin, "pose": self.pose.to_version(target_version) if self.pose is not None and hasattr(self.pose, "to_version") else self.pose, "surface": self.surface.to_version(target_version) if self.surface is not None and hasattr(self.surface, "to_version") else self.surface}
+        return self.__class__(**kwargs)
 
     def to_sdf(self, version: str | None = None) -> ET.Element:
         from ..elements.frame import Frame
         from ..elements.geometry import Geometry
         from ..elements.pose import Pose
         from ..elements.surface import Surface
-        if self.__version__ is None and version is not None:
-            self.__version__ = version
-        elif version is not None and version != self.__version__:
-            return self.to_version(version).to_sdf()
-        version = self.__version__ or version
+        if self.sdfversion is None and version is not None:
+            self.sdfversion = version
+        elif version is not None and version != self.sdfversion:
+            return self.to_version(str(version)).to_sdf()
         el = ET.Element("collision")
         if self.auto_inertia_params is not None:
             _c_tmp = ET.Element("auto_inertia_params")
@@ -218,10 +167,7 @@ class Collision(BaseModel):
             _c_tmp.text = str(self.density)
             el.append(_c_tmp)
         for item in (self.frames or []):
-            if hasattr(item, 'to_sdf'):
-                _child_res = item.to_sdf(version)
-            else:
-                _child_res = str(item)
+            _child_res = item.to_sdf(version)
             if isinstance(_child_res, str):
                 _item_el = ET.Element('frame')
                 _item_el.text = _child_res
@@ -231,10 +177,7 @@ class Collision(BaseModel):
         if self.geometry is None:
             self.geometry = Geometry(sdf_version=version)
         if self.geometry is not None:
-            if hasattr(self.geometry, 'to_sdf'):
-                _child_res = self.geometry.to_sdf(version)
-            else:
-                _child_res = str(self.geometry)
+            _child_res = self.geometry.to_sdf(version)
             if isinstance(_child_res, str):
                 _item_el = ET.Element('geometry')
                 _item_el.text = _child_res
@@ -254,10 +197,7 @@ class Collision(BaseModel):
         if self.name is not None:
             el.set("name", self.name)
         if self.origin is not None:
-            if hasattr(self.origin, 'to_sdf'):
-                _child_res = self.origin.to_sdf(version)
-            else:
-                _child_res = str(self.origin)
+            _child_res = self.origin.to_sdf(version)
             if isinstance(_child_res, str):
                 _item_el = ET.Element('origin')
                 _item_el.text = _child_res
@@ -265,10 +205,7 @@ class Collision(BaseModel):
                 _item_el = _child_res
             el.append(_item_el)
         if self.pose is not None:
-            if hasattr(self.pose, 'to_sdf'):
-                _child_res = self.pose.to_sdf(version)
-            else:
-                _child_res = str(self.pose)
+            _child_res = self.pose.to_sdf(version)
             if isinstance(_child_res, str):
                 _item_el = ET.Element('pose')
                 _item_el.text = _child_res
@@ -276,10 +213,7 @@ class Collision(BaseModel):
                 _item_el = _child_res
             el.append(_item_el)
         if self.surface is not None:
-            if hasattr(self.surface, 'to_sdf'):
-                _child_res = self.surface.to_sdf(version)
-            else:
-                _child_res = str(self.surface)
+            _child_res = self.surface.to_sdf(version)
             if isinstance(_child_res, str):
                 _item_el = ET.Element('surface')
                 _item_el.text = _child_res

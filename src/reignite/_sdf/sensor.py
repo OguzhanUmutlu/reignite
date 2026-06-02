@@ -1,14 +1,15 @@
 ### THIS FILE WAS AUTO-GENERATED ###
 from __future__ import annotations
 
-import typing
 from xml.etree import ElementTree as ET
 
+from ..utils.utils import _parse_double
+import typing
 from typing import List
 
 from ..utils.model import BaseModel
 from ..utils.errors import SDFError
-from ..utils.pose import Pose as _SDFPose, _PoseT, _pose
+from ..utils.pose import Pose as _PoseT, _pose
 from ..utils.version import cmp_version
 
 if typing.TYPE_CHECKING:
@@ -33,39 +34,6 @@ if typing.TYPE_CHECKING:
     from ..elements.sonar import Sonar
     from ..elements.transceiver import Transceiver
 
-
-import math
-
-def _parse_int32(raw: str) -> int | SDFError:
-    try:
-        v = int(raw)
-        if not (-2147483648 <= v <= 2147483647):
-            return SDFError(f"int32 out of range: {v}")
-        return v
-    except ValueError:
-        return SDFError(f"Invalid int32: {raw}")
-
-
-def _parse_uint32(raw: str) -> int | SDFError:
-    try:
-        v = int(raw)
-        if not (0 <= v <= 4294967295):
-            return SDFError(f"uint32 out of range: {v}")
-        return v
-    except ValueError:
-        return SDFError(f"Invalid uint32: {raw}")
-
-
-def _parse_double(raw: str) -> float | SDFError:
-    try:
-        v = float(raw)
-        if not math.isfinite(v) or abs(v) > math.inf:
-            return SDFError(f"double out of range: {raw}")
-        return v
-    except ValueError:
-        return SDFError(f"Invalid double: {raw}")
-
-
 def _parse_pose(raw: str) -> _PoseT | SDFError:
     try:
         return _pose(raw)
@@ -73,28 +41,22 @@ def _parse_pose(raw: str) -> _PoseT | SDFError:
         return SDFError(str(e))
 
 
+# noinspection PyUnusedImports
 class Sensor(BaseModel):
     class Origin(BaseModel):
-        def __init__(self, sdf_version: str | None = None, pose: _PoseT = None):
+        def __init__(self, sdf_version: str | None = None, pose: _PoseT | None = None):
             super().__init__(sdf_version)
-            if pose is None:
-                pose = _pose("0 0 0 0 0 0")
-            else:
-                pose = _pose(pose)
-            self.pose = pose
+            self.pose = _pose("0 0 0 0 0 0") if pose is None else _pose(pose)
 
         def to_version(self, target_version: str) -> "Sensor.Origin":
-            kwargs = {"sdf_version": target_version}
-            kwargs["pose"] = self.pose
-            new_obj = self.__class__(**kwargs)
-            return new_obj
+            kwargs: dict = {"sdf_version": target_version, "pose": self.pose}
+            return self.__class__(**kwargs)
 
         def to_sdf(self, version: str | None = None) -> ET.Element:
-            if self.__version__ is None and version is not None:
-                self.__version__ = version
-            elif version is not None and version != self.__version__:
-                return self.to_version(version).to_sdf()
-            version = self.__version__ or version
+            if self.sdfversion is None and version is not None:
+                self.sdfversion = version
+            elif version is not None and version != self.sdfversion:
+                return self.to_version(str(version)).to_sdf()
             el = ET.Element("origin")
             if self.pose is not None:
                 if cmp_version(version, "1.2") >= 0:
@@ -125,19 +87,19 @@ class Sensor(BaseModel):
         air_pressure: "AirPressure" = None,
         air_speed: "AirSpeed" = None,
         altimeter: "Altimeter" = None,
-        always_on: bool = False,
+        always_on: bool | None = False,
         camera: "Camera" = None,
         contact: "Contact" = None,
-        enable_metrics: bool = False,
+        enable_metrics: bool | None = False,
         force_torque: "ForceTorque" = None,
-        frame_id: str = "",
+        frame_id: str | None = "",
         frames: List["Frame"] = None,
         gps: "Gps" = None,
         imu: "Imu" = None,
         lidar: "Lidar" = None,
         logical_camera: "LogicalCamera" = None,
         magnetometer: "Magnetometer" = None,
-        name: str = "__default__",
+        name: str | None = "__default__",
         navsat: "Navsat" = None,
         origin: "Sensor.Origin" = None,
         plugins: List["Plugin"] = None,
@@ -146,29 +108,29 @@ class Sensor(BaseModel):
         rfid: "Rfid" = None,
         rfidtag: "Rfidtag" = None,
         sonar: "Sonar" = None,
-        topic: str = "__default",
+        topic: str | None = "__default",
         transceiver: "Transceiver" = None,
-        type: str = "__default__",
-        update_rate: float = 0,
-        visualize: bool = False
+        type: str | None = "__default__",
+        update_rate: float | None = 0,
+        visualize: bool | None = False
     ):
         super().__init__(sdf_version)
         self.air_pressure = air_pressure
         self.air_speed = air_speed
         self.altimeter = altimeter
-        self.always_on = always_on
+        self.always_on = always_on if always_on is not None else False
         self.camera = camera
         self.contact = contact
-        self.enable_metrics = enable_metrics
+        self.enable_metrics = enable_metrics if enable_metrics is not None else False
         self.force_torque = force_torque
-        self.frame_id = frame_id
+        self.frame_id = frame_id if frame_id is not None else ""
         self.frames = frames or []
         self.gps = gps
         self.imu = imu
         self.lidar = lidar
         self.logical_camera = logical_camera
         self.magnetometer = magnetometer
-        self.name = name
+        self.name = name if name is not None else "__default__"
         self.navsat = navsat
         self.origin = origin
         self.plugins = plugins or []
@@ -177,118 +139,118 @@ class Sensor(BaseModel):
         self.rfid = rfid
         self.rfidtag = rfidtag
         self.sonar = sonar
-        self.topic = topic
+        self.topic = topic if topic is not None else "__default"
         self.transceiver = transceiver
-        self.type = type
-        self.update_rate = update_rate
-        self.visualize = visualize
+        self.type = type if type is not None else "__default__"
+        self.update_rate = update_rate if update_rate is not None else 0
+        self.visualize = visualize if visualize is not None else False
         if self.air_pressure is not None and hasattr(self.air_pressure, 'to_version'):
-            if getattr(self.air_pressure, '__version__', None) is None:
-                self.air_pressure.__version__ = self.__version__
-            elif getattr(self.air_pressure, '__version__', None) != self.__version__ and self.__version__ is not None:
-                self.air_pressure = self.air_pressure.to_version(self.__version__)
+            if getattr(self.air_pressure, 'sdfversion', None) is None:
+                self.air_pressure.sdfversion = self.sdfversion
+            elif getattr(self.air_pressure, 'sdfversion', None) != self.sdfversion and self.sdfversion is not None:
+                self.air_pressure = self.air_pressure.to_version(self.sdfversion)
         if self.air_speed is not None and hasattr(self.air_speed, 'to_version'):
-            if getattr(self.air_speed, '__version__', None) is None:
-                self.air_speed.__version__ = self.__version__
-            elif getattr(self.air_speed, '__version__', None) != self.__version__ and self.__version__ is not None:
-                self.air_speed = self.air_speed.to_version(self.__version__)
+            if getattr(self.air_speed, 'sdfversion', None) is None:
+                self.air_speed.sdfversion = self.sdfversion
+            elif getattr(self.air_speed, 'sdfversion', None) != self.sdfversion and self.sdfversion is not None:
+                self.air_speed = self.air_speed.to_version(self.sdfversion)
         if self.altimeter is not None and hasattr(self.altimeter, 'to_version'):
-            if getattr(self.altimeter, '__version__', None) is None:
-                self.altimeter.__version__ = self.__version__
-            elif getattr(self.altimeter, '__version__', None) != self.__version__ and self.__version__ is not None:
-                self.altimeter = self.altimeter.to_version(self.__version__)
+            if getattr(self.altimeter, 'sdfversion', None) is None:
+                self.altimeter.sdfversion = self.sdfversion
+            elif getattr(self.altimeter, 'sdfversion', None) != self.sdfversion and self.sdfversion is not None:
+                self.altimeter = self.altimeter.to_version(self.sdfversion)
         if self.camera is not None and hasattr(self.camera, 'to_version'):
-            if getattr(self.camera, '__version__', None) is None:
-                self.camera.__version__ = self.__version__
-            elif getattr(self.camera, '__version__', None) != self.__version__ and self.__version__ is not None:
-                self.camera = self.camera.to_version(self.__version__)
+            if getattr(self.camera, 'sdfversion', None) is None:
+                self.camera.sdfversion = self.sdfversion
+            elif getattr(self.camera, 'sdfversion', None) != self.sdfversion and self.sdfversion is not None:
+                self.camera = self.camera.to_version(self.sdfversion)
         if self.contact is not None and hasattr(self.contact, 'to_version'):
-            if getattr(self.contact, '__version__', None) is None:
-                self.contact.__version__ = self.__version__
-            elif getattr(self.contact, '__version__', None) != self.__version__ and self.__version__ is not None:
-                self.contact = self.contact.to_version(self.__version__)
+            if getattr(self.contact, 'sdfversion', None) is None:
+                self.contact.sdfversion = self.sdfversion
+            elif getattr(self.contact, 'sdfversion', None) != self.sdfversion and self.sdfversion is not None:
+                self.contact = self.contact.to_version(self.sdfversion)
         if self.force_torque is not None and hasattr(self.force_torque, 'to_version'):
-            if getattr(self.force_torque, '__version__', None) is None:
-                self.force_torque.__version__ = self.__version__
-            elif getattr(self.force_torque, '__version__', None) != self.__version__ and self.__version__ is not None:
-                self.force_torque = self.force_torque.to_version(self.__version__)
+            if getattr(self.force_torque, 'sdfversion', None) is None:
+                self.force_torque.sdfversion = self.sdfversion
+            elif getattr(self.force_torque, 'sdfversion', None) != self.sdfversion and self.sdfversion is not None:
+                self.force_torque = self.force_torque.to_version(self.sdfversion)
         for _i, _c in enumerate(self.frames):
             if not hasattr(_c, 'to_version'): continue
-            if getattr(_c, '__version__', None) is None:
-                _c.__version__ = self.__version__
-            elif getattr(_c, '__version__', None) != self.__version__ and self.__version__ is not None:
-                self.frames[_i] = _c.to_version(self.__version__)
+            if getattr(_c, 'sdfversion', None) is None:
+                _c.sdfversion = self.sdfversion
+            elif getattr(_c, 'sdfversion', None) != self.sdfversion and self.sdfversion is not None:
+                self.frames[_i] = _c.to_version(self.sdfversion)
         if self.gps is not None and hasattr(self.gps, 'to_version'):
-            if getattr(self.gps, '__version__', None) is None:
-                self.gps.__version__ = self.__version__
-            elif getattr(self.gps, '__version__', None) != self.__version__ and self.__version__ is not None:
-                self.gps = self.gps.to_version(self.__version__)
+            if getattr(self.gps, 'sdfversion', None) is None:
+                self.gps.sdfversion = self.sdfversion
+            elif getattr(self.gps, 'sdfversion', None) != self.sdfversion and self.sdfversion is not None:
+                self.gps = self.gps.to_version(self.sdfversion)
         if self.imu is not None and hasattr(self.imu, 'to_version'):
-            if getattr(self.imu, '__version__', None) is None:
-                self.imu.__version__ = self.__version__
-            elif getattr(self.imu, '__version__', None) != self.__version__ and self.__version__ is not None:
-                self.imu = self.imu.to_version(self.__version__)
+            if getattr(self.imu, 'sdfversion', None) is None:
+                self.imu.sdfversion = self.sdfversion
+            elif getattr(self.imu, 'sdfversion', None) != self.sdfversion and self.sdfversion is not None:
+                self.imu = self.imu.to_version(self.sdfversion)
         if self.lidar is not None and hasattr(self.lidar, 'to_version'):
-            if getattr(self.lidar, '__version__', None) is None:
-                self.lidar.__version__ = self.__version__
-            elif getattr(self.lidar, '__version__', None) != self.__version__ and self.__version__ is not None:
-                self.lidar = self.lidar.to_version(self.__version__)
+            if getattr(self.lidar, 'sdfversion', None) is None:
+                self.lidar.sdfversion = self.sdfversion
+            elif getattr(self.lidar, 'sdfversion', None) != self.sdfversion and self.sdfversion is not None:
+                self.lidar = self.lidar.to_version(self.sdfversion)
         if self.logical_camera is not None and hasattr(self.logical_camera, 'to_version'):
-            if getattr(self.logical_camera, '__version__', None) is None:
-                self.logical_camera.__version__ = self.__version__
-            elif getattr(self.logical_camera, '__version__', None) != self.__version__ and self.__version__ is not None:
-                self.logical_camera = self.logical_camera.to_version(self.__version__)
+            if getattr(self.logical_camera, 'sdfversion', None) is None:
+                self.logical_camera.sdfversion = self.sdfversion
+            elif getattr(self.logical_camera, 'sdfversion', None) != self.sdfversion and self.sdfversion is not None:
+                self.logical_camera = self.logical_camera.to_version(self.sdfversion)
         if self.magnetometer is not None and hasattr(self.magnetometer, 'to_version'):
-            if getattr(self.magnetometer, '__version__', None) is None:
-                self.magnetometer.__version__ = self.__version__
-            elif getattr(self.magnetometer, '__version__', None) != self.__version__ and self.__version__ is not None:
-                self.magnetometer = self.magnetometer.to_version(self.__version__)
+            if getattr(self.magnetometer, 'sdfversion', None) is None:
+                self.magnetometer.sdfversion = self.sdfversion
+            elif getattr(self.magnetometer, 'sdfversion', None) != self.sdfversion and self.sdfversion is not None:
+                self.magnetometer = self.magnetometer.to_version(self.sdfversion)
         if self.navsat is not None and hasattr(self.navsat, 'to_version'):
-            if getattr(self.navsat, '__version__', None) is None:
-                self.navsat.__version__ = self.__version__
-            elif getattr(self.navsat, '__version__', None) != self.__version__ and self.__version__ is not None:
-                self.navsat = self.navsat.to_version(self.__version__)
+            if getattr(self.navsat, 'sdfversion', None) is None:
+                self.navsat.sdfversion = self.sdfversion
+            elif getattr(self.navsat, 'sdfversion', None) != self.sdfversion and self.sdfversion is not None:
+                self.navsat = self.navsat.to_version(self.sdfversion)
         if self.origin is not None and hasattr(self.origin, 'to_version'):
-            if getattr(self.origin, '__version__', None) is None:
-                self.origin.__version__ = self.__version__
-            elif getattr(self.origin, '__version__', None) != self.__version__ and self.__version__ is not None:
-                self.origin = self.origin.to_version(self.__version__)
+            if getattr(self.origin, 'sdfversion', None) is None:
+                self.origin.sdfversion = self.sdfversion
+            elif getattr(self.origin, 'sdfversion', None) != self.sdfversion and self.sdfversion is not None:
+                self.origin = self.origin.to_version(self.sdfversion)
         for _i, _c in enumerate(self.plugins):
             if not hasattr(_c, 'to_version'): continue
-            if getattr(_c, '__version__', None) is None:
-                _c.__version__ = self.__version__
-            elif getattr(_c, '__version__', None) != self.__version__ and self.__version__ is not None:
-                self.plugins[_i] = _c.to_version(self.__version__)
+            if getattr(_c, 'sdfversion', None) is None:
+                _c.sdfversion = self.sdfversion
+            elif getattr(_c, 'sdfversion', None) != self.sdfversion and self.sdfversion is not None:
+                self.plugins[_i] = _c.to_version(self.sdfversion)
         if self.pose is not None and hasattr(self.pose, 'to_version'):
-            if getattr(self.pose, '__version__', None) is None:
-                self.pose.__version__ = self.__version__
-            elif getattr(self.pose, '__version__', None) != self.__version__ and self.__version__ is not None:
-                self.pose = self.pose.to_version(self.__version__)
+            if getattr(self.pose, 'sdfversion', None) is None:
+                self.pose.sdfversion = self.sdfversion
+            elif getattr(self.pose, 'sdfversion', None) != self.sdfversion and self.sdfversion is not None:
+                self.pose = self.pose.to_version(self.sdfversion)
         if self.ray is not None and hasattr(self.ray, 'to_version'):
-            if getattr(self.ray, '__version__', None) is None:
-                self.ray.__version__ = self.__version__
-            elif getattr(self.ray, '__version__', None) != self.__version__ and self.__version__ is not None:
-                self.ray = self.ray.to_version(self.__version__)
+            if getattr(self.ray, 'sdfversion', None) is None:
+                self.ray.sdfversion = self.sdfversion
+            elif getattr(self.ray, 'sdfversion', None) != self.sdfversion and self.sdfversion is not None:
+                self.ray = self.ray.to_version(self.sdfversion)
         if self.rfid is not None and hasattr(self.rfid, 'to_version'):
-            if getattr(self.rfid, '__version__', None) is None:
-                self.rfid.__version__ = self.__version__
-            elif getattr(self.rfid, '__version__', None) != self.__version__ and self.__version__ is not None:
-                self.rfid = self.rfid.to_version(self.__version__)
+            if getattr(self.rfid, 'sdfversion', None) is None:
+                self.rfid.sdfversion = self.sdfversion
+            elif getattr(self.rfid, 'sdfversion', None) != self.sdfversion and self.sdfversion is not None:
+                self.rfid = self.rfid.to_version(self.sdfversion)
         if self.rfidtag is not None and hasattr(self.rfidtag, 'to_version'):
-            if getattr(self.rfidtag, '__version__', None) is None:
-                self.rfidtag.__version__ = self.__version__
-            elif getattr(self.rfidtag, '__version__', None) != self.__version__ and self.__version__ is not None:
-                self.rfidtag = self.rfidtag.to_version(self.__version__)
+            if getattr(self.rfidtag, 'sdfversion', None) is None:
+                self.rfidtag.sdfversion = self.sdfversion
+            elif getattr(self.rfidtag, 'sdfversion', None) != self.sdfversion and self.sdfversion is not None:
+                self.rfidtag = self.rfidtag.to_version(self.sdfversion)
         if self.sonar is not None and hasattr(self.sonar, 'to_version'):
-            if getattr(self.sonar, '__version__', None) is None:
-                self.sonar.__version__ = self.__version__
-            elif getattr(self.sonar, '__version__', None) != self.__version__ and self.__version__ is not None:
-                self.sonar = self.sonar.to_version(self.__version__)
+            if getattr(self.sonar, 'sdfversion', None) is None:
+                self.sonar.sdfversion = self.sdfversion
+            elif getattr(self.sonar, 'sdfversion', None) != self.sdfversion and self.sdfversion is not None:
+                self.sonar = self.sonar.to_version(self.sdfversion)
         if self.transceiver is not None and hasattr(self.transceiver, 'to_version'):
-            if getattr(self.transceiver, '__version__', None) is None:
-                self.transceiver.__version__ = self.__version__
-            elif getattr(self.transceiver, '__version__', None) != self.__version__ and self.__version__ is not None:
-                self.transceiver = self.transceiver.to_version(self.__version__)
+            if getattr(self.transceiver, 'sdfversion', None) is None:
+                self.transceiver.sdfversion = self.sdfversion
+            elif getattr(self.transceiver, 'sdfversion', None) != self.sdfversion and self.sdfversion is not None:
+                self.transceiver = self.transceiver.to_version(self.sdfversion)
 
     def add_frame(self, *items: "Frame"):
         if self.frames is None:
@@ -363,38 +325,8 @@ class Sensor(BaseModel):
             raise ValueError(f"'update_rate' is not supported in SDF version {target_version} (removed in 1.2)")
         if self.visualize is not None and cmp_version(target_version, "1.2") >= 0:
             raise ValueError(f"'visualize' is not supported in SDF version {target_version} (removed in 1.2)")
-        kwargs = {"sdf_version": target_version}
-        kwargs["air_pressure"] = self.air_pressure.to_version(target_version) if hasattr(self.air_pressure, "to_version") else self.air_pressure
-        kwargs["air_speed"] = self.air_speed.to_version(target_version) if hasattr(self.air_speed, "to_version") else self.air_speed
-        kwargs["altimeter"] = self.altimeter.to_version(target_version) if hasattr(self.altimeter, "to_version") else self.altimeter
-        kwargs["always_on"] = self.always_on
-        kwargs["camera"] = self.camera.to_version(target_version) if hasattr(self.camera, "to_version") else self.camera
-        kwargs["contact"] = self.contact.to_version(target_version) if hasattr(self.contact, "to_version") else self.contact
-        kwargs["enable_metrics"] = self.enable_metrics
-        kwargs["force_torque"] = self.force_torque.to_version(target_version) if hasattr(self.force_torque, "to_version") else self.force_torque
-        kwargs["frame_id"] = self.frame_id
-        kwargs["frames"] = [c.to_version(target_version) if hasattr(c, "to_version") else c for c in (self.frames or [])]
-        kwargs["gps"] = self.gps.to_version(target_version) if hasattr(self.gps, "to_version") else self.gps
-        kwargs["imu"] = self.imu.to_version(target_version) if hasattr(self.imu, "to_version") else self.imu
-        kwargs["lidar"] = self.lidar.to_version(target_version) if hasattr(self.lidar, "to_version") else self.lidar
-        kwargs["logical_camera"] = self.logical_camera.to_version(target_version) if hasattr(self.logical_camera, "to_version") else self.logical_camera
-        kwargs["magnetometer"] = self.magnetometer.to_version(target_version) if hasattr(self.magnetometer, "to_version") else self.magnetometer
-        kwargs["name"] = self.name
-        kwargs["navsat"] = self.navsat.to_version(target_version) if hasattr(self.navsat, "to_version") else self.navsat
-        kwargs["origin"] = self.origin.to_version(target_version) if hasattr(self.origin, "to_version") else self.origin
-        kwargs["plugins"] = [c.to_version(target_version) if hasattr(c, "to_version") else c for c in (self.plugins or [])]
-        kwargs["pose"] = self.pose.to_version(target_version) if hasattr(self.pose, "to_version") else self.pose
-        kwargs["ray"] = self.ray.to_version(target_version) if hasattr(self.ray, "to_version") else self.ray
-        kwargs["rfid"] = self.rfid.to_version(target_version) if hasattr(self.rfid, "to_version") else self.rfid
-        kwargs["rfidtag"] = self.rfidtag.to_version(target_version) if hasattr(self.rfidtag, "to_version") else self.rfidtag
-        kwargs["sonar"] = self.sonar.to_version(target_version) if hasattr(self.sonar, "to_version") else self.sonar
-        kwargs["topic"] = self.topic
-        kwargs["transceiver"] = self.transceiver.to_version(target_version) if hasattr(self.transceiver, "to_version") else self.transceiver
-        kwargs["type"] = self.type
-        kwargs["update_rate"] = self.update_rate
-        kwargs["visualize"] = self.visualize
-        new_obj = self.__class__(**kwargs)
-        return new_obj
+        kwargs: dict = {"sdf_version": target_version, "air_pressure": self.air_pressure.to_version(target_version) if self.air_pressure is not None and hasattr(self.air_pressure, "to_version") else self.air_pressure, "air_speed": self.air_speed.to_version(target_version) if self.air_speed is not None and hasattr(self.air_speed, "to_version") else self.air_speed, "altimeter": self.altimeter.to_version(target_version) if self.altimeter is not None and hasattr(self.altimeter, "to_version") else self.altimeter, "always_on": self.always_on, "camera": self.camera.to_version(target_version) if self.camera is not None and hasattr(self.camera, "to_version") else self.camera, "contact": self.contact.to_version(target_version) if self.contact is not None and hasattr(self.contact, "to_version") else self.contact, "enable_metrics": self.enable_metrics, "force_torque": self.force_torque.to_version(target_version) if self.force_torque is not None and hasattr(self.force_torque, "to_version") else self.force_torque, "frame_id": self.frame_id, "frames": [c.to_version(target_version) if hasattr(c, "to_version") else c for c in (self.frames or [])], "gps": self.gps.to_version(target_version) if self.gps is not None and hasattr(self.gps, "to_version") else self.gps, "imu": self.imu.to_version(target_version) if self.imu is not None and hasattr(self.imu, "to_version") else self.imu, "lidar": self.lidar.to_version(target_version) if self.lidar is not None and hasattr(self.lidar, "to_version") else self.lidar, "logical_camera": self.logical_camera.to_version(target_version) if self.logical_camera is not None and hasattr(self.logical_camera, "to_version") else self.logical_camera, "magnetometer": self.magnetometer.to_version(target_version) if self.magnetometer is not None and hasattr(self.magnetometer, "to_version") else self.magnetometer, "name": self.name, "navsat": self.navsat.to_version(target_version) if self.navsat is not None and hasattr(self.navsat, "to_version") else self.navsat, "origin": self.origin.to_version(target_version) if self.origin is not None and hasattr(self.origin, "to_version") else self.origin, "plugins": [c.to_version(target_version) if hasattr(c, "to_version") else c for c in (self.plugins or [])], "pose": self.pose.to_version(target_version) if self.pose is not None and hasattr(self.pose, "to_version") else self.pose, "ray": self.ray.to_version(target_version) if self.ray is not None and hasattr(self.ray, "to_version") else self.ray, "rfid": self.rfid.to_version(target_version) if self.rfid is not None and hasattr(self.rfid, "to_version") else self.rfid, "rfidtag": self.rfidtag.to_version(target_version) if self.rfidtag is not None and hasattr(self.rfidtag, "to_version") else self.rfidtag, "sonar": self.sonar.to_version(target_version) if self.sonar is not None and hasattr(self.sonar, "to_version") else self.sonar, "topic": self.topic, "transceiver": self.transceiver.to_version(target_version) if self.transceiver is not None and hasattr(self.transceiver, "to_version") else self.transceiver, "type": self.type, "update_rate": self.update_rate, "visualize": self.visualize}
+        return self.__class__(**kwargs)
 
     def to_sdf(self, version: str | None = None) -> ET.Element:
         from ..elements.air_pressure import AirPressure
@@ -417,17 +349,13 @@ class Sensor(BaseModel):
         from ..elements.rfidtag import Rfidtag
         from ..elements.sonar import Sonar
         from ..elements.transceiver import Transceiver
-        if self.__version__ is None and version is not None:
-            self.__version__ = version
-        elif version is not None and version != self.__version__:
-            return self.to_version(version).to_sdf()
-        version = self.__version__ or version
+        if self.sdfversion is None and version is not None:
+            self.sdfversion = version
+        elif version is not None and version != self.sdfversion:
+            return self.to_version(str(version)).to_sdf()
         el = ET.Element("sensor")
         if self.air_pressure is not None:
-            if hasattr(self.air_pressure, 'to_sdf'):
-                _child_res = self.air_pressure.to_sdf(version)
-            else:
-                _child_res = str(self.air_pressure)
+            _child_res = self.air_pressure.to_sdf(version)
             if isinstance(_child_res, str):
                 _item_el = ET.Element('air_pressure')
                 _item_el.text = _child_res
@@ -435,10 +363,7 @@ class Sensor(BaseModel):
                 _item_el = _child_res
             el.append(_item_el)
         if self.air_speed is not None:
-            if hasattr(self.air_speed, 'to_sdf'):
-                _child_res = self.air_speed.to_sdf(version)
-            else:
-                _child_res = str(self.air_speed)
+            _child_res = self.air_speed.to_sdf(version)
             if isinstance(_child_res, str):
                 _item_el = ET.Element('air_speed')
                 _item_el.text = _child_res
@@ -446,10 +371,7 @@ class Sensor(BaseModel):
                 _item_el = _child_res
             el.append(_item_el)
         if self.altimeter is not None:
-            if hasattr(self.altimeter, 'to_sdf'):
-                _child_res = self.altimeter.to_sdf(version)
-            else:
-                _child_res = str(self.altimeter)
+            _child_res = self.altimeter.to_sdf(version)
             if isinstance(_child_res, str):
                 _item_el = ET.Element('altimeter')
                 _item_el.text = _child_res
@@ -459,10 +381,7 @@ class Sensor(BaseModel):
         if self.always_on is not None:
             el.set("always_on", str(self.always_on).lower())
         if self.camera is not None:
-            if hasattr(self.camera, 'to_sdf'):
-                _child_res = self.camera.to_sdf(version)
-            else:
-                _child_res = str(self.camera)
+            _child_res = self.camera.to_sdf(version)
             if isinstance(_child_res, str):
                 _item_el = ET.Element('camera')
                 _item_el.text = _child_res
@@ -470,10 +389,7 @@ class Sensor(BaseModel):
                 _item_el = _child_res
             el.append(_item_el)
         if self.contact is not None:
-            if hasattr(self.contact, 'to_sdf'):
-                _child_res = self.contact.to_sdf(version)
-            else:
-                _child_res = str(self.contact)
+            _child_res = self.contact.to_sdf(version)
             if isinstance(_child_res, str):
                 _item_el = ET.Element('contact')
                 _item_el.text = _child_res
@@ -485,10 +401,7 @@ class Sensor(BaseModel):
             _c_tmp.text = str(self.enable_metrics).lower()
             el.append(_c_tmp)
         if self.force_torque is not None:
-            if hasattr(self.force_torque, 'to_sdf'):
-                _child_res = self.force_torque.to_sdf(version)
-            else:
-                _child_res = str(self.force_torque)
+            _child_res = self.force_torque.to_sdf(version)
             if isinstance(_child_res, str):
                 _item_el = ET.Element('force_torque')
                 _item_el.text = _child_res
@@ -500,10 +413,7 @@ class Sensor(BaseModel):
             _c_tmp.text = self.frame_id
             el.append(_c_tmp)
         for item in (self.frames or []):
-            if hasattr(item, 'to_sdf'):
-                _child_res = item.to_sdf(version)
-            else:
-                _child_res = str(item)
+            _child_res = item.to_sdf(version)
             if isinstance(_child_res, str):
                 _item_el = ET.Element('frame')
                 _item_el.text = _child_res
@@ -511,10 +421,7 @@ class Sensor(BaseModel):
                 _item_el = _child_res
             el.append(_item_el)
         if self.gps is not None:
-            if hasattr(self.gps, 'to_sdf'):
-                _child_res = self.gps.to_sdf(version)
-            else:
-                _child_res = str(self.gps)
+            _child_res = self.gps.to_sdf(version)
             if isinstance(_child_res, str):
                 _item_el = ET.Element('gps')
                 _item_el.text = _child_res
@@ -522,10 +429,7 @@ class Sensor(BaseModel):
                 _item_el = _child_res
             el.append(_item_el)
         if self.imu is not None:
-            if hasattr(self.imu, 'to_sdf'):
-                _child_res = self.imu.to_sdf(version)
-            else:
-                _child_res = str(self.imu)
+            _child_res = self.imu.to_sdf(version)
             if isinstance(_child_res, str):
                 _item_el = ET.Element('imu')
                 _item_el.text = _child_res
@@ -533,10 +437,7 @@ class Sensor(BaseModel):
                 _item_el = _child_res
             el.append(_item_el)
         if self.lidar is not None:
-            if hasattr(self.lidar, 'to_sdf'):
-                _child_res = self.lidar.to_sdf(version)
-            else:
-                _child_res = str(self.lidar)
+            _child_res = self.lidar.to_sdf(version)
             if isinstance(_child_res, str):
                 _item_el = ET.Element('lidar')
                 _item_el.text = _child_res
@@ -544,10 +445,7 @@ class Sensor(BaseModel):
                 _item_el = _child_res
             el.append(_item_el)
         if self.logical_camera is not None:
-            if hasattr(self.logical_camera, 'to_sdf'):
-                _child_res = self.logical_camera.to_sdf(version)
-            else:
-                _child_res = str(self.logical_camera)
+            _child_res = self.logical_camera.to_sdf(version)
             if isinstance(_child_res, str):
                 _item_el = ET.Element('logical_camera')
                 _item_el.text = _child_res
@@ -555,10 +453,7 @@ class Sensor(BaseModel):
                 _item_el = _child_res
             el.append(_item_el)
         if self.magnetometer is not None:
-            if hasattr(self.magnetometer, 'to_sdf'):
-                _child_res = self.magnetometer.to_sdf(version)
-            else:
-                _child_res = str(self.magnetometer)
+            _child_res = self.magnetometer.to_sdf(version)
             if isinstance(_child_res, str):
                 _item_el = ET.Element('magnetometer')
                 _item_el.text = _child_res
@@ -568,10 +463,7 @@ class Sensor(BaseModel):
         if self.name is not None:
             el.set("name", self.name)
         if self.navsat is not None:
-            if hasattr(self.navsat, 'to_sdf'):
-                _child_res = self.navsat.to_sdf(version)
-            else:
-                _child_res = str(self.navsat)
+            _child_res = self.navsat.to_sdf(version)
             if isinstance(_child_res, str):
                 _item_el = ET.Element('navsat')
                 _item_el.text = _child_res
@@ -579,10 +471,7 @@ class Sensor(BaseModel):
                 _item_el = _child_res
             el.append(_item_el)
         if self.origin is not None:
-            if hasattr(self.origin, 'to_sdf'):
-                _child_res = self.origin.to_sdf(version)
-            else:
-                _child_res = str(self.origin)
+            _child_res = self.origin.to_sdf(version)
             if isinstance(_child_res, str):
                 _item_el = ET.Element('origin')
                 _item_el.text = _child_res
@@ -590,10 +479,7 @@ class Sensor(BaseModel):
                 _item_el = _child_res
             el.append(_item_el)
         for item in (self.plugins or []):
-            if hasattr(item, 'to_sdf'):
-                _child_res = item.to_sdf(version)
-            else:
-                _child_res = str(item)
+            _child_res = item.to_sdf(version)
             if isinstance(_child_res, str):
                 _item_el = ET.Element('plugin')
                 _item_el.text = _child_res
@@ -601,10 +487,7 @@ class Sensor(BaseModel):
                 _item_el = _child_res
             el.append(_item_el)
         if self.pose is not None:
-            if hasattr(self.pose, 'to_sdf'):
-                _child_res = self.pose.to_sdf(version)
-            else:
-                _child_res = str(self.pose)
+            _child_res = self.pose.to_sdf(version)
             if isinstance(_child_res, str):
                 _item_el = ET.Element('pose')
                 _item_el.text = _child_res
@@ -612,10 +495,7 @@ class Sensor(BaseModel):
                 _item_el = _child_res
             el.append(_item_el)
         if self.ray is not None:
-            if hasattr(self.ray, 'to_sdf'):
-                _child_res = self.ray.to_sdf(version)
-            else:
-                _child_res = str(self.ray)
+            _child_res = self.ray.to_sdf(version)
             if isinstance(_child_res, str):
                 _item_el = ET.Element('ray')
                 _item_el.text = _child_res
@@ -623,10 +503,7 @@ class Sensor(BaseModel):
                 _item_el = _child_res
             el.append(_item_el)
         if self.rfid is not None:
-            if hasattr(self.rfid, 'to_sdf'):
-                _child_res = self.rfid.to_sdf(version)
-            else:
-                _child_res = str(self.rfid)
+            _child_res = self.rfid.to_sdf(version)
             if isinstance(_child_res, str):
                 _item_el = ET.Element('rfid')
                 _item_el.text = _child_res
@@ -634,10 +511,7 @@ class Sensor(BaseModel):
                 _item_el = _child_res
             el.append(_item_el)
         if self.rfidtag is not None:
-            if hasattr(self.rfidtag, 'to_sdf'):
-                _child_res = self.rfidtag.to_sdf(version)
-            else:
-                _child_res = str(self.rfidtag)
+            _child_res = self.rfidtag.to_sdf(version)
             if isinstance(_child_res, str):
                 _item_el = ET.Element('rfidtag')
                 _item_el.text = _child_res
@@ -645,10 +519,7 @@ class Sensor(BaseModel):
                 _item_el = _child_res
             el.append(_item_el)
         if self.sonar is not None:
-            if hasattr(self.sonar, 'to_sdf'):
-                _child_res = self.sonar.to_sdf(version)
-            else:
-                _child_res = str(self.sonar)
+            _child_res = self.sonar.to_sdf(version)
             if isinstance(_child_res, str):
                 _item_el = ET.Element('sonar')
                 _item_el.text = _child_res
@@ -660,10 +531,7 @@ class Sensor(BaseModel):
             _c_tmp.text = self.topic
             el.append(_c_tmp)
         if self.transceiver is not None:
-            if hasattr(self.transceiver, 'to_sdf'):
-                _child_res = self.transceiver.to_sdf(version)
-            else:
-                _child_res = str(self.transceiver)
+            _child_res = self.transceiver.to_sdf(version)
             if isinstance(_child_res, str):
                 _item_el = ET.Element('transceiver')
                 _item_el.text = _child_res

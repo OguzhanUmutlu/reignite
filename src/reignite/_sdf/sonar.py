@@ -1,79 +1,41 @@
 ### THIS FILE WAS AUTO-GENERATED ###
 from __future__ import annotations
 
-import typing
 from xml.etree import ElementTree as ET
 
+from ..utils.utils import _parse_double
 from ..utils.model import BaseModel
 from ..utils.errors import SDFError
 from ..utils.version import cmp_version
 
 
-import math
-
-def _parse_int32(raw: str) -> int | SDFError:
-    try:
-        v = int(raw)
-        if not (-2147483648 <= v <= 2147483647):
-            return SDFError(f"int32 out of range: {v}")
-        return v
-    except ValueError:
-        return SDFError(f"Invalid int32: {raw}")
-
-
-def _parse_uint32(raw: str) -> int | SDFError:
-    try:
-        v = int(raw)
-        if not (0 <= v <= 4294967295):
-            return SDFError(f"uint32 out of range: {v}")
-        return v
-    except ValueError:
-        return SDFError(f"Invalid uint32: {raw}")
-
-
-def _parse_double(raw: str) -> float | SDFError:
-    try:
-        v = float(raw)
-        if not math.isfinite(v) or abs(v) > math.inf:
-            return SDFError(f"double out of range: {raw}")
-        return v
-    except ValueError:
-        return SDFError(f"Invalid double: {raw}")
-
-
-
+# noinspection PyUnusedImports
 class Sonar(BaseModel):
     def __init__(
         self,
         sdf_version: str | None = None,
-        geometry: str = "cone",
-        max: float = 1.0,
-        min: float = 0,
-        radius: float = 0.5
+        geometry: str | None = "cone",
+        max: float | None = 1.0,
+        min: float | None = 0,
+        radius: float | None = 0.5
     ):
         super().__init__(sdf_version)
-        self.geometry = geometry
-        self.max = max
-        self.min = min
-        self.radius = radius
+        self.geometry = geometry if geometry is not None else "cone"
+        self.max = max if max is not None else 1.0
+        self.min = min if min is not None else 0
+        self.radius = radius if radius is not None else 0.5
 
     def to_version(self, target_version: str) -> "Sonar":
         if self.geometry is not None and cmp_version(target_version, "1.6") < 0:
             raise ValueError(f"'geometry' is not supported in SDF version {target_version} (added in 1.6)")
-        kwargs = {"sdf_version": target_version}
-        kwargs["geometry"] = self.geometry
-        kwargs["max"] = self.max
-        kwargs["min"] = self.min
-        kwargs["radius"] = self.radius
-        new_obj = self.__class__(**kwargs)
-        return new_obj
+        kwargs: dict = {"sdf_version": target_version, "geometry": self.geometry, "max": self.max, "min": self.min, "radius": self.radius}
+        return self.__class__(**kwargs)
 
     def to_sdf(self, version: str | None = None) -> ET.Element:
-        if self.__version__ is None and version is not None:
-            self.__version__ = version
-        elif version is not None and version != self.__version__:
-            return self.to_version(version).to_sdf()
-        version = self.__version__ or version
+        if self.sdfversion is None and version is not None:
+            self.sdfversion = version
+        elif version is not None and version != self.sdfversion:
+            return self.to_version(str(version)).to_sdf()
         el = ET.Element("sonar")
         if self.geometry is not None:
             _c_tmp = ET.Element("geometry")

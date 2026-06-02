@@ -1,9 +1,10 @@
 ### THIS FILE WAS AUTO-GENERATED ###
 from __future__ import annotations
 
-import typing
 from xml.etree import ElementTree as ET
 
+from ..utils.utils import _parse_double
+import typing
 from typing import List
 
 from ..utils.model import BaseModel
@@ -15,42 +16,10 @@ if typing.TYPE_CHECKING:
     from ..elements.pose import Pose
 
 
-import math
-
-def _parse_int32(raw: str) -> int | SDFError:
-    try:
-        v = int(raw)
-        if not (-2147483648 <= v <= 2147483647):
-            return SDFError(f"int32 out of range: {v}")
-        return v
-    except ValueError:
-        return SDFError(f"Invalid int32: {raw}")
-
-
-def _parse_uint32(raw: str) -> int | SDFError:
-    try:
-        v = int(raw)
-        if not (0 <= v <= 4294967295):
-            return SDFError(f"uint32 out of range: {v}")
-        return v
-    except ValueError:
-        return SDFError(f"Invalid uint32: {raw}")
-
-
-def _parse_double(raw: str) -> float | SDFError:
-    try:
-        v = float(raw)
-        if not math.isfinite(v) or abs(v) > math.inf:
-            return SDFError(f"double out of range: {raw}")
-        return v
-    except ValueError:
-        return SDFError(f"Invalid double: {raw}")
-
-
-
+# noinspection PyUnusedImports
 class AudioSource(BaseModel):
     class Contact(BaseModel):
-        def __init__(self, sdf_version: str | None = None, collisions: List[str] = None):
+        def __init__(self, sdf_version: str | None = None, collisions: List[str] | None = None):
             super().__init__(sdf_version)
             self.collisions = collisions or []
 
@@ -60,17 +29,14 @@ class AudioSource(BaseModel):
             self.collisions.extend(items)
 
         def to_version(self, target_version: str) -> "AudioSource.Contact":
-            kwargs = {"sdf_version": target_version}
-            kwargs["collisions"] = self.collisions
-            new_obj = self.__class__(**kwargs)
-            return new_obj
+            kwargs: dict = {"sdf_version": target_version, "collisions": self.collisions}
+            return self.__class__(**kwargs)
 
         def to_sdf(self, version: str | None = None) -> ET.Element:
-            if self.__version__ is None and version is not None:
-                self.__version__ = version
-            elif version is not None and version != self.__version__:
-                return self.to_version(version).to_sdf()
-            version = self.__version__ or version
+            if self.sdfversion is None and version is not None:
+                self.sdfversion = version
+            elif version is not None and version != self.sdfversion:
+                return self.to_version(str(version)).to_sdf()
             el = ET.Element("contact")
             for _v in (self.collisions or []):
                 _c_tmp = ET.Element("collision")
@@ -94,36 +60,36 @@ class AudioSource(BaseModel):
         sdf_version: str | None = None,
         contact: "AudioSource.Contact" = None,
         frames: List["Frame"] = None,
-        gain: float = 1.0,
-        loop: bool = False,
-        pitch: float = 1.0,
+        gain: float | None = 1.0,
+        loop: bool | None = False,
+        pitch: float | None = 1.0,
         pose: "Pose" = None,
-        uri: str = "__default__"
+        uri: str | None = "__default__"
     ):
         super().__init__(sdf_version)
         self.contact = contact
         self.frames = frames or []
-        self.gain = gain
-        self.loop = loop
-        self.pitch = pitch
+        self.gain = gain if gain is not None else 1.0
+        self.loop = loop if loop is not None else False
+        self.pitch = pitch if pitch is not None else 1.0
         self.pose = pose
-        self.uri = uri
+        self.uri = uri if uri is not None else "__default__"
         if self.contact is not None and hasattr(self.contact, 'to_version'):
-            if getattr(self.contact, '__version__', None) is None:
-                self.contact.__version__ = self.__version__
-            elif getattr(self.contact, '__version__', None) != self.__version__ and self.__version__ is not None:
-                self.contact = self.contact.to_version(self.__version__)
+            if getattr(self.contact, 'sdfversion', None) is None:
+                self.contact.sdfversion = self.sdfversion
+            elif getattr(self.contact, 'sdfversion', None) != self.sdfversion and self.sdfversion is not None:
+                self.contact = self.contact.to_version(self.sdfversion)
         for _i, _c in enumerate(self.frames):
             if not hasattr(_c, 'to_version'): continue
-            if getattr(_c, '__version__', None) is None:
-                _c.__version__ = self.__version__
-            elif getattr(_c, '__version__', None) != self.__version__ and self.__version__ is not None:
-                self.frames[_i] = _c.to_version(self.__version__)
+            if getattr(_c, 'sdfversion', None) is None:
+                _c.sdfversion = self.sdfversion
+            elif getattr(_c, 'sdfversion', None) != self.sdfversion and self.sdfversion is not None:
+                self.frames[_i] = _c.to_version(self.sdfversion)
         if self.pose is not None and hasattr(self.pose, 'to_version'):
-            if getattr(self.pose, '__version__', None) is None:
-                self.pose.__version__ = self.__version__
-            elif getattr(self.pose, '__version__', None) != self.__version__ and self.__version__ is not None:
-                self.pose = self.pose.to_version(self.__version__)
+            if getattr(self.pose, 'sdfversion', None) is None:
+                self.pose.sdfversion = self.sdfversion
+            elif getattr(self.pose, 'sdfversion', None) != self.sdfversion and self.sdfversion is not None:
+                self.pose = self.pose.to_version(self.sdfversion)
 
     def add_frame(self, *items: "Frame"):
         if self.frames is None:
@@ -137,31 +103,19 @@ class AudioSource(BaseModel):
             raise ValueError(f"'frames' is not supported in SDF version {target_version} (added in 1.5)")
         if self.frames is not None and cmp_version(target_version, "1.7") >= 0:
             raise ValueError(f"'frames' is not supported in SDF version {target_version} (removed in 1.7)")
-        kwargs = {"sdf_version": target_version}
-        kwargs["contact"] = self.contact.to_version(target_version) if hasattr(self.contact, "to_version") else self.contact
-        kwargs["frames"] = [c.to_version(target_version) if hasattr(c, "to_version") else c for c in (self.frames or [])]
-        kwargs["gain"] = self.gain
-        kwargs["loop"] = self.loop
-        kwargs["pitch"] = self.pitch
-        kwargs["pose"] = self.pose.to_version(target_version) if hasattr(self.pose, "to_version") else self.pose
-        kwargs["uri"] = self.uri
-        new_obj = self.__class__(**kwargs)
-        return new_obj
+        kwargs: dict = {"sdf_version": target_version, "contact": self.contact.to_version(target_version) if self.contact is not None and hasattr(self.contact, "to_version") else self.contact, "frames": [c.to_version(target_version) if hasattr(c, "to_version") else c for c in (self.frames or [])], "gain": self.gain, "loop": self.loop, "pitch": self.pitch, "pose": self.pose.to_version(target_version) if self.pose is not None and hasattr(self.pose, "to_version") else self.pose, "uri": self.uri}
+        return self.__class__(**kwargs)
 
     def to_sdf(self, version: str | None = None) -> ET.Element:
         from ..elements.frame import Frame
         from ..elements.pose import Pose
-        if self.__version__ is None and version is not None:
-            self.__version__ = version
-        elif version is not None and version != self.__version__:
-            return self.to_version(version).to_sdf()
-        version = self.__version__ or version
+        if self.sdfversion is None and version is not None:
+            self.sdfversion = version
+        elif version is not None and version != self.sdfversion:
+            return self.to_version(str(version)).to_sdf()
         el = ET.Element("audio_source")
         if self.contact is not None:
-            if hasattr(self.contact, 'to_sdf'):
-                _child_res = self.contact.to_sdf(version)
-            else:
-                _child_res = str(self.contact)
+            _child_res = self.contact.to_sdf(version)
             if isinstance(_child_res, str):
                 _item_el = ET.Element('contact')
                 _item_el.text = _child_res
@@ -169,10 +123,7 @@ class AudioSource(BaseModel):
                 _item_el = _child_res
             el.append(_item_el)
         for item in (self.frames or []):
-            if hasattr(item, 'to_sdf'):
-                _child_res = item.to_sdf(version)
-            else:
-                _child_res = str(item)
+            _child_res = item.to_sdf(version)
             if isinstance(_child_res, str):
                 _item_el = ET.Element('frame')
                 _item_el.text = _child_res
@@ -192,10 +143,7 @@ class AudioSource(BaseModel):
             _c_tmp.text = str(self.pitch)
             el.append(_c_tmp)
         if self.pose is not None:
-            if hasattr(self.pose, 'to_sdf'):
-                _child_res = self.pose.to_sdf(version)
-            else:
-                _child_res = str(self.pose)
+            _child_res = self.pose.to_sdf(version)
             if isinstance(_child_res, str):
                 _item_el = ET.Element('pose')
                 _item_el.text = _child_res

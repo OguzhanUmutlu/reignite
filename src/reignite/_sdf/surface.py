@@ -1,46 +1,13 @@
 ### THIS FILE WAS AUTO-GENERATED ###
 from __future__ import annotations
 
-import typing
 from xml.etree import ElementTree as ET
 
+from ..utils.utils import _parse_double, _parse_uint32
 from ..utils.model import BaseModel
 from ..utils.errors import SDFError
-from ..utils.vector3 import Vector3 as _SDFVector3, _Vector3T, _vector3
+from ..utils.vector3 import Vector3 as _Vector3T, _vector3
 from ..utils.version import cmp_version
-
-
-import math
-
-def _parse_int32(raw: str) -> int | SDFError:
-    try:
-        v = int(raw)
-        if not (-2147483648 <= v <= 2147483647):
-            return SDFError(f"int32 out of range: {v}")
-        return v
-    except ValueError:
-        return SDFError(f"Invalid int32: {raw}")
-
-
-def _parse_uint32(raw: str) -> int | SDFError:
-    try:
-        v = int(raw)
-        if not (0 <= v <= 4294967295):
-            return SDFError(f"uint32 out of range: {v}")
-        return v
-    except ValueError:
-        return SDFError(f"Invalid uint32: {raw}")
-
-
-def _parse_double(raw: str) -> float | SDFError:
-    try:
-        v = float(raw)
-        if not math.isfinite(v) or abs(v) > math.inf:
-            return SDFError(f"double out of range: {raw}")
-        return v
-    except ValueError:
-        return SDFError(f"Invalid double: {raw}")
-
 
 def _parse_vector3(raw: str) -> _Vector3T | SDFError:
     try:
@@ -49,35 +16,32 @@ def _parse_vector3(raw: str) -> _Vector3T | SDFError:
         return SDFError(str(e))
 
 
+# noinspection PyUnusedImports
 class Surface(BaseModel):
     class Bounce(BaseModel):
         def __init__(
             self,
             sdf_version: str | None = None,
-            restitution_coefficient: float = 0,
-            threshold: float = 100000
+            restitution_coefficient: float | None = 0,
+            threshold: float | None = 100000
         ):
             super().__init__(sdf_version)
-            self.restitution_coefficient = restitution_coefficient
-            self.threshold = threshold
+            self.restitution_coefficient = restitution_coefficient if restitution_coefficient is not None else 0
+            self.threshold = threshold if threshold is not None else 100000
 
         def to_version(self, target_version: str) -> "Surface.Bounce":
             if self.restitution_coefficient is not None and cmp_version(target_version, "1.2") >= 0:
                 raise ValueError(f"'restitution_coefficient' is not supported in SDF version {target_version} (removed in 1.2)")
             if self.threshold is not None and cmp_version(target_version, "1.2") >= 0:
                 raise ValueError(f"'threshold' is not supported in SDF version {target_version} (removed in 1.2)")
-            kwargs = {"sdf_version": target_version}
-            kwargs["restitution_coefficient"] = self.restitution_coefficient
-            kwargs["threshold"] = self.threshold
-            new_obj = self.__class__(**kwargs)
-            return new_obj
+            kwargs: dict = {"sdf_version": target_version, "restitution_coefficient": self.restitution_coefficient, "threshold": self.threshold}
+            return self.__class__(**kwargs)
 
         def to_sdf(self, version: str | None = None) -> ET.Element:
-            if self.__version__ is None and version is not None:
-                self.__version__ = version
-            elif version is not None and version != self.__version__:
-                return self.to_version(version).to_sdf()
-            version = self.__version__ or version
+            if self.sdfversion is None and version is not None:
+                self.sdfversion = version
+            elif version is not None and version != self.sdfversion:
+                return self.to_version(str(version)).to_sdf()
             el = ET.Element("bounce")
             if self.restitution_coefficient is not None:
                 el.set("restitution_coefficient", str(self.restitution_coefficient))
@@ -100,38 +64,30 @@ class Surface(BaseModel):
             def __init__(
                 self,
                 sdf_version: str | None = None,
-                kd: float = 1.0,
-                kp: float = 1000000000000.0,
-                soft_cfm: float = 0,
-                soft_erp: float = 0.2,
-                split_impulse: bool = True,
-                split_impulse_penetration_threshold: float = -0.01
+                kd: float | None = 1.0,
+                kp: float | None = 1000000000000.0,
+                soft_cfm: float | None = 0,
+                soft_erp: float | None = 0.2,
+                split_impulse: bool | None = True,
+                split_impulse_penetration_threshold: float | None = -0.01
             ):
                 super().__init__(sdf_version)
-                self.kd = kd
-                self.kp = kp
-                self.soft_cfm = soft_cfm
-                self.soft_erp = soft_erp
-                self.split_impulse = split_impulse
-                self.split_impulse_penetration_threshold = split_impulse_penetration_threshold
+                self.kd = kd if kd is not None else 1.0
+                self.kp = kp if kp is not None else 1000000000000.0
+                self.soft_cfm = soft_cfm if soft_cfm is not None else 0
+                self.soft_erp = soft_erp if soft_erp is not None else 0.2
+                self.split_impulse = split_impulse if split_impulse is not None else True
+                self.split_impulse_penetration_threshold = split_impulse_penetration_threshold if split_impulse_penetration_threshold is not None else -0.01
 
             def to_version(self, target_version: str) -> "Surface.Contact.Bullet":
-                kwargs = {"sdf_version": target_version}
-                kwargs["kd"] = self.kd
-                kwargs["kp"] = self.kp
-                kwargs["soft_cfm"] = self.soft_cfm
-                kwargs["soft_erp"] = self.soft_erp
-                kwargs["split_impulse"] = self.split_impulse
-                kwargs["split_impulse_penetration_threshold"] = self.split_impulse_penetration_threshold
-                new_obj = self.__class__(**kwargs)
-                return new_obj
+                kwargs: dict = {"sdf_version": target_version, "kd": self.kd, "kp": self.kp, "soft_cfm": self.soft_cfm, "soft_erp": self.soft_erp, "split_impulse": self.split_impulse, "split_impulse_penetration_threshold": self.split_impulse_penetration_threshold}
+                return self.__class__(**kwargs)
 
             def to_sdf(self, version: str | None = None) -> ET.Element:
-                if self.__version__ is None and version is not None:
-                    self.__version__ = version
-                elif version is not None and version != self.__version__:
-                    return self.to_version(version).to_sdf()
-                version = self.__version__ or version
+                if self.sdfversion is None and version is not None:
+                    self.sdfversion = version
+                elif version is not None and version != self.sdfversion:
+                    return self.to_version(str(version)).to_sdf()
                 el = ET.Element("bullet")
                 if self.kd is not None:
                     _c_tmp = ET.Element("kd")
@@ -221,20 +177,20 @@ class Surface(BaseModel):
             def __init__(
                 self,
                 sdf_version: str | None = None,
-                kd: float = 1.0,
-                kp: float = 1000000000000.0,
-                max_vel: float = 0.01,
-                min_depth: float = 0,
-                soft_cfm: float = 0,
-                soft_erp: float = 0.2
+                kd: float | None = 1.0,
+                kp: float | None = 1000000000000.0,
+                max_vel: float | None = 0.01,
+                min_depth: float | None = 0,
+                soft_cfm: float | None = 0,
+                soft_erp: float | None = 0.2
             ):
                 super().__init__(sdf_version)
-                self.kd = kd
-                self.kp = kp
-                self.max_vel = max_vel
-                self.min_depth = min_depth
-                self.soft_cfm = soft_cfm
-                self.soft_erp = soft_erp
+                self.kd = kd if kd is not None else 1.0
+                self.kp = kp if kp is not None else 1000000000000.0
+                self.max_vel = max_vel if max_vel is not None else 0.01
+                self.min_depth = min_depth if min_depth is not None else 0
+                self.soft_cfm = soft_cfm if soft_cfm is not None else 0
+                self.soft_erp = soft_erp if soft_erp is not None else 0.2
 
             def to_version(self, target_version: str) -> "Surface.Contact.Ode":
                 if self.kd is not None and cmp_version(target_version, "1.2") >= 0:
@@ -249,22 +205,14 @@ class Surface(BaseModel):
                     raise ValueError(f"'soft_cfm' is not supported in SDF version {target_version} (removed in 1.2)")
                 if self.soft_erp is not None and cmp_version(target_version, "1.2") >= 0:
                     raise ValueError(f"'soft_erp' is not supported in SDF version {target_version} (removed in 1.2)")
-                kwargs = {"sdf_version": target_version}
-                kwargs["kd"] = self.kd
-                kwargs["kp"] = self.kp
-                kwargs["max_vel"] = self.max_vel
-                kwargs["min_depth"] = self.min_depth
-                kwargs["soft_cfm"] = self.soft_cfm
-                kwargs["soft_erp"] = self.soft_erp
-                new_obj = self.__class__(**kwargs)
-                return new_obj
+                kwargs: dict = {"sdf_version": target_version, "kd": self.kd, "kp": self.kp, "max_vel": self.max_vel, "min_depth": self.min_depth, "soft_cfm": self.soft_cfm, "soft_erp": self.soft_erp}
+                return self.__class__(**kwargs)
 
             def to_sdf(self, version: str | None = None) -> ET.Element:
-                if self.__version__ is None and version is not None:
-                    self.__version__ = version
-                elif version is not None and version != self.__version__:
-                    return self.to_version(version).to_sdf()
-                version = self.__version__ or version
+                if self.sdfversion is None and version is not None:
+                    self.sdfversion = version
+                elif version is not None and version != self.sdfversion:
+                    return self.to_version(str(version)).to_sdf()
                 el = ET.Element("ode")
                 if self.kd is not None:
                     el.set("kd", str(self.kd))
@@ -306,33 +254,33 @@ class Surface(BaseModel):
             self,
             sdf_version: str | None = None,
             bullet: "Surface.Contact.Bullet" = None,
-            category_bitmask: int = 65535,
-            collide_bitmask: int = 1,
-            collide_without_contact: bool = False,
-            collide_without_contact_bitmask: int = 1,
-            elastic_modulus: float = -1,
+            category_bitmask: int | None = 65535,
+            collide_bitmask: int | None = 1,
+            collide_without_contact: bool | None = False,
+            collide_without_contact_bitmask: int | None = 1,
+            elastic_modulus: float | None = -1,
             ode: "Surface.Contact.Ode" = None,
-            poissons_ratio: float = 0.3
+            poissons_ratio: float | None = 0.3
         ):
             super().__init__(sdf_version)
             self.bullet = bullet
-            self.category_bitmask = category_bitmask
-            self.collide_bitmask = collide_bitmask
-            self.collide_without_contact = collide_without_contact
-            self.collide_without_contact_bitmask = collide_without_contact_bitmask
-            self.elastic_modulus = elastic_modulus
+            self.category_bitmask = category_bitmask if category_bitmask is not None else 65535
+            self.collide_bitmask = collide_bitmask if collide_bitmask is not None else 1
+            self.collide_without_contact = collide_without_contact if collide_without_contact is not None else False
+            self.collide_without_contact_bitmask = collide_without_contact_bitmask if collide_without_contact_bitmask is not None else 1
+            self.elastic_modulus = elastic_modulus if elastic_modulus is not None else -1
             self.ode = ode
-            self.poissons_ratio = poissons_ratio
+            self.poissons_ratio = poissons_ratio if poissons_ratio is not None else 0.3
             if self.bullet is not None and hasattr(self.bullet, 'to_version'):
-                if getattr(self.bullet, '__version__', None) is None:
-                    self.bullet.__version__ = self.__version__
-                elif getattr(self.bullet, '__version__', None) != self.__version__ and self.__version__ is not None:
-                    self.bullet = self.bullet.to_version(self.__version__)
+                if getattr(self.bullet, 'sdfversion', None) is None:
+                    self.bullet.sdfversion = self.sdfversion
+                elif getattr(self.bullet, 'sdfversion', None) != self.sdfversion and self.sdfversion is not None:
+                    self.bullet = self.bullet.to_version(self.sdfversion)
             if self.ode is not None and hasattr(self.ode, 'to_version'):
-                if getattr(self.ode, '__version__', None) is None:
-                    self.ode.__version__ = self.__version__
-                elif getattr(self.ode, '__version__', None) != self.__version__ and self.__version__ is not None:
-                    self.ode = self.ode.to_version(self.__version__)
+                if getattr(self.ode, 'sdfversion', None) is None:
+                    self.ode.sdfversion = self.sdfversion
+                elif getattr(self.ode, 'sdfversion', None) != self.sdfversion and self.sdfversion is not None:
+                    self.ode = self.ode.to_version(self.sdfversion)
 
         def to_version(self, target_version: str) -> "Surface.Contact":
             if self.bullet is not None and cmp_version(target_version, "1.4") < 0:
@@ -349,30 +297,17 @@ class Surface(BaseModel):
                 raise ValueError(f"'elastic_modulus' is not supported in SDF version {target_version} (added in 1.5)")
             if self.poissons_ratio is not None and cmp_version(target_version, "1.5") < 0:
                 raise ValueError(f"'poissons_ratio' is not supported in SDF version {target_version} (added in 1.5)")
-            kwargs = {"sdf_version": target_version}
-            kwargs["bullet"] = self.bullet.to_version(target_version) if hasattr(self.bullet, "to_version") else self.bullet
-            kwargs["category_bitmask"] = self.category_bitmask
-            kwargs["collide_bitmask"] = self.collide_bitmask
-            kwargs["collide_without_contact"] = self.collide_without_contact
-            kwargs["collide_without_contact_bitmask"] = self.collide_without_contact_bitmask
-            kwargs["elastic_modulus"] = self.elastic_modulus
-            kwargs["ode"] = self.ode.to_version(target_version) if hasattr(self.ode, "to_version") else self.ode
-            kwargs["poissons_ratio"] = self.poissons_ratio
-            new_obj = self.__class__(**kwargs)
-            return new_obj
+            kwargs: dict = {"sdf_version": target_version, "bullet": self.bullet.to_version(target_version) if self.bullet is not None and hasattr(self.bullet, "to_version") else self.bullet, "category_bitmask": self.category_bitmask, "collide_bitmask": self.collide_bitmask, "collide_without_contact": self.collide_without_contact, "collide_without_contact_bitmask": self.collide_without_contact_bitmask, "elastic_modulus": self.elastic_modulus, "ode": self.ode.to_version(target_version) if self.ode is not None and hasattr(self.ode, "to_version") else self.ode, "poissons_ratio": self.poissons_ratio}
+            return self.__class__(**kwargs)
 
         def to_sdf(self, version: str | None = None) -> ET.Element:
-            if self.__version__ is None and version is not None:
-                self.__version__ = version
-            elif version is not None and version != self.__version__:
-                return self.to_version(version).to_sdf()
-            version = self.__version__ or version
+            if self.sdfversion is None and version is not None:
+                self.sdfversion = version
+            elif version is not None and version != self.sdfversion:
+                return self.to_version(str(version)).to_sdf()
             el = ET.Element("contact")
             if self.bullet is not None:
-                if hasattr(self.bullet, 'to_sdf'):
-                    _child_res = self.bullet.to_sdf(version)
-                else:
-                    _child_res = str(self.bullet)
+                _child_res = self.bullet.to_sdf(version)
                 if isinstance(_child_res, str):
                     _item_el = ET.Element('bullet')
                     _item_el.text = _child_res
@@ -400,10 +335,7 @@ class Surface(BaseModel):
                 _c_tmp.text = str(self.elastic_modulus)
                 el.append(_c_tmp)
             if self.ode is not None:
-                if hasattr(self.ode, 'to_sdf'):
-                    _child_res = self.ode.to_sdf(version)
-                else:
-                    _child_res = str(self.ode)
+                _child_res = self.ode.to_sdf(version)
                 if isinstance(_child_res, str):
                     _item_el = ET.Element('ode')
                     _item_el.text = _child_res
@@ -509,36 +441,26 @@ class Surface(BaseModel):
             def __init__(
                 self,
                 sdf_version: str | None = None,
-                fdir1: _Vector3T = None,
-                friction: float = 1,
-                friction2: float = 1,
-                rolling_friction: float = 1
+                fdir1: _Vector3T | None = None,
+                friction: float | None = 1,
+                friction2: float | None = 1,
+                rolling_friction: float | None = 1
             ):
                 super().__init__(sdf_version)
-                if fdir1 is None:
-                    fdir1 = _vector3("0 0 0")
-                else:
-                    fdir1 = _vector3(fdir1)
-                self.fdir1 = fdir1
-                self.friction = friction
-                self.friction2 = friction2
-                self.rolling_friction = rolling_friction
+                self.fdir1 = _vector3("0 0 0") if fdir1 is None else _vector3(fdir1)
+                self.friction = friction if friction is not None else 1
+                self.friction2 = friction2 if friction2 is not None else 1
+                self.rolling_friction = rolling_friction if rolling_friction is not None else 1
 
             def to_version(self, target_version: str) -> "Surface.Friction.FrictionBullet":
-                kwargs = {"sdf_version": target_version}
-                kwargs["fdir1"] = self.fdir1
-                kwargs["friction"] = self.friction
-                kwargs["friction2"] = self.friction2
-                kwargs["rolling_friction"] = self.rolling_friction
-                new_obj = self.__class__(**kwargs)
-                return new_obj
+                kwargs: dict = {"sdf_version": target_version, "fdir1": self.fdir1, "friction": self.friction, "friction2": self.friction2, "rolling_friction": self.rolling_friction}
+                return self.__class__(**kwargs)
 
             def to_sdf(self, version: str | None = None) -> ET.Element:
-                if self.__version__ is None and version is not None:
-                    self.__version__ = version
-                elif version is not None and version != self.__version__:
-                    return self.to_version(version).to_sdf()
-                version = self.__version__ or version
+                if self.sdfversion is None and version is not None:
+                    self.sdfversion = version
+                elif version is not None and version != self.sdfversion:
+                    return self.to_version(str(version)).to_sdf()
                 el = ET.Element("bullet")
                 if self.fdir1 is not None:
                     _c_tmp = ET.Element("fdir1")
@@ -602,22 +524,18 @@ class Surface(BaseModel):
             def __init__(
                 self,
                 sdf_version: str | None = None,
-                fdir1: _Vector3T = None,
-                mu: float = -1,
-                mu2: float = -1,
-                slip1: float = 0.0,
-                slip2: float = 0.0
+                fdir1: _Vector3T | None = None,
+                mu: float | None = -1,
+                mu2: float | None = -1,
+                slip1: float | None = 0.0,
+                slip2: float | None = 0.0
             ):
                 super().__init__(sdf_version)
-                if fdir1 is None:
-                    fdir1 = _vector3("0 0 0")
-                else:
-                    fdir1 = _vector3(fdir1)
-                self.fdir1 = fdir1
-                self.mu = mu
-                self.mu2 = mu2
-                self.slip1 = slip1
-                self.slip2 = slip2
+                self.fdir1 = _vector3("0 0 0") if fdir1 is None else _vector3(fdir1)
+                self.mu = mu if mu is not None else -1
+                self.mu2 = mu2 if mu2 is not None else -1
+                self.slip1 = slip1 if slip1 is not None else 0.0
+                self.slip2 = slip2 if slip2 is not None else 0.0
 
             def to_version(self, target_version: str) -> "Surface.Friction.FrictionOde":
                 if self.fdir1 is not None and cmp_version(target_version, "1.2") >= 0:
@@ -630,21 +548,14 @@ class Surface(BaseModel):
                     raise ValueError(f"'slip1' is not supported in SDF version {target_version} (removed in 1.2)")
                 if self.slip2 is not None and cmp_version(target_version, "1.2") >= 0:
                     raise ValueError(f"'slip2' is not supported in SDF version {target_version} (removed in 1.2)")
-                kwargs = {"sdf_version": target_version}
-                kwargs["fdir1"] = self.fdir1
-                kwargs["mu"] = self.mu
-                kwargs["mu2"] = self.mu2
-                kwargs["slip1"] = self.slip1
-                kwargs["slip2"] = self.slip2
-                new_obj = self.__class__(**kwargs)
-                return new_obj
+                kwargs: dict = {"sdf_version": target_version, "fdir1": self.fdir1, "mu": self.mu, "mu2": self.mu2, "slip1": self.slip1, "slip2": self.slip2}
+                return self.__class__(**kwargs)
 
             def to_sdf(self, version: str | None = None) -> ET.Element:
-                if self.__version__ is None and version is not None:
-                    self.__version__ = version
-                elif version is not None and version != self.__version__:
-                    return self.to_version(version).to_sdf()
-                version = self.__version__ or version
+                if self.sdfversion is None and version is not None:
+                    self.sdfversion = version
+                elif version is not None and version != self.sdfversion:
+                    return self.to_version(str(version)).to_sdf()
                 el = ET.Element("ode")
                 if self.fdir1 is not None:
                     el.set("fdir1", str(self.fdir1))
@@ -679,22 +590,19 @@ class Surface(BaseModel):
 
         class Torsional(BaseModel):
             class TorsionalOde(BaseModel):
-                def __init__(self, sdf_version: str | None = None, slip: float = 0.0):
+                def __init__(self, sdf_version: str | None = None, slip: float | None = 0.0):
                     super().__init__(sdf_version)
-                    self.slip = slip
+                    self.slip = slip if slip is not None else 0.0
 
                 def to_version(self, target_version: str) -> "Surface.Friction.Torsional.TorsionalOde":
-                    kwargs = {"sdf_version": target_version}
-                    kwargs["slip"] = self.slip
-                    new_obj = self.__class__(**kwargs)
-                    return new_obj
+                    kwargs: dict = {"sdf_version": target_version, "slip": self.slip}
+                    return self.__class__(**kwargs)
 
                 def to_sdf(self, version: str | None = None) -> ET.Element:
-                    if self.__version__ is None and version is not None:
-                        self.__version__ = version
-                    elif version is not None and version != self.__version__:
-                        return self.to_version(version).to_sdf()
-                    version = self.__version__ or version
+                    if self.sdfversion is None and version is not None:
+                        self.sdfversion = version
+                    elif version is not None and version != self.sdfversion:
+                        return self.to_version(str(version)).to_sdf()
                     el = ET.Element("ode")
                     if self.slip is not None:
                         _c_tmp = ET.Element("slip")
@@ -718,50 +626,40 @@ class Surface(BaseModel):
             def __init__(
                 self,
                 sdf_version: str | None = None,
-                coefficient: float = 1.0,
+                coefficient: float | None = 1.0,
                 ode: "Surface.Friction.Torsional.TorsionalOde" = None,
-                patch_radius: float = 0,
-                surface_radius: float = 0.0,
-                use_patch_radius: bool = True
+                patch_radius: float | None = 0,
+                surface_radius: float | None = 0.0,
+                use_patch_radius: bool | None = True
             ):
                 super().__init__(sdf_version)
-                self.coefficient = coefficient
+                self.coefficient = coefficient if coefficient is not None else 1.0
                 self.ode = ode
-                self.patch_radius = patch_radius
-                self.surface_radius = surface_radius
-                self.use_patch_radius = use_patch_radius
+                self.patch_radius = patch_radius if patch_radius is not None else 0
+                self.surface_radius = surface_radius if surface_radius is not None else 0.0
+                self.use_patch_radius = use_patch_radius if use_patch_radius is not None else True
                 if self.ode is not None and hasattr(self.ode, 'to_version'):
-                    if getattr(self.ode, '__version__', None) is None:
-                        self.ode.__version__ = self.__version__
-                    elif getattr(self.ode, '__version__', None) != self.__version__ and self.__version__ is not None:
-                        self.ode = self.ode.to_version(self.__version__)
+                    if getattr(self.ode, 'sdfversion', None) is None:
+                        self.ode.sdfversion = self.sdfversion
+                    elif getattr(self.ode, 'sdfversion', None) != self.sdfversion and self.sdfversion is not None:
+                        self.ode = self.ode.to_version(self.sdfversion)
 
             def to_version(self, target_version: str) -> "Surface.Friction.Torsional":
-                kwargs = {"sdf_version": target_version}
-                kwargs["coefficient"] = self.coefficient
-                kwargs["ode"] = self.ode.to_version(target_version) if hasattr(self.ode, "to_version") else self.ode
-                kwargs["patch_radius"] = self.patch_radius
-                kwargs["surface_radius"] = self.surface_radius
-                kwargs["use_patch_radius"] = self.use_patch_radius
-                new_obj = self.__class__(**kwargs)
-                return new_obj
+                kwargs: dict = {"sdf_version": target_version, "coefficient": self.coefficient, "ode": self.ode.to_version(target_version) if self.ode is not None and hasattr(self.ode, "to_version") else self.ode, "patch_radius": self.patch_radius, "surface_radius": self.surface_radius, "use_patch_radius": self.use_patch_radius}
+                return self.__class__(**kwargs)
 
             def to_sdf(self, version: str | None = None) -> ET.Element:
-                if self.__version__ is None and version is not None:
-                    self.__version__ = version
-                elif version is not None and version != self.__version__:
-                    return self.to_version(version).to_sdf()
-                version = self.__version__ or version
+                if self.sdfversion is None and version is not None:
+                    self.sdfversion = version
+                elif version is not None and version != self.sdfversion:
+                    return self.to_version(str(version)).to_sdf()
                 el = ET.Element("torsional")
                 if self.coefficient is not None:
                     _c_tmp = ET.Element("coefficient")
                     _c_tmp.text = str(self.coefficient)
                     el.append(_c_tmp)
                 if self.ode is not None:
-                    if hasattr(self.ode, 'to_sdf'):
-                        _child_res = self.ode.to_sdf(version)
-                    else:
-                        _child_res = str(self.ode)
+                    _child_res = self.ode.to_sdf(version)
                     if isinstance(_child_res, str):
                         _item_el = ET.Element('ode')
                         _item_el.text = _child_res
@@ -842,45 +740,37 @@ class Surface(BaseModel):
             self.ode = ode
             self.torsional = torsional
             if self.bullet is not None and hasattr(self.bullet, 'to_version'):
-                if getattr(self.bullet, '__version__', None) is None:
-                    self.bullet.__version__ = self.__version__
-                elif getattr(self.bullet, '__version__', None) != self.__version__ and self.__version__ is not None:
-                    self.bullet = self.bullet.to_version(self.__version__)
+                if getattr(self.bullet, 'sdfversion', None) is None:
+                    self.bullet.sdfversion = self.sdfversion
+                elif getattr(self.bullet, 'sdfversion', None) != self.sdfversion and self.sdfversion is not None:
+                    self.bullet = self.bullet.to_version(self.sdfversion)
             if self.ode is not None and hasattr(self.ode, 'to_version'):
-                if getattr(self.ode, '__version__', None) is None:
-                    self.ode.__version__ = self.__version__
-                elif getattr(self.ode, '__version__', None) != self.__version__ and self.__version__ is not None:
-                    self.ode = self.ode.to_version(self.__version__)
+                if getattr(self.ode, 'sdfversion', None) is None:
+                    self.ode.sdfversion = self.sdfversion
+                elif getattr(self.ode, 'sdfversion', None) != self.sdfversion and self.sdfversion is not None:
+                    self.ode = self.ode.to_version(self.sdfversion)
             if self.torsional is not None and hasattr(self.torsional, 'to_version'):
-                if getattr(self.torsional, '__version__', None) is None:
-                    self.torsional.__version__ = self.__version__
-                elif getattr(self.torsional, '__version__', None) != self.__version__ and self.__version__ is not None:
-                    self.torsional = self.torsional.to_version(self.__version__)
+                if getattr(self.torsional, 'sdfversion', None) is None:
+                    self.torsional.sdfversion = self.sdfversion
+                elif getattr(self.torsional, 'sdfversion', None) != self.sdfversion and self.sdfversion is not None:
+                    self.torsional = self.torsional.to_version(self.sdfversion)
 
         def to_version(self, target_version: str) -> "Surface.Friction":
             if self.bullet is not None and cmp_version(target_version, "1.4") < 0:
                 raise ValueError(f"'bullet' is not supported in SDF version {target_version} (added in 1.4)")
             if self.torsional is not None and cmp_version(target_version, "1.5") < 0:
                 raise ValueError(f"'torsional' is not supported in SDF version {target_version} (added in 1.5)")
-            kwargs = {"sdf_version": target_version}
-            kwargs["bullet"] = self.bullet.to_version(target_version) if hasattr(self.bullet, "to_version") else self.bullet
-            kwargs["ode"] = self.ode.to_version(target_version) if hasattr(self.ode, "to_version") else self.ode
-            kwargs["torsional"] = self.torsional.to_version(target_version) if hasattr(self.torsional, "to_version") else self.torsional
-            new_obj = self.__class__(**kwargs)
-            return new_obj
+            kwargs: dict = {"sdf_version": target_version, "bullet": self.bullet.to_version(target_version) if self.bullet is not None and hasattr(self.bullet, "to_version") else self.bullet, "ode": self.ode.to_version(target_version) if self.ode is not None and hasattr(self.ode, "to_version") else self.ode, "torsional": self.torsional.to_version(target_version) if self.torsional is not None and hasattr(self.torsional, "to_version") else self.torsional}
+            return self.__class__(**kwargs)
 
         def to_sdf(self, version: str | None = None) -> ET.Element:
-            if self.__version__ is None and version is not None:
-                self.__version__ = version
-            elif version is not None and version != self.__version__:
-                return self.to_version(version).to_sdf()
-            version = self.__version__ or version
+            if self.sdfversion is None and version is not None:
+                self.sdfversion = version
+            elif version is not None and version != self.sdfversion:
+                return self.to_version(str(version)).to_sdf()
             el = ET.Element("friction")
             if self.bullet is not None:
-                if hasattr(self.bullet, 'to_sdf'):
-                    _child_res = self.bullet.to_sdf(version)
-                else:
-                    _child_res = str(self.bullet)
+                _child_res = self.bullet.to_sdf(version)
                 if isinstance(_child_res, str):
                     _item_el = ET.Element('bullet')
                     _item_el.text = _child_res
@@ -888,10 +778,7 @@ class Surface(BaseModel):
                     _item_el = _child_res
                 el.append(_item_el)
             if self.ode is not None:
-                if hasattr(self.ode, 'to_sdf'):
-                    _child_res = self.ode.to_sdf(version)
-                else:
-                    _child_res = str(self.ode)
+                _child_res = self.ode.to_sdf(version)
                 if isinstance(_child_res, str):
                     _item_el = ET.Element('ode')
                     _item_el.text = _child_res
@@ -899,10 +786,7 @@ class Surface(BaseModel):
                     _item_el = _child_res
                 el.append(_item_el)
             if self.torsional is not None:
-                if hasattr(self.torsional, 'to_sdf'):
-                    _child_res = self.torsional.to_sdf(version)
-                else:
-                    _child_res = str(self.torsional)
+                _child_res = self.torsional.to_sdf(version)
                 if isinstance(_child_res, str):
                     _item_el = ET.Element('torsional')
                     _item_el.text = _child_res
@@ -948,32 +832,26 @@ class Surface(BaseModel):
             def __init__(
                 self,
                 sdf_version: str | None = None,
-                bone_attachment: float = 100.0,
-                damping: float = 10.0,
-                flesh_mass_fraction: float = 0.05,
-                stiffness: float = 100.0
+                bone_attachment: float | None = 100.0,
+                damping: float | None = 10.0,
+                flesh_mass_fraction: float | None = 0.05,
+                stiffness: float | None = 100.0
             ):
                 super().__init__(sdf_version)
-                self.bone_attachment = bone_attachment
-                self.damping = damping
-                self.flesh_mass_fraction = flesh_mass_fraction
-                self.stiffness = stiffness
+                self.bone_attachment = bone_attachment if bone_attachment is not None else 100.0
+                self.damping = damping if damping is not None else 10.0
+                self.flesh_mass_fraction = flesh_mass_fraction if flesh_mass_fraction is not None else 0.05
+                self.stiffness = stiffness if stiffness is not None else 100.0
 
             def to_version(self, target_version: str) -> "Surface.SoftContact.Dart":
-                kwargs = {"sdf_version": target_version}
-                kwargs["bone_attachment"] = self.bone_attachment
-                kwargs["damping"] = self.damping
-                kwargs["flesh_mass_fraction"] = self.flesh_mass_fraction
-                kwargs["stiffness"] = self.stiffness
-                new_obj = self.__class__(**kwargs)
-                return new_obj
+                kwargs: dict = {"sdf_version": target_version, "bone_attachment": self.bone_attachment, "damping": self.damping, "flesh_mass_fraction": self.flesh_mass_fraction, "stiffness": self.stiffness}
+                return self.__class__(**kwargs)
 
             def to_sdf(self, version: str | None = None) -> ET.Element:
-                if self.__version__ is None and version is not None:
-                    self.__version__ = version
-                elif version is not None and version != self.__version__:
-                    return self.to_version(version).to_sdf()
-                version = self.__version__ or version
+                if self.sdfversion is None and version is not None:
+                    self.sdfversion = version
+                elif version is not None and version != self.sdfversion:
+                    return self.to_version(str(version)).to_sdf()
                 el = ET.Element("dart")
                 if self.bone_attachment is not None:
                     _c_tmp = ET.Element("bone_attachment")
@@ -1037,29 +915,23 @@ class Surface(BaseModel):
             super().__init__(sdf_version)
             self.dart = dart
             if self.dart is not None and hasattr(self.dart, 'to_version'):
-                if getattr(self.dart, '__version__', None) is None:
-                    self.dart.__version__ = self.__version__
-                elif getattr(self.dart, '__version__', None) != self.__version__ and self.__version__ is not None:
-                    self.dart = self.dart.to_version(self.__version__)
+                if getattr(self.dart, 'sdfversion', None) is None:
+                    self.dart.sdfversion = self.sdfversion
+                elif getattr(self.dart, 'sdfversion', None) != self.sdfversion and self.sdfversion is not None:
+                    self.dart = self.dart.to_version(self.sdfversion)
 
         def to_version(self, target_version: str) -> "Surface.SoftContact":
-            kwargs = {"sdf_version": target_version}
-            kwargs["dart"] = self.dart.to_version(target_version) if hasattr(self.dart, "to_version") else self.dart
-            new_obj = self.__class__(**kwargs)
-            return new_obj
+            kwargs: dict = {"sdf_version": target_version, "dart": self.dart.to_version(target_version) if self.dart is not None and hasattr(self.dart, "to_version") else self.dart}
+            return self.__class__(**kwargs)
 
         def to_sdf(self, version: str | None = None) -> ET.Element:
-            if self.__version__ is None and version is not None:
-                self.__version__ = version
-            elif version is not None and version != self.__version__:
-                return self.to_version(version).to_sdf()
-            version = self.__version__ or version
+            if self.sdfversion is None and version is not None:
+                self.sdfversion = version
+            elif version is not None and version != self.sdfversion:
+                return self.to_version(str(version)).to_sdf()
             el = ET.Element("soft_contact")
             if self.dart is not None:
-                if hasattr(self.dart, 'to_sdf'):
-                    _child_res = self.dart.to_sdf(version)
-                else:
-                    _child_res = str(self.dart)
+                _child_res = self.dart.to_sdf(version)
                 if isinstance(_child_res, str):
                     _item_el = ET.Element('dart')
                     _item_el.text = _child_res
@@ -1094,49 +966,40 @@ class Surface(BaseModel):
         self.friction = friction
         self.soft_contact = soft_contact
         if self.bounce is not None and hasattr(self.bounce, 'to_version'):
-            if getattr(self.bounce, '__version__', None) is None:
-                self.bounce.__version__ = self.__version__
-            elif getattr(self.bounce, '__version__', None) != self.__version__ and self.__version__ is not None:
-                self.bounce = self.bounce.to_version(self.__version__)
+            if getattr(self.bounce, 'sdfversion', None) is None:
+                self.bounce.sdfversion = self.sdfversion
+            elif getattr(self.bounce, 'sdfversion', None) != self.sdfversion and self.sdfversion is not None:
+                self.bounce = self.bounce.to_version(self.sdfversion)
         if self.contact is not None and hasattr(self.contact, 'to_version'):
-            if getattr(self.contact, '__version__', None) is None:
-                self.contact.__version__ = self.__version__
-            elif getattr(self.contact, '__version__', None) != self.__version__ and self.__version__ is not None:
-                self.contact = self.contact.to_version(self.__version__)
+            if getattr(self.contact, 'sdfversion', None) is None:
+                self.contact.sdfversion = self.sdfversion
+            elif getattr(self.contact, 'sdfversion', None) != self.sdfversion and self.sdfversion is not None:
+                self.contact = self.contact.to_version(self.sdfversion)
         if self.friction is not None and hasattr(self.friction, 'to_version'):
-            if getattr(self.friction, '__version__', None) is None:
-                self.friction.__version__ = self.__version__
-            elif getattr(self.friction, '__version__', None) != self.__version__ and self.__version__ is not None:
-                self.friction = self.friction.to_version(self.__version__)
+            if getattr(self.friction, 'sdfversion', None) is None:
+                self.friction.sdfversion = self.sdfversion
+            elif getattr(self.friction, 'sdfversion', None) != self.sdfversion and self.sdfversion is not None:
+                self.friction = self.friction.to_version(self.sdfversion)
         if self.soft_contact is not None and hasattr(self.soft_contact, 'to_version'):
-            if getattr(self.soft_contact, '__version__', None) is None:
-                self.soft_contact.__version__ = self.__version__
-            elif getattr(self.soft_contact, '__version__', None) != self.__version__ and self.__version__ is not None:
-                self.soft_contact = self.soft_contact.to_version(self.__version__)
+            if getattr(self.soft_contact, 'sdfversion', None) is None:
+                self.soft_contact.sdfversion = self.sdfversion
+            elif getattr(self.soft_contact, 'sdfversion', None) != self.sdfversion and self.sdfversion is not None:
+                self.soft_contact = self.soft_contact.to_version(self.sdfversion)
 
     def to_version(self, target_version: str) -> "Surface":
         if self.soft_contact is not None and cmp_version(target_version, "1.4") < 0:
             raise ValueError(f"'soft_contact' is not supported in SDF version {target_version} (added in 1.4)")
-        kwargs = {"sdf_version": target_version}
-        kwargs["bounce"] = self.bounce.to_version(target_version) if hasattr(self.bounce, "to_version") else self.bounce
-        kwargs["contact"] = self.contact.to_version(target_version) if hasattr(self.contact, "to_version") else self.contact
-        kwargs["friction"] = self.friction.to_version(target_version) if hasattr(self.friction, "to_version") else self.friction
-        kwargs["soft_contact"] = self.soft_contact.to_version(target_version) if hasattr(self.soft_contact, "to_version") else self.soft_contact
-        new_obj = self.__class__(**kwargs)
-        return new_obj
+        kwargs: dict = {"sdf_version": target_version, "bounce": self.bounce.to_version(target_version) if self.bounce is not None and hasattr(self.bounce, "to_version") else self.bounce, "contact": self.contact.to_version(target_version) if self.contact is not None and hasattr(self.contact, "to_version") else self.contact, "friction": self.friction.to_version(target_version) if self.friction is not None and hasattr(self.friction, "to_version") else self.friction, "soft_contact": self.soft_contact.to_version(target_version) if self.soft_contact is not None and hasattr(self.soft_contact, "to_version") else self.soft_contact}
+        return self.__class__(**kwargs)
 
     def to_sdf(self, version: str | None = None) -> ET.Element:
-        if self.__version__ is None and version is not None:
-            self.__version__ = version
-        elif version is not None and version != self.__version__:
-            return self.to_version(version).to_sdf()
-        version = self.__version__ or version
+        if self.sdfversion is None and version is not None:
+            self.sdfversion = version
+        elif version is not None and version != self.sdfversion:
+            return self.to_version(str(version)).to_sdf()
         el = ET.Element("surface")
         if self.bounce is not None:
-            if hasattr(self.bounce, 'to_sdf'):
-                _child_res = self.bounce.to_sdf(version)
-            else:
-                _child_res = str(self.bounce)
+            _child_res = self.bounce.to_sdf(version)
             if isinstance(_child_res, str):
                 _item_el = ET.Element('bounce')
                 _item_el.text = _child_res
@@ -1144,10 +1007,7 @@ class Surface(BaseModel):
                 _item_el = _child_res
             el.append(_item_el)
         if self.contact is not None:
-            if hasattr(self.contact, 'to_sdf'):
-                _child_res = self.contact.to_sdf(version)
-            else:
-                _child_res = str(self.contact)
+            _child_res = self.contact.to_sdf(version)
             if isinstance(_child_res, str):
                 _item_el = ET.Element('contact')
                 _item_el.text = _child_res
@@ -1155,10 +1015,7 @@ class Surface(BaseModel):
                 _item_el = _child_res
             el.append(_item_el)
         if self.friction is not None:
-            if hasattr(self.friction, 'to_sdf'):
-                _child_res = self.friction.to_sdf(version)
-            else:
-                _child_res = str(self.friction)
+            _child_res = self.friction.to_sdf(version)
             if isinstance(_child_res, str):
                 _item_el = ET.Element('friction')
                 _item_el.text = _child_res
@@ -1166,10 +1023,7 @@ class Surface(BaseModel):
                 _item_el = _child_res
             el.append(_item_el)
         if self.soft_contact is not None:
-            if hasattr(self.soft_contact, 'to_sdf'):
-                _child_res = self.soft_contact.to_sdf(version)
-            else:
-                _child_res = str(self.soft_contact)
+            _child_res = self.soft_contact.to_sdf(version)
             if isinstance(_child_res, str):
                 _item_el = ET.Element('soft_contact')
                 _item_el.text = _child_res

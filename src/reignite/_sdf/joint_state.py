@@ -1,66 +1,35 @@
 ### THIS FILE WAS AUTO-GENERATED ###
 from __future__ import annotations
 
-import typing
 from xml.etree import ElementTree as ET
 
+from ..utils.utils import _parse_double, _parse_uint32
 from ..utils.model import BaseModel
 from ..utils.errors import SDFError
 
 
-import math
-
-def _parse_int32(raw: str) -> int | SDFError:
-    try:
-        v = int(raw)
-        if not (-2147483648 <= v <= 2147483647):
-            return SDFError(f"int32 out of range: {v}")
-        return v
-    except ValueError:
-        return SDFError(f"Invalid int32: {raw}")
-
-
-def _parse_uint32(raw: str) -> int | SDFError:
-    try:
-        v = int(raw)
-        if not (0 <= v <= 4294967295):
-            return SDFError(f"uint32 out of range: {v}")
-        return v
-    except ValueError:
-        return SDFError(f"Invalid uint32: {raw}")
-
-
-def _parse_double(raw: str) -> float | SDFError:
-    try:
-        v = float(raw)
-        if not math.isfinite(v) or abs(v) > math.inf:
-            return SDFError(f"double out of range: {raw}")
-        return v
-    except ValueError:
-        return SDFError(f"Invalid double: {raw}")
-
-
-
+# noinspection PyUnusedImports
 class JointState(BaseModel):
     class Angle(BaseModel):
-        def __init__(self, sdf_version: str | None = None, angle: float = 0, axis: int = 0):
+        def __init__(
+            self,
+            sdf_version: str | None = None,
+            angle: float | None = 0,
+            axis: int | None = 0
+        ):
             super().__init__(sdf_version)
-            self.angle = angle
-            self.axis = axis
+            self.angle = angle if angle is not None else 0
+            self.axis = axis if axis is not None else 0
 
         def to_version(self, target_version: str) -> "JointState.Angle":
-            kwargs = {"sdf_version": target_version}
-            kwargs["angle"] = self.angle
-            kwargs["axis"] = self.axis
-            new_obj = self.__class__(**kwargs)
-            return new_obj
+            kwargs: dict = {"sdf_version": target_version, "angle": self.angle, "axis": self.axis}
+            return self.__class__(**kwargs)
 
         def to_sdf(self, version: str | None = None) -> ET.Element:
-            if self.__version__ is None and version is not None:
-                self.__version__ = version
-            elif version is not None and version != self.__version__:
-                return self.to_version(version).to_sdf()
-            version = self.__version__ or version
+            if self.sdfversion is None and version is not None:
+                self.sdfversion = version
+            elif version is not None and version != self.sdfversion:
+                return self.to_version(str(version)).to_sdf()
             el = ET.Element("angle")
             if self.angle is not None:
                 el.text = str(self.angle)
@@ -84,26 +53,22 @@ class JointState(BaseModel):
             def __init__(
                 self,
                 sdf_version: str | None = None,
-                acceleration: float = 0,
-                degrees: bool = False
+                acceleration: float | None = 0,
+                degrees: bool | None = False
             ):
                 super().__init__(sdf_version)
-                self.acceleration = acceleration
-                self.degrees = degrees
+                self.acceleration = acceleration if acceleration is not None else 0
+                self.degrees = degrees if degrees is not None else False
 
             def to_version(self, target_version: str) -> "JointState.Axis2State.Acceleration":
-                kwargs = {"sdf_version": target_version}
-                kwargs["acceleration"] = self.acceleration
-                kwargs["degrees"] = self.degrees
-                new_obj = self.__class__(**kwargs)
-                return new_obj
+                kwargs: dict = {"sdf_version": target_version, "acceleration": self.acceleration, "degrees": self.degrees}
+                return self.__class__(**kwargs)
 
             def to_sdf(self, version: str | None = None) -> ET.Element:
-                if self.__version__ is None and version is not None:
-                    self.__version__ = version
-                elif version is not None and version != self.__version__:
-                    return self.to_version(version).to_sdf()
-                version = self.__version__ or version
+                if self.sdfversion is None and version is not None:
+                    self.sdfversion = version
+                elif version is not None and version != self.sdfversion:
+                    return self.to_version(str(version)).to_sdf()
                 el = ET.Element("acceleration")
                 if self.acceleration is not None:
                     el.text = str(self.acceleration)
@@ -123,24 +88,25 @@ class JointState(BaseModel):
                 return cls(sdf_version=version, acceleration=_acceleration, degrees=_degrees)
 
         class Position(BaseModel):
-            def __init__(self, sdf_version: str | None = None, degrees: bool = False, position: float = 0):
+            def __init__(
+                self,
+                sdf_version: str | None = None,
+                degrees: bool | None = False,
+                position: float | None = 0
+            ):
                 super().__init__(sdf_version)
-                self.degrees = degrees
-                self.position = position
+                self.degrees = degrees if degrees is not None else False
+                self.position = position if position is not None else 0
 
             def to_version(self, target_version: str) -> "JointState.Axis2State.Position":
-                kwargs = {"sdf_version": target_version}
-                kwargs["degrees"] = self.degrees
-                kwargs["position"] = self.position
-                new_obj = self.__class__(**kwargs)
-                return new_obj
+                kwargs: dict = {"sdf_version": target_version, "degrees": self.degrees, "position": self.position}
+                return self.__class__(**kwargs)
 
             def to_sdf(self, version: str | None = None) -> ET.Element:
-                if self.__version__ is None and version is not None:
-                    self.__version__ = version
-                elif version is not None and version != self.__version__:
-                    return self.to_version(version).to_sdf()
-                version = self.__version__ or version
+                if self.sdfversion is None and version is not None:
+                    self.sdfversion = version
+                elif version is not None and version != self.sdfversion:
+                    return self.to_version(str(version)).to_sdf()
                 el = ET.Element("position")
                 if self.degrees is not None:
                     el.set("degrees", str(self.degrees).lower())
@@ -160,24 +126,25 @@ class JointState(BaseModel):
                 return cls(sdf_version=version, degrees=_degrees, position=_position)
 
         class Velocity(BaseModel):
-            def __init__(self, sdf_version: str | None = None, degrees: bool = False, velocity: float = 0):
+            def __init__(
+                self,
+                sdf_version: str | None = None,
+                degrees: bool | None = False,
+                velocity: float | None = 0
+            ):
                 super().__init__(sdf_version)
-                self.degrees = degrees
-                self.velocity = velocity
+                self.degrees = degrees if degrees is not None else False
+                self.velocity = velocity if velocity is not None else 0
 
             def to_version(self, target_version: str) -> "JointState.Axis2State.Velocity":
-                kwargs = {"sdf_version": target_version}
-                kwargs["degrees"] = self.degrees
-                kwargs["velocity"] = self.velocity
-                new_obj = self.__class__(**kwargs)
-                return new_obj
+                kwargs: dict = {"sdf_version": target_version, "degrees": self.degrees, "velocity": self.velocity}
+                return self.__class__(**kwargs)
 
             def to_sdf(self, version: str | None = None) -> ET.Element:
-                if self.__version__ is None and version is not None:
-                    self.__version__ = version
-                elif version is not None and version != self.__version__:
-                    return self.to_version(version).to_sdf()
-                version = self.__version__ or version
+                if self.sdfversion is None and version is not None:
+                    self.sdfversion = version
+                elif version is not None and version != self.sdfversion:
+                    return self.to_version(str(version)).to_sdf()
                 el = ET.Element("velocity")
                 if self.degrees is not None:
                     el.set("degrees", str(self.degrees).lower())
@@ -200,52 +167,43 @@ class JointState(BaseModel):
             self,
             sdf_version: str | None = None,
             acceleration: "JointState.Axis2State.Acceleration" = None,
-            effort: float = 0,
+            effort: float | None = 0,
             position: "JointState.Axis2State.Position" = None,
             velocity: "JointState.Axis2State.Velocity" = None
         ):
             super().__init__(sdf_version)
             self.acceleration = acceleration
-            self.effort = effort
+            self.effort = effort if effort is not None else 0
             self.position = position
             self.velocity = velocity
             if self.acceleration is not None and hasattr(self.acceleration, 'to_version'):
-                if getattr(self.acceleration, '__version__', None) is None:
-                    self.acceleration.__version__ = self.__version__
-                elif getattr(self.acceleration, '__version__', None) != self.__version__ and self.__version__ is not None:
-                    self.acceleration = self.acceleration.to_version(self.__version__)
+                if getattr(self.acceleration, 'sdfversion', None) is None:
+                    self.acceleration.sdfversion = self.sdfversion
+                elif getattr(self.acceleration, 'sdfversion', None) != self.sdfversion and self.sdfversion is not None:
+                    self.acceleration = self.acceleration.to_version(self.sdfversion)
             if self.position is not None and hasattr(self.position, 'to_version'):
-                if getattr(self.position, '__version__', None) is None:
-                    self.position.__version__ = self.__version__
-                elif getattr(self.position, '__version__', None) != self.__version__ and self.__version__ is not None:
-                    self.position = self.position.to_version(self.__version__)
+                if getattr(self.position, 'sdfversion', None) is None:
+                    self.position.sdfversion = self.sdfversion
+                elif getattr(self.position, 'sdfversion', None) != self.sdfversion and self.sdfversion is not None:
+                    self.position = self.position.to_version(self.sdfversion)
             if self.velocity is not None and hasattr(self.velocity, 'to_version'):
-                if getattr(self.velocity, '__version__', None) is None:
-                    self.velocity.__version__ = self.__version__
-                elif getattr(self.velocity, '__version__', None) != self.__version__ and self.__version__ is not None:
-                    self.velocity = self.velocity.to_version(self.__version__)
+                if getattr(self.velocity, 'sdfversion', None) is None:
+                    self.velocity.sdfversion = self.sdfversion
+                elif getattr(self.velocity, 'sdfversion', None) != self.sdfversion and self.sdfversion is not None:
+                    self.velocity = self.velocity.to_version(self.sdfversion)
 
         def to_version(self, target_version: str) -> "JointState.Axis2State":
-            kwargs = {"sdf_version": target_version}
-            kwargs["acceleration"] = self.acceleration.to_version(target_version) if hasattr(self.acceleration, "to_version") else self.acceleration
-            kwargs["effort"] = self.effort
-            kwargs["position"] = self.position.to_version(target_version) if hasattr(self.position, "to_version") else self.position
-            kwargs["velocity"] = self.velocity.to_version(target_version) if hasattr(self.velocity, "to_version") else self.velocity
-            new_obj = self.__class__(**kwargs)
-            return new_obj
+            kwargs: dict = {"sdf_version": target_version, "acceleration": self.acceleration.to_version(target_version) if self.acceleration is not None and hasattr(self.acceleration, "to_version") else self.acceleration, "effort": self.effort, "position": self.position.to_version(target_version) if self.position is not None and hasattr(self.position, "to_version") else self.position, "velocity": self.velocity.to_version(target_version) if self.velocity is not None and hasattr(self.velocity, "to_version") else self.velocity}
+            return self.__class__(**kwargs)
 
         def to_sdf(self, version: str | None = None) -> ET.Element:
-            if self.__version__ is None and version is not None:
-                self.__version__ = version
-            elif version is not None and version != self.__version__:
-                return self.to_version(version).to_sdf()
-            version = self.__version__ or version
+            if self.sdfversion is None and version is not None:
+                self.sdfversion = version
+            elif version is not None and version != self.sdfversion:
+                return self.to_version(str(version)).to_sdf()
             el = ET.Element("axis2_state")
             if self.acceleration is not None:
-                if hasattr(self.acceleration, 'to_sdf'):
-                    _child_res = self.acceleration.to_sdf(version)
-                else:
-                    _child_res = str(self.acceleration)
+                _child_res = self.acceleration.to_sdf(version)
                 if isinstance(_child_res, str):
                     _item_el = ET.Element('acceleration')
                     _item_el.text = _child_res
@@ -257,10 +215,7 @@ class JointState(BaseModel):
                 _c_tmp.text = str(self.effort)
                 el.append(_c_tmp)
             if self.position is not None:
-                if hasattr(self.position, 'to_sdf'):
-                    _child_res = self.position.to_sdf(version)
-                else:
-                    _child_res = str(self.position)
+                _child_res = self.position.to_sdf(version)
                 if isinstance(_child_res, str):
                     _item_el = ET.Element('position')
                     _item_el.text = _child_res
@@ -268,10 +223,7 @@ class JointState(BaseModel):
                     _item_el = _child_res
                 el.append(_item_el)
             if self.velocity is not None:
-                if hasattr(self.velocity, 'to_sdf'):
-                    _child_res = self.velocity.to_sdf(version)
-                else:
-                    _child_res = str(self.velocity)
+                _child_res = self.velocity.to_sdf(version)
                 if isinstance(_child_res, str):
                     _item_el = ET.Element('velocity')
                     _item_el.text = _child_res
@@ -322,52 +274,43 @@ class JointState(BaseModel):
             self,
             sdf_version: str | None = None,
             acceleration: "Acceleration" = None,
-            effort: float = 0,
+            effort: float | None = 0,
             position: "Position" = None,
             velocity: "Velocity" = None
         ):
             super().__init__(sdf_version)
             self.acceleration = acceleration
-            self.effort = effort
+            self.effort = effort if effort is not None else 0
             self.position = position
             self.velocity = velocity
             if self.acceleration is not None and hasattr(self.acceleration, 'to_version'):
-                if getattr(self.acceleration, '__version__', None) is None:
-                    self.acceleration.__version__ = self.__version__
-                elif getattr(self.acceleration, '__version__', None) != self.__version__ and self.__version__ is not None:
-                    self.acceleration = self.acceleration.to_version(self.__version__)
+                if getattr(self.acceleration, 'sdfversion', None) is None:
+                    self.acceleration.sdfversion = self.sdfversion
+                elif getattr(self.acceleration, 'sdfversion', None) != self.sdfversion and self.sdfversion is not None:
+                    self.acceleration = self.acceleration.to_version(self.sdfversion)
             if self.position is not None and hasattr(self.position, 'to_version'):
-                if getattr(self.position, '__version__', None) is None:
-                    self.position.__version__ = self.__version__
-                elif getattr(self.position, '__version__', None) != self.__version__ and self.__version__ is not None:
-                    self.position = self.position.to_version(self.__version__)
+                if getattr(self.position, 'sdfversion', None) is None:
+                    self.position.sdfversion = self.sdfversion
+                elif getattr(self.position, 'sdfversion', None) != self.sdfversion and self.sdfversion is not None:
+                    self.position = self.position.to_version(self.sdfversion)
             if self.velocity is not None and hasattr(self.velocity, 'to_version'):
-                if getattr(self.velocity, '__version__', None) is None:
-                    self.velocity.__version__ = self.__version__
-                elif getattr(self.velocity, '__version__', None) != self.__version__ and self.__version__ is not None:
-                    self.velocity = self.velocity.to_version(self.__version__)
+                if getattr(self.velocity, 'sdfversion', None) is None:
+                    self.velocity.sdfversion = self.sdfversion
+                elif getattr(self.velocity, 'sdfversion', None) != self.sdfversion and self.sdfversion is not None:
+                    self.velocity = self.velocity.to_version(self.sdfversion)
 
         def to_version(self, target_version: str) -> "JointState.AxisState":
-            kwargs = {"sdf_version": target_version}
-            kwargs["acceleration"] = self.acceleration.to_version(target_version) if hasattr(self.acceleration, "to_version") else self.acceleration
-            kwargs["effort"] = self.effort
-            kwargs["position"] = self.position.to_version(target_version) if hasattr(self.position, "to_version") else self.position
-            kwargs["velocity"] = self.velocity.to_version(target_version) if hasattr(self.velocity, "to_version") else self.velocity
-            new_obj = self.__class__(**kwargs)
-            return new_obj
+            kwargs: dict = {"sdf_version": target_version, "acceleration": self.acceleration.to_version(target_version) if self.acceleration is not None and hasattr(self.acceleration, "to_version") else self.acceleration, "effort": self.effort, "position": self.position.to_version(target_version) if self.position is not None and hasattr(self.position, "to_version") else self.position, "velocity": self.velocity.to_version(target_version) if self.velocity is not None and hasattr(self.velocity, "to_version") else self.velocity}
+            return self.__class__(**kwargs)
 
         def to_sdf(self, version: str | None = None) -> ET.Element:
-            if self.__version__ is None and version is not None:
-                self.__version__ = version
-            elif version is not None and version != self.__version__:
-                return self.to_version(version).to_sdf()
-            version = self.__version__ or version
+            if self.sdfversion is None and version is not None:
+                self.sdfversion = version
+            elif version is not None and version != self.sdfversion:
+                return self.to_version(str(version)).to_sdf()
             el = ET.Element("axis_state")
             if self.acceleration is not None:
-                if hasattr(self.acceleration, 'to_sdf'):
-                    _child_res = self.acceleration.to_sdf(version)
-                else:
-                    _child_res = str(self.acceleration)
+                _child_res = self.acceleration.to_sdf(version)
                 if isinstance(_child_res, str):
                     _item_el = ET.Element('acceleration')
                     _item_el.text = _child_res
@@ -379,10 +322,7 @@ class JointState(BaseModel):
                 _c_tmp.text = str(self.effort)
                 el.append(_c_tmp)
             if self.position is not None:
-                if hasattr(self.position, 'to_sdf'):
-                    _child_res = self.position.to_sdf(version)
-                else:
-                    _child_res = str(self.position)
+                _child_res = self.position.to_sdf(version)
                 if isinstance(_child_res, str):
                     _item_el = ET.Element('position')
                     _item_el.text = _child_res
@@ -390,10 +330,7 @@ class JointState(BaseModel):
                     _item_el = _child_res
                 el.append(_item_el)
             if self.velocity is not None:
-                if hasattr(self.velocity, 'to_sdf'):
-                    _child_res = self.velocity.to_sdf(version)
-                else:
-                    _child_res = str(self.velocity)
+                _child_res = self.velocity.to_sdf(version)
                 if isinstance(_child_res, str):
                     _item_el = ET.Element('velocity')
                     _item_el.text = _child_res
@@ -445,50 +382,41 @@ class JointState(BaseModel):
         angle: "JointState.Angle" = None,
         axis2_state: "JointState.Axis2State" = None,
         axis_state: "JointState.AxisState" = None,
-        name: str = "__default__"
+        name: str | None = "__default__"
     ):
         super().__init__(sdf_version)
         self.angle = angle
         self.axis2_state = axis2_state
         self.axis_state = axis_state
-        self.name = name
+        self.name = name if name is not None else "__default__"
         if self.angle is not None and hasattr(self.angle, 'to_version'):
-            if getattr(self.angle, '__version__', None) is None:
-                self.angle.__version__ = self.__version__
-            elif getattr(self.angle, '__version__', None) != self.__version__ and self.__version__ is not None:
-                self.angle = self.angle.to_version(self.__version__)
+            if getattr(self.angle, 'sdfversion', None) is None:
+                self.angle.sdfversion = self.sdfversion
+            elif getattr(self.angle, 'sdfversion', None) != self.sdfversion and self.sdfversion is not None:
+                self.angle = self.angle.to_version(self.sdfversion)
         if self.axis2_state is not None and hasattr(self.axis2_state, 'to_version'):
-            if getattr(self.axis2_state, '__version__', None) is None:
-                self.axis2_state.__version__ = self.__version__
-            elif getattr(self.axis2_state, '__version__', None) != self.__version__ and self.__version__ is not None:
-                self.axis2_state = self.axis2_state.to_version(self.__version__)
+            if getattr(self.axis2_state, 'sdfversion', None) is None:
+                self.axis2_state.sdfversion = self.sdfversion
+            elif getattr(self.axis2_state, 'sdfversion', None) != self.sdfversion and self.sdfversion is not None:
+                self.axis2_state = self.axis2_state.to_version(self.sdfversion)
         if self.axis_state is not None and hasattr(self.axis_state, 'to_version'):
-            if getattr(self.axis_state, '__version__', None) is None:
-                self.axis_state.__version__ = self.__version__
-            elif getattr(self.axis_state, '__version__', None) != self.__version__ and self.__version__ is not None:
-                self.axis_state = self.axis_state.to_version(self.__version__)
+            if getattr(self.axis_state, 'sdfversion', None) is None:
+                self.axis_state.sdfversion = self.sdfversion
+            elif getattr(self.axis_state, 'sdfversion', None) != self.sdfversion and self.sdfversion is not None:
+                self.axis_state = self.axis_state.to_version(self.sdfversion)
 
     def to_version(self, target_version: str) -> "JointState":
-        kwargs = {"sdf_version": target_version}
-        kwargs["angle"] = self.angle.to_version(target_version) if hasattr(self.angle, "to_version") else self.angle
-        kwargs["axis2_state"] = self.axis2_state.to_version(target_version) if hasattr(self.axis2_state, "to_version") else self.axis2_state
-        kwargs["axis_state"] = self.axis_state.to_version(target_version) if hasattr(self.axis_state, "to_version") else self.axis_state
-        kwargs["name"] = self.name
-        new_obj = self.__class__(**kwargs)
-        return new_obj
+        kwargs: dict = {"sdf_version": target_version, "angle": self.angle.to_version(target_version) if self.angle is not None and hasattr(self.angle, "to_version") else self.angle, "axis2_state": self.axis2_state.to_version(target_version) if self.axis2_state is not None and hasattr(self.axis2_state, "to_version") else self.axis2_state, "axis_state": self.axis_state.to_version(target_version) if self.axis_state is not None and hasattr(self.axis_state, "to_version") else self.axis_state, "name": self.name}
+        return self.__class__(**kwargs)
 
     def to_sdf(self, version: str | None = None) -> ET.Element:
-        if self.__version__ is None and version is not None:
-            self.__version__ = version
-        elif version is not None and version != self.__version__:
-            return self.to_version(version).to_sdf()
-        version = self.__version__ or version
+        if self.sdfversion is None and version is not None:
+            self.sdfversion = version
+        elif version is not None and version != self.sdfversion:
+            return self.to_version(str(version)).to_sdf()
         el = ET.Element("joint_state")
         if self.angle is not None:
-            if hasattr(self.angle, 'to_sdf'):
-                _child_res = self.angle.to_sdf(version)
-            else:
-                _child_res = str(self.angle)
+            _child_res = self.angle.to_sdf(version)
             if isinstance(_child_res, str):
                 _item_el = ET.Element('angle')
                 _item_el.text = _child_res
@@ -496,10 +424,7 @@ class JointState(BaseModel):
                 _item_el = _child_res
             el.append(_item_el)
         if self.axis2_state is not None:
-            if hasattr(self.axis2_state, 'to_sdf'):
-                _child_res = self.axis2_state.to_sdf(version)
-            else:
-                _child_res = str(self.axis2_state)
+            _child_res = self.axis2_state.to_sdf(version)
             if isinstance(_child_res, str):
                 _item_el = ET.Element('axis2_state')
                 _item_el.text = _child_res
@@ -507,10 +432,7 @@ class JointState(BaseModel):
                 _item_el = _child_res
             el.append(_item_el)
         if self.axis_state is not None:
-            if hasattr(self.axis_state, 'to_sdf'):
-                _child_res = self.axis_state.to_sdf(version)
-            else:
-                _child_res = str(self.axis_state)
+            _child_res = self.axis_state.to_sdf(version)
             if isinstance(_child_res, str):
                 _item_el = ET.Element('axis_state')
                 _item_el.text = _child_res

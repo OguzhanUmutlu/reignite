@@ -1,54 +1,22 @@
 ### THIS FILE WAS AUTO-GENERATED ###
 from __future__ import annotations
 
-import typing
 from xml.etree import ElementTree as ET
 
+from ..utils.utils import _parse_double
+import typing
 from typing import List
 
 from ..utils.model import BaseModel
 from ..utils.errors import SDFError
-from ..utils.pose import Pose as _SDFPose, _PoseT, _pose
-from ..utils.vector3 import Vector3 as _SDFVector3, _Vector3T, _vector3
+from ..utils.pose import Pose as _PoseT, _pose
+from ..utils.vector3 import Vector3 as _Vector3T, _vector3
 from ..utils.version import cmp_version
 
 if typing.TYPE_CHECKING:
     from ..elements.frame import Frame
     from ..elements.plugin import Plugin
     from ..elements.pose import Pose
-
-
-import math
-
-def _parse_int32(raw: str) -> int | SDFError:
-    try:
-        v = int(raw)
-        if not (-2147483648 <= v <= 2147483647):
-            return SDFError(f"int32 out of range: {v}")
-        return v
-    except ValueError:
-        return SDFError(f"Invalid int32: {raw}")
-
-
-def _parse_uint32(raw: str) -> int | SDFError:
-    try:
-        v = int(raw)
-        if not (0 <= v <= 4294967295):
-            return SDFError(f"uint32 out of range: {v}")
-        return v
-    except ValueError:
-        return SDFError(f"Invalid uint32: {raw}")
-
-
-def _parse_double(raw: str) -> float | SDFError:
-    try:
-        v = float(raw)
-        if not math.isfinite(v) or abs(v) > math.inf:
-            return SDFError(f"double out of range: {raw}")
-        return v
-    except ValueError:
-        return SDFError(f"Invalid double: {raw}")
-
 
 def _parse_pose(raw: str) -> _PoseT | SDFError:
     try:
@@ -63,29 +31,23 @@ def _parse_vector3(raw: str) -> _Vector3T | SDFError:
         return SDFError(str(e))
 
 
+# noinspection PyUnusedImports
 class Gui(BaseModel):
     class Camera(BaseModel):
         class Origin(BaseModel):
-            def __init__(self, sdf_version: str | None = None, pose: _PoseT = None):
+            def __init__(self, sdf_version: str | None = None, pose: _PoseT | None = None):
                 super().__init__(sdf_version)
-                if pose is None:
-                    pose = _pose("0 0 0 0 0 0")
-                else:
-                    pose = _pose(pose)
-                self.pose = pose
+                self.pose = _pose("0 0 0 0 0 0") if pose is None else _pose(pose)
 
             def to_version(self, target_version: str) -> "Gui.Camera.Origin":
-                kwargs = {"sdf_version": target_version}
-                kwargs["pose"] = self.pose
-                new_obj = self.__class__(**kwargs)
-                return new_obj
+                kwargs: dict = {"sdf_version": target_version, "pose": self.pose}
+                return self.__class__(**kwargs)
 
             def to_sdf(self, version: str | None = None) -> ET.Element:
-                if self.__version__ is None and version is not None:
-                    self.__version__ = version
-                elif version is not None and version != self.__version__:
-                    return self.to_version(version).to_sdf()
-                version = self.__version__ or version
+                if self.sdfversion is None and version is not None:
+                    self.sdfversion = version
+                elif version is not None and version != self.sdfversion:
+                    return self.to_version(str(version)).to_sdf()
                 el = ET.Element("origin")
                 if self.pose is not None:
                     if cmp_version(version, "1.2") >= 0:
@@ -114,26 +76,22 @@ class Gui(BaseModel):
             def __init__(
                 self,
                 sdf_version: str | None = None,
-                inherit_yaw: bool = False,
-                max_dist: float = 0,
-                min_dist: float = 0,
-                name: str = "__default__",
-                static: bool = False,
-                use_model_frame: bool = True,
-                xyz: _Vector3T = None
+                inherit_yaw: bool | None = False,
+                max_dist: float | None = 0,
+                min_dist: float | None = 0,
+                name: str | None = "__default__",
+                static: bool | None = False,
+                use_model_frame: bool | None = True,
+                xyz: _Vector3T | None = None
             ):
                 super().__init__(sdf_version)
-                if xyz is None:
-                    xyz = _vector3("-5.0 0.0 3.0")
-                else:
-                    xyz = _vector3(xyz)
-                self.inherit_yaw = inherit_yaw
-                self.max_dist = max_dist
-                self.min_dist = min_dist
-                self.name = name
-                self.static = static
-                self.use_model_frame = use_model_frame
-                self.xyz = xyz
+                self.inherit_yaw = inherit_yaw if inherit_yaw is not None else False
+                self.max_dist = max_dist if max_dist is not None else 0
+                self.min_dist = min_dist if min_dist is not None else 0
+                self.name = name if name is not None else "__default__"
+                self.static = static if static is not None else False
+                self.use_model_frame = use_model_frame if use_model_frame is not None else True
+                self.xyz = _vector3("-5.0 0.0 3.0") if xyz is None else _vector3(xyz)
 
             def to_version(self, target_version: str) -> "Gui.Camera.TrackVisual":
                 if self.inherit_yaw is not None and cmp_version(target_version, "1.6") < 0:
@@ -144,23 +102,14 @@ class Gui(BaseModel):
                     raise ValueError(f"'use_model_frame' is not supported in SDF version {target_version} (added in 1.6)")
                 if self.xyz is not None and cmp_version(target_version, "1.6") < 0:
                     raise ValueError(f"'xyz' is not supported in SDF version {target_version} (added in 1.6)")
-                kwargs = {"sdf_version": target_version}
-                kwargs["inherit_yaw"] = self.inherit_yaw
-                kwargs["max_dist"] = self.max_dist
-                kwargs["min_dist"] = self.min_dist
-                kwargs["name"] = self.name
-                kwargs["static"] = self.static
-                kwargs["use_model_frame"] = self.use_model_frame
-                kwargs["xyz"] = self.xyz
-                new_obj = self.__class__(**kwargs)
-                return new_obj
+                kwargs: dict = {"sdf_version": target_version, "inherit_yaw": self.inherit_yaw, "max_dist": self.max_dist, "min_dist": self.min_dist, "name": self.name, "static": self.static, "use_model_frame": self.use_model_frame, "xyz": self.xyz}
+                return self.__class__(**kwargs)
 
             def to_sdf(self, version: str | None = None) -> ET.Element:
-                if self.__version__ is None and version is not None:
-                    self.__version__ = version
-                elif version is not None and version != self.__version__:
-                    return self.to_version(version).to_sdf()
-                version = self.__version__ or version
+                if self.sdfversion is None and version is not None:
+                    self.sdfversion = version
+                elif version is not None and version != self.sdfversion:
+                    return self.to_version(str(version)).to_sdf()
                 el = ET.Element("track_visual")
                 if self.inherit_yaw is not None:
                     _c_tmp = ET.Element("inherit_yaw")
@@ -271,42 +220,42 @@ class Gui(BaseModel):
             self,
             sdf_version: str | None = None,
             frames: List["Frame"] = None,
-            name: str = "user_camera",
+            name: str | None = "user_camera",
             origin: "Gui.Camera.Origin" = None,
             pose: "Pose" = None,
-            projection_type: str = "perspective",
+            projection_type: str | None = "perspective",
             track_visual: "Gui.Camera.TrackVisual" = None,
-            view_controller: str = "oribit"
+            view_controller: str | None = "oribit"
         ):
             super().__init__(sdf_version)
             self.frames = frames or []
-            self.name = name
+            self.name = name if name is not None else "user_camera"
             self.origin = origin
             self.pose = pose
-            self.projection_type = projection_type
+            self.projection_type = projection_type if projection_type is not None else "perspective"
             self.track_visual = track_visual
-            self.view_controller = view_controller
+            self.view_controller = view_controller if view_controller is not None else "oribit"
             for _i, _c in enumerate(self.frames):
                 if not hasattr(_c, 'to_version'): continue
-                if getattr(_c, '__version__', None) is None:
-                    _c.__version__ = self.__version__
-                elif getattr(_c, '__version__', None) != self.__version__ and self.__version__ is not None:
-                    self.frames[_i] = _c.to_version(self.__version__)
+                if getattr(_c, 'sdfversion', None) is None:
+                    _c.sdfversion = self.sdfversion
+                elif getattr(_c, 'sdfversion', None) != self.sdfversion and self.sdfversion is not None:
+                    self.frames[_i] = _c.to_version(self.sdfversion)
             if self.origin is not None and hasattr(self.origin, 'to_version'):
-                if getattr(self.origin, '__version__', None) is None:
-                    self.origin.__version__ = self.__version__
-                elif getattr(self.origin, '__version__', None) != self.__version__ and self.__version__ is not None:
-                    self.origin = self.origin.to_version(self.__version__)
+                if getattr(self.origin, 'sdfversion', None) is None:
+                    self.origin.sdfversion = self.sdfversion
+                elif getattr(self.origin, 'sdfversion', None) != self.sdfversion and self.sdfversion is not None:
+                    self.origin = self.origin.to_version(self.sdfversion)
             if self.pose is not None and hasattr(self.pose, 'to_version'):
-                if getattr(self.pose, '__version__', None) is None:
-                    self.pose.__version__ = self.__version__
-                elif getattr(self.pose, '__version__', None) != self.__version__ and self.__version__ is not None:
-                    self.pose = self.pose.to_version(self.__version__)
+                if getattr(self.pose, 'sdfversion', None) is None:
+                    self.pose.sdfversion = self.sdfversion
+                elif getattr(self.pose, 'sdfversion', None) != self.sdfversion and self.sdfversion is not None:
+                    self.pose = self.pose.to_version(self.sdfversion)
             if self.track_visual is not None and hasattr(self.track_visual, 'to_version'):
-                if getattr(self.track_visual, '__version__', None) is None:
-                    self.track_visual.__version__ = self.__version__
-                elif getattr(self.track_visual, '__version__', None) != self.__version__ and self.__version__ is not None:
-                    self.track_visual = self.track_visual.to_version(self.__version__)
+                if getattr(self.track_visual, 'sdfversion', None) is None:
+                    self.track_visual.sdfversion = self.sdfversion
+                elif getattr(self.track_visual, 'sdfversion', None) != self.sdfversion and self.sdfversion is not None:
+                    self.track_visual = self.track_visual.to_version(self.sdfversion)
 
         def add_frame(self, *items: "Frame"):
             if self.frames is None:
@@ -326,31 +275,19 @@ class Gui(BaseModel):
                 raise ValueError(f"'pose' is not supported in SDF version {target_version} (added in 1.2)")
             if self.projection_type is not None and cmp_version(target_version, "1.5") < 0:
                 raise ValueError(f"'projection_type' is not supported in SDF version {target_version} (added in 1.5)")
-            kwargs = {"sdf_version": target_version}
-            kwargs["frames"] = [c.to_version(target_version) if hasattr(c, "to_version") else c for c in (self.frames or [])]
-            kwargs["name"] = self.name
-            kwargs["origin"] = self.origin.to_version(target_version) if hasattr(self.origin, "to_version") else self.origin
-            kwargs["pose"] = self.pose.to_version(target_version) if hasattr(self.pose, "to_version") else self.pose
-            kwargs["projection_type"] = self.projection_type
-            kwargs["track_visual"] = self.track_visual.to_version(target_version) if hasattr(self.track_visual, "to_version") else self.track_visual
-            kwargs["view_controller"] = self.view_controller
-            new_obj = self.__class__(**kwargs)
-            return new_obj
+            kwargs: dict = {"sdf_version": target_version, "frames": [c.to_version(target_version) if hasattr(c, "to_version") else c for c in (self.frames or [])], "name": self.name, "origin": self.origin.to_version(target_version) if self.origin is not None and hasattr(self.origin, "to_version") else self.origin, "pose": self.pose.to_version(target_version) if self.pose is not None and hasattr(self.pose, "to_version") else self.pose, "projection_type": self.projection_type, "track_visual": self.track_visual.to_version(target_version) if self.track_visual is not None and hasattr(self.track_visual, "to_version") else self.track_visual, "view_controller": self.view_controller}
+            return self.__class__(**kwargs)
 
         def to_sdf(self, version: str | None = None) -> ET.Element:
             from ..elements.frame import Frame
             from ..elements.pose import Pose
-            if self.__version__ is None and version is not None:
-                self.__version__ = version
-            elif version is not None and version != self.__version__:
-                return self.to_version(version).to_sdf()
-            version = self.__version__ or version
+            if self.sdfversion is None and version is not None:
+                self.sdfversion = version
+            elif version is not None and version != self.sdfversion:
+                return self.to_version(str(version)).to_sdf()
             el = ET.Element("camera")
             for item in (self.frames or []):
-                if hasattr(item, 'to_sdf'):
-                    _child_res = item.to_sdf(version)
-                else:
-                    _child_res = str(item)
+                _child_res = item.to_sdf(version)
                 if isinstance(_child_res, str):
                     _item_el = ET.Element('frame')
                     _item_el.text = _child_res
@@ -360,10 +297,7 @@ class Gui(BaseModel):
             if self.name is not None:
                 el.set("name", self.name)
             if self.origin is not None:
-                if hasattr(self.origin, 'to_sdf'):
-                    _child_res = self.origin.to_sdf(version)
-                else:
-                    _child_res = str(self.origin)
+                _child_res = self.origin.to_sdf(version)
                 if isinstance(_child_res, str):
                     _item_el = ET.Element('origin')
                     _item_el.text = _child_res
@@ -371,10 +305,7 @@ class Gui(BaseModel):
                     _item_el = _child_res
                 el.append(_item_el)
             if self.pose is not None:
-                if hasattr(self.pose, 'to_sdf'):
-                    _child_res = self.pose.to_sdf(version)
-                else:
-                    _child_res = str(self.pose)
+                _child_res = self.pose.to_sdf(version)
                 if isinstance(_child_res, str):
                     _item_el = ET.Element('pose')
                     _item_el.text = _child_res
@@ -386,10 +317,7 @@ class Gui(BaseModel):
                 _c_tmp.text = self.projection_type
                 el.append(_c_tmp)
             if self.track_visual is not None:
-                if hasattr(self.track_visual, 'to_sdf'):
-                    _child_res = self.track_visual.to_sdf(version)
-                else:
-                    _child_res = str(self.track_visual)
+                _child_res = self.track_visual.to_sdf(version)
                 if isinstance(_child_res, str):
                     _item_el = ET.Element('track_visual')
                     _item_el.text = _child_res
@@ -469,24 +397,24 @@ class Gui(BaseModel):
         self,
         sdf_version: str | None = None,
         camera: "Gui.Camera" = None,
-        fullscreen: bool = False,
+        fullscreen: bool | None = False,
         plugins: List["Plugin"] = None
     ):
         super().__init__(sdf_version)
         self.camera = camera
-        self.fullscreen = fullscreen
+        self.fullscreen = fullscreen if fullscreen is not None else False
         self.plugins = plugins or []
         if self.camera is not None and hasattr(self.camera, 'to_version'):
-            if getattr(self.camera, '__version__', None) is None:
-                self.camera.__version__ = self.__version__
-            elif getattr(self.camera, '__version__', None) != self.__version__ and self.__version__ is not None:
-                self.camera = self.camera.to_version(self.__version__)
+            if getattr(self.camera, 'sdfversion', None) is None:
+                self.camera.sdfversion = self.sdfversion
+            elif getattr(self.camera, 'sdfversion', None) != self.sdfversion and self.sdfversion is not None:
+                self.camera = self.camera.to_version(self.sdfversion)
         for _i, _c in enumerate(self.plugins):
             if not hasattr(_c, 'to_version'): continue
-            if getattr(_c, '__version__', None) is None:
-                _c.__version__ = self.__version__
-            elif getattr(_c, '__version__', None) != self.__version__ and self.__version__ is not None:
-                self.plugins[_i] = _c.to_version(self.__version__)
+            if getattr(_c, 'sdfversion', None) is None:
+                _c.sdfversion = self.sdfversion
+            elif getattr(_c, 'sdfversion', None) != self.sdfversion and self.sdfversion is not None:
+                self.plugins[_i] = _c.to_version(self.sdfversion)
 
     def add_plugin(self, *items: "Plugin"):
         if self.plugins is None:
@@ -497,26 +425,18 @@ class Gui(BaseModel):
         from ..elements.plugin import Plugin
         if self.plugins is not None and cmp_version(target_version, "1.5") < 0:
             raise ValueError(f"'plugins' is not supported in SDF version {target_version} (added in 1.5)")
-        kwargs = {"sdf_version": target_version}
-        kwargs["camera"] = self.camera.to_version(target_version) if hasattr(self.camera, "to_version") else self.camera
-        kwargs["fullscreen"] = self.fullscreen
-        kwargs["plugins"] = [c.to_version(target_version) if hasattr(c, "to_version") else c for c in (self.plugins or [])]
-        new_obj = self.__class__(**kwargs)
-        return new_obj
+        kwargs: dict = {"sdf_version": target_version, "camera": self.camera.to_version(target_version) if self.camera is not None and hasattr(self.camera, "to_version") else self.camera, "fullscreen": self.fullscreen, "plugins": [c.to_version(target_version) if hasattr(c, "to_version") else c for c in (self.plugins or [])]}
+        return self.__class__(**kwargs)
 
     def to_sdf(self, version: str | None = None) -> ET.Element:
         from ..elements.plugin import Plugin
-        if self.__version__ is None and version is not None:
-            self.__version__ = version
-        elif version is not None and version != self.__version__:
-            return self.to_version(version).to_sdf()
-        version = self.__version__ or version
+        if self.sdfversion is None and version is not None:
+            self.sdfversion = version
+        elif version is not None and version != self.sdfversion:
+            return self.to_version(str(version)).to_sdf()
         el = ET.Element("gui")
         if self.camera is not None:
-            if hasattr(self.camera, 'to_sdf'):
-                _child_res = self.camera.to_sdf(version)
-            else:
-                _child_res = str(self.camera)
+            _child_res = self.camera.to_sdf(version)
             if isinstance(_child_res, str):
                 _item_el = ET.Element('camera')
                 _item_el.text = _child_res
@@ -526,10 +446,7 @@ class Gui(BaseModel):
         if self.fullscreen is not None:
             el.set("fullscreen", str(self.fullscreen).lower())
         for item in (self.plugins or []):
-            if hasattr(item, 'to_sdf'):
-                _child_res = item.to_sdf(version)
-            else:
-                _child_res = str(item)
+            _child_res = item.to_sdf(version)
             if isinstance(_child_res, str):
                 _item_el = ET.Element('plugin')
                 _item_el.text = _child_res

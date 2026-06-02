@@ -1,69 +1,37 @@
 ### THIS FILE WAS AUTO-GENERATED ###
 from __future__ import annotations
 
-import typing
 from xml.etree import ElementTree as ET
 
+from ..utils.utils import _parse_double
 from ..utils.model import BaseModel
 from ..utils.errors import SDFError
 from ..utils.version import cmp_version
 
 
-import math
-
-def _parse_int32(raw: str) -> int | SDFError:
-    try:
-        v = int(raw)
-        if not (-2147483648 <= v <= 2147483647):
-            return SDFError(f"int32 out of range: {v}")
-        return v
-    except ValueError:
-        return SDFError(f"Invalid int32: {raw}")
-
-
-def _parse_uint32(raw: str) -> int | SDFError:
-    try:
-        v = int(raw)
-        if not (0 <= v <= 4294967295):
-            return SDFError(f"uint32 out of range: {v}")
-        return v
-    except ValueError:
-        return SDFError(f"Invalid uint32: {raw}")
-
-
-def _parse_double(raw: str) -> float | SDFError:
-    try:
-        v = float(raw)
-        if not math.isfinite(v) or abs(v) > math.inf:
-            return SDFError(f"double out of range: {raw}")
-        return v
-    except ValueError:
-        return SDFError(f"Invalid double: {raw}")
-
-
-
+# noinspection PyUnusedImports
 class SphericalCoordinates(BaseModel):
     def __init__(
         self,
         sdf_version: str | None = None,
-        elevation: float = 0.0,
-        heading_deg: float = 0.0,
-        latitude_deg: float = 0.0,
-        longitude_deg: float = 0.0,
-        surface_axis_equatorial: float = 0.0,
-        surface_axis_polar: float = 0.0,
-        surface_model: str = "EARTH_WGS84",
-        world_frame_orientation: str = "ENU"
+        elevation: float | None = 0.0,
+        heading_deg: float | None = 0.0,
+        latitude_deg: float | None = 0.0,
+        longitude_deg: float | None = 0.0,
+        surface_axis_equatorial: float | None = 0.0,
+        surface_axis_polar: float | None = 0.0,
+        surface_model: str | None = "EARTH_WGS84",
+        world_frame_orientation: str | None = "ENU"
     ):
         super().__init__(sdf_version)
-        self.elevation = elevation
-        self.heading_deg = heading_deg
-        self.latitude_deg = latitude_deg
-        self.longitude_deg = longitude_deg
-        self.surface_axis_equatorial = surface_axis_equatorial
-        self.surface_axis_polar = surface_axis_polar
-        self.surface_model = surface_model
-        self.world_frame_orientation = world_frame_orientation
+        self.elevation = elevation if elevation is not None else 0.0
+        self.heading_deg = heading_deg if heading_deg is not None else 0.0
+        self.latitude_deg = latitude_deg if latitude_deg is not None else 0.0
+        self.longitude_deg = longitude_deg if longitude_deg is not None else 0.0
+        self.surface_axis_equatorial = surface_axis_equatorial if surface_axis_equatorial is not None else 0.0
+        self.surface_axis_polar = surface_axis_polar if surface_axis_polar is not None else 0.0
+        self.surface_model = surface_model if surface_model is not None else "EARTH_WGS84"
+        self.world_frame_orientation = world_frame_orientation if world_frame_orientation is not None else "ENU"
 
     def to_version(self, target_version: str) -> "SphericalCoordinates":
         if self.surface_axis_equatorial is not None and cmp_version(target_version, "1.10") < 0:
@@ -72,24 +40,14 @@ class SphericalCoordinates(BaseModel):
             raise ValueError(f"'surface_axis_polar' is not supported in SDF version {target_version} (added in 1.10)")
         if self.world_frame_orientation is not None and cmp_version(target_version, "1.6") < 0:
             raise ValueError(f"'world_frame_orientation' is not supported in SDF version {target_version} (added in 1.6)")
-        kwargs = {"sdf_version": target_version}
-        kwargs["elevation"] = self.elevation
-        kwargs["heading_deg"] = self.heading_deg
-        kwargs["latitude_deg"] = self.latitude_deg
-        kwargs["longitude_deg"] = self.longitude_deg
-        kwargs["surface_axis_equatorial"] = self.surface_axis_equatorial
-        kwargs["surface_axis_polar"] = self.surface_axis_polar
-        kwargs["surface_model"] = self.surface_model
-        kwargs["world_frame_orientation"] = self.world_frame_orientation
-        new_obj = self.__class__(**kwargs)
-        return new_obj
+        kwargs: dict = {"sdf_version": target_version, "elevation": self.elevation, "heading_deg": self.heading_deg, "latitude_deg": self.latitude_deg, "longitude_deg": self.longitude_deg, "surface_axis_equatorial": self.surface_axis_equatorial, "surface_axis_polar": self.surface_axis_polar, "surface_model": self.surface_model, "world_frame_orientation": self.world_frame_orientation}
+        return self.__class__(**kwargs)
 
     def to_sdf(self, version: str | None = None) -> ET.Element:
-        if self.__version__ is None and version is not None:
-            self.__version__ = version
-        elif version is not None and version != self.__version__:
-            return self.to_version(version).to_sdf()
-        version = self.__version__ or version
+        if self.sdfversion is None and version is not None:
+            self.sdfversion = version
+        elif version is not None and version != self.sdfversion:
+            return self.to_version(str(version)).to_sdf()
         el = ET.Element("spherical_coordinates")
         if self.elevation is not None:
             _c_tmp = ET.Element("elevation")

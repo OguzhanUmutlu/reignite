@@ -1,46 +1,13 @@
 ### THIS FILE WAS AUTO-GENERATED ###
 from __future__ import annotations
 
-import typing
 from xml.etree import ElementTree as ET
 
+from ..utils.utils import _parse_uint32
 from ..utils.model import BaseModel
 from ..utils.errors import SDFError
-from ..utils.vector3 import Vector3 as _SDFVector3, _Vector3T, _vector3
+from ..utils.vector3 import Vector3 as _Vector3T, _vector3
 from ..utils.version import cmp_version
-
-
-import math
-
-def _parse_int32(raw: str) -> int | SDFError:
-    try:
-        v = int(raw)
-        if not (-2147483648 <= v <= 2147483647):
-            return SDFError(f"int32 out of range: {v}")
-        return v
-    except ValueError:
-        return SDFError(f"Invalid int32: {raw}")
-
-
-def _parse_uint32(raw: str) -> int | SDFError:
-    try:
-        v = int(raw)
-        if not (0 <= v <= 4294967295):
-            return SDFError(f"uint32 out of range: {v}")
-        return v
-    except ValueError:
-        return SDFError(f"Invalid uint32: {raw}")
-
-
-def _parse_double(raw: str) -> float | SDFError:
-    try:
-        v = float(raw)
-        if not math.isfinite(v) or abs(v) > math.inf:
-            return SDFError(f"double out of range: {raw}")
-        return v
-    except ValueError:
-        return SDFError(f"Invalid double: {raw}")
-
 
 def _parse_vector3(raw: str) -> _Vector3T | SDFError:
     try:
@@ -49,31 +16,28 @@ def _parse_vector3(raw: str) -> _Vector3T | SDFError:
         return SDFError(str(e))
 
 
+# noinspection PyUnusedImports
 class Mesh(BaseModel):
     class ConvexDecomposition(BaseModel):
         def __init__(
             self,
             sdf_version: str | None = None,
-            max_convex_hulls: int = 16,
-            voxel_resolution: int = 200000
+            max_convex_hulls: int | None = 16,
+            voxel_resolution: int | None = 200000
         ):
             super().__init__(sdf_version)
-            self.max_convex_hulls = max_convex_hulls
-            self.voxel_resolution = voxel_resolution
+            self.max_convex_hulls = max_convex_hulls if max_convex_hulls is not None else 16
+            self.voxel_resolution = voxel_resolution if voxel_resolution is not None else 200000
 
         def to_version(self, target_version: str) -> "Mesh.ConvexDecomposition":
-            kwargs = {"sdf_version": target_version}
-            kwargs["max_convex_hulls"] = self.max_convex_hulls
-            kwargs["voxel_resolution"] = self.voxel_resolution
-            new_obj = self.__class__(**kwargs)
-            return new_obj
+            kwargs: dict = {"sdf_version": target_version, "max_convex_hulls": self.max_convex_hulls, "voxel_resolution": self.voxel_resolution}
+            return self.__class__(**kwargs)
 
         def to_sdf(self, version: str | None = None) -> ET.Element:
-            if self.__version__ is None and version is not None:
-                self.__version__ = version
-            elif version is not None and version != self.__version__:
-                return self.to_version(version).to_sdf()
-            version = self.__version__ or version
+            if self.sdfversion is None and version is not None:
+                self.sdfversion = version
+            elif version is not None and version != self.sdfversion:
+                return self.to_version(str(version)).to_sdf()
             el = ET.Element("convex_decomposition")
             if self.max_convex_hulls is not None:
                 _c_tmp = ET.Element("max_convex_hulls")
@@ -111,26 +75,22 @@ class Mesh(BaseModel):
         def __init__(
             self,
             sdf_version: str | None = None,
-            center: bool = False,
-            name: str = "__default__"
+            center: bool | None = False,
+            name: str | None = "__default__"
         ):
             super().__init__(sdf_version)
-            self.center = center
-            self.name = name
+            self.center = center if center is not None else False
+            self.name = name if name is not None else "__default__"
 
         def to_version(self, target_version: str) -> "Mesh.Submesh":
-            kwargs = {"sdf_version": target_version}
-            kwargs["center"] = self.center
-            kwargs["name"] = self.name
-            new_obj = self.__class__(**kwargs)
-            return new_obj
+            kwargs: dict = {"sdf_version": target_version, "center": self.center, "name": self.name}
+            return self.__class__(**kwargs)
 
         def to_sdf(self, version: str | None = None) -> ET.Element:
-            if self.__version__ is None and version is not None:
-                self.__version__ = version
-            elif version is not None and version != self.__version__:
-                return self.to_version(version).to_sdf()
-            version = self.__version__ or version
+            if self.sdfversion is None and version is not None:
+                self.sdfversion = version
+            elif version is not None and version != self.sdfversion:
+                return self.to_version(str(version)).to_sdf()
             el = ET.Element("submesh")
             if self.center is not None:
                 _c_tmp = ET.Element("center")
@@ -168,58 +128,44 @@ class Mesh(BaseModel):
         self,
         sdf_version: str | None = None,
         convex_decomposition: "Mesh.ConvexDecomposition" = None,
-        optimization: str = "",
-        scale: _Vector3T = None,
+        optimization: str | None = "",
+        scale: _Vector3T | None = None,
         submesh: "Mesh.Submesh" = None,
-        uri: str = "__default__"
+        uri: str | None = "__default__"
     ):
         super().__init__(sdf_version)
-        if scale is None:
-            scale = _vector3("1 1 1")
-        else:
-            scale = _vector3(scale)
         self.convex_decomposition = convex_decomposition
-        self.optimization = optimization
-        self.scale = scale
+        self.optimization = optimization if optimization is not None else ""
+        self.scale = _vector3("1 1 1") if scale is None else _vector3(scale)
         self.submesh = submesh
-        self.uri = uri
+        self.uri = uri if uri is not None else "__default__"
         if self.convex_decomposition is not None and hasattr(self.convex_decomposition, 'to_version'):
-            if getattr(self.convex_decomposition, '__version__', None) is None:
-                self.convex_decomposition.__version__ = self.__version__
-            elif getattr(self.convex_decomposition, '__version__', None) != self.__version__ and self.__version__ is not None:
-                self.convex_decomposition = self.convex_decomposition.to_version(self.__version__)
+            if getattr(self.convex_decomposition, 'sdfversion', None) is None:
+                self.convex_decomposition.sdfversion = self.sdfversion
+            elif getattr(self.convex_decomposition, 'sdfversion', None) != self.sdfversion and self.sdfversion is not None:
+                self.convex_decomposition = self.convex_decomposition.to_version(self.sdfversion)
         if self.submesh is not None and hasattr(self.submesh, 'to_version'):
-            if getattr(self.submesh, '__version__', None) is None:
-                self.submesh.__version__ = self.__version__
-            elif getattr(self.submesh, '__version__', None) != self.__version__ and self.__version__ is not None:
-                self.submesh = self.submesh.to_version(self.__version__)
+            if getattr(self.submesh, 'sdfversion', None) is None:
+                self.submesh.sdfversion = self.sdfversion
+            elif getattr(self.submesh, 'sdfversion', None) != self.sdfversion and self.sdfversion is not None:
+                self.submesh = self.submesh.to_version(self.sdfversion)
 
     def to_version(self, target_version: str) -> "Mesh":
         if self.convex_decomposition is not None and cmp_version(target_version, "1.11") < 0:
             raise ValueError(f"'convex_decomposition' is not supported in SDF version {target_version} (added in 1.11)")
         if self.optimization is not None and cmp_version(target_version, "1.11") < 0:
             raise ValueError(f"'optimization' is not supported in SDF version {target_version} (added in 1.11)")
-        kwargs = {"sdf_version": target_version}
-        kwargs["convex_decomposition"] = self.convex_decomposition.to_version(target_version) if hasattr(self.convex_decomposition, "to_version") else self.convex_decomposition
-        kwargs["optimization"] = self.optimization
-        kwargs["scale"] = self.scale
-        kwargs["submesh"] = self.submesh.to_version(target_version) if hasattr(self.submesh, "to_version") else self.submesh
-        kwargs["uri"] = self.uri
-        new_obj = self.__class__(**kwargs)
-        return new_obj
+        kwargs: dict = {"sdf_version": target_version, "convex_decomposition": self.convex_decomposition.to_version(target_version) if self.convex_decomposition is not None and hasattr(self.convex_decomposition, "to_version") else self.convex_decomposition, "optimization": self.optimization, "scale": self.scale, "submesh": self.submesh.to_version(target_version) if self.submesh is not None and hasattr(self.submesh, "to_version") else self.submesh, "uri": self.uri}
+        return self.__class__(**kwargs)
 
     def to_sdf(self, version: str | None = None) -> ET.Element:
-        if self.__version__ is None and version is not None:
-            self.__version__ = version
-        elif version is not None and version != self.__version__:
-            return self.to_version(version).to_sdf()
-        version = self.__version__ or version
+        if self.sdfversion is None and version is not None:
+            self.sdfversion = version
+        elif version is not None and version != self.sdfversion:
+            return self.to_version(str(version)).to_sdf()
         el = ET.Element("mesh")
         if self.convex_decomposition is not None:
-            if hasattr(self.convex_decomposition, 'to_sdf'):
-                _child_res = self.convex_decomposition.to_sdf(version)
-            else:
-                _child_res = str(self.convex_decomposition)
+            _child_res = self.convex_decomposition.to_sdf(version)
             if isinstance(_child_res, str):
                 _item_el = ET.Element('convex_decomposition')
                 _item_el.text = _child_res
@@ -233,10 +179,7 @@ class Mesh(BaseModel):
             _c_tmp.text = str(self.scale)
             el.append(_c_tmp)
         if self.submesh is not None:
-            if hasattr(self.submesh, 'to_sdf'):
-                _child_res = self.submesh.to_sdf(version)
-            else:
-                _child_res = str(self.submesh)
+            _child_res = self.submesh.to_sdf(version)
             if isinstance(_child_res, str):
                 _item_el = ET.Element('submesh')
                 _item_el.text = _child_res

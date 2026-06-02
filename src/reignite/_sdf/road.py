@@ -1,51 +1,19 @@
 ### THIS FILE WAS AUTO-GENERATED ###
 from __future__ import annotations
 
-import typing
 from xml.etree import ElementTree as ET
 
+from ..utils.utils import _parse_double
+import typing
 from typing import List
 
 from ..utils.model import BaseModel
 from ..utils.errors import SDFError
-from ..utils.vector3 import Vector3 as _SDFVector3, _Vector3T, _vector3
+from ..utils.vector3 import Vector3 as _Vector3T, _vector3
 from ..utils.version import cmp_version
 
 if typing.TYPE_CHECKING:
     from ..elements.material import Material
-
-
-import math
-
-def _parse_int32(raw: str) -> int | SDFError:
-    try:
-        v = int(raw)
-        if not (-2147483648 <= v <= 2147483647):
-            return SDFError(f"int32 out of range: {v}")
-        return v
-    except ValueError:
-        return SDFError(f"Invalid int32: {raw}")
-
-
-def _parse_uint32(raw: str) -> int | SDFError:
-    try:
-        v = int(raw)
-        if not (0 <= v <= 4294967295):
-            return SDFError(f"uint32 out of range: {v}")
-        return v
-    except ValueError:
-        return SDFError(f"Invalid uint32: {raw}")
-
-
-def _parse_double(raw: str) -> float | SDFError:
-    try:
-        v = float(raw)
-        if not math.isfinite(v) or abs(v) > math.inf:
-            return SDFError(f"double out of range: {raw}")
-        return v
-    except ValueError:
-        return SDFError(f"Invalid double: {raw}")
-
 
 def _parse_vector3(raw: str) -> _Vector3T | SDFError:
     try:
@@ -54,29 +22,26 @@ def _parse_vector3(raw: str) -> _Vector3T | SDFError:
         return SDFError(str(e))
 
 
+# noinspection PyUnusedImports
 class Road(BaseModel):
     def __init__(
         self,
         sdf_version: str | None = None,
         material: "Material" = None,
-        name: str = "__default__",
-        points: List[_Vector3T] = None,
-        width: float = 1.0
+        name: str | None = "__default__",
+        points: List[_Vector3T] | None = None,
+        width: float | None = 1.0
     ):
         super().__init__(sdf_version)
-        if points is None:
-            points = _vector3("0 0 0")
-        else:
-            points = _vector3(points)
         self.material = material
-        self.name = name
-        self.points = points or []
-        self.width = width
+        self.name = name if name is not None else "__default__"
+        self.points = list(map(_vector3, points)) if points is not None else []
+        self.width = width if width is not None else 1.0
         if self.material is not None and hasattr(self.material, 'to_version'):
-            if getattr(self.material, '__version__', None) is None:
-                self.material.__version__ = self.__version__
-            elif getattr(self.material, '__version__', None) != self.__version__ and self.__version__ is not None:
-                self.material = self.material.to_version(self.__version__)
+            if getattr(self.material, 'sdfversion', None) is None:
+                self.material.sdfversion = self.sdfversion
+            elif getattr(self.material, 'sdfversion', None) != self.sdfversion and self.sdfversion is not None:
+                self.material = self.material.to_version(self.sdfversion)
 
     def add_point(self, *items: _Vector3T):
         if self.points is None:
@@ -87,27 +52,18 @@ class Road(BaseModel):
         from ..elements.material import Material
         if self.material is not None and cmp_version(target_version, "1.5") < 0:
             raise ValueError(f"'material' is not supported in SDF version {target_version} (added in 1.5)")
-        kwargs = {"sdf_version": target_version}
-        kwargs["material"] = self.material.to_version(target_version) if hasattr(self.material, "to_version") else self.material
-        kwargs["name"] = self.name
-        kwargs["points"] = self.points
-        kwargs["width"] = self.width
-        new_obj = self.__class__(**kwargs)
-        return new_obj
+        kwargs: dict = {"sdf_version": target_version, "material": self.material.to_version(target_version) if self.material is not None and hasattr(self.material, "to_version") else self.material, "name": self.name, "points": self.points, "width": self.width}
+        return self.__class__(**kwargs)
 
     def to_sdf(self, version: str | None = None) -> ET.Element:
         from ..elements.material import Material
-        if self.__version__ is None and version is not None:
-            self.__version__ = version
-        elif version is not None and version != self.__version__:
-            return self.to_version(version).to_sdf()
-        version = self.__version__ or version
+        if self.sdfversion is None and version is not None:
+            self.sdfversion = version
+        elif version is not None and version != self.sdfversion:
+            return self.to_version(str(version)).to_sdf()
         el = ET.Element("road")
         if self.material is not None:
-            if hasattr(self.material, 'to_sdf'):
-                _child_res = self.material.to_sdf(version)
-            else:
-                _child_res = str(self.material)
+            _child_res = self.material.to_sdf(version)
             if isinstance(_child_res, str):
                 _item_el = ET.Element('material')
                 _item_el.text = _child_res

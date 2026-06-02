@@ -5,9 +5,7 @@ from typing import Sequence, Union
 _ColorT = Union[Sequence[float], str, "Color"]
 
 
-def _color(value: _ColorT | None) -> Color | None:
-    if value is None:
-        return None
+def _color(value: _ColorT) -> Color:
     if isinstance(value, Color):
         return value
     if isinstance(value, str):
@@ -48,6 +46,9 @@ class Color:
         self.g = int(g)
         self.b = int(b)
         self.a = int(a)
+
+    def to_sdf(self, _):
+        return str(self)
 
     def __str__(self) -> str:
         return f"{self.r / 255.0} {self.g / 255.0} {self.b / 255.0} {self.a / 255.0}"
