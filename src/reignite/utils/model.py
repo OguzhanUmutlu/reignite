@@ -1,6 +1,11 @@
+from __future__ import annotations
+
 import xml.etree.ElementTree as ET
+from typing import TypeVar, Any
 
 from .errors import SDFError
+
+T = TypeVar("T")
 
 
 class BaseModel:
@@ -27,7 +32,7 @@ class BaseModel:
     def _find_element(self, search: str):
         return None
 
-    def find_element(self, search: str, assert_class=None):
+    def find_element(self, search: str, assert_class: type[T] | None = None) -> T | Any:
         result = self._find_element(search)
         if result is None:
             raise ValueError(f"Element not found: {search}")
