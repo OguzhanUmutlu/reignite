@@ -30,7 +30,7 @@ class Vector3:
         self.y = y
         self.z = z
 
-    def to_sdf(self, _):
+    def to_sdf(self, _=None):
         return str(self)
 
     def __str__(self) -> str:

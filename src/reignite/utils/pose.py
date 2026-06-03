@@ -34,7 +34,7 @@ class Pose:
         self.pitch = pitch
         self.yaw = yaw
 
-    def to_sdf(self, _):
+    def to_sdf(self, _=None):
         return str(self)
 
     def __str__(self) -> str:

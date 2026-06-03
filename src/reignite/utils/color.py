@@ -47,7 +47,7 @@ class Color:
         self.b = int(b)
         self.a = int(a)
 
-    def to_sdf(self, _):
+    def to_sdf(self, _=None):
         return str(self)
 
     def __str__(self) -> str:

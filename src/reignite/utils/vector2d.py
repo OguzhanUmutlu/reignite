@@ -28,7 +28,7 @@ class Vector2d:
         self.x = x
         self.y = y
 
-    def to_sdf(self, _):
+    def to_sdf(self, _=None):
         return str(self)
 
     def __str__(self) -> str:
