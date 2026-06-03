@@ -22,7 +22,11 @@ def resolve_path(path: str | Path):
         for p in os.environ["GZ_SIM_RESOURCE_PATH"].split(":"):
             candidate = Path(p) / rel
             if candidate.exists():
-                return candidate
+                if candidate.is_dir():
+                    if (candidate / "model.sdf").exists():
+                        return candidate / "model.sdf"
+                else:
+                    return candidate
         raise ValueError(f"Could not resolve path: {path}")
     return Path(path)
 
