@@ -1,8 +1,7 @@
-from reignite.elements import Plugin
-from reignite.elements.plugin import TextElement, ParentElement
-from reignite.elements.plugins.gui.GzGui import GzGui
-from reignite.utils.color import Color
-from reignite.utils.pose import Pose
+from ....utils.color import Color
+from ....utils.pose import Pose
+from .GzGui import GzGui
+from ...plugin import Plugin, TextElement, ParentElement
 
 
 class MinimalScenePlugin(Plugin):

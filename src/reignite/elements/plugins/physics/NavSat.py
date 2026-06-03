@@ -1,4 +1,4 @@
-from reignite.elements import Plugin
+from ...plugin import Plugin
 
 
 class NavSatPlugin(Plugin):

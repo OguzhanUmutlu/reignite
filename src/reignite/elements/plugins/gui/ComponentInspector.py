@@ -1,5 +1,5 @@
-from reignite.elements import Plugin
-from reignite.elements.plugins.gui.GzGui import GzGui
+from ...plugin import Plugin
+from .GzGui import GzGui
 
 
 class ComponentInspectorPlugin(Plugin):

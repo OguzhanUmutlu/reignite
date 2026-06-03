@@ -1,8 +1,8 @@
 from typing import Optional
 from xml.etree import ElementTree as ET
 
-from reignite.utils.errors import SDFError
-from reignite.utils.model import BaseModel
+from ....utils.errors import SDFError
+from ....utils.model import BaseModel
 
 
 class GzGui(BaseModel):

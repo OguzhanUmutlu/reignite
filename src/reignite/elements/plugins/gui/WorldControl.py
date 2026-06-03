@@ -1,7 +1,7 @@
 from typing import Optional
 
-from reignite.elements import Plugin
-from reignite.elements.plugins.gui.GzGui import GzGui
+from ...plugin import Plugin
+from .GzGui import GzGui
 
 
 class WorldControlPlugin(Plugin):

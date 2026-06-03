@@ -1,4 +1,4 @@
-from ..plugin import Plugin
+from ...plugin import Plugin
 
 
 class ArduPilotPlugin(Plugin):
