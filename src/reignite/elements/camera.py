@@ -2,7 +2,7 @@ from .._sdf.camera import Camera as _Camera
 
 
 class Camera(_Camera):
-    def find_element(self, search: str):
+    def _find_element(self, search: str):
         if not search:
             return None
         search, rest = Camera.__search(search)

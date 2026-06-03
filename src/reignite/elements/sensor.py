@@ -2,7 +2,7 @@ from .._sdf.sensor import Sensor as _Sensor
 
 
 class Sensor(_Sensor):
-    def find_element(self, search: str):
+    def _find_element(self, search: str):
         if not search:
             return None
         search, rest = Sensor.__search(search)

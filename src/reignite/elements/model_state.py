@@ -2,7 +2,7 @@ from .._sdf.model_state import ModelState as _ModelState
 
 
 class ModelState(_ModelState):
-    def find_element(self, search: str):
+    def _find_element(self, search: str):
         if not search:
             return None
         search, rest = ModelState.__search(search)

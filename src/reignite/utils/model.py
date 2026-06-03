@@ -24,8 +24,17 @@ class BaseModel:
     def to_version(self, target_version: str) -> "BaseModel":
         raise NotImplementedError
 
-    def find_element(self, search: str):
+    def _find_element(self, search: str):
         return None
+
+    def find_element(self, search: str, assert_class=None):
+        result = self._find_element(search)
+        if result is None:
+            raise ValueError(f"Element not found: {search}")
+        if assert_class is not None and not isinstance(result, assert_class):
+            raise ValueError(
+                f"Element '{search}' is not of expected type {assert_class.__name__}: {type(result).__name__}")
+        return result
 
     @staticmethod
     def __find_help(s, search: str, rest: str):

@@ -2,7 +2,7 @@ from .._sdf.visual import Visual as _Visual
 
 
 class Visual(_Visual):
-    def find_element(self, search: str):
+    def _find_element(self, search: str):
         if not search:
             return None
         search, rest = Visual.__search(search)

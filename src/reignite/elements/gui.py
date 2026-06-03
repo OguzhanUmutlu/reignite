@@ -3,7 +3,7 @@ from .._sdf.gui import Gui as _Gui
 
 class Gui(_Gui):
     class Camera(_Gui.Camera):
-        def find_element(self, search: str):
+        def _find_element(self, search: str):
             if not search:
                 return None
             search, rest = Gui.Camera.__search(search)
@@ -11,7 +11,7 @@ class Gui(_Gui):
                 return self.track_visual.find_element(rest)
             return Gui.Camera.__find_help(self.frames, search, rest)
 
-    def find_element(self, search: str):
+    def _find_element(self, search: str):
         if not search:
             return None
         search, rest = Gui.__search(search)

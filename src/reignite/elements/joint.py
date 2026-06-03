@@ -2,7 +2,7 @@ from .._sdf.joint import Joint as _Joint
 
 
 class Joint(_Joint):
-    def find_element(self, search: str):
+    def _find_element(self, search: str):
         if not search:
             return None
         search, rest = Joint.__search(search)

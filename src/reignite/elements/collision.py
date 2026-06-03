@@ -2,7 +2,7 @@ from .._sdf.collision import Collision as _Collision
 
 
 class Collision(_Collision):
-    def find_element(self, search: str):
+    def _find_element(self, search: str):
         if not search:
             return None
         search, rest = Collision.__search(search)

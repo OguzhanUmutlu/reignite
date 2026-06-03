@@ -2,7 +2,7 @@ from .._sdf.gazebo import Gazebo as _Gazebo
 
 
 class Gazebo(_Gazebo):
-    def find_element(self, search: str):
+    def _find_element(self, search: str):
         if not search:
             return None
         search, rest = Gazebo.__search(search)

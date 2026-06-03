@@ -14,7 +14,7 @@ class World(_World):
         for model in self.models:
             yield from model.get_geometries()
 
-    def find_element(self, search: str):
+    def _find_element(self, search: str):
         if not search:
             return None
         search, rest = World.__search(search)

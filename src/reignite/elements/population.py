@@ -2,7 +2,7 @@ from .._sdf.population import Population as _Population
 
 
 class Population(_Population):
-    def find_element(self, search: str):
+    def _find_element(self, search: str):
         if not search:
             return None
         search, rest = Population.__search(search)

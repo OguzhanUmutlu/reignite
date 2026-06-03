@@ -2,7 +2,7 @@ from .._sdf.mesh import Mesh as _Mesh
 
 
 class Mesh(_Mesh):
-    def find_element(self, search: str):
+    def _find_element(self, search: str):
         if not search:
             return None
         search, rest = Mesh.__search(search)

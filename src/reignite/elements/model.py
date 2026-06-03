@@ -14,7 +14,7 @@ class Model(_Model):
         for link in self.links:
             yield from link.get_geometries()
 
-    def find_element(self, search: str):
+    def _find_element(self, search: str):
         if not search:
             return None
         search, rest = Model.__search(search)

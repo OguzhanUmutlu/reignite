@@ -2,7 +2,7 @@ from .._sdf.sdf import Sdf as _Sdf
 
 
 class Sdf(_Sdf):
-    def find_element(self, search: str):
+    def _find_element(self, search: str):
         if not search:
             return None
         search, rest = Sdf.__search(search)

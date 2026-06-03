@@ -8,7 +8,7 @@ class Link(_Link):
         for collision in self.collisions:
             yield collision.geometry
 
-    def find_element(self, search: str):
+    def _find_element(self, search: str):
         if not search:
             return None
         search, rest = Link.__search(search)

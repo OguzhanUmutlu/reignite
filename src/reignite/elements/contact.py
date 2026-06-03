@@ -2,7 +2,7 @@ from .._sdf.contact import Contact as _Contact
 
 
 class Contact(_Contact):
-    def find_element(self, search: str):
+    def _find_element(self, search: str):
         if not search:
             return None
         search, rest = Contact.__search(search)
