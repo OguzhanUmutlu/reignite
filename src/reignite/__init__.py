@@ -1,14 +1,30 @@
 from __future__ import annotations
 
+import os
 from pathlib import Path
 from xml.etree import ElementTree as ET
 
-from .utils import BaseModel
 from .elements import get_element_class, ELEMENT_CLASS_MAP
+from .utils import BaseModel
 
 
 def _to_classname(s: str) -> str:
     return "".join(p.capitalize() for p in s.replace("-", "_").split("_"))
+
+
+def resolve_path(path: str | Path):
+    if isinstance(path, Path):
+        return path
+    if path.startswith("model://"):
+        rel = path[len("model://")]
+        if "GZ_SIM_RESOURCE_PATH" not in os.environ:
+            return path
+        for p in os.environ["GZ_SIM_RESOURCE_PATH"].split(":"):
+            candidate = Path(p) / rel
+            if candidate.exists():
+                return candidate
+        raise ValueError(f"Could not resolve path: {path}")
+    return Path(path)
 
 
 def _select_root_element(root: ET.Element) -> tuple[str, ET.Element]:
@@ -44,7 +60,7 @@ def read_sdf_from_element(root: ET.Element):
 
 
 def read_sdf(source: str | Path):
-    return read_sdf_from_element(ET.parse(Path(source)).getroot())
+    return read_sdf_from_element(ET.parse(resolve_path(source)).getroot())
 
 
 def read_sdf_string(xml_text: str):
@@ -55,6 +71,7 @@ def sdf_to_root(el: ET.Element, version: str) -> ET.ElementTree:
     root = ET.Element("sdf", version=version)
     root.append(el)
     return ET.ElementTree(root)
+
 
 def element_to_root(el: BaseModel, version: str) -> ET.ElementTree:
     return sdf_to_root(el.to_sdf(version), version)
