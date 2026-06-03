@@ -1,5 +1,5 @@
-from ...plugin import Plugin
 from .GzGui import GzGui
+from ...plugin import Plugin
 
 
 class ImageDisplayPlugin(Plugin):

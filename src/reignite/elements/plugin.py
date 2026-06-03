@@ -52,7 +52,7 @@ class TextElement(BaseModel):
         text = el.text.strip() if el.text else ""
         return cls(el.tag, text, el.attrib)
 
-    def to_sdf(self, version: str = None) -> ET.Element:
+    def to_sdf(self, version: str | None = None) -> ET.Element:
         e = ET.Element(self.name, attrib=self.attributes)
         if self.text is not None:
             e.text = simple_str(self.text)
@@ -76,7 +76,7 @@ class ParentElement(BaseModel):
                     el]
         return cls(el.tag, children, el.attrib)
 
-    def to_sdf(self, version: str = None) -> ET.Element:
+    def to_sdf(self, version: str | None = None) -> ET.Element:
         e = ET.Element(self.name, attrib=self.attributes)
         for child in self.children:
             e.append(child.to_sdf(version))
@@ -124,7 +124,7 @@ class Plugin(_Base):
 
         def _parse_et(e: ET.Element) -> BaseModel:
             if len(e) > 0:
-                children = [_parse_et(c) for c in e]
+                children = [_parse_et(d) for d in e]
                 return ParentElement(e.tag, children, e.attrib)
 
             text = e.text.strip() if e.text else ""

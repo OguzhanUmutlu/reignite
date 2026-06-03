@@ -1,7 +1,7 @@
 from typing import Optional
 
-from ...plugin import Plugin
 from .GzGui import GzGui
+from ...plugin import Plugin
 
 
 class WorldStatsPlugin(Plugin):

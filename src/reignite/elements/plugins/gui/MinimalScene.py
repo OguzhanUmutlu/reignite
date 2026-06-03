@@ -1,7 +1,7 @@
 from .GzGui import GzGui
 from ...plugin import Plugin, TextElement, ParentElement
-from ....utils.color import Color, _ColorT, _color
-from ....utils.pose import Pose, _PoseT, _pose
+from ....utils.color import _ColorT, _color
+from ....utils.pose import _PoseT, _pose
 
 
 class MinimalScenePlugin(Plugin):

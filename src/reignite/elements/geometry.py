@@ -16,7 +16,8 @@ from ..utils.vector3 import _vector3
 
 
 class BoxGeometry(Geometry):
-    def __init__(self, size: Vector3 | tuple[float, float, float] | float, y: float = None, z: float = None):
+    def __init__(self, size: Vector3 | tuple[float, float, float] | float, y: float | None = None,
+                 z: float | None = None):
         super().__init__(box=Box(size=_vector3(size, y, z)))
 
 
@@ -36,18 +37,19 @@ class CylinderGeometry(Geometry):
 
 
 class EllipsoidGeometry(Geometry):
-    def __init__(self, radii: Vector3 | tuple[float, float, float] | float, y: float = None, z: float = None):
+    def __init__(self, radii: Vector3 | tuple[float, float, float] | float, y: float | None = None,
+                 z: float | None = None):
         super().__init__(ellipsoid=Ellipsoid(radii=_vector3(radii, y, z)))
 
 
 class EmptyGeometry(Geometry):
     def __init__(self):
-        super().__init__(empty="")
+        super().__init__(empty="")  # noqa
 
 
 class MeshGeometry(Geometry):
-    def __init__(self, uri: str, scale: float | tuple[float, float, float] | Vector3 = 1.0, sy: float = None,
-                 sz: float = None):
+    def __init__(self, uri: str, scale: float | tuple[float, float, float] | Vector3 = 1.0, sy: float | None = None,
+                 sz: float | None = None):
         super().__init__(mesh=Mesh(uri=uri, scale=_vector3(scale, sy, sz)))
 
 
