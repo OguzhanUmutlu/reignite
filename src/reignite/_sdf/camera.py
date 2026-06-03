@@ -9,7 +9,7 @@ from typing import List
 
 from ..utils.model import BaseModel
 from ..utils.errors import SDFError
-from ..utils.vector2d import Vector2d as _Vector2dT, _vector2d
+from ..utils.vector2d import _Vector2dT, _vector2d
 from ..utils.version import cmp_version
 
 if typing.TYPE_CHECKING:

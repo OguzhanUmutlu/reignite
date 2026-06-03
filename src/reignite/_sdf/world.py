@@ -8,7 +8,7 @@ from typing import List
 
 from ..utils.model import BaseModel
 from ..utils.errors import SDFError
-from ..utils.vector3 import Vector3 as _Vector3T, _vector3
+from ..utils.vector3 import _Vector3T, _vector3
 from ..utils.version import cmp_version
 from ..utils.migration import apply_migrations
 

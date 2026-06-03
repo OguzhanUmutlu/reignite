@@ -7,8 +7,8 @@ from ..utils.utils import _parse_double
 import typing
 from ..utils.model import BaseModel
 from ..utils.errors import SDFError
-from ..utils.color import Color as _ColorT, _color
-from ..utils.vector3 import Vector3 as _Vector3T, _vector3
+from ..utils.color import _ColorT, _color
+from ..utils.vector3 import _Vector3T, _vector3
 
 if typing.TYPE_CHECKING:
     from ..elements.material import Material

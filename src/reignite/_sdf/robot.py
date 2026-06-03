@@ -8,7 +8,7 @@ from typing import List
 
 from ..utils.model import BaseModel
 from ..utils.errors import SDFError
-from ..utils.pose import Pose as _PoseT, _pose
+from ..utils.pose import _PoseT, _pose
 
 if typing.TYPE_CHECKING:
     from ..elements.gripper import Gripper

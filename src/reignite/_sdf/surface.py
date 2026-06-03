@@ -6,7 +6,7 @@ from xml.etree import ElementTree as ET
 from ..utils.utils import _parse_double, _parse_uint32
 from ..utils.model import BaseModel
 from ..utils.errors import SDFError
-from ..utils.vector3 import Vector3 as _Vector3T, _vector3
+from ..utils.vector3 import _Vector3T, _vector3
 from ..utils.version import cmp_version
 
 def _parse_vector3(raw: str) -> _Vector3T | SDFError:

@@ -6,7 +6,7 @@ from xml.etree import ElementTree as ET
 from ..utils.utils import _parse_double
 from ..utils.model import BaseModel
 from ..utils.errors import SDFError
-from ..utils.color import Color as _ColorT, _color
+from ..utils.color import _ColorT, _color
 from ..utils.version import cmp_version
 
 def _parse_color(raw: str) -> _ColorT | SDFError:

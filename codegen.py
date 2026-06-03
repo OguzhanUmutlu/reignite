@@ -1552,7 +1552,7 @@ def generate_element_file(
 
     for mod, cls in sorted(all_type_imports.items()):
         class_name = _to_classname(mod)
-        lines.append(f"from ..utils.{mod} import {class_name} as _{class_name}T, _{mod}")
+        lines.append(f"from ..utils.{mod} import _{class_name}T, _{mod}")
 
     if needs_version_cmp:
         lines.append("from ..utils.version import cmp_version")

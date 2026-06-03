@@ -8,8 +8,8 @@ from typing import List
 
 from ..utils.model import BaseModel
 from ..utils.errors import SDFError
-from ..utils.pose import Pose as _PoseT, _pose
-from ..utils.vector3 import Vector3 as _Vector3T, _vector3
+from ..utils.pose import _PoseT, _pose
+from ..utils.vector3 import _Vector3T, _vector3
 from ..utils.version import cmp_version
 
 if typing.TYPE_CHECKING:

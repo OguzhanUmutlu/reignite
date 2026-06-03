@@ -5,7 +5,7 @@ from xml.etree import ElementTree as ET
 
 from ..utils.model import BaseModel
 from ..utils.errors import SDFError
-from ..utils.pose import Pose as _PoseT, _pose
+from ..utils.pose import _PoseT, _pose
 from ..utils.version import cmp_version
 from ..utils.migration import apply_migrations
 

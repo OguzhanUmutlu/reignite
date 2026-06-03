@@ -5,8 +5,8 @@ from xml.etree import ElementTree as ET
 
 from ..utils.model import BaseModel
 from ..utils.errors import SDFError
-from ..utils.vector2d import Vector2d as _Vector2dT, _vector2d
-from ..utils.vector3 import Vector3 as _Vector3T, _vector3
+from ..utils.vector2d import _Vector2dT, _vector2d
+from ..utils.vector3 import _Vector3T, _vector3
 
 def _parse_vector2d(raw: str) -> _Vector2dT | SDFError:
     try:
