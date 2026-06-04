@@ -23,15 +23,17 @@ class SensorsPlugin(Plugin):
 
             super().__init__(
                 "global_illumination",
-                TextElement("enabled", enabled) if enabled is not None else None,
-                TextElement("resolution", resolution) if resolution is not None else None,
-                TextElement("octant_count", octant_count) if octant_count is not None else None,
-                TextElement("bounce_count", str(bounce_count)) if bounce_count is not None else None,
-                TextElement("high_quality", high_quality) if high_quality is not None else None,
-                TextElement("anisotropic", anisotropic) if anisotropic is not None else None,
-                TextElement("thin_wall_counter", str(thin_wall_counter)) if thin_wall_counter is not None else None,
-                TextElement("conserve_memory", conserve_memory) if conserve_memory is not None else None,
-                TextElement("debug_vis_mode", debug_vis_mode) if debug_vis_mode is not None else None,
+                [
+                    TextElement("enabled", enabled) if enabled is not None else None,
+                    TextElement("resolution", resolution) if resolution is not None else None,
+                    TextElement("octant_count", octant_count) if octant_count is not None else None,
+                    TextElement("bounce_count", str(bounce_count)) if bounce_count is not None else None,
+                    TextElement("high_quality", high_quality) if high_quality is not None else None,
+                    TextElement("anisotropic", anisotropic) if anisotropic is not None else None,
+                    TextElement("thin_wall_counter", str(thin_wall_counter)) if thin_wall_counter is not None else None,
+                    TextElement("conserve_memory", conserve_memory) if conserve_memory is not None else None,
+                    TextElement("debug_vis_mode", debug_vis_mode) if debug_vis_mode is not None else None
+                ],
                 type=type
             )
 

@@ -1,7 +1,7 @@
 from reignite.elements.plugin import Plugin, ParentElement, TextElement
 
 
-class TrackedVehicle(Plugin):
+class TrackedVehiclePlugin(Plugin):
     class Track(ParentElement):
         def __init__(
                 self,
@@ -14,9 +14,12 @@ class TrackedVehicle(Plugin):
                 raise ValueError("Track side must be 'left' or 'right'")
             super().__init__(
                 f"{side}_track",
-                TextElement("link", link),
-                TextElement("velocity_topic", velocity_topic) if velocity_topic else None,
-                TextElement("center_of_rotation_topic", center_of_rotation_topic) if center_of_rotation_topic else None
+                [
+                    TextElement("link", link),
+                    TextElement("velocity_topic", velocity_topic) if velocity_topic else None,
+                    TextElement("center_of_rotation_topic",
+                                center_of_rotation_topic) if center_of_rotation_topic else None
+                ]
             )
 
     class VelocityLimiter(ParentElement):
@@ -34,12 +37,14 @@ class TrackedVehicle(Plugin):
                 raise ValueError("VelocityLimiter type must be 'linear' or 'angular'")
             super().__init__(
                 f"{type}_velocity",
-                TextElement("min_velocity", str(min_velocity)) if min_velocity is not None else None,
-                TextElement("max_velocity", str(max_velocity)) if max_velocity is not None else None,
-                TextElement("min_acceleration", str(min_acceleration)) if min_acceleration is not None else None,
-                TextElement("max_acceleration", str(max_acceleration)) if max_acceleration is not None else None,
-                TextElement("min_jerk", str(min_jerk)) if min_jerk is not None else None,
-                TextElement("max_jerk", str(max_jerk)) if max_jerk is not None else None
+                [
+                    TextElement("min_velocity", str(min_velocity)) if min_velocity is not None else None,
+                    TextElement("max_velocity", str(max_velocity)) if max_velocity is not None else None,
+                    TextElement("min_acceleration", str(min_acceleration)) if min_acceleration is not None else None,
+                    TextElement("max_acceleration", str(max_acceleration)) if max_acceleration is not None else None,
+                    TextElement("min_jerk", str(min_jerk)) if min_jerk is not None else None,
+                    TextElement("max_jerk", str(max_jerk)) if max_jerk is not None else None
+                ]
             )
 
     def __init__(
@@ -64,15 +69,15 @@ class TrackedVehicle(Plugin):
         elements = []
         if left_track is not None:
             if isinstance(left_track, str):
-                left_track = [TrackedVehicle.Track("left", left_track)]
-            elif isinstance(left_track, TrackedVehicle.Track):
+                left_track = [TrackedVehiclePlugin.Track("left", left_track)]
+            elif isinstance(left_track, TrackedVehiclePlugin.Track):
                 left_track = [left_track]
             elements.extend(left_track)
 
         if right_track is not None:
             if isinstance(right_track, str):
-                right_track = [TrackedVehicle.Track("right", right_track)]
-            elif isinstance(right_track, TrackedVehicle.Track):
+                right_track = [TrackedVehiclePlugin.Track("right", right_track)]
+            elif isinstance(right_track, TrackedVehiclePlugin.Track):
                 right_track = [right_track]
             elements.extend(right_track)
 

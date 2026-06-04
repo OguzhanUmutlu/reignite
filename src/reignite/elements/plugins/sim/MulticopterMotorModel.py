@@ -1,7 +1,7 @@
 from reignite.elements.plugin import Plugin
 
 
-class MulticopterMotorModel(Plugin):
+class MulticopterMotorModelPlugin(Plugin):
     def __init__(
             self,
             robotNamespace: str | None = None,

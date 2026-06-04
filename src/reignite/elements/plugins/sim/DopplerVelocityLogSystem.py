@@ -1,7 +1,7 @@
 from ...plugin import Plugin
 
 
-class DopplerVelocityLogSystem(Plugin):
+class DopplerVelocityLogSystemPlugin(Plugin):
     def __init__(self):
         super().__init__(
             sdf_version=None,

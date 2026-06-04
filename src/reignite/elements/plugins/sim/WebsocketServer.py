@@ -6,8 +6,10 @@ class WebsocketServerPlugin(Plugin):
         def __init__(self, msg_type: str, limit: int):
             super().__init__(
                 "subscription",
-                TextElement("msg_type", msg_type),
-                TextElement("limit", str(limit))
+                [
+                    TextElement("msg_type", msg_type),
+                    TextElement("limit", str(limit))
+                ]
             )
 
     class SubscriptionLimitPerConnection(ParentElement):
@@ -18,8 +20,10 @@ class WebsocketServerPlugin(Plugin):
         def __init__(self, cert_file: str, private_key_file: str):
             super().__init__(
                 "ssl",
-                TextElement("cert_file", cert_file),
-                TextElement("private_key_file", private_key_file)
+                [
+                    TextElement("cert_file", cert_file),
+                    TextElement("private_key_file", private_key_file)
+                ]
             )
 
     def __init__(

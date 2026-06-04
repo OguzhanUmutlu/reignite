@@ -1,7 +1,7 @@
 from reignite.elements.plugin import Plugin
 
 
-class RFComms(Plugin):
+class RFCommsPlugin(Plugin):
     def __init__(
             self,
             max_range: float | None = None,

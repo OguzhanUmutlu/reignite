@@ -6,18 +6,20 @@ class PerformerDetectorPlugin(Plugin):
         def __init__(self, size: list[float] | str):
             if isinstance(size, list):
                 size = " ".join(map(str, size))
-            super().__init__("box", TextElement("size", size))
+            super().__init__("box", [TextElement("size", size)])
 
     class Geometry(ParentElement):
         def __init__(self, box: "PerformerDetectorPlugin.Box"):
-            super().__init__("geometry", box)
+            super().__init__("geometry", [box])
 
     class HeaderData(ParentElement):
         def __init__(self, key: str, value: str):
             super().__init__(
                 "header_data",
-                TextElement("key", key),
-                TextElement("value", value)
+                [
+                    TextElement("key", key),
+                    TextElement("value", value)
+                ]
             )
 
     def __init__(

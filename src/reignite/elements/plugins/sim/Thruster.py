@@ -1,7 +1,7 @@
 from reignite.elements.plugin import Plugin
 
 
-class Thruster(Plugin):
+class ThrusterPlugin(Plugin):
     def __init__(
             self,
             joint_name: str,

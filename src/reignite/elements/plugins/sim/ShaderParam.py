@@ -21,8 +21,10 @@ class ShaderParamPlugin(Plugin):
         def __init__(self, vertex: str, fragment: str, language: str | None = None):
             super().__init__(
                 "shader",
-                TextElement("vertex", vertex),
-                TextElement("fragment", fragment),
+                [
+                    TextElement("vertex", vertex),
+                    TextElement("fragment", fragment)
+                ],
                 language=language
             )
 

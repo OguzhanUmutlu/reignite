@@ -4,7 +4,7 @@ from reignite.elements.plugin import Plugin, ParentElement, TextElement
 class PhysicsPlugin(Plugin):
     class Engine(ParentElement):
         def __init__(self, filename: str):
-            super().__init__("engine", TextElement("filename", filename))
+            super().__init__("engine", [TextElement("filename", filename)])
 
     def __init__(
             self,

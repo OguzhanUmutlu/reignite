@@ -1,7 +1,7 @@
 from reignite.elements.plugin import Plugin
 
 
-class PosePublisher(Plugin):
+class PosePublisherPlugin(Plugin):
     def __init__(
             self,
             publish_link_pose: bool | None = None,

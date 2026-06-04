@@ -21,7 +21,7 @@ _messages = {
 }
 
 
-class TriggeredPublisher(Plugin):
+class TriggeredPublisherPlugin(Plugin):
     class Match(TextElement):
         def __init__(self, value: str, field: str | None = None, tol: float | None = None,
                      inverted: bool = False):
@@ -31,7 +31,7 @@ class TriggeredPublisher(Plugin):
             super().__init__("match", value, **attrs)
 
     class Input(ParentElement):
-        def __init__(self, type: str, topic: str, matches: list["TriggeredPublisher.Match"] | None = None):
+        def __init__(self, type: str, topic: str, matches: list["TriggeredPublisherPlugin.Match"] | None = None):
             super().__init__("input", matches or [], type=type, topic=topic)
 
     class Output(TextElement):

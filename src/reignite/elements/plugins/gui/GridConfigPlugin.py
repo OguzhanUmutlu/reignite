@@ -1,3 +1,4 @@
+from reignite import BaseModel
 from reignite.elements.plugin import Plugin, ParentElement, TextElement
 from .GzGui import GzGui
 
@@ -20,14 +21,16 @@ class GridConfigPlugin(Plugin):
 
             super().__init__(
                 "insert",
-                TextElement("cell_count", str(cell_count)) if cell_count is not None else None,
-                TextElement("cell_length", str(cell_length)) if cell_length is not None else None,
-                TextElement("color", color) if color is not None else None,
-                TextElement("horizontal_cell_count",
-                            str(horizontal_cell_count)) if horizontal_cell_count is not None else None,
-                TextElement("pose", pose) if pose is not None else None,
-                TextElement("vertical_cell_count",
-                            str(vertical_cell_count)) if vertical_cell_count is not None else None,
+                [
+                    TextElement("cell_count", str(cell_count)) if cell_count is not None else None,
+                    TextElement("cell_length", str(cell_length)) if cell_length is not None else None,
+                    TextElement("color", color) if color is not None else None,
+                    TextElement("horizontal_cell_count",
+                                str(horizontal_cell_count)) if horizontal_cell_count is not None else None,
+                    TextElement("pose", pose) if pose is not None else None,
+                    TextElement("vertical_cell_count",
+                                str(vertical_cell_count)) if vertical_cell_count is not None else None
+                ]
             )
 
     def __init__(
@@ -42,7 +45,7 @@ class GridConfigPlugin(Plugin):
             name: str = "GridConfig",
             **gui_kwargs
     ):
-        elements = [GzGui(**gui_kwargs)]
+        elements: list[BaseModel] = [GzGui(**gui_kwargs)]
         if insert is not None:
             if isinstance(insert, GridConfigPlugin.Insert):
                 insert = [insert]

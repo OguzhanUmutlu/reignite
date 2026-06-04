@@ -1,7 +1,7 @@
 from reignite.elements.plugin import Plugin, ParentElement, TextElement
 
 
-class TrajectoryFollower(Plugin):
+class TrajectoryFollowerPlugin(Plugin):
     class Waypoints(ParentElement):
         def __init__(self, waypoints: list[list[float]]):
             children = [TextElement("waypoint", " ".join(map(str, wp))) for wp in waypoints]
@@ -9,14 +9,16 @@ class TrajectoryFollower(Plugin):
 
     class Circle(ParentElement):
         def __init__(self, radius: float):
-            super().__init__("circle", TextElement("radius", str(radius)))
+            super().__init__("circle", [TextElement("radius", str(radius))])
 
     class Line(ParentElement):
         def __init__(self, direction: float, length: float):
             super().__init__(
                 "line",
-                TextElement("direction", str(direction)),
-                TextElement("length", str(length))
+                [
+                    TextElement("direction", str(direction)),
+                    TextElement("length", str(length))
+                ]
             )
 
     def __init__(
@@ -36,7 +38,7 @@ class TrajectoryFollower(Plugin):
     ):
         elements = []
         if isinstance(waypoints, list):
-            waypoints = TrajectoryFollower.Waypoints(waypoints)
+            waypoints = TrajectoryFollowerPlugin.Waypoints(waypoints)
         if waypoints is not None:
             elements.append(waypoints)
         if circle is not None:

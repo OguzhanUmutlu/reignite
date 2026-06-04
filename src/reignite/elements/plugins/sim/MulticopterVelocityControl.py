@@ -1,7 +1,7 @@
 from reignite.elements.plugin import Plugin
 
 
-class MulticopterVelocityControl(Plugin):
+class MulticopterVelocityControlPlugin(Plugin):
     def __init__(
             self,
             angularRateGain: list[float] | str | None = None,

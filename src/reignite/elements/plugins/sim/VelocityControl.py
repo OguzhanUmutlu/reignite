@@ -1,7 +1,7 @@
 from reignite.elements.plugin import Plugin, TextElement
 
 
-class VelocityControl(Plugin):
+class VelocityControlPlugin(Plugin):
     def __init__(
             self,
             initial_linear: list[float] | str | None = None,

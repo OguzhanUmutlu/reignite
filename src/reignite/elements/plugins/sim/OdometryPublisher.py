@@ -1,7 +1,7 @@
 from reignite.elements.plugin import Plugin
 
 
-class OdometryPublisher(Plugin):
+class OdometryPublisherPlugin(Plugin):
     def __init__(
             self,
             odom_frame: str | None = None,

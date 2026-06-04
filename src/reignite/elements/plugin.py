@@ -2,7 +2,7 @@ import os
 import xml.etree.ElementTree as ET
 from copy import deepcopy
 from pathlib import Path
-from typing import Optional, List
+from typing import Optional
 
 from .._sdf.plugin import Plugin as _Base
 from ..utils.model import BaseModel
@@ -41,7 +41,7 @@ def simple_str(value):
 
 
 class TextElement(BaseModel):
-    def __init__(self, name: str, text, attributes: Optional[dict] = None, **extra):
+    def __init__(self, name: str, text, attributes: dict | None = None, **extra):
         super().__init__(sdf_version=None)
         self.name = name
         self.text = simple_str(text)
@@ -63,12 +63,11 @@ class TextElement(BaseModel):
 
 
 class ParentElement(BaseModel):
-    def __init__(self, name: str, children: List[BaseModel], attributes: Optional[dict] = None,
-                 **extra):
+    def __init__(self, name: str, children: list[BaseModel | None], attributes: dict | None = None, **extra):
         super().__init__(sdf_version=None)
         self.name = name
         self.attributes = {**(attributes or dict()), **extra}
-        self.children = children
+        self.children = list(filter(lambda x: x is not None, children))
 
     @classmethod
     def _from_sdf(cls, el: ET.Element, version: str):
@@ -89,14 +88,14 @@ class ParentElement(BaseModel):
 class Plugin(_Base):
     def __init__(
             self,
-            sdf_version: Optional[str] = None,
-            elements: Optional[List[BaseModel]] = None,
+            sdf_version: str | None = None,
+            elements: list[BaseModel | None] | None = None,
             filename: str = "__default__",
             name: str = "__default__",
             **extra
     ):
         super().__init__(sdf_version=sdf_version, filename=filename, name=name)
-        self.elements = elements or []
+        self.elements: list[BaseModel] = list(filter(lambda x: x is not None, elements or []))
         for k, v in extra.items():
             if v is None:
                 continue

@@ -1,7 +1,7 @@
 from reignite.elements.plugin import Plugin
 
 
-class TrackController(Plugin):
+class TrackControllerPlugin(Plugin):
     def __init__(
             self,
             link: str,
