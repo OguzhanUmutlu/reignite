@@ -616,13 +616,20 @@ class Imu(BaseModel):
 
             @classmethod
             def _from_sdf(cls, el: ET.Element, version: str) -> "Imu.OrientationReferenceFrame.CustomRpy | SDFError":
-                _text = el.text or "0 0 0"
-                _custom_rpy = _parse_vector3(_text)
-                if isinstance(_custom_rpy, SDFError):
-                    return _custom_rpy
-                _parent_frame = el.get("parent_frame", None)
-                if isinstance(_parent_frame, SDFError):
-                    return _parent_frame.extend("@parent_frame")
+                _raw_custom_rpy = el.text
+                if _raw_custom_rpy is not None:
+                    _custom_rpy = _parse_vector3(_raw_custom_rpy)
+                    if isinstance(_custom_rpy, SDFError):
+                        return _custom_rpy
+                else:
+                    _custom_rpy = None
+                _raw_parent_frame = el.get("parent_frame")
+                if _raw_parent_frame is not None:
+                    _parent_frame = _raw_parent_frame
+                    if isinstance(_parent_frame, SDFError):
+                        return _parent_frame.extend("@parent_frame")
+                else:
+                    _parent_frame = None
                 return cls(sdf_version=version, custom_rpy=_custom_rpy, parent_frame=_parent_frame)
 
         class GravDirX(BaseModel):
@@ -654,13 +661,20 @@ class Imu(BaseModel):
 
             @classmethod
             def _from_sdf(cls, el: ET.Element, version: str) -> "Imu.OrientationReferenceFrame.GravDirX | SDFError":
-                _text = el.text or "1 0 0"
-                _grav_dir_x = _parse_vector3(_text)
-                if isinstance(_grav_dir_x, SDFError):
-                    return _grav_dir_x
-                _parent_frame = el.get("parent_frame", None)
-                if isinstance(_parent_frame, SDFError):
-                    return _parent_frame.extend("@parent_frame")
+                _raw_grav_dir_x = el.text
+                if _raw_grav_dir_x is not None:
+                    _grav_dir_x = _parse_vector3(_raw_grav_dir_x)
+                    if isinstance(_grav_dir_x, SDFError):
+                        return _grav_dir_x
+                else:
+                    _grav_dir_x = None
+                _raw_parent_frame = el.get("parent_frame")
+                if _raw_parent_frame is not None:
+                    _parent_frame = _raw_parent_frame
+                    if isinstance(_parent_frame, SDFError):
+                        return _parent_frame.extend("@parent_frame")
+                else:
+                    _parent_frame = None
                 return cls(sdf_version=version, grav_dir_x=_grav_dir_x, parent_frame=_parent_frame)
 
         def __init__(

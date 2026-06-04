@@ -86,33 +86,43 @@ class Actor(BaseModel):
                 if _c_tmp is not None: _raw_filename = _c_tmp.text
             else:
                 _raw_filename = el.get("filename")
-            if _raw_filename is None: _raw_filename = "__default__"
-            _filename = _raw_filename
-            if isinstance(_filename, SDFError):
-                return _filename.extend("@filename")
+            if _raw_filename is not None:
+                _filename = _raw_filename
+                if isinstance(_filename, SDFError):
+                    return _filename.extend("@filename")
+            else:
+                _filename = None
             _raw_interpolate_x = None
             if cmp_version(version, "1.2") >= 0:
                 _c_tmp = el.find("interpolate_x")
                 if _c_tmp is not None: _raw_interpolate_x = _c_tmp.text
             else:
                 _raw_interpolate_x = el.get("interpolate_x")
-            if _raw_interpolate_x is None: _raw_interpolate_x = False
-            _interpolate_x = str(_raw_interpolate_x).strip().lower() == 'true'
-            if isinstance(_interpolate_x, SDFError):
-                return _interpolate_x.extend("@interpolate_x")
-            _name = el.get("name", "__default__")
-            if isinstance(_name, SDFError):
-                return _name.extend("@name")
+            if _raw_interpolate_x is not None:
+                _interpolate_x = str(_raw_interpolate_x).strip().lower() == 'true'
+                if isinstance(_interpolate_x, SDFError):
+                    return _interpolate_x.extend("@interpolate_x")
+            else:
+                _interpolate_x = None
+            _raw_name = el.get("name")
+            if _raw_name is not None:
+                _name = _raw_name
+                if isinstance(_name, SDFError):
+                    return _name.extend("@name")
+            else:
+                _name = None
             _raw_scale = None
             if cmp_version(version, "1.2") >= 0:
                 _c_tmp = el.find("scale")
                 if _c_tmp is not None: _raw_scale = _c_tmp.text
             else:
                 _raw_scale = el.get("scale")
-            if _raw_scale is None: _raw_scale = 1.0
-            _scale = _parse_double(_raw_scale)
-            if isinstance(_scale, SDFError):
-                return _scale.extend("@scale")
+            if _raw_scale is not None:
+                _scale = _parse_double(_raw_scale)
+                if isinstance(_scale, SDFError):
+                    return _scale.extend("@scale")
+            else:
+                _scale = None
             return cls(sdf_version=version, filename=_filename, interpolate_x=_interpolate_x, name=_name, scale=_scale)
 
     class Origin(BaseModel):
@@ -147,10 +157,12 @@ class Actor(BaseModel):
                 if _c_tmp is not None: _raw_pose = _c_tmp.text
             else:
                 _raw_pose = el.get("pose")
-            if _raw_pose is None: _raw_pose = "0 0 0 0 0 0"
-            _pose = _parse_pose(_raw_pose)
-            if isinstance(_pose, SDFError):
-                return _pose.extend("@pose")
+            if _raw_pose is not None:
+                _pose = _parse_pose(_raw_pose)
+                if isinstance(_pose, SDFError):
+                    return _pose.extend("@pose")
+            else:
+                _pose = None
             return cls(sdf_version=version, pose=_pose)
 
     class Script(BaseModel):
@@ -200,20 +212,24 @@ class Actor(BaseModel):
                         if _c_tmp is not None: _raw_pose = _c_tmp.text
                     else:
                         _raw_pose = el.get("pose")
-                    if _raw_pose is None: _raw_pose = "0 0 0 0 0 0"
-                    _pose = _parse_pose(_raw_pose)
-                    if isinstance(_pose, SDFError):
-                        return _pose.extend("@pose")
+                    if _raw_pose is not None:
+                        _pose = _parse_pose(_raw_pose)
+                        if isinstance(_pose, SDFError):
+                            return _pose.extend("@pose")
+                    else:
+                        _pose = None
                     _raw_time = None
                     if cmp_version(version, "1.2") >= 0:
                         _c_tmp = el.find("time")
                         if _c_tmp is not None: _raw_time = _c_tmp.text
                     else:
                         _raw_time = el.get("time")
-                    if _raw_time is None: _raw_time = 0.0
-                    _time = _parse_double(_raw_time)
-                    if isinstance(_time, SDFError):
-                        return _time.extend("@time")
+                    if _raw_time is not None:
+                        _time = _parse_double(_raw_time)
+                        if isinstance(_time, SDFError):
+                            return _time.extend("@time")
+                    else:
+                        _time = None
                     return cls(sdf_version=version, pose=_pose, time=_time)
 
             def __init__(
@@ -271,18 +287,30 @@ class Actor(BaseModel):
 
             @classmethod
             def _from_sdf(cls, el: ET.Element, version: str) -> "Actor.Script.Trajectory | SDFError":
-                _id = _parse_int32(el.get("id", 0))
-                if isinstance(_id, SDFError):
-                    return _id.extend("@id")
-                _tension = _parse_double(el.get("tension", 0.0))
-                if isinstance(_tension, SDFError):
-                    return _tension.extend("@tension")
+                _raw_id = el.get("id")
+                if _raw_id is not None:
+                    _id = _parse_int32(_raw_id)
+                    if isinstance(_id, SDFError):
+                        return _id.extend("@id")
+                else:
+                    _id = None
+                _raw_tension = el.get("tension")
+                if _raw_tension is not None:
+                    _tension = _parse_double(_raw_tension)
+                    if isinstance(_tension, SDFError):
+                        return _tension.extend("@tension")
+                else:
+                    _tension = None
                 if _tension is not None and cmp_version(version, "1.6") < 0:
                     if _tension != 0.0:
                         return SDFError(f"'tension' is not supported in SDF version {version} (added in 1.6)")
-                _type = el.get("type", "__default__")
-                if isinstance(_type, SDFError):
-                    return _type.extend("@type")
+                _raw_type = el.get("type")
+                if _raw_type is not None:
+                    _type = _raw_type
+                    if isinstance(_type, SDFError):
+                        return _type.extend("@type")
+                else:
+                    _type = None
                 _waypoints = []
                 for c in el.findall("waypoint"):
                     _res = cls.Waypoint._from_sdf(c, version)
@@ -365,30 +393,36 @@ class Actor(BaseModel):
                 if _c_tmp is not None: _raw_auto_start = _c_tmp.text
             else:
                 _raw_auto_start = el.get("auto_start")
-            if _raw_auto_start is None: _raw_auto_start = True
-            _auto_start = str(_raw_auto_start).strip().lower() == 'true'
-            if isinstance(_auto_start, SDFError):
-                return _auto_start.extend("@auto_start")
+            if _raw_auto_start is not None:
+                _auto_start = str(_raw_auto_start).strip().lower() == 'true'
+                if isinstance(_auto_start, SDFError):
+                    return _auto_start.extend("@auto_start")
+            else:
+                _auto_start = None
             _raw_delay_start = None
             if cmp_version(version, "1.2") >= 0:
                 _c_tmp = el.find("delay_start")
                 if _c_tmp is not None: _raw_delay_start = _c_tmp.text
             else:
                 _raw_delay_start = el.get("delay_start")
-            if _raw_delay_start is None: _raw_delay_start = 0.0
-            _delay_start = _parse_double(_raw_delay_start)
-            if isinstance(_delay_start, SDFError):
-                return _delay_start.extend("@delay_start")
+            if _raw_delay_start is not None:
+                _delay_start = _parse_double(_raw_delay_start)
+                if isinstance(_delay_start, SDFError):
+                    return _delay_start.extend("@delay_start")
+            else:
+                _delay_start = None
             _raw_loop = None
             if cmp_version(version, "1.2") >= 0:
                 _c_tmp = el.find("loop")
                 if _c_tmp is not None: _raw_loop = _c_tmp.text
             else:
                 _raw_loop = el.get("loop")
-            if _raw_loop is None: _raw_loop = True
-            _loop = str(_raw_loop).strip().lower() == 'true'
-            if isinstance(_loop, SDFError):
-                return _loop.extend("@loop")
+            if _raw_loop is not None:
+                _loop = str(_raw_loop).strip().lower() == 'true'
+                if isinstance(_loop, SDFError):
+                    return _loop.extend("@loop")
+            else:
+                _loop = None
             _trajectories = []
             for c in el.findall("trajectory"):
                 _res = cls.Trajectory._from_sdf(c, version)
@@ -442,20 +476,24 @@ class Actor(BaseModel):
                 if _c_tmp is not None: _raw_filename = _c_tmp.text
             else:
                 _raw_filename = el.get("filename")
-            if _raw_filename is None: _raw_filename = "__default__"
-            _filename = _raw_filename
-            if isinstance(_filename, SDFError):
-                return _filename.extend("@filename")
+            if _raw_filename is not None:
+                _filename = _raw_filename
+                if isinstance(_filename, SDFError):
+                    return _filename.extend("@filename")
+            else:
+                _filename = None
             _raw_scale = None
             if cmp_version(version, "1.2") >= 0:
                 _c_tmp = el.find("scale")
                 if _c_tmp is not None: _raw_scale = _c_tmp.text
             else:
                 _raw_scale = el.get("scale")
-            if _raw_scale is None: _raw_scale = 1.0
-            _scale = _parse_double(_raw_scale)
-            if isinstance(_scale, SDFError):
-                return _scale.extend("@scale")
+            if _raw_scale is not None:
+                _scale = _parse_double(_raw_scale)
+                if isinstance(_scale, SDFError):
+                    return _scale.extend("@scale")
+            else:
+                _scale = None
             return cls(sdf_version=version, filename=_filename, scale=_scale)
 
     def __init__(
@@ -705,9 +743,13 @@ class Actor(BaseModel):
             if isinstance(_res, SDFError):
                 return _res.extend("link")
             _links.append(_res)
-        _name = el.get("name", "__default__")
-        if isinstance(_name, SDFError):
-            return _name.extend("@name")
+        _raw_name = el.get("name")
+        if _raw_name is not None:
+            _name = _raw_name
+            if isinstance(_name, SDFError):
+                return _name.extend("@name")
+        else:
+            _name = None
         _c_origin = el.find("origin")
         if _c_origin is not None:
             _res = cls.Origin._from_sdf(_c_origin, version)
@@ -754,8 +796,10 @@ class Actor(BaseModel):
             if _c_tmp is not None: _raw_static = _c_tmp.text
         else:
             _raw_static = el.get("static")
-        if _raw_static is None: _raw_static = False
-        _static = str(_raw_static).strip().lower() == 'true'
-        if isinstance(_static, SDFError):
-            return _static.extend("@static")
+        if _raw_static is not None:
+            _static = str(_raw_static).strip().lower() == 'true'
+            if isinstance(_static, SDFError):
+                return _static.extend("@static")
+        else:
+            _static = None
         return cls(sdf_version=version, animations=_animations, frames=_frames, joints=_joints, links=_links, name=_name, origin=_origin, plugins=_plugins, pose=_pose, script=_script, skin=_skin, static=_static)

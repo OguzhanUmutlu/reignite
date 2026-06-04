@@ -37,10 +37,18 @@ class Plugin(BaseModel):
 
     @classmethod
     def _from_sdf(cls, el: ET.Element, version: str) -> "Plugin | SDFError":
-        _filename = el.get("filename", "__default__")
-        if isinstance(_filename, SDFError):
-            return _filename.extend("@filename")
-        _name = el.get("name", "__default__")
-        if isinstance(_name, SDFError):
-            return _name.extend("@name")
+        _raw_filename = el.get("filename")
+        if _raw_filename is not None:
+            _filename = _raw_filename
+            if isinstance(_filename, SDFError):
+                return _filename.extend("@filename")
+        else:
+            _filename = None
+        _raw_name = el.get("name")
+        if _raw_name is not None:
+            _name = _raw_name
+            if isinstance(_name, SDFError):
+                return _name.extend("@name")
+        else:
+            _name = None
         return cls(sdf_version=version, filename=_filename, name=_name)

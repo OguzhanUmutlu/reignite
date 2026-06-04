@@ -62,16 +62,23 @@ class LinkState(BaseModel):
 
         @classmethod
         def _from_sdf(cls, el: ET.Element, version: str) -> "LinkState.AngularAcceleration | SDFError":
-            _text = el.text or "0 0 0"
-            _angular_acceleration = _parse_vector3(_text)
-            if isinstance(_angular_acceleration, SDFError):
-                return _angular_acceleration
+            _raw_angular_acceleration = el.text
+            if _raw_angular_acceleration is not None:
+                _angular_acceleration = _parse_vector3(_raw_angular_acceleration)
+                if isinstance(_angular_acceleration, SDFError):
+                    return _angular_acceleration
+            else:
+                _angular_acceleration = None
             if _angular_acceleration is not None and cmp_version(version, "1.12") < 0:
                 if _angular_acceleration != "0 0 0":
                     return SDFError(f"'angular_acceleration' is not supported in SDF version {version} (added in 1.12)")
-            _degrees = str(el.get("degrees", False)).strip().lower() == 'true'
-            if isinstance(_degrees, SDFError):
-                return _degrees.extend("@degrees")
+            _raw_degrees = el.get("degrees")
+            if _raw_degrees is not None:
+                _degrees = str(_raw_degrees).strip().lower() == 'true'
+                if isinstance(_degrees, SDFError):
+                    return _degrees.extend("@degrees")
+            else:
+                _degrees = None
             return cls(sdf_version=version, angular_acceleration=_angular_acceleration, degrees=_degrees)
 
     class AngularVelocity(BaseModel):
@@ -105,16 +112,23 @@ class LinkState(BaseModel):
 
         @classmethod
         def _from_sdf(cls, el: ET.Element, version: str) -> "LinkState.AngularVelocity | SDFError":
-            _text = el.text or "0 0 0"
-            _angular_velocity = _parse_vector3(_text)
-            if isinstance(_angular_velocity, SDFError):
-                return _angular_velocity
+            _raw_angular_velocity = el.text
+            if _raw_angular_velocity is not None:
+                _angular_velocity = _parse_vector3(_raw_angular_velocity)
+                if isinstance(_angular_velocity, SDFError):
+                    return _angular_velocity
+            else:
+                _angular_velocity = None
             if _angular_velocity is not None and cmp_version(version, "1.12") < 0:
                 if _angular_velocity != "0 0 0":
                     return SDFError(f"'angular_velocity' is not supported in SDF version {version} (added in 1.12)")
-            _degrees = str(el.get("degrees", False)).strip().lower() == 'true'
-            if isinstance(_degrees, SDFError):
-                return _degrees.extend("@degrees")
+            _raw_degrees = el.get("degrees")
+            if _raw_degrees is not None:
+                _degrees = str(_raw_degrees).strip().lower() == 'true'
+                if isinstance(_degrees, SDFError):
+                    return _degrees.extend("@degrees")
+            else:
+                _degrees = None
             return cls(sdf_version=version, angular_velocity=_angular_velocity, degrees=_degrees)
 
     class Collision(BaseModel):
@@ -138,9 +152,13 @@ class LinkState(BaseModel):
 
         @classmethod
         def _from_sdf(cls, el: ET.Element, version: str) -> "LinkState.Collision | SDFError":
-            _name = el.get("name", "__default__")
-            if isinstance(_name, SDFError):
-                return _name.extend("@name")
+            _raw_name = el.get("name")
+            if _raw_name is not None:
+                _name = _raw_name
+                if isinstance(_name, SDFError):
+                    return _name.extend("@name")
+            else:
+                _name = None
             return cls(sdf_version=version, name=_name)
 
     class CollisionState(BaseModel):
@@ -164,9 +182,13 @@ class LinkState(BaseModel):
 
         @classmethod
         def _from_sdf(cls, el: ET.Element, version: str) -> "LinkState.CollisionState | SDFError":
-            _name = el.get("name", "__default__")
-            if isinstance(_name, SDFError):
-                return _name.extend("@name")
+            _raw_name = el.get("name")
+            if _raw_name is not None:
+                _name = _raw_name
+                if isinstance(_name, SDFError):
+                    return _name.extend("@name")
+            else:
+                _name = None
             return cls(sdf_version=version, name=_name)
 
     def __init__(
@@ -449,9 +471,13 @@ class LinkState(BaseModel):
             _linear_velocity = None
         if _linear_velocity is not None and cmp_version(version, "1.12") < 0:
             return SDFError(f"'linear_velocity' is not supported in SDF version {version} (added in 1.12)")
-        _name = el.get("name", "__default__")
-        if isinstance(_name, SDFError):
-            return _name.extend("@name")
+        _raw_name = el.get("name")
+        if _raw_name is not None:
+            _name = _raw_name
+            if isinstance(_name, SDFError):
+                return _name.extend("@name")
+        else:
+            _name = None
         _c_pose = el.find("pose")
         if _c_pose is not None:
             _res = Pose._from_sdf(_c_pose, version)

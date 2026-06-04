@@ -169,9 +169,13 @@ class Robot(BaseModel):
             if isinstance(_res, SDFError):
                 return _res.extend("link")
             _links.append(_res)
-        _name = el.get("name", "__default__")
-        if isinstance(_name, SDFError):
-            return _name.extend("@name")
+        _raw_name = el.get("name")
+        if _raw_name is not None:
+            _name = _raw_name
+            if isinstance(_name, SDFError):
+                return _name.extend("@name")
+        else:
+            _name = None
         _plugins = []
         for c in el.findall("plugin"):
             _res = Plugin._from_sdf(c, version)

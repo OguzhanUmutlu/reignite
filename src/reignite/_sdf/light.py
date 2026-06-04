@@ -102,40 +102,48 @@ class Light(BaseModel):
                 if _c_tmp is not None: _raw_constant = _c_tmp.text
             else:
                 _raw_constant = el.get("constant")
-            if _raw_constant is None: _raw_constant = 1
-            _constant = _parse_double(_raw_constant)
-            if isinstance(_constant, SDFError):
-                return _constant.extend("@constant")
+            if _raw_constant is not None:
+                _constant = _parse_double(_raw_constant)
+                if isinstance(_constant, SDFError):
+                    return _constant.extend("@constant")
+            else:
+                _constant = None
             _raw_linear = None
             if cmp_version(version, "1.2") >= 0:
                 _c_tmp = el.find("linear")
                 if _c_tmp is not None: _raw_linear = _c_tmp.text
             else:
                 _raw_linear = el.get("linear")
-            if _raw_linear is None: _raw_linear = 1
-            _linear = _parse_double(_raw_linear)
-            if isinstance(_linear, SDFError):
-                return _linear.extend("@linear")
+            if _raw_linear is not None:
+                _linear = _parse_double(_raw_linear)
+                if isinstance(_linear, SDFError):
+                    return _linear.extend("@linear")
+            else:
+                _linear = None
             _raw_quadratic = None
             if cmp_version(version, "1.2") >= 0:
                 _c_tmp = el.find("quadratic")
                 if _c_tmp is not None: _raw_quadratic = _c_tmp.text
             else:
                 _raw_quadratic = el.get("quadratic")
-            if _raw_quadratic is None: _raw_quadratic = 0
-            _quadratic = _parse_double(_raw_quadratic)
-            if isinstance(_quadratic, SDFError):
-                return _quadratic.extend("@quadratic")
+            if _raw_quadratic is not None:
+                _quadratic = _parse_double(_raw_quadratic)
+                if isinstance(_quadratic, SDFError):
+                    return _quadratic.extend("@quadratic")
+            else:
+                _quadratic = None
             _raw_range = None
             if cmp_version(version, "1.2") >= 0:
                 _c_tmp = el.find("range")
                 if _c_tmp is not None: _raw_range = _c_tmp.text
             else:
                 _raw_range = el.get("range")
-            if _raw_range is None: _raw_range = 10
-            _range = _parse_double(_raw_range)
-            if isinstance(_range, SDFError):
-                return _range.extend("@range")
+            if _raw_range is not None:
+                _range = _parse_double(_raw_range)
+                if isinstance(_range, SDFError):
+                    return _range.extend("@range")
+            else:
+                _range = None
             return cls(sdf_version=version, constant=_constant, linear=_linear, quadratic=_quadratic, range=_range)
 
     class Diffuse(BaseModel):
@@ -170,19 +178,24 @@ class Light(BaseModel):
 
         @classmethod
         def _from_sdf(cls, el: ET.Element, version: str) -> "Light.Diffuse | SDFError":
-            _text = el.text or "1 1 1 1"
-            _diffuse = _parse_color(_text)
-            if isinstance(_diffuse, SDFError):
-                return _diffuse
+            _raw_diffuse = el.text
+            if _raw_diffuse is not None:
+                _diffuse = _parse_color(_raw_diffuse)
+                if isinstance(_diffuse, SDFError):
+                    return _diffuse
+            else:
+                _diffuse = None
             _raw_rgba = None
             if cmp_version(version, "1.2") >= 0:
                 _raw_rgba = el.text
             else:
                 _raw_rgba = el.get("rgba")
-            if _raw_rgba is None: _raw_rgba = "1 1 1 1"
-            _rgba = _parse_color(_raw_rgba)
-            if isinstance(_rgba, SDFError):
-                return _rgba.extend("@rgba")
+            if _raw_rgba is not None:
+                _rgba = _parse_color(_raw_rgba)
+                if isinstance(_rgba, SDFError):
+                    return _rgba.extend("@rgba")
+            else:
+                _rgba = None
             return cls(sdf_version=version, diffuse=_diffuse, rgba=_rgba)
 
     class Direction(BaseModel):
@@ -217,19 +230,24 @@ class Light(BaseModel):
 
         @classmethod
         def _from_sdf(cls, el: ET.Element, version: str) -> "Light.Direction | SDFError":
-            _text = el.text or "0 0 -1"
-            _direction = _parse_vector3(_text)
-            if isinstance(_direction, SDFError):
-                return _direction
+            _raw_direction = el.text
+            if _raw_direction is not None:
+                _direction = _parse_vector3(_raw_direction)
+                if isinstance(_direction, SDFError):
+                    return _direction
+            else:
+                _direction = None
             _raw_xyz = None
             if cmp_version(version, "1.2") >= 0:
                 _raw_xyz = el.text
             else:
                 _raw_xyz = el.get("xyz")
-            if _raw_xyz is None: _raw_xyz = "0 0 -1"
-            _xyz = _parse_vector3(_raw_xyz)
-            if isinstance(_xyz, SDFError):
-                return _xyz.extend("@xyz")
+            if _raw_xyz is not None:
+                _xyz = _parse_vector3(_raw_xyz)
+                if isinstance(_xyz, SDFError):
+                    return _xyz.extend("@xyz")
+            else:
+                _xyz = None
             return cls(sdf_version=version, direction=_direction, xyz=_xyz)
 
     class Origin(BaseModel):
@@ -264,10 +282,12 @@ class Light(BaseModel):
                 if _c_tmp is not None: _raw_pose = _c_tmp.text
             else:
                 _raw_pose = el.get("pose")
-            if _raw_pose is None: _raw_pose = "0 0 0 0 0 0"
-            _pose = _parse_pose(_raw_pose)
-            if isinstance(_pose, SDFError):
-                return _pose.extend("@pose")
+            if _raw_pose is not None:
+                _pose = _parse_pose(_raw_pose)
+                if isinstance(_pose, SDFError):
+                    return _pose.extend("@pose")
+            else:
+                _pose = None
             return cls(sdf_version=version, pose=_pose)
 
     class Specular(BaseModel):
@@ -307,14 +327,19 @@ class Light(BaseModel):
                 _raw_rgba = el.text
             else:
                 _raw_rgba = el.get("rgba")
-            if _raw_rgba is None: _raw_rgba = ".1 .1 .1 1"
-            _rgba = _parse_color(_raw_rgba)
-            if isinstance(_rgba, SDFError):
-                return _rgba.extend("@rgba")
-            _text = el.text or ".1 .1 .1 1"
-            _specular = _parse_color(_text)
-            if isinstance(_specular, SDFError):
-                return _specular
+            if _raw_rgba is not None:
+                _rgba = _parse_color(_raw_rgba)
+                if isinstance(_rgba, SDFError):
+                    return _rgba.extend("@rgba")
+            else:
+                _rgba = None
+            _raw_specular = el.text
+            if _raw_specular is not None:
+                _specular = _parse_color(_raw_specular)
+                if isinstance(_specular, SDFError):
+                    return _specular
+            else:
+                _specular = None
             return cls(sdf_version=version, rgba=_rgba, specular=_specular)
 
     class Spot(BaseModel):
@@ -371,30 +396,36 @@ class Light(BaseModel):
                 if _c_tmp is not None: _raw_falloff = _c_tmp.text
             else:
                 _raw_falloff = el.get("falloff")
-            if _raw_falloff is None: _raw_falloff = 0
-            _falloff = _parse_double(_raw_falloff)
-            if isinstance(_falloff, SDFError):
-                return _falloff.extend("@falloff")
+            if _raw_falloff is not None:
+                _falloff = _parse_double(_raw_falloff)
+                if isinstance(_falloff, SDFError):
+                    return _falloff.extend("@falloff")
+            else:
+                _falloff = None
             _raw_inner_angle = None
             if cmp_version(version, "1.2") >= 0:
                 _c_tmp = el.find("inner_angle")
                 if _c_tmp is not None: _raw_inner_angle = _c_tmp.text
             else:
                 _raw_inner_angle = el.get("inner_angle")
-            if _raw_inner_angle is None: _raw_inner_angle = 0
-            _inner_angle = _parse_double(_raw_inner_angle)
-            if isinstance(_inner_angle, SDFError):
-                return _inner_angle.extend("@inner_angle")
+            if _raw_inner_angle is not None:
+                _inner_angle = _parse_double(_raw_inner_angle)
+                if isinstance(_inner_angle, SDFError):
+                    return _inner_angle.extend("@inner_angle")
+            else:
+                _inner_angle = None
             _raw_outer_angle = None
             if cmp_version(version, "1.2") >= 0:
                 _c_tmp = el.find("outer_angle")
                 if _c_tmp is not None: _raw_outer_angle = _c_tmp.text
             else:
                 _raw_outer_angle = el.get("outer_angle")
-            if _raw_outer_angle is None: _raw_outer_angle = 0
-            _outer_angle = _parse_double(_raw_outer_angle)
-            if isinstance(_outer_angle, SDFError):
-                return _outer_angle.extend("@outer_angle")
+            if _raw_outer_angle is not None:
+                _outer_angle = _parse_double(_raw_outer_angle)
+                if isinstance(_outer_angle, SDFError):
+                    return _outer_angle.extend("@outer_angle")
+            else:
+                _outer_angle = None
             return cls(sdf_version=version, falloff=_falloff, inner_angle=_inner_angle, outer_angle=_outer_angle)
 
     def __init__(
@@ -612,10 +643,12 @@ class Light(BaseModel):
             if _c_tmp is not None: _raw_cast_shadows = _c_tmp.text
         else:
             _raw_cast_shadows = el.get("cast_shadows")
-        if _raw_cast_shadows is None: _raw_cast_shadows = False
-        _cast_shadows = str(_raw_cast_shadows).strip().lower() == 'true'
-        if isinstance(_cast_shadows, SDFError):
-            return _cast_shadows.extend("@cast_shadows")
+        if _raw_cast_shadows is not None:
+            _cast_shadows = str(_raw_cast_shadows).strip().lower() == 'true'
+            if isinstance(_cast_shadows, SDFError):
+                return _cast_shadows.extend("@cast_shadows")
+        else:
+            _cast_shadows = None
         _c_diffuse = el.find("diffuse")
         if _c_diffuse is not None:
             _res = cls.Diffuse._from_sdf(_c_diffuse, version)
@@ -662,9 +695,13 @@ class Light(BaseModel):
             _light_on = None
         if _light_on is not None and cmp_version(version, "1.8") < 0:
             return SDFError(f"'light_on' is not supported in SDF version {version} (added in 1.8)")
-        _name = el.get("name", "__default__")
-        if isinstance(_name, SDFError):
-            return _name.extend("@name")
+        _raw_name = el.get("name")
+        if _raw_name is not None:
+            _name = _raw_name
+            if isinstance(_name, SDFError):
+                return _name.extend("@name")
+        else:
+            _name = None
         _c_origin = el.find("origin")
         if _c_origin is not None:
             _res = cls.Origin._from_sdf(_c_origin, version)
@@ -699,9 +736,13 @@ class Light(BaseModel):
             _spot = _res
         else:
             _spot = None
-        _type = el.get("type", "point")
-        if isinstance(_type, SDFError):
-            return _type.extend("@type")
+        _raw_type = el.get("type")
+        if _raw_type is not None:
+            _type = _raw_type
+            if isinstance(_type, SDFError):
+                return _type.extend("@type")
+        else:
+            _type = None
         _c_tmp = el.find("visualize")
         if _c_tmp is not None:
             _text = _c_tmp.text if _c_tmp.text is not None else True

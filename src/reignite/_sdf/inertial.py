@@ -444,60 +444,72 @@ class Inertial(BaseModel):
                 if _c_tmp is not None: _raw_ixx = _c_tmp.text
             else:
                 _raw_ixx = el.get("ixx")
-            if _raw_ixx is None: _raw_ixx = 0.0
-            _ixx = _parse_double(_raw_ixx)
-            if isinstance(_ixx, SDFError):
-                return _ixx.extend("@ixx")
+            if _raw_ixx is not None:
+                _ixx = _parse_double(_raw_ixx)
+                if isinstance(_ixx, SDFError):
+                    return _ixx.extend("@ixx")
+            else:
+                _ixx = None
             _raw_ixy = None
             if cmp_version(version, "1.2") >= 0:
                 _c_tmp = el.find("ixy")
                 if _c_tmp is not None: _raw_ixy = _c_tmp.text
             else:
                 _raw_ixy = el.get("ixy")
-            if _raw_ixy is None: _raw_ixy = 0.0
-            _ixy = _parse_double(_raw_ixy)
-            if isinstance(_ixy, SDFError):
-                return _ixy.extend("@ixy")
+            if _raw_ixy is not None:
+                _ixy = _parse_double(_raw_ixy)
+                if isinstance(_ixy, SDFError):
+                    return _ixy.extend("@ixy")
+            else:
+                _ixy = None
             _raw_ixz = None
             if cmp_version(version, "1.2") >= 0:
                 _c_tmp = el.find("ixz")
                 if _c_tmp is not None: _raw_ixz = _c_tmp.text
             else:
                 _raw_ixz = el.get("ixz")
-            if _raw_ixz is None: _raw_ixz = 0.0
-            _ixz = _parse_double(_raw_ixz)
-            if isinstance(_ixz, SDFError):
-                return _ixz.extend("@ixz")
+            if _raw_ixz is not None:
+                _ixz = _parse_double(_raw_ixz)
+                if isinstance(_ixz, SDFError):
+                    return _ixz.extend("@ixz")
+            else:
+                _ixz = None
             _raw_iyy = None
             if cmp_version(version, "1.2") >= 0:
                 _c_tmp = el.find("iyy")
                 if _c_tmp is not None: _raw_iyy = _c_tmp.text
             else:
                 _raw_iyy = el.get("iyy")
-            if _raw_iyy is None: _raw_iyy = 0.0
-            _iyy = _parse_double(_raw_iyy)
-            if isinstance(_iyy, SDFError):
-                return _iyy.extend("@iyy")
+            if _raw_iyy is not None:
+                _iyy = _parse_double(_raw_iyy)
+                if isinstance(_iyy, SDFError):
+                    return _iyy.extend("@iyy")
+            else:
+                _iyy = None
             _raw_iyz = None
             if cmp_version(version, "1.2") >= 0:
                 _c_tmp = el.find("iyz")
                 if _c_tmp is not None: _raw_iyz = _c_tmp.text
             else:
                 _raw_iyz = el.get("iyz")
-            if _raw_iyz is None: _raw_iyz = 0.0
-            _iyz = _parse_double(_raw_iyz)
-            if isinstance(_iyz, SDFError):
-                return _iyz.extend("@iyz")
+            if _raw_iyz is not None:
+                _iyz = _parse_double(_raw_iyz)
+                if isinstance(_iyz, SDFError):
+                    return _iyz.extend("@iyz")
+            else:
+                _iyz = None
             _raw_izz = None
             if cmp_version(version, "1.2") >= 0:
                 _c_tmp = el.find("izz")
                 if _c_tmp is not None: _raw_izz = _c_tmp.text
             else:
                 _raw_izz = el.get("izz")
-            if _raw_izz is None: _raw_izz = 0.0
-            _izz = _parse_double(_raw_izz)
-            if isinstance(_izz, SDFError):
-                return _izz.extend("@izz")
+            if _raw_izz is not None:
+                _izz = _parse_double(_raw_izz)
+                if isinstance(_izz, SDFError):
+                    return _izz.extend("@izz")
+            else:
+                _izz = None
             return cls(sdf_version=version, ixx=_ixx, ixy=_ixy, ixz=_ixz, iyy=_iyy, iyz=_iyz, izz=_izz)
 
     class Origin(BaseModel):
@@ -532,10 +544,12 @@ class Inertial(BaseModel):
                 if _c_tmp is not None: _raw_pose = _c_tmp.text
             else:
                 _raw_pose = el.get("pose")
-            if _raw_pose is None: _raw_pose = "0 0 0 0 0 0"
-            _pose = _parse_pose(_raw_pose)
-            if isinstance(_pose, SDFError):
-                return _pose.extend("@pose")
+            if _raw_pose is not None:
+                _pose = _parse_pose(_raw_pose)
+                if isinstance(_pose, SDFError):
+                    return _pose.extend("@pose")
+            else:
+                _pose = None
             return cls(sdf_version=version, pose=_pose)
 
     def __init__(
@@ -687,9 +701,13 @@ class Inertial(BaseModel):
     def _from_sdf(cls, el: ET.Element, version: str) -> "Inertial | SDFError":
         from ..elements.frame import Frame
         from ..elements.pose import Pose
-        _auto = str(el.get("auto", False)).strip().lower() == 'true'
-        if isinstance(_auto, SDFError):
-            return _auto.extend("@auto")
+        _raw_auto = el.get("auto")
+        if _raw_auto is not None:
+            _auto = str(_raw_auto).strip().lower() == 'true'
+            if isinstance(_auto, SDFError):
+                return _auto.extend("@auto")
+        else:
+            _auto = None
         if _auto is not None and cmp_version(version, "1.11") < 0:
             if _auto != False:
                 return SDFError(f"'auto' is not supported in SDF version {version} (added in 1.11)")
@@ -710,10 +728,12 @@ class Inertial(BaseModel):
             if _c_tmp is not None: _raw_density = _c_tmp.text
         else:
             _raw_density = el.get("density")
-        if _raw_density is None: _raw_density = 1.0
-        _density = _parse_double(_raw_density)
-        if isinstance(_density, SDFError):
-            return _density.extend("@density")
+        if _raw_density is not None:
+            _density = _parse_double(_raw_density)
+            if isinstance(_density, SDFError):
+                return _density.extend("@density")
+        else:
+            _density = None
         _c_fluid_added_mass = el.find("fluid_added_mass")
         if _c_fluid_added_mass is not None:
             _res = cls.FluidAddedMass._from_sdf(_c_fluid_added_mass, version)
@@ -746,10 +766,12 @@ class Inertial(BaseModel):
             if _c_tmp is not None: _raw_mass = _c_tmp.text
         else:
             _raw_mass = el.get("mass")
-        if _raw_mass is None: _raw_mass = 1.0
-        _mass = _parse_double(_raw_mass)
-        if isinstance(_mass, SDFError):
-            return _mass.extend("@mass")
+        if _raw_mass is not None:
+            _mass = _parse_double(_raw_mass)
+            if isinstance(_mass, SDFError):
+                return _mass.extend("@mass")
+        else:
+            _mass = None
         _c_origin = el.find("origin")
         if _c_origin is not None:
             _res = cls.Origin._from_sdf(_c_origin, version)

@@ -64,17 +64,25 @@ class Frame(BaseModel):
     @classmethod
     def _from_sdf(cls, el: ET.Element, version: str) -> "Frame | SDFError":
         from ..elements.pose import Pose
-        _attached_to = el.get("attached_to", None)
-        if isinstance(_attached_to, SDFError):
-            return _attached_to.extend("@attached_to")
+        _raw_attached_to = el.get("attached_to")
+        if _raw_attached_to is not None:
+            _attached_to = _raw_attached_to
+            if isinstance(_attached_to, SDFError):
+                return _attached_to.extend("@attached_to")
+        else:
+            _attached_to = None
         if _attached_to is not None and cmp_version(version, "1.7") < 0:
             if _attached_to != None:
                 return SDFError(f"'attached_to' is not supported in SDF version {version} (added in 1.7)")
         if el.get("name") is None:
             return SDFError(f"'name' is required in SDF version {version}")
-        _name = el.get("name", None)
-        if isinstance(_name, SDFError):
-            return _name.extend("@name")
+        _raw_name = el.get("name")
+        if _raw_name is not None:
+            _name = _raw_name
+            if isinstance(_name, SDFError):
+                return _name.extend("@name")
+        else:
+            _name = None
         _c_pose = el.find("pose")
         if _c_pose is not None:
             _res = Pose._from_sdf(_c_pose, version)

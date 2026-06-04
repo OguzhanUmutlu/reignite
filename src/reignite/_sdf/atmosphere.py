@@ -79,7 +79,11 @@ class Atmosphere(BaseModel):
             _temperature_gradient = _val
         else:
             _temperature_gradient = None
-        _type = el.get("type", "adiabatic")
-        if isinstance(_type, SDFError):
-            return _type.extend("@type")
+        _raw_type = el.get("type")
+        if _raw_type is not None:
+            _type = _raw_type
+            if isinstance(_type, SDFError):
+                return _type.extend("@type")
+        else:
+            _type = None
         return cls(sdf_version=version, pressure=_pressure, temperature=_temperature, temperature_gradient=_temperature_gradient, type=_type)

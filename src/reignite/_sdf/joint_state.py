@@ -39,13 +39,20 @@ class JointState(BaseModel):
 
         @classmethod
         def _from_sdf(cls, el: ET.Element, version: str) -> "JointState.Angle | SDFError":
-            _text = el.text or 0
-            _angle = _parse_double(_text)
-            if isinstance(_angle, SDFError):
-                return _angle
-            _axis = _parse_uint32(el.get("axis", 0))
-            if isinstance(_axis, SDFError):
-                return _axis.extend("@axis")
+            _raw_angle = el.text
+            if _raw_angle is not None:
+                _angle = _parse_double(_raw_angle)
+                if isinstance(_angle, SDFError):
+                    return _angle
+            else:
+                _angle = None
+            _raw_axis = el.get("axis")
+            if _raw_axis is not None:
+                _axis = _parse_uint32(_raw_axis)
+                if isinstance(_axis, SDFError):
+                    return _axis.extend("@axis")
+            else:
+                _axis = None
             return cls(sdf_version=version, angle=_angle, axis=_axis)
 
     class Axis2State(BaseModel):
@@ -78,13 +85,20 @@ class JointState(BaseModel):
 
             @classmethod
             def _from_sdf(cls, el: ET.Element, version: str) -> "JointState.Axis2State.Acceleration | SDFError":
-                _text = el.text or 0
-                _acceleration = _parse_double(_text)
-                if isinstance(_acceleration, SDFError):
-                    return _acceleration
-                _degrees = str(el.get("degrees", False)).strip().lower() == 'true'
-                if isinstance(_degrees, SDFError):
-                    return _degrees.extend("@degrees")
+                _raw_acceleration = el.text
+                if _raw_acceleration is not None:
+                    _acceleration = _parse_double(_raw_acceleration)
+                    if isinstance(_acceleration, SDFError):
+                        return _acceleration
+                else:
+                    _acceleration = None
+                _raw_degrees = el.get("degrees")
+                if _raw_degrees is not None:
+                    _degrees = str(_raw_degrees).strip().lower() == 'true'
+                    if isinstance(_degrees, SDFError):
+                        return _degrees.extend("@degrees")
+                else:
+                    _degrees = None
                 return cls(sdf_version=version, acceleration=_acceleration, degrees=_degrees)
 
         class Position(BaseModel):
@@ -116,13 +130,20 @@ class JointState(BaseModel):
 
             @classmethod
             def _from_sdf(cls, el: ET.Element, version: str) -> "JointState.Axis2State.Position | SDFError":
-                _degrees = str(el.get("degrees", False)).strip().lower() == 'true'
-                if isinstance(_degrees, SDFError):
-                    return _degrees.extend("@degrees")
-                _text = el.text or 0
-                _position = _parse_double(_text)
-                if isinstance(_position, SDFError):
-                    return _position
+                _raw_degrees = el.get("degrees")
+                if _raw_degrees is not None:
+                    _degrees = str(_raw_degrees).strip().lower() == 'true'
+                    if isinstance(_degrees, SDFError):
+                        return _degrees.extend("@degrees")
+                else:
+                    _degrees = None
+                _raw_position = el.text
+                if _raw_position is not None:
+                    _position = _parse_double(_raw_position)
+                    if isinstance(_position, SDFError):
+                        return _position
+                else:
+                    _position = None
                 return cls(sdf_version=version, degrees=_degrees, position=_position)
 
         class Velocity(BaseModel):
@@ -154,13 +175,20 @@ class JointState(BaseModel):
 
             @classmethod
             def _from_sdf(cls, el: ET.Element, version: str) -> "JointState.Axis2State.Velocity | SDFError":
-                _degrees = str(el.get("degrees", False)).strip().lower() == 'true'
-                if isinstance(_degrees, SDFError):
-                    return _degrees.extend("@degrees")
-                _text = el.text or 0
-                _velocity = _parse_double(_text)
-                if isinstance(_velocity, SDFError):
-                    return _velocity
+                _raw_degrees = el.get("degrees")
+                if _raw_degrees is not None:
+                    _degrees = str(_raw_degrees).strip().lower() == 'true'
+                    if isinstance(_degrees, SDFError):
+                        return _degrees.extend("@degrees")
+                else:
+                    _degrees = None
+                _raw_velocity = el.text
+                if _raw_velocity is not None:
+                    _velocity = _parse_double(_raw_velocity)
+                    if isinstance(_velocity, SDFError):
+                        return _velocity
+                else:
+                    _velocity = None
                 return cls(sdf_version=version, degrees=_degrees, velocity=_velocity)
 
         def __init__(
@@ -469,7 +497,11 @@ class JointState(BaseModel):
             _axis_state = _res
         else:
             _axis_state = None
-        _name = el.get("name", "__default__")
-        if isinstance(_name, SDFError):
-            return _name.extend("@name")
+        _raw_name = el.get("name")
+        if _raw_name is not None:
+            _name = _raw_name
+            if isinstance(_name, SDFError):
+                return _name.extend("@name")
+        else:
+            _name = None
         return cls(sdf_version=version, angle=_angle, axis2_state=_axis2_state, axis_state=_axis_state, name=_name)

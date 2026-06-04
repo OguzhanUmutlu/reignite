@@ -53,16 +53,23 @@ class Material(BaseModel):
 
                 @classmethod
                 def _from_sdf(cls, el: ET.Element, version: str) -> "Material.Pbr.Metal.LightMap | SDFError":
-                    _text = el.text or None
-                    _light_map = _text
-                    if isinstance(_light_map, SDFError):
-                        return _light_map
+                    _raw_light_map = el.text
+                    if _raw_light_map is not None:
+                        _light_map = _raw_light_map
+                        if isinstance(_light_map, SDFError):
+                            return _light_map
+                    else:
+                        _light_map = None
                     if _light_map is not None and cmp_version(version, "1.7") < 0:
                         if _light_map != None:
                             return SDFError(f"'light_map' is not supported in SDF version {version} (added in 1.7)")
-                    _uv_set = _parse_uint32(el.get("uv_set", 0))
-                    if isinstance(_uv_set, SDFError):
-                        return _uv_set.extend("@uv_set")
+                    _raw_uv_set = el.get("uv_set")
+                    if _raw_uv_set is not None:
+                        _uv_set = _parse_uint32(_raw_uv_set)
+                        if isinstance(_uv_set, SDFError):
+                            return _uv_set.extend("@uv_set")
+                    else:
+                        _uv_set = None
                     return cls(sdf_version=version, light_map=_light_map, uv_set=_uv_set)
 
             class NormalMap(BaseModel):
@@ -94,13 +101,20 @@ class Material(BaseModel):
 
                 @classmethod
                 def _from_sdf(cls, el: ET.Element, version: str) -> "Material.Pbr.Metal.NormalMap | SDFError":
-                    _text = el.text or None
-                    _normal_map = _text
-                    if isinstance(_normal_map, SDFError):
-                        return _normal_map
-                    _type = el.get("type", "tangent")
-                    if isinstance(_type, SDFError):
-                        return _type.extend("@type")
+                    _raw_normal_map = el.text
+                    if _raw_normal_map is not None:
+                        _normal_map = _raw_normal_map
+                        if isinstance(_normal_map, SDFError):
+                            return _normal_map
+                    else:
+                        _normal_map = None
+                    _raw_type = el.get("type")
+                    if _raw_type is not None:
+                        _type = _raw_type
+                        if isinstance(_type, SDFError):
+                            return _type.extend("@type")
+                    else:
+                        _type = None
                     return cls(sdf_version=version, normal_map=_normal_map, type=_type)
 
             def __init__(
@@ -637,9 +651,13 @@ class Material(BaseModel):
                 _normal_map = _val
             else:
                 _normal_map = None
-            _type = el.get("type", "pixel")
-            if isinstance(_type, SDFError):
-                return _type.extend("@type")
+            _raw_type = el.get("type")
+            if _raw_type is not None:
+                _type = _raw_type
+                if isinstance(_type, SDFError):
+                    return _type.extend("@type")
+            else:
+                _type = None
             return cls(sdf_version=version, normal_map=_normal_map, type=_type)
 
     def __init__(

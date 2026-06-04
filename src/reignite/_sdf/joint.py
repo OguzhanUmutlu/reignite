@@ -97,20 +97,24 @@ class Joint(BaseModel):
                     if _c_tmp is not None: _raw_damping = _c_tmp.text
                 else:
                     _raw_damping = el.get("damping")
-                if _raw_damping is None: _raw_damping = 0
-                _damping = _parse_double(_raw_damping)
-                if isinstance(_damping, SDFError):
-                    return _damping.extend("@damping")
+                if _raw_damping is not None:
+                    _damping = _parse_double(_raw_damping)
+                    if isinstance(_damping, SDFError):
+                        return _damping.extend("@damping")
+                else:
+                    _damping = None
                 _raw_friction = None
                 if cmp_version(version, "1.2") >= 0:
                     _c_tmp = el.find("friction")
                     if _c_tmp is not None: _raw_friction = _c_tmp.text
                 else:
                     _raw_friction = el.get("friction")
-                if _raw_friction is None: _raw_friction = 0
-                _friction = _parse_double(_raw_friction)
-                if isinstance(_friction, SDFError):
-                    return _friction.extend("@friction")
+                if _raw_friction is not None:
+                    _friction = _parse_double(_raw_friction)
+                    if isinstance(_friction, SDFError):
+                        return _friction.extend("@friction")
+                else:
+                    _friction = None
                 _c_tmp = el.find("spring_reference")
                 if _c_tmp is not None:
                     _text = _c_tmp.text if _c_tmp.text is not None else 0
@@ -225,20 +229,24 @@ class Joint(BaseModel):
                     if _c_tmp is not None: _raw_effort = _c_tmp.text
                 else:
                     _raw_effort = el.get("effort")
-                if _raw_effort is None: _raw_effort = 0
-                _effort = _parse_double(_raw_effort)
-                if isinstance(_effort, SDFError):
-                    return _effort.extend("@effort")
+                if _raw_effort is not None:
+                    _effort = _parse_double(_raw_effort)
+                    if isinstance(_effort, SDFError):
+                        return _effort.extend("@effort")
+                else:
+                    _effort = None
                 _raw_lower = None
                 if cmp_version(version, "1.2") >= 0:
                     _c_tmp = el.find("lower")
                     if _c_tmp is not None: _raw_lower = _c_tmp.text
                 else:
                     _raw_lower = el.get("lower")
-                if _raw_lower is None: _raw_lower = -1e16
-                _lower = _parse_double(_raw_lower)
-                if isinstance(_lower, SDFError):
-                    return _lower.extend("@lower")
+                if _raw_lower is not None:
+                    _lower = _parse_double(_raw_lower)
+                    if isinstance(_lower, SDFError):
+                        return _lower.extend("@lower")
+                else:
+                    _lower = None
                 _c_tmp = el.find("stiffness")
                 if _c_tmp is not None:
                     _text = _c_tmp.text if _c_tmp.text is not None else 1e8
@@ -256,20 +264,24 @@ class Joint(BaseModel):
                     if _c_tmp is not None: _raw_upper = _c_tmp.text
                 else:
                     _raw_upper = el.get("upper")
-                if _raw_upper is None: _raw_upper = 1e16
-                _upper = _parse_double(_raw_upper)
-                if isinstance(_upper, SDFError):
-                    return _upper.extend("@upper")
+                if _raw_upper is not None:
+                    _upper = _parse_double(_raw_upper)
+                    if isinstance(_upper, SDFError):
+                        return _upper.extend("@upper")
+                else:
+                    _upper = None
                 _raw_velocity = None
                 if cmp_version(version, "1.2") >= 0:
                     _c_tmp = el.find("velocity")
                     if _c_tmp is not None: _raw_velocity = _c_tmp.text
                 else:
                     _raw_velocity = el.get("velocity")
-                if _raw_velocity is None: _raw_velocity = 0
-                _velocity = _parse_double(_raw_velocity)
-                if isinstance(_velocity, SDFError):
-                    return _velocity.extend("@velocity")
+                if _raw_velocity is not None:
+                    _velocity = _parse_double(_raw_velocity)
+                    if isinstance(_velocity, SDFError):
+                        return _velocity.extend("@velocity")
+                else:
+                    _velocity = None
                 return cls(sdf_version=version, dissipation=_dissipation, effort=_effort, lower=_lower, stiffness=_stiffness, upper=_upper, velocity=_velocity)
 
         class Xyz(BaseModel):
@@ -305,16 +317,23 @@ class Joint(BaseModel):
 
             @classmethod
             def _from_sdf(cls, el: ET.Element, version: str) -> "Joint.Axis.Xyz | SDFError":
-                _expressed_in = el.get("expressed_in", None)
-                if isinstance(_expressed_in, SDFError):
-                    return _expressed_in.extend("@expressed_in")
+                _raw_expressed_in = el.get("expressed_in")
+                if _raw_expressed_in is not None:
+                    _expressed_in = _raw_expressed_in
+                    if isinstance(_expressed_in, SDFError):
+                        return _expressed_in.extend("@expressed_in")
+                else:
+                    _expressed_in = None
                 if _expressed_in is not None and cmp_version(version, "1.7") < 0:
                     if _expressed_in != None:
                         return SDFError(f"'expressed_in' is not supported in SDF version {version} (added in 1.7)")
-                _text = el.text or "0 0 1"
-                _xyz = _parse_vector3(_text)
-                if isinstance(_xyz, SDFError):
-                    return _xyz
+                _raw_xyz = el.text
+                if _raw_xyz is not None:
+                    _xyz = _parse_vector3(_raw_xyz)
+                    if isinstance(_xyz, SDFError):
+                        return _xyz
+                else:
+                    _xyz = None
                 if _xyz is not None and cmp_version(version, "1.2") < 0:
                     if _xyz != "0 0 1":
                         return SDFError(f"'xyz' is not supported in SDF version {version} (added in 1.2)")
@@ -477,10 +496,12 @@ class Joint(BaseModel):
                 if _c_tmp is not None: _raw_xyz = _c_tmp.text
             else:
                 _raw_xyz = el.get("xyz")
-            if _raw_xyz is None: _raw_xyz = "0 0 1"
-            _xyz = _parse_vector3(_raw_xyz)
-            if isinstance(_xyz, SDFError):
-                return _xyz.extend("@xyz")
+            if _raw_xyz is not None:
+                _xyz = _parse_vector3(_raw_xyz)
+                if isinstance(_xyz, SDFError):
+                    return _xyz.extend("@xyz")
+            else:
+                _xyz = None
             return cls(sdf_version=version, dynamics=_dynamics, initial_position=_initial_position, limit=_limit, mimic=_mimic, use_parent_model_frame=_use_parent_model_frame, xyz=_xyz)
 
     class Axis2(BaseModel):
@@ -574,20 +595,24 @@ class Joint(BaseModel):
                     if _c_tmp is not None: _raw_effort = _c_tmp.text
                 else:
                     _raw_effort = el.get("effort")
-                if _raw_effort is None: _raw_effort = 0
-                _effort = _parse_double(_raw_effort)
-                if isinstance(_effort, SDFError):
-                    return _effort.extend("@effort")
+                if _raw_effort is not None:
+                    _effort = _parse_double(_raw_effort)
+                    if isinstance(_effort, SDFError):
+                        return _effort.extend("@effort")
+                else:
+                    _effort = None
                 _raw_lower = None
                 if cmp_version(version, "1.2") >= 0:
                     _c_tmp = el.find("lower")
                     if _c_tmp is not None: _raw_lower = _c_tmp.text
                 else:
                     _raw_lower = el.get("lower")
-                if _raw_lower is None: _raw_lower = -1e16
-                _lower = _parse_double(_raw_lower)
-                if isinstance(_lower, SDFError):
-                    return _lower.extend("@lower")
+                if _raw_lower is not None:
+                    _lower = _parse_double(_raw_lower)
+                    if isinstance(_lower, SDFError):
+                        return _lower.extend("@lower")
+                else:
+                    _lower = None
                 _c_tmp = el.find("stiffness")
                 if _c_tmp is not None:
                     _text = _c_tmp.text if _c_tmp.text is not None else 1e8
@@ -605,20 +630,24 @@ class Joint(BaseModel):
                     if _c_tmp is not None: _raw_upper = _c_tmp.text
                 else:
                     _raw_upper = el.get("upper")
-                if _raw_upper is None: _raw_upper = 1e16
-                _upper = _parse_double(_raw_upper)
-                if isinstance(_upper, SDFError):
-                    return _upper.extend("@upper")
+                if _raw_upper is not None:
+                    _upper = _parse_double(_raw_upper)
+                    if isinstance(_upper, SDFError):
+                        return _upper.extend("@upper")
+                else:
+                    _upper = None
                 _raw_velocity = None
                 if cmp_version(version, "1.2") >= 0:
                     _c_tmp = el.find("velocity")
                     if _c_tmp is not None: _raw_velocity = _c_tmp.text
                 else:
                     _raw_velocity = el.get("velocity")
-                if _raw_velocity is None: _raw_velocity = 0
-                _velocity = _parse_double(_raw_velocity)
-                if isinstance(_velocity, SDFError):
-                    return _velocity.extend("@velocity")
+                if _raw_velocity is not None:
+                    _velocity = _parse_double(_raw_velocity)
+                    if isinstance(_velocity, SDFError):
+                        return _velocity.extend("@velocity")
+                else:
+                    _velocity = None
                 return cls(sdf_version=version, dissipation=_dissipation, effort=_effort, lower=_lower, stiffness=_stiffness, upper=_upper, velocity=_velocity)
 
         _MIGRATIONS = [{"version": "1.7", "ops": [{"type": "map", "from": "use_parent_model_frame", "to": "xyz::expressed_in", "from_values": ["true", "True", "TRUE", "1"], "to_value": "__model__"}]}]
@@ -778,10 +807,12 @@ class Joint(BaseModel):
                 if _c_tmp is not None: _raw_xyz = _c_tmp.text
             else:
                 _raw_xyz = el.get("xyz")
-            if _raw_xyz is None: _raw_xyz = "0 0 1"
-            _xyz = _parse_vector3(_raw_xyz)
-            if isinstance(_xyz, SDFError):
-                return _xyz.extend("@xyz")
+            if _raw_xyz is not None:
+                _xyz = _parse_vector3(_raw_xyz)
+                if isinstance(_xyz, SDFError):
+                    return _xyz.extend("@xyz")
+            else:
+                _xyz = None
             return cls(sdf_version=version, dynamics=_dynamics, initial_position=_initial_position, limit=_limit, mimic=_mimic, use_parent_model_frame=_use_parent_model_frame, xyz=_xyz)
 
     class Child(BaseModel):
@@ -816,19 +847,24 @@ class Joint(BaseModel):
 
         @classmethod
         def _from_sdf(cls, el: ET.Element, version: str) -> "Joint.Child | SDFError":
-            _text = el.text or "__default__"
-            _child = _text
-            if isinstance(_child, SDFError):
-                return _child
+            _raw_child = el.text
+            if _raw_child is not None:
+                _child = _raw_child
+                if isinstance(_child, SDFError):
+                    return _child
+            else:
+                _child = None
             _raw_link = None
             if cmp_version(version, "1.2") >= 0:
                 _raw_link = el.text
             else:
                 _raw_link = el.get("link")
-            if _raw_link is None: _raw_link = "__default__"
-            _link = _raw_link
-            if isinstance(_link, SDFError):
-                return _link.extend("@link")
+            if _raw_link is not None:
+                _link = _raw_link
+                if isinstance(_link, SDFError):
+                    return _link.extend("@link")
+            else:
+                _link = None
             return cls(sdf_version=version, child=_child, link=_link)
 
     class Origin(BaseModel):
@@ -863,10 +899,12 @@ class Joint(BaseModel):
                 if _c_tmp is not None: _raw_pose = _c_tmp.text
             else:
                 _raw_pose = el.get("pose")
-            if _raw_pose is None: _raw_pose = "0 0 0 0 0 0"
-            _pose = _parse_pose(_raw_pose)
-            if isinstance(_pose, SDFError):
-                return _pose.extend("@pose")
+            if _raw_pose is not None:
+                _pose = _parse_pose(_raw_pose)
+                if isinstance(_pose, SDFError):
+                    return _pose.extend("@pose")
+            else:
+                _pose = None
             return cls(sdf_version=version, pose=_pose)
 
     class Parent(BaseModel):
@@ -906,14 +944,19 @@ class Joint(BaseModel):
                 _raw_link = el.text
             else:
                 _raw_link = el.get("link")
-            if _raw_link is None: _raw_link = "__default__"
-            _link = _raw_link
-            if isinstance(_link, SDFError):
-                return _link.extend("@link")
-            _text = el.text or "__default__"
-            _parent = _text
-            if isinstance(_parent, SDFError):
-                return _parent
+            if _raw_link is not None:
+                _link = _raw_link
+                if isinstance(_link, SDFError):
+                    return _link.extend("@link")
+            else:
+                _link = None
+            _raw_parent = el.text
+            if _raw_parent is not None:
+                _parent = _raw_parent
+                if isinstance(_parent, SDFError):
+                    return _parent
+            else:
+                _parent = None
             return cls(sdf_version=version, link=_link, parent=_parent)
 
     class Physics(BaseModel):
@@ -963,20 +1006,24 @@ class Joint(BaseModel):
                         if _c_tmp is not None: _raw_cfm = _c_tmp.text
                     else:
                         _raw_cfm = el.get("cfm")
-                    if _raw_cfm is None: _raw_cfm = 0.0
-                    _cfm = _parse_double(_raw_cfm)
-                    if isinstance(_cfm, SDFError):
-                        return _cfm.extend("@cfm")
+                    if _raw_cfm is not None:
+                        _cfm = _parse_double(_raw_cfm)
+                        if isinstance(_cfm, SDFError):
+                            return _cfm.extend("@cfm")
+                    else:
+                        _cfm = None
                     _raw_erp = None
                     if cmp_version(version, "1.2") >= 0:
                         _c_tmp = el.find("erp")
                         if _c_tmp is not None: _raw_erp = _c_tmp.text
                     else:
                         _raw_erp = el.get("erp")
-                    if _raw_erp is None: _raw_erp = 0.2
-                    _erp = _parse_double(_raw_erp)
-                    if isinstance(_erp, SDFError):
-                        return _erp.extend("@erp")
+                    if _raw_erp is not None:
+                        _erp = _parse_double(_raw_erp)
+                        if isinstance(_erp, SDFError):
+                            return _erp.extend("@erp")
+                    else:
+                        _erp = None
                     return cls(sdf_version=version, cfm=_cfm, erp=_erp)
 
             class Suspension(BaseModel):
@@ -1024,20 +1071,24 @@ class Joint(BaseModel):
                         if _c_tmp is not None: _raw_cfm = _c_tmp.text
                     else:
                         _raw_cfm = el.get("cfm")
-                    if _raw_cfm is None: _raw_cfm = 0.0
-                    _cfm = _parse_double(_raw_cfm)
-                    if isinstance(_cfm, SDFError):
-                        return _cfm.extend("@cfm")
+                    if _raw_cfm is not None:
+                        _cfm = _parse_double(_raw_cfm)
+                        if isinstance(_cfm, SDFError):
+                            return _cfm.extend("@cfm")
+                    else:
+                        _cfm = None
                     _raw_erp = None
                     if cmp_version(version, "1.2") >= 0:
                         _c_tmp = el.find("erp")
                         if _c_tmp is not None: _raw_erp = _c_tmp.text
                     else:
                         _raw_erp = el.get("erp")
-                    if _raw_erp is None: _raw_erp = 0.2
-                    _erp = _parse_double(_raw_erp)
-                    if isinstance(_erp, SDFError):
-                        return _erp.extend("@erp")
+                    if _raw_erp is not None:
+                        _erp = _parse_double(_raw_erp)
+                        if isinstance(_erp, SDFError):
+                            return _erp.extend("@erp")
+                    else:
+                        _erp = None
                     return cls(sdf_version=version, cfm=_cfm, erp=_erp)
 
             def __init__(
@@ -1662,9 +1713,13 @@ class Joint(BaseModel):
             _gearbox_reference_body = None
         if _gearbox_reference_body is not None and cmp_version(version, "1.4") < 0:
             return SDFError(f"'gearbox_reference_body' is not supported in SDF version {version} (added in 1.4)")
-        _name = el.get("name", "__default__")
-        if isinstance(_name, SDFError):
-            return _name.extend("@name")
+        _raw_name = el.get("name")
+        if _raw_name is not None:
+            _name = _raw_name
+            if isinstance(_name, SDFError):
+                return _name.extend("@name")
+        else:
+            _name = None
         _c_origin = el.find("origin")
         if _c_origin is not None:
             _res = cls.Origin._from_sdf(_c_origin, version)
@@ -1729,7 +1784,11 @@ class Joint(BaseModel):
             _thread_pitch = _val
         else:
             _thread_pitch = None
-        _type = el.get("type", "__default__")
-        if isinstance(_type, SDFError):
-            return _type.extend("@type")
+        _raw_type = el.get("type")
+        if _raw_type is not None:
+            _type = _raw_type
+            if isinstance(_type, SDFError):
+                return _type.extend("@type")
+        else:
+            _type = None
         return cls(sdf_version=version, axis=_axis, axis2=_axis2, child=_child, frames=_frames, gearbox_ratio=_gearbox_ratio, gearbox_reference_body=_gearbox_reference_body, name=_name, origin=_origin, parent=_parent, physics=_physics, pose=_pose, screw_thread_pitch=_screw_thread_pitch, sensor=_sensor, thread_pitch=_thread_pitch, type=_type)

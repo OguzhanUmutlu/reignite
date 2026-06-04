@@ -70,20 +70,24 @@ class Camera(BaseModel):
                 if _c_tmp is not None: _raw_far = _c_tmp.text
             else:
                 _raw_far = el.get("far")
-            if _raw_far is None: _raw_far = 100
-            _far = _parse_double(_raw_far)
-            if isinstance(_far, SDFError):
-                return _far.extend("@far")
+            if _raw_far is not None:
+                _far = _parse_double(_raw_far)
+                if isinstance(_far, SDFError):
+                    return _far.extend("@far")
+            else:
+                _far = None
             _raw_near = None
             if cmp_version(version, "1.2") >= 0:
                 _c_tmp = el.find("near")
                 if _c_tmp is not None: _raw_near = _c_tmp.text
             else:
                 _raw_near = el.get("near")
-            if _raw_near is None: _raw_near = .1
-            _near = _parse_double(_raw_near)
-            if isinstance(_near, SDFError):
-                return _near.extend("@near")
+            if _raw_near is not None:
+                _near = _parse_double(_raw_near)
+                if isinstance(_near, SDFError):
+                    return _near.extend("@near")
+            else:
+                _near = None
             return cls(sdf_version=version, far=_far, near=_near)
 
     class DepthCamera(BaseModel):
@@ -202,10 +206,12 @@ class Camera(BaseModel):
                 if _c_tmp is not None: _raw_output = _c_tmp.text
             else:
                 _raw_output = el.get("output")
-            if _raw_output is None: _raw_output = "depths"
-            _output = _raw_output
-            if isinstance(_output, SDFError):
-                return _output.extend("@output")
+            if _raw_output is not None:
+                _output = _raw_output
+                if isinstance(_output, SDFError):
+                    return _output.extend("@output")
+            else:
+                _output = None
             return cls(sdf_version=version, clip=_clip, output=_output)
 
     class Distortion(BaseModel):
@@ -358,14 +364,19 @@ class Camera(BaseModel):
                 _raw_angle = el.text
             else:
                 _raw_angle = el.get("angle")
-            if _raw_angle is None: _raw_angle = 1.047
-            _angle = _parse_double(_raw_angle)
-            if isinstance(_angle, SDFError):
-                return _angle.extend("@angle")
-            _text = el.text or 1.047
-            _horizontal_fov = _parse_double(_text)
-            if isinstance(_horizontal_fov, SDFError):
-                return _horizontal_fov
+            if _raw_angle is not None:
+                _angle = _parse_double(_raw_angle)
+                if isinstance(_angle, SDFError):
+                    return _angle.extend("@angle")
+            else:
+                _angle = None
+            _raw_horizontal_fov = el.text
+            if _raw_horizontal_fov is not None:
+                _horizontal_fov = _parse_double(_raw_horizontal_fov)
+                if isinstance(_horizontal_fov, SDFError):
+                    return _horizontal_fov
+            else:
+                _horizontal_fov = None
             return cls(sdf_version=version, angle=_angle, horizontal_fov=_horizontal_fov)
 
     class Image(BaseModel):
@@ -441,30 +452,36 @@ class Camera(BaseModel):
                 if _c_tmp is not None: _raw_format = _c_tmp.text
             else:
                 _raw_format = el.get("format")
-            if _raw_format is None: _raw_format = "R8G8B8"
-            _format = _raw_format
-            if isinstance(_format, SDFError):
-                return _format.extend("@format")
+            if _raw_format is not None:
+                _format = _raw_format
+                if isinstance(_format, SDFError):
+                    return _format.extend("@format")
+            else:
+                _format = None
             _raw_height = None
             if cmp_version(version, "1.2") >= 0:
                 _c_tmp = el.find("height")
                 if _c_tmp is not None: _raw_height = _c_tmp.text
             else:
                 _raw_height = el.get("height")
-            if _raw_height is None: _raw_height = 240
-            _height = _parse_int32(_raw_height)
-            if isinstance(_height, SDFError):
-                return _height.extend("@height")
+            if _raw_height is not None:
+                _height = _parse_int32(_raw_height)
+                if isinstance(_height, SDFError):
+                    return _height.extend("@height")
+            else:
+                _height = None
             _raw_width = None
             if cmp_version(version, "1.2") >= 0:
                 _c_tmp = el.find("width")
                 if _c_tmp is not None: _raw_width = _c_tmp.text
             else:
                 _raw_width = el.get("width")
-            if _raw_width is None: _raw_width = 320
-            _width = _parse_int32(_raw_width)
-            if isinstance(_width, SDFError):
-                return _width.extend("@width")
+            if _raw_width is not None:
+                _width = _parse_int32(_raw_width)
+                if isinstance(_width, SDFError):
+                    return _width.extend("@width")
+            else:
+                _width = None
             return cls(sdf_version=version, anti_aliasing=_anti_aliasing, format=_format, height=_height, width=_width)
 
     class Lens(BaseModel):
@@ -1035,12 +1052,20 @@ class Camera(BaseModel):
 
         @classmethod
         def _from_sdf(cls, el: ET.Element, version: str) -> "Camera.Save | SDFError":
-            _enabled = str(el.get("enabled", False)).strip().lower() == 'true'
-            if isinstance(_enabled, SDFError):
-                return _enabled.extend("@enabled")
-            _path = el.get("path", "__default__")
-            if isinstance(_path, SDFError):
-                return _path.extend("@path")
+            _raw_enabled = el.get("enabled")
+            if _raw_enabled is not None:
+                _enabled = str(_raw_enabled).strip().lower() == 'true'
+                if isinstance(_enabled, SDFError):
+                    return _enabled.extend("@enabled")
+            else:
+                _enabled = None
+            _raw_path = el.get("path")
+            if _raw_path is not None:
+                _path = _raw_path
+                if isinstance(_path, SDFError):
+                    return _path.extend("@path")
+            else:
+                _path = None
             return cls(sdf_version=version, enabled=_enabled, path=_path)
 
     def __init__(
@@ -1381,9 +1406,13 @@ class Camera(BaseModel):
             _lens = None
         if _lens is not None and cmp_version(version, "1.5") < 0:
             return SDFError(f"'lens' is not supported in SDF version {version} (added in 1.5)")
-        _name = el.get("name", "__default__")
-        if isinstance(_name, SDFError):
-            return _name.extend("@name")
+        _raw_name = el.get("name")
+        if _raw_name is not None:
+            _name = _raw_name
+            if isinstance(_name, SDFError):
+                return _name.extend("@name")
+        else:
+            _name = None
         if _name is not None and cmp_version(version, "1.3") < 0:
             if _name != "__default__":
                 return SDFError(f"'name' is not supported in SDF version {version} (added in 1.3)")

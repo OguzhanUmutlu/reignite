@@ -423,19 +423,24 @@ class Physics(BaseModel):
 
         @classmethod
         def _from_sdf(cls, el: ET.Element, version: str) -> "Physics.Gravity | SDFError":
-            _text = el.text or "0 0 -9.8"
-            _gravity = _parse_vector3(_text)
-            if isinstance(_gravity, SDFError):
-                return _gravity
+            _raw_gravity = el.text
+            if _raw_gravity is not None:
+                _gravity = _parse_vector3(_raw_gravity)
+                if isinstance(_gravity, SDFError):
+                    return _gravity
+            else:
+                _gravity = None
             _raw_xyz = None
             if cmp_version(version, "1.2") >= 0:
                 _raw_xyz = el.text
             else:
                 _raw_xyz = el.get("xyz")
-            if _raw_xyz is None: _raw_xyz = "0 0 -9.8"
-            _xyz = _parse_vector3(_raw_xyz)
-            if isinstance(_xyz, SDFError):
-                return _xyz.extend("@xyz")
+            if _raw_xyz is not None:
+                _xyz = _parse_vector3(_raw_xyz)
+                if isinstance(_xyz, SDFError):
+                    return _xyz.extend("@xyz")
+            else:
+                _xyz = None
             return cls(sdf_version=version, gravity=_gravity, xyz=_xyz)
 
     class Ode(BaseModel):
@@ -502,40 +507,48 @@ class Physics(BaseModel):
                     if _c_tmp is not None: _raw_cfm = _c_tmp.text
                 else:
                     _raw_cfm = el.get("cfm")
-                if _raw_cfm is None: _raw_cfm = 0
-                _cfm = _parse_double(_raw_cfm)
-                if isinstance(_cfm, SDFError):
-                    return _cfm.extend("@cfm")
+                if _raw_cfm is not None:
+                    _cfm = _parse_double(_raw_cfm)
+                    if isinstance(_cfm, SDFError):
+                        return _cfm.extend("@cfm")
+                else:
+                    _cfm = None
                 _raw_contact_max_correcting_vel = None
                 if cmp_version(version, "1.2") >= 0:
                     _c_tmp = el.find("contact_max_correcting_vel")
                     if _c_tmp is not None: _raw_contact_max_correcting_vel = _c_tmp.text
                 else:
                     _raw_contact_max_correcting_vel = el.get("contact_max_correcting_vel")
-                if _raw_contact_max_correcting_vel is None: _raw_contact_max_correcting_vel = 100.0
-                _contact_max_correcting_vel = _parse_double(_raw_contact_max_correcting_vel)
-                if isinstance(_contact_max_correcting_vel, SDFError):
-                    return _contact_max_correcting_vel.extend("@contact_max_correcting_vel")
+                if _raw_contact_max_correcting_vel is not None:
+                    _contact_max_correcting_vel = _parse_double(_raw_contact_max_correcting_vel)
+                    if isinstance(_contact_max_correcting_vel, SDFError):
+                        return _contact_max_correcting_vel.extend("@contact_max_correcting_vel")
+                else:
+                    _contact_max_correcting_vel = None
                 _raw_contact_surface_layer = None
                 if cmp_version(version, "1.2") >= 0:
                     _c_tmp = el.find("contact_surface_layer")
                     if _c_tmp is not None: _raw_contact_surface_layer = _c_tmp.text
                 else:
                     _raw_contact_surface_layer = el.get("contact_surface_layer")
-                if _raw_contact_surface_layer is None: _raw_contact_surface_layer = 0.001
-                _contact_surface_layer = _parse_double(_raw_contact_surface_layer)
-                if isinstance(_contact_surface_layer, SDFError):
-                    return _contact_surface_layer.extend("@contact_surface_layer")
+                if _raw_contact_surface_layer is not None:
+                    _contact_surface_layer = _parse_double(_raw_contact_surface_layer)
+                    if isinstance(_contact_surface_layer, SDFError):
+                        return _contact_surface_layer.extend("@contact_surface_layer")
+                else:
+                    _contact_surface_layer = None
                 _raw_erp = None
                 if cmp_version(version, "1.2") >= 0:
                     _c_tmp = el.find("erp")
                     if _c_tmp is not None: _raw_erp = _c_tmp.text
                 else:
                     _raw_erp = el.get("erp")
-                if _raw_erp is None: _raw_erp = 0.2
-                _erp = _parse_double(_raw_erp)
-                if isinstance(_erp, SDFError):
-                    return _erp.extend("@erp")
+                if _raw_erp is not None:
+                    _erp = _parse_double(_raw_erp)
+                    if isinstance(_erp, SDFError):
+                        return _erp.extend("@erp")
+                else:
+                    _erp = None
                 return cls(sdf_version=version, cfm=_cfm, contact_max_correcting_vel=_contact_max_correcting_vel, contact_surface_layer=_contact_surface_layer, erp=_erp)
 
         class OdeSolver(BaseModel):
@@ -650,10 +663,12 @@ class Physics(BaseModel):
                     if _c_tmp is not None: _raw_dt = _c_tmp.text
                 else:
                     _raw_dt = el.get("dt")
-                if _raw_dt is None: _raw_dt = 0.001
-                _dt = _parse_double(_raw_dt)
-                if isinstance(_dt, SDFError):
-                    return _dt.extend("@dt")
+                if _raw_dt is not None:
+                    _dt = _parse_double(_raw_dt)
+                    if isinstance(_dt, SDFError):
+                        return _dt.extend("@dt")
+                else:
+                    _dt = None
                 _c_tmp = el.find("friction_model")
                 if _c_tmp is not None:
                     _text = _c_tmp.text if _c_tmp.text is not None else "pyramid_model"
@@ -682,10 +697,12 @@ class Physics(BaseModel):
                     if _c_tmp is not None: _raw_iters = _c_tmp.text
                 else:
                     _raw_iters = el.get("iters")
-                if _raw_iters is None: _raw_iters = 50
-                _iters = _parse_int32(_raw_iters)
-                if isinstance(_iters, SDFError):
-                    return _iters.extend("@iters")
+                if _raw_iters is not None:
+                    _iters = _parse_int32(_raw_iters)
+                    if isinstance(_iters, SDFError):
+                        return _iters.extend("@iters")
+                else:
+                    _iters = None
                 _c_tmp = el.find("min_step_size")
                 if _c_tmp is not None:
                     _text = _c_tmp.text if _c_tmp.text is not None else 0.0001
@@ -703,20 +720,24 @@ class Physics(BaseModel):
                     if _c_tmp is not None: _raw_precon_iters = _c_tmp.text
                 else:
                     _raw_precon_iters = el.get("precon_iters")
-                if _raw_precon_iters is None: _raw_precon_iters = 0
-                _precon_iters = _parse_int32(_raw_precon_iters)
-                if isinstance(_precon_iters, SDFError):
-                    return _precon_iters.extend("@precon_iters")
+                if _raw_precon_iters is not None:
+                    _precon_iters = _parse_int32(_raw_precon_iters)
+                    if isinstance(_precon_iters, SDFError):
+                        return _precon_iters.extend("@precon_iters")
+                else:
+                    _precon_iters = None
                 _raw_sor = None
                 if cmp_version(version, "1.2") >= 0:
                     _c_tmp = el.find("sor")
                     if _c_tmp is not None: _raw_sor = _c_tmp.text
                 else:
                     _raw_sor = el.get("sor")
-                if _raw_sor is None: _raw_sor = 1.3
-                _sor = _parse_double(_raw_sor)
-                if isinstance(_sor, SDFError):
-                    return _sor.extend("@sor")
+                if _raw_sor is not None:
+                    _sor = _parse_double(_raw_sor)
+                    if isinstance(_sor, SDFError):
+                        return _sor.extend("@sor")
+                else:
+                    _sor = None
                 _c_tmp = el.find("thread_position_correction")
                 if _c_tmp is not None:
                     _text = _c_tmp.text if _c_tmp.text is not None else False
@@ -734,10 +755,12 @@ class Physics(BaseModel):
                     if _c_tmp is not None: _raw_type = _c_tmp.text
                 else:
                     _raw_type = el.get("type")
-                if _raw_type is None: _raw_type = "quick"
-                _type = _raw_type
-                if isinstance(_type, SDFError):
-                    return _type.extend("@type")
+                if _raw_type is not None:
+                    _type = _raw_type
+                    if isinstance(_type, SDFError):
+                        return _type.extend("@type")
+                else:
+                    _type = None
                 _c_tmp = el.find("use_dynamic_moi_rescaling")
                 if _c_tmp is not None:
                     _text = _c_tmp.text if _c_tmp.text is not None else False
@@ -1256,9 +1279,13 @@ class Physics(BaseModel):
             _dart = None
         if _dart is not None and cmp_version(version, "1.6") < 0:
             return SDFError(f"'dart' is not supported in SDF version {version} (added in 1.6)")
-        _default = str(el.get("default", False)).strip().lower() == 'true'
-        if isinstance(_default, SDFError):
-            return _default.extend("@default")
+        _raw_default = el.get("default")
+        if _raw_default is not None:
+            _default = str(_raw_default).strip().lower() == 'true'
+            if isinstance(_default, SDFError):
+                return _default.extend("@default")
+        else:
+            _default = None
         if _default is not None and cmp_version(version, "1.5") < 0:
             if _default != False:
                 return SDFError(f"'default' is not supported in SDF version {version} (added in 1.5)")
@@ -1301,9 +1328,13 @@ class Physics(BaseModel):
             _max_step_size = None
         if _max_step_size is not None and cmp_version(version, "1.4") < 0:
             return SDFError(f"'max_step_size' is not supported in SDF version {version} (added in 1.4)")
-        _name = el.get("name", "default_physics")
-        if isinstance(_name, SDFError):
-            return _name.extend("@name")
+        _raw_name = el.get("name")
+        if _raw_name is not None:
+            _name = _raw_name
+            if isinstance(_name, SDFError):
+                return _name.extend("@name")
+        else:
+            _name = None
         if _name is not None and cmp_version(version, "1.5") < 0:
             if _name != "default_physics":
                 return SDFError(f"'name' is not supported in SDF version {version} (added in 1.5)")
@@ -1347,17 +1378,23 @@ class Physics(BaseModel):
             _simbody = None
         if _simbody is not None and cmp_version(version, "1.4") < 0:
             return SDFError(f"'simbody' is not supported in SDF version {version} (added in 1.4)")
-        _type = el.get("type", "ode")
-        if isinstance(_type, SDFError):
-            return _type.extend("@type")
+        _raw_type = el.get("type")
+        if _raw_type is not None:
+            _type = _raw_type
+            if isinstance(_type, SDFError):
+                return _type.extend("@type")
+        else:
+            _type = None
         _raw_update_rate = None
         if cmp_version(version, "1.2") >= 0:
             _c_tmp = el.find("update_rate")
             if _c_tmp is not None: _raw_update_rate = _c_tmp.text
         else:
             _raw_update_rate = el.get("update_rate")
-        if _raw_update_rate is None: _raw_update_rate = 0
-        _update_rate = _parse_double(_raw_update_rate)
-        if isinstance(_update_rate, SDFError):
-            return _update_rate.extend("@update_rate")
+        if _raw_update_rate is not None:
+            _update_rate = _parse_double(_raw_update_rate)
+            if isinstance(_update_rate, SDFError):
+                return _update_rate.extend("@update_rate")
+        else:
+            _update_rate = None
         return cls(sdf_version=version, bullet=_bullet, dart=_dart, default=_default, gravity=_gravity, magnetic_field=_magnetic_field, max_contacts=_max_contacts, max_step_size=_max_step_size, name=_name, ode=_ode, real_time_factor=_real_time_factor, real_time_update_rate=_real_time_update_rate, simbody=_simbody, type=_type, update_rate=_update_rate)

@@ -95,9 +95,13 @@ class Road(BaseModel):
             _material = None
         if _material is not None and cmp_version(version, "1.5") < 0:
             return SDFError(f"'material' is not supported in SDF version {version} (added in 1.5)")
-        _name = el.get("name", "__default__")
-        if isinstance(_name, SDFError):
-            return _name.extend("@name")
+        _raw_name = el.get("name")
+        if _raw_name is not None:
+            _name = _raw_name
+            if isinstance(_name, SDFError):
+                return _name.extend("@name")
+        else:
+            _name = None
         _points = []
         for c in el.findall("point"):
             _text = c.text if c.text is not None else "0 0 0"

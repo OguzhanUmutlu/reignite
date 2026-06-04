@@ -63,20 +63,24 @@ class Surface(BaseModel):
                 if _c_tmp is not None: _raw_restitution_coefficient = _c_tmp.text
             else:
                 _raw_restitution_coefficient = el.get("restitution_coefficient")
-            if _raw_restitution_coefficient is None: _raw_restitution_coefficient = 0
-            _restitution_coefficient = _parse_double(_raw_restitution_coefficient)
-            if isinstance(_restitution_coefficient, SDFError):
-                return _restitution_coefficient.extend("@restitution_coefficient")
+            if _raw_restitution_coefficient is not None:
+                _restitution_coefficient = _parse_double(_raw_restitution_coefficient)
+                if isinstance(_restitution_coefficient, SDFError):
+                    return _restitution_coefficient.extend("@restitution_coefficient")
+            else:
+                _restitution_coefficient = None
             _raw_threshold = None
             if cmp_version(version, "1.2") >= 0:
                 _c_tmp = el.find("threshold")
                 if _c_tmp is not None: _raw_threshold = _c_tmp.text
             else:
                 _raw_threshold = el.get("threshold")
-            if _raw_threshold is None: _raw_threshold = 100000
-            _threshold = _parse_double(_raw_threshold)
-            if isinstance(_threshold, SDFError):
-                return _threshold.extend("@threshold")
+            if _raw_threshold is not None:
+                _threshold = _parse_double(_raw_threshold)
+                if isinstance(_threshold, SDFError):
+                    return _threshold.extend("@threshold")
+            else:
+                _threshold = None
             return cls(sdf_version=version, restitution_coefficient=_restitution_coefficient, threshold=_threshold)
 
     class Contact(BaseModel):
@@ -274,60 +278,72 @@ class Surface(BaseModel):
                     if _c_tmp is not None: _raw_kd = _c_tmp.text
                 else:
                     _raw_kd = el.get("kd")
-                if _raw_kd is None: _raw_kd = 1.0
-                _kd = _parse_double(_raw_kd)
-                if isinstance(_kd, SDFError):
-                    return _kd.extend("@kd")
+                if _raw_kd is not None:
+                    _kd = _parse_double(_raw_kd)
+                    if isinstance(_kd, SDFError):
+                        return _kd.extend("@kd")
+                else:
+                    _kd = None
                 _raw_kp = None
                 if cmp_version(version, "1.2") >= 0:
                     _c_tmp = el.find("kp")
                     if _c_tmp is not None: _raw_kp = _c_tmp.text
                 else:
                     _raw_kp = el.get("kp")
-                if _raw_kp is None: _raw_kp = 1000000000000.0
-                _kp = _parse_double(_raw_kp)
-                if isinstance(_kp, SDFError):
-                    return _kp.extend("@kp")
+                if _raw_kp is not None:
+                    _kp = _parse_double(_raw_kp)
+                    if isinstance(_kp, SDFError):
+                        return _kp.extend("@kp")
+                else:
+                    _kp = None
                 _raw_max_vel = None
                 if cmp_version(version, "1.2") >= 0:
                     _c_tmp = el.find("max_vel")
                     if _c_tmp is not None: _raw_max_vel = _c_tmp.text
                 else:
                     _raw_max_vel = el.get("max_vel")
-                if _raw_max_vel is None: _raw_max_vel = 0.01
-                _max_vel = _parse_double(_raw_max_vel)
-                if isinstance(_max_vel, SDFError):
-                    return _max_vel.extend("@max_vel")
+                if _raw_max_vel is not None:
+                    _max_vel = _parse_double(_raw_max_vel)
+                    if isinstance(_max_vel, SDFError):
+                        return _max_vel.extend("@max_vel")
+                else:
+                    _max_vel = None
                 _raw_min_depth = None
                 if cmp_version(version, "1.2") >= 0:
                     _c_tmp = el.find("min_depth")
                     if _c_tmp is not None: _raw_min_depth = _c_tmp.text
                 else:
                     _raw_min_depth = el.get("min_depth")
-                if _raw_min_depth is None: _raw_min_depth = 0
-                _min_depth = _parse_double(_raw_min_depth)
-                if isinstance(_min_depth, SDFError):
-                    return _min_depth.extend("@min_depth")
+                if _raw_min_depth is not None:
+                    _min_depth = _parse_double(_raw_min_depth)
+                    if isinstance(_min_depth, SDFError):
+                        return _min_depth.extend("@min_depth")
+                else:
+                    _min_depth = None
                 _raw_soft_cfm = None
                 if cmp_version(version, "1.2") >= 0:
                     _c_tmp = el.find("soft_cfm")
                     if _c_tmp is not None: _raw_soft_cfm = _c_tmp.text
                 else:
                     _raw_soft_cfm = el.get("soft_cfm")
-                if _raw_soft_cfm is None: _raw_soft_cfm = 0
-                _soft_cfm = _parse_double(_raw_soft_cfm)
-                if isinstance(_soft_cfm, SDFError):
-                    return _soft_cfm.extend("@soft_cfm")
+                if _raw_soft_cfm is not None:
+                    _soft_cfm = _parse_double(_raw_soft_cfm)
+                    if isinstance(_soft_cfm, SDFError):
+                        return _soft_cfm.extend("@soft_cfm")
+                else:
+                    _soft_cfm = None
                 _raw_soft_erp = None
                 if cmp_version(version, "1.2") >= 0:
                     _c_tmp = el.find("soft_erp")
                     if _c_tmp is not None: _raw_soft_erp = _c_tmp.text
                 else:
                     _raw_soft_erp = el.get("soft_erp")
-                if _raw_soft_erp is None: _raw_soft_erp = 0.2
-                _soft_erp = _parse_double(_raw_soft_erp)
-                if isinstance(_soft_erp, SDFError):
-                    return _soft_erp.extend("@soft_erp")
+                if _raw_soft_erp is not None:
+                    _soft_erp = _parse_double(_raw_soft_erp)
+                    if isinstance(_soft_erp, SDFError):
+                        return _soft_erp.extend("@soft_erp")
+                else:
+                    _soft_erp = None
                 return cls(sdf_version=version, kd=_kd, kp=_kp, max_vel=_max_vel, min_depth=_min_depth, soft_cfm=_soft_cfm, soft_erp=_soft_erp)
 
         def __init__(
@@ -672,50 +688,60 @@ class Surface(BaseModel):
                     if _c_tmp is not None: _raw_fdir1 = _c_tmp.text
                 else:
                     _raw_fdir1 = el.get("fdir1")
-                if _raw_fdir1 is None: _raw_fdir1 = "0 0 0"
-                _fdir1 = _parse_vector3(_raw_fdir1)
-                if isinstance(_fdir1, SDFError):
-                    return _fdir1.extend("@fdir1")
+                if _raw_fdir1 is not None:
+                    _fdir1 = _parse_vector3(_raw_fdir1)
+                    if isinstance(_fdir1, SDFError):
+                        return _fdir1.extend("@fdir1")
+                else:
+                    _fdir1 = None
                 _raw_mu = None
                 if cmp_version(version, "1.2") >= 0:
                     _c_tmp = el.find("mu")
                     if _c_tmp is not None: _raw_mu = _c_tmp.text
                 else:
                     _raw_mu = el.get("mu")
-                if _raw_mu is None: _raw_mu = -1
-                _mu = _parse_double(_raw_mu)
-                if isinstance(_mu, SDFError):
-                    return _mu.extend("@mu")
+                if _raw_mu is not None:
+                    _mu = _parse_double(_raw_mu)
+                    if isinstance(_mu, SDFError):
+                        return _mu.extend("@mu")
+                else:
+                    _mu = None
                 _raw_mu2 = None
                 if cmp_version(version, "1.2") >= 0:
                     _c_tmp = el.find("mu2")
                     if _c_tmp is not None: _raw_mu2 = _c_tmp.text
                 else:
                     _raw_mu2 = el.get("mu2")
-                if _raw_mu2 is None: _raw_mu2 = -1
-                _mu2 = _parse_double(_raw_mu2)
-                if isinstance(_mu2, SDFError):
-                    return _mu2.extend("@mu2")
+                if _raw_mu2 is not None:
+                    _mu2 = _parse_double(_raw_mu2)
+                    if isinstance(_mu2, SDFError):
+                        return _mu2.extend("@mu2")
+                else:
+                    _mu2 = None
                 _raw_slip1 = None
                 if cmp_version(version, "1.2") >= 0:
                     _c_tmp = el.find("slip1")
                     if _c_tmp is not None: _raw_slip1 = _c_tmp.text
                 else:
                     _raw_slip1 = el.get("slip1")
-                if _raw_slip1 is None: _raw_slip1 = 0.0
-                _slip1 = _parse_double(_raw_slip1)
-                if isinstance(_slip1, SDFError):
-                    return _slip1.extend("@slip1")
+                if _raw_slip1 is not None:
+                    _slip1 = _parse_double(_raw_slip1)
+                    if isinstance(_slip1, SDFError):
+                        return _slip1.extend("@slip1")
+                else:
+                    _slip1 = None
                 _raw_slip2 = None
                 if cmp_version(version, "1.2") >= 0:
                     _c_tmp = el.find("slip2")
                     if _c_tmp is not None: _raw_slip2 = _c_tmp.text
                 else:
                     _raw_slip2 = el.get("slip2")
-                if _raw_slip2 is None: _raw_slip2 = 0.0
-                _slip2 = _parse_double(_raw_slip2)
-                if isinstance(_slip2, SDFError):
-                    return _slip2.extend("@slip2")
+                if _raw_slip2 is not None:
+                    _slip2 = _parse_double(_raw_slip2)
+                    if isinstance(_slip2, SDFError):
+                        return _slip2.extend("@slip2")
+                else:
+                    _slip2 = None
                 return cls(sdf_version=version, fdir1=_fdir1, mu=_mu, mu2=_mu2, slip1=_slip1, slip2=_slip2)
 
         class Torsional(BaseModel):

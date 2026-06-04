@@ -58,14 +58,22 @@ class Mimic(BaseModel):
 
     @classmethod
     def _from_sdf(cls, el: ET.Element, version: str) -> "Mimic | SDFError":
-        _axis = el.get("axis", "axis")
-        if isinstance(_axis, SDFError):
-            return _axis.extend("@axis")
+        _raw_axis = el.get("axis")
+        if _raw_axis is not None:
+            _axis = _raw_axis
+            if isinstance(_axis, SDFError):
+                return _axis.extend("@axis")
+        else:
+            _axis = None
         if el.get("joint") is None:
             return SDFError(f"'joint' is required in SDF version {version}")
-        _joint = el.get("joint", None)
-        if isinstance(_joint, SDFError):
-            return _joint.extend("@joint")
+        _raw_joint = el.get("joint")
+        if _raw_joint is not None:
+            _joint = _raw_joint
+            if isinstance(_joint, SDFError):
+                return _joint.extend("@joint")
+        else:
+            _joint = None
         _c_tmp = el.find("multiplier")
         if _c_tmp is not None:
             _text = _c_tmp.text if _c_tmp.text is not None else 1.0

@@ -156,9 +156,13 @@ class Sdf(BaseModel):
             if isinstance(_res, SDFError):
                 return _res.extend("model")
             _models.append(_res)
-        _version = el.get("version", "1.3")
-        if isinstance(_version, SDFError):
-            return _version.extend("@version")
+        _raw_version = el.get("version")
+        if _raw_version is not None:
+            _version = _raw_version
+            if isinstance(_version, SDFError):
+                return _version.extend("@version")
+        else:
+            _version = None
         _worlds = []
         for c in el.findall("world"):
             _res = World._from_sdf(c, version)

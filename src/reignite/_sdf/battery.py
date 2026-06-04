@@ -40,9 +40,13 @@ class Battery(BaseModel):
 
     @classmethod
     def _from_sdf(cls, el: ET.Element, version: str) -> "Battery | SDFError":
-        _name = el.get("name", "__default__")
-        if isinstance(_name, SDFError):
-            return _name.extend("@name")
+        _raw_name = el.get("name")
+        if _raw_name is not None:
+            _name = _raw_name
+            if isinstance(_name, SDFError):
+                return _name.extend("@name")
+        else:
+            _name = None
         _c_tmp = el.find("voltage")
         if _c_tmp is not None:
             _text = _c_tmp.text if _c_tmp.text is not None else 0.0

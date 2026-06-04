@@ -204,9 +204,13 @@ class Mesh(BaseModel):
             _convex_decomposition = None
         if _convex_decomposition is not None and cmp_version(version, "1.11") < 0:
             return SDFError(f"'convex_decomposition' is not supported in SDF version {version} (added in 1.11)")
-        _optimization = el.get("optimization", None)
-        if isinstance(_optimization, SDFError):
-            return _optimization.extend("@optimization")
+        _raw_optimization = el.get("optimization")
+        if _raw_optimization is not None:
+            _optimization = _raw_optimization
+            if isinstance(_optimization, SDFError):
+                return _optimization.extend("@optimization")
+        else:
+            _optimization = None
         if _optimization is not None and cmp_version(version, "1.11") < 0:
             if _optimization != None:
                 return SDFError(f"'optimization' is not supported in SDF version {version} (added in 1.11)")

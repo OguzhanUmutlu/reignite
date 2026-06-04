@@ -30,9 +30,13 @@ class CollisionEngine(BaseModel):
 
         @classmethod
         def _from_sdf(cls, el: ET.Element, version: str) -> "CollisionEngine.Bullet | SDFError":
-            _type = el.get("type", "__default__")
-            if isinstance(_type, SDFError):
-                return _type.extend("@type")
+            _raw_type = el.get("type")
+            if _raw_type is not None:
+                _type = _raw_type
+                if isinstance(_type, SDFError):
+                    return _type.extend("@type")
+            else:
+                _type = None
             return cls(sdf_version=version, type=_type)
 
     class Ode(BaseModel):
@@ -56,9 +60,13 @@ class CollisionEngine(BaseModel):
 
         @classmethod
         def _from_sdf(cls, el: ET.Element, version: str) -> "CollisionEngine.Ode | SDFError":
-            _type = el.get("type", "__default__")
-            if isinstance(_type, SDFError):
-                return _type.extend("@type")
+            _raw_type = el.get("type")
+            if _raw_type is not None:
+                _type = _raw_type
+                if isinstance(_type, SDFError):
+                    return _type.extend("@type")
+            else:
+                _type = None
             return cls(sdf_version=version, type=_type)
 
     def __init__(

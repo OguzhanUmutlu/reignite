@@ -508,10 +508,12 @@ class State(BaseModel):
             if _c_tmp is not None: _raw_time = _c_tmp.text
         else:
             _raw_time = el.get("time")
-        if _raw_time is None: _raw_time = 0.0
-        _time = _parse_time(_raw_time)
-        if isinstance(_time, SDFError):
-            return _time.extend("@time")
+        if _raw_time is not None:
+            _time = _parse_time(_raw_time)
+            if isinstance(_time, SDFError):
+                return _time.extend("@time")
+        else:
+            _time = None
         _c_tmp = el.find("wall_time")
         if _c_tmp is not None:
             _text = _c_tmp.text if _c_tmp.text is not None else 0.0
@@ -523,7 +525,11 @@ class State(BaseModel):
             _wall_time = None
         if _wall_time is not None and cmp_version(version, "1.3") < 0:
             return SDFError(f"'wall_time' is not supported in SDF version {version} (added in 1.3)")
-        _world_name = el.get("world_name", "__default__")
-        if isinstance(_world_name, SDFError):
-            return _world_name.extend("@world_name")
+        _raw_world_name = el.get("world_name")
+        if _raw_world_name is not None:
+            _world_name = _raw_world_name
+            if isinstance(_world_name, SDFError):
+                return _world_name.extend("@world_name")
+        else:
+            _world_name = None
         return cls(sdf_version=version, deletions=_deletions, insertions=_insertions, iterations=_iterations, joint_states=_joint_states, light_states=_light_states, lights=_lights, model_states=_model_states, models=_models, real_time=_real_time, sim_time=_sim_time, time=_time, wall_time=_wall_time, world_name=_world_name)

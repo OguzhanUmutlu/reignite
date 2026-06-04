@@ -133,30 +133,36 @@ class Ray(BaseModel):
                 if _c_tmp is not None: _raw_max = _c_tmp.text
             else:
                 _raw_max = el.get("max")
-            if _raw_max is None: _raw_max = 0
-            _max = _parse_double(_raw_max)
-            if isinstance(_max, SDFError):
-                return _max.extend("@max")
+            if _raw_max is not None:
+                _max = _parse_double(_raw_max)
+                if isinstance(_max, SDFError):
+                    return _max.extend("@max")
+            else:
+                _max = None
             _raw_min = None
             if cmp_version(version, "1.2") >= 0:
                 _c_tmp = el.find("min")
                 if _c_tmp is not None: _raw_min = _c_tmp.text
             else:
                 _raw_min = el.get("min")
-            if _raw_min is None: _raw_min = 0
-            _min = _parse_double(_raw_min)
-            if isinstance(_min, SDFError):
-                return _min.extend("@min")
+            if _raw_min is not None:
+                _min = _parse_double(_raw_min)
+                if isinstance(_min, SDFError):
+                    return _min.extend("@min")
+            else:
+                _min = None
             _raw_resolution = None
             if cmp_version(version, "1.2") >= 0:
                 _c_tmp = el.find("resolution")
                 if _c_tmp is not None: _raw_resolution = _c_tmp.text
             else:
                 _raw_resolution = el.get("resolution")
-            if _raw_resolution is None: _raw_resolution = 0
-            _resolution = _parse_double(_raw_resolution)
-            if isinstance(_resolution, SDFError):
-                return _resolution.extend("@resolution")
+            if _raw_resolution is not None:
+                _resolution = _parse_double(_raw_resolution)
+                if isinstance(_resolution, SDFError):
+                    return _resolution.extend("@resolution")
+            else:
+                _resolution = None
             return cls(sdf_version=version, max=_max, min=_min, resolution=_resolution)
 
     class Scan(BaseModel):
@@ -223,40 +229,48 @@ class Ray(BaseModel):
                     if _c_tmp is not None: _raw_max_angle = _c_tmp.text
                 else:
                     _raw_max_angle = el.get("max_angle")
-                if _raw_max_angle is None: _raw_max_angle = 0
-                _max_angle = _parse_double(_raw_max_angle)
-                if isinstance(_max_angle, SDFError):
-                    return _max_angle.extend("@max_angle")
+                if _raw_max_angle is not None:
+                    _max_angle = _parse_double(_raw_max_angle)
+                    if isinstance(_max_angle, SDFError):
+                        return _max_angle.extend("@max_angle")
+                else:
+                    _max_angle = None
                 _raw_min_angle = None
                 if cmp_version(version, "1.2") >= 0:
                     _c_tmp = el.find("min_angle")
                     if _c_tmp is not None: _raw_min_angle = _c_tmp.text
                 else:
                     _raw_min_angle = el.get("min_angle")
-                if _raw_min_angle is None: _raw_min_angle = 0
-                _min_angle = _parse_double(_raw_min_angle)
-                if isinstance(_min_angle, SDFError):
-                    return _min_angle.extend("@min_angle")
+                if _raw_min_angle is not None:
+                    _min_angle = _parse_double(_raw_min_angle)
+                    if isinstance(_min_angle, SDFError):
+                        return _min_angle.extend("@min_angle")
+                else:
+                    _min_angle = None
                 _raw_resolution = None
                 if cmp_version(version, "1.2") >= 0:
                     _c_tmp = el.find("resolution")
                     if _c_tmp is not None: _raw_resolution = _c_tmp.text
                 else:
                     _raw_resolution = el.get("resolution")
-                if _raw_resolution is None: _raw_resolution = 1
-                _resolution = _parse_double(_raw_resolution)
-                if isinstance(_resolution, SDFError):
-                    return _resolution.extend("@resolution")
+                if _raw_resolution is not None:
+                    _resolution = _parse_double(_raw_resolution)
+                    if isinstance(_resolution, SDFError):
+                        return _resolution.extend("@resolution")
+                else:
+                    _resolution = None
                 _raw_samples = None
                 if cmp_version(version, "1.2") >= 0:
                     _c_tmp = el.find("samples")
                     if _c_tmp is not None: _raw_samples = _c_tmp.text
                 else:
                     _raw_samples = el.get("samples")
-                if _raw_samples is None: _raw_samples = 1
-                _samples = _parse_uint32(_raw_samples)
-                if isinstance(_samples, SDFError):
-                    return _samples.extend("@samples")
+                if _raw_samples is not None:
+                    _samples = _parse_uint32(_raw_samples)
+                    if isinstance(_samples, SDFError):
+                        return _samples.extend("@samples")
+                else:
+                    _samples = None
                 return cls(sdf_version=version, max_angle=_max_angle, min_angle=_min_angle, resolution=_resolution, samples=_samples)
 
         class Vertical(BaseModel):
@@ -322,40 +336,48 @@ class Ray(BaseModel):
                     if _c_tmp is not None: _raw_max_angle = _c_tmp.text
                 else:
                     _raw_max_angle = el.get("max_angle")
-                if _raw_max_angle is None: _raw_max_angle = 0
-                _max_angle = _parse_double(_raw_max_angle)
-                if isinstance(_max_angle, SDFError):
-                    return _max_angle.extend("@max_angle")
+                if _raw_max_angle is not None:
+                    _max_angle = _parse_double(_raw_max_angle)
+                    if isinstance(_max_angle, SDFError):
+                        return _max_angle.extend("@max_angle")
+                else:
+                    _max_angle = None
                 _raw_min_angle = None
                 if cmp_version(version, "1.2") >= 0:
                     _c_tmp = el.find("min_angle")
                     if _c_tmp is not None: _raw_min_angle = _c_tmp.text
                 else:
                     _raw_min_angle = el.get("min_angle")
-                if _raw_min_angle is None: _raw_min_angle = 0
-                _min_angle = _parse_double(_raw_min_angle)
-                if isinstance(_min_angle, SDFError):
-                    return _min_angle.extend("@min_angle")
+                if _raw_min_angle is not None:
+                    _min_angle = _parse_double(_raw_min_angle)
+                    if isinstance(_min_angle, SDFError):
+                        return _min_angle.extend("@min_angle")
+                else:
+                    _min_angle = None
                 _raw_resolution = None
                 if cmp_version(version, "1.2") >= 0:
                     _c_tmp = el.find("resolution")
                     if _c_tmp is not None: _raw_resolution = _c_tmp.text
                 else:
                     _raw_resolution = el.get("resolution")
-                if _raw_resolution is None: _raw_resolution = 1
-                _resolution = _parse_double(_raw_resolution)
-                if isinstance(_resolution, SDFError):
-                    return _resolution.extend("@resolution")
+                if _raw_resolution is not None:
+                    _resolution = _parse_double(_raw_resolution)
+                    if isinstance(_resolution, SDFError):
+                        return _resolution.extend("@resolution")
+                else:
+                    _resolution = None
                 _raw_samples = None
                 if cmp_version(version, "1.2") >= 0:
                     _c_tmp = el.find("samples")
                     if _c_tmp is not None: _raw_samples = _c_tmp.text
                 else:
                     _raw_samples = el.get("samples")
-                if _raw_samples is None: _raw_samples = 1
-                _samples = _parse_uint32(_raw_samples)
-                if isinstance(_samples, SDFError):
-                    return _samples.extend("@samples")
+                if _raw_samples is not None:
+                    _samples = _parse_uint32(_raw_samples)
+                    if isinstance(_samples, SDFError):
+                        return _samples.extend("@samples")
+                else:
+                    _samples = None
                 return cls(sdf_version=version, max_angle=_max_angle, min_angle=_min_angle, resolution=_resolution, samples=_samples)
 
         def __init__(

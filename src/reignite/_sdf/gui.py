@@ -66,10 +66,12 @@ class Gui(BaseModel):
                     if _c_tmp is not None: _raw_pose = _c_tmp.text
                 else:
                     _raw_pose = el.get("pose")
-                if _raw_pose is None: _raw_pose = "0 0 0 0 0 0"
-                _pose = _parse_pose(_raw_pose)
-                if isinstance(_pose, SDFError):
-                    return _pose.extend("@pose")
+                if _raw_pose is not None:
+                    _pose = _parse_pose(_raw_pose)
+                    if isinstance(_pose, SDFError):
+                        return _pose.extend("@pose")
+                else:
+                    _pose = None
                 return cls(sdf_version=version, pose=_pose)
 
         class TrackVisual(BaseModel):
@@ -342,9 +344,13 @@ class Gui(BaseModel):
                 _frames.append(_res)
             if _frames and cmp_version(version, "1.5") < 0:
                 return SDFError(f"'frames' is not supported in SDF version {version} (added in 1.5)")
-            _name = el.get("name", "user_camera")
-            if isinstance(_name, SDFError):
-                return _name.extend("@name")
+            _raw_name = el.get("name")
+            if _raw_name is not None:
+                _name = _raw_name
+                if isinstance(_name, SDFError):
+                    return _name.extend("@name")
+            else:
+                _name = None
             _c_origin = el.find("origin")
             if _c_origin is not None:
                 _res = cls.Origin._from_sdf(_c_origin, version)
@@ -466,9 +472,13 @@ class Gui(BaseModel):
             _camera = _res
         else:
             _camera = None
-        _fullscreen = str(el.get("fullscreen", False)).strip().lower() == 'true'
-        if isinstance(_fullscreen, SDFError):
-            return _fullscreen.extend("@fullscreen")
+        _raw_fullscreen = el.get("fullscreen")
+        if _raw_fullscreen is not None:
+            _fullscreen = str(_raw_fullscreen).strip().lower() == 'true'
+            if isinstance(_fullscreen, SDFError):
+                return _fullscreen.extend("@fullscreen")
+        else:
+            _fullscreen = None
         _plugins = []
         for c in el.findall("plugin"):
             _res = Plugin._from_sdf(c, version)

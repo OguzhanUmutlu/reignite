@@ -57,13 +57,20 @@ class ModelState(BaseModel):
 
             @classmethod
             def _from_sdf(cls, el: ET.Element, version: str) -> "ModelState.Joint.Angle | SDFError":
-                _text = el.text or 0
-                _angle = _parse_double(_text)
-                if isinstance(_angle, SDFError):
-                    return _angle
-                _axis = _parse_uint32(el.get("axis", 0))
-                if isinstance(_axis, SDFError):
-                    return _axis.extend("@axis")
+                _raw_angle = el.text
+                if _raw_angle is not None:
+                    _angle = _parse_double(_raw_angle)
+                    if isinstance(_angle, SDFError):
+                        return _angle
+                else:
+                    _angle = None
+                _raw_axis = el.get("axis")
+                if _raw_axis is not None:
+                    _axis = _parse_uint32(_raw_axis)
+                    if isinstance(_axis, SDFError):
+                        return _axis.extend("@axis")
+                else:
+                    _axis = None
                 return cls(sdf_version=version, angle=_angle, axis=_axis)
 
         def __init__(
@@ -117,9 +124,13 @@ class ModelState(BaseModel):
                 if isinstance(_res, SDFError):
                     return _res.extend("angle")
                 _angles.append(_res)
-            _name = el.get("name", "__default__")
-            if isinstance(_name, SDFError):
-                return _name.extend("@name")
+            _raw_name = el.get("name")
+            if _raw_name is not None:
+                _name = _raw_name
+                if isinstance(_name, SDFError):
+                    return _name.extend("@name")
+            else:
+                _name = None
             return cls(sdf_version=version, angles=_angles, name=_name)
 
     def __init__(
@@ -388,9 +399,13 @@ class ModelState(BaseModel):
             if isinstance(_res, SDFError):
                 return _res.extend("model")
             _models.append(_res)
-        _name = el.get("name", "__default__")
-        if isinstance(_name, SDFError):
-            return _name.extend("@name")
+        _raw_name = el.get("name")
+        if _raw_name is not None:
+            _name = _raw_name
+            if isinstance(_name, SDFError):
+                return _name.extend("@name")
+        else:
+            _name = None
         _c_pose = el.find("pose")
         if _c_pose is not None:
             _res = Pose._from_sdf(_c_pose, version)

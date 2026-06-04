@@ -75,10 +75,12 @@ class Sensor(BaseModel):
                 if _c_tmp is not None: _raw_pose = _c_tmp.text
             else:
                 _raw_pose = el.get("pose")
-            if _raw_pose is None: _raw_pose = "0 0 0 0 0 0"
-            _pose = _parse_pose(_raw_pose)
-            if isinstance(_pose, SDFError):
-                return _pose.extend("@pose")
+            if _raw_pose is not None:
+                _pose = _parse_pose(_raw_pose)
+                if isinstance(_pose, SDFError):
+                    return _pose.extend("@pose")
+            else:
+                _pose = None
             return cls(sdf_version=version, pose=_pose)
 
     def __init__(
@@ -613,10 +615,12 @@ class Sensor(BaseModel):
             if _c_tmp is not None: _raw_always_on = _c_tmp.text
         else:
             _raw_always_on = el.get("always_on")
-        if _raw_always_on is None: _raw_always_on = False
-        _always_on = str(_raw_always_on).strip().lower() == 'true'
-        if isinstance(_always_on, SDFError):
-            return _always_on.extend("@always_on")
+        if _raw_always_on is not None:
+            _always_on = str(_raw_always_on).strip().lower() == 'true'
+            if isinstance(_always_on, SDFError):
+                return _always_on.extend("@always_on")
+        else:
+            _always_on = None
         _c_camera = el.find("camera")
         if _c_camera is not None:
             _res = Camera._from_sdf(_c_camera, version)
@@ -723,9 +727,13 @@ class Sensor(BaseModel):
             _magnetometer = None
         if _magnetometer is not None and cmp_version(version, "1.5") < 0:
             return SDFError(f"'magnetometer' is not supported in SDF version {version} (added in 1.5)")
-        _name = el.get("name", "__default__")
-        if isinstance(_name, SDFError):
-            return _name.extend("@name")
+        _raw_name = el.get("name")
+        if _raw_name is not None:
+            _name = _raw_name
+            if isinstance(_name, SDFError):
+                return _name.extend("@name")
+        else:
+            _name = None
         _c_navsat = el.find("navsat")
         if _c_navsat is not None:
             _res = Navsat._from_sdf(_c_navsat, version)
@@ -813,27 +821,35 @@ class Sensor(BaseModel):
             _transceiver = None
         if _transceiver is not None and cmp_version(version, "1.4") < 0:
             return SDFError(f"'transceiver' is not supported in SDF version {version} (added in 1.4)")
-        _type = el.get("type", "__default__")
-        if isinstance(_type, SDFError):
-            return _type.extend("@type")
+        _raw_type = el.get("type")
+        if _raw_type is not None:
+            _type = _raw_type
+            if isinstance(_type, SDFError):
+                return _type.extend("@type")
+        else:
+            _type = None
         _raw_update_rate = None
         if cmp_version(version, "1.2") >= 0:
             _c_tmp = el.find("update_rate")
             if _c_tmp is not None: _raw_update_rate = _c_tmp.text
         else:
             _raw_update_rate = el.get("update_rate")
-        if _raw_update_rate is None: _raw_update_rate = 0
-        _update_rate = _parse_double(_raw_update_rate)
-        if isinstance(_update_rate, SDFError):
-            return _update_rate.extend("@update_rate")
+        if _raw_update_rate is not None:
+            _update_rate = _parse_double(_raw_update_rate)
+            if isinstance(_update_rate, SDFError):
+                return _update_rate.extend("@update_rate")
+        else:
+            _update_rate = None
         _raw_visualize = None
         if cmp_version(version, "1.2") >= 0:
             _c_tmp = el.find("visualize")
             if _c_tmp is not None: _raw_visualize = _c_tmp.text
         else:
             _raw_visualize = el.get("visualize")
-        if _raw_visualize is None: _raw_visualize = False
-        _visualize = str(_raw_visualize).strip().lower() == 'true'
-        if isinstance(_visualize, SDFError):
-            return _visualize.extend("@visualize")
+        if _raw_visualize is not None:
+            _visualize = str(_raw_visualize).strip().lower() == 'true'
+            if isinstance(_visualize, SDFError):
+                return _visualize.extend("@visualize")
+        else:
+            _visualize = None
         return cls(sdf_version=version, air_pressure=_air_pressure, air_speed=_air_speed, altimeter=_altimeter, always_on=_always_on, camera=_camera, contact=_contact, enable_metrics=_enable_metrics, force_torque=_force_torque, frame_id=_frame_id, frames=_frames, gps=_gps, imu=_imu, lidar=_lidar, logical_camera=_logical_camera, magnetometer=_magnetometer, name=_name, navsat=_navsat, origin=_origin, plugins=_plugins, pose=_pose, ray=_ray, rfid=_rfid, rfidtag=_rfidtag, sonar=_sonar, topic=_topic, transceiver=_transceiver, type=_type, update_rate=_update_rate, visualize=_visualize)

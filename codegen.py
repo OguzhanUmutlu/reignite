@@ -1193,17 +1193,23 @@ def _render_class(spec: dict, file_external_imports: set[str], indent: int = 0,
 
             if not p.renames:
                 if p.kind == "attr":
-                    raw_expr = f'el.get("{p.original_name}", {p.raw_default})'
-                    val_expr = p.from_expr.replace("{raw}", raw_expr)
-                    block.append(f"        _{p.py_name} = {val_expr}")
-                    block.append(f"        if isinstance(_{p.py_name}, SDFError):")
-                    block.append(f'            return _{p.py_name}.extend("@{p.original_name}")')
+                    block.append(f'        _raw_{p.py_name} = el.get("{p.original_name}")')
+                    block.append(f'        if _raw_{p.py_name} is not None:')
+                    val_expr = p.from_expr.replace("{raw}", f"_raw_{p.py_name}")
+                    block.append(f"            _{p.py_name} = {val_expr}")
+                    block.append(f"            if isinstance(_{p.py_name}, SDFError):")
+                    block.append(f'                return _{p.py_name}.extend("@{p.original_name}")')
+                    block.append(f'        else:')
+                    block.append(f'            _{p.py_name} = None')
                 else:
-                    block.append(f"        _text = el.text or {p.raw_default}")
-                    val_expr = p.from_expr.replace("{raw}", "_text")
-                    block.append(f"        _{p.py_name} = {val_expr}")
-                    block.append(f"        if isinstance(_{p.py_name}, SDFError):")
-                    block.append(f'            return _{p.py_name}')
+                    block.append(f'        _raw_{p.py_name} = el.text')
+                    block.append(f'        if _raw_{p.py_name} is not None:')
+                    val_expr = p.from_expr.replace("{raw}", f"_raw_{p.py_name}")
+                    block.append(f"            _{p.py_name} = {val_expr}")
+                    block.append(f"            if isinstance(_{p.py_name}, SDFError):")
+                    block.append(f'                return _{p.py_name}')
+                    block.append(f'        else:')
+                    block.append(f'            _{p.py_name} = None')
             else:
                 block.append(f"        _raw_{p.py_name} = None")
                 sorted_versions = sorted(p.renames.keys(), key=lambda v: tuple(int(x) for x in v.split(".")),
@@ -1229,14 +1235,17 @@ def _render_class(spec: dict, file_external_imports: set[str], indent: int = 0,
                 else:
                     block.append(f'            _c_tmp = el.find("{p.original_name}")')
                     block.append(f'            if _c_tmp is not None: _raw_{p.py_name} = _c_tmp.text')
-                block.append(f'        if _raw_{p.py_name} is None: _raw_{p.py_name} = {p.raw_default}')
+                
+                block.append(f'        if _raw_{p.py_name} is not None:')
                 val_expr = p.from_expr.replace("{raw}", f"_raw_{p.py_name}")
-                block.append(f"        _{p.py_name} = {val_expr}")
-                block.append(f"        if isinstance(_{p.py_name}, SDFError):")
+                block.append(f"            _{p.py_name} = {val_expr}")
+                block.append(f"            if isinstance(_{p.py_name}, SDFError):")
                 if p.kind == "attr":
-                    block.append(f'            return _{p.py_name}.extend("@{p.original_name}")')
+                    block.append(f'                return _{p.py_name}.extend("@{p.original_name}")')
                 else:
-                    block.append(f'            return _{p.py_name}')
+                    block.append(f'                return _{p.py_name}')
+                block.append(f'        else:')
+                block.append(f'            _{p.py_name} = None')
 
         elif p.kind == "child_leaf":
             if p.is_required:

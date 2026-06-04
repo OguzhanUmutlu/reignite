@@ -72,31 +72,50 @@ class Pose(BaseModel):
 
     @classmethod
     def _from_sdf(cls, el: ET.Element, version: str) -> "Pose | SDFError":
-        _degrees = str(el.get("degrees", False)).strip().lower() == 'true'
-        if isinstance(_degrees, SDFError):
-            return _degrees.extend("@degrees")
+        _raw_degrees = el.get("degrees")
+        if _raw_degrees is not None:
+            _degrees = str(_raw_degrees).strip().lower() == 'true'
+            if isinstance(_degrees, SDFError):
+                return _degrees.extend("@degrees")
+        else:
+            _degrees = None
         if _degrees is not None and cmp_version(version, "1.9") < 0:
             if _degrees != False:
                 return SDFError(f"'degrees' is not supported in SDF version {version} (added in 1.9)")
-        _frame = el.get("frame", None)
-        if isinstance(_frame, SDFError):
-            return _frame.extend("@frame")
-        _text = el.text or "0 0 0 0 0 0"
-        _pose = _parse_pose(_text)
-        if isinstance(_pose, SDFError):
-            return _pose
+        _raw_frame = el.get("frame")
+        if _raw_frame is not None:
+            _frame = _raw_frame
+            if isinstance(_frame, SDFError):
+                return _frame.extend("@frame")
+        else:
+            _frame = None
+        _raw_pose = el.text
+        if _raw_pose is not None:
+            _pose = _parse_pose(_raw_pose)
+            if isinstance(_pose, SDFError):
+                return _pose
+        else:
+            _pose = None
         if _pose is not None and cmp_version(version, "1.5") < 0:
             if _pose != "0 0 0 0 0 0":
                 return SDFError(f"'pose' is not supported in SDF version {version} (added in 1.5)")
-        _relative_to = el.get("relative_to", None)
-        if isinstance(_relative_to, SDFError):
-            return _relative_to.extend("@relative_to")
+        _raw_relative_to = el.get("relative_to")
+        if _raw_relative_to is not None:
+            _relative_to = _raw_relative_to
+            if isinstance(_relative_to, SDFError):
+                return _relative_to.extend("@relative_to")
+        else:
+            _relative_to = None
         if _relative_to is not None and cmp_version(version, "1.7") < 0:
             if _relative_to != None:
                 return SDFError(f"'relative_to' is not supported in SDF version {version} (added in 1.7)")
-        _rotation_format = el.get("rotation_format", "euler_rpy")
-        if isinstance(_rotation_format, SDFError):
-            return _rotation_format.extend("@rotation_format")
+        _raw_rotation_format = el.get("rotation_format")
+        if _raw_rotation_format is not None:
+            _rotation_format = _raw_rotation_format
+            if isinstance(_rotation_format, SDFError):
+                return _rotation_format.extend("@rotation_format")
+        else:
+            _rotation_format = None
         if _rotation_format is not None and cmp_version(version, "1.9") < 0:
             if _rotation_format != "euler_rpy":
                 return SDFError(f"'rotation_format' is not supported in SDF version {version} (added in 1.9)")

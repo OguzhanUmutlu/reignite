@@ -59,10 +59,12 @@ class Collision(BaseModel):
                 if _c_tmp is not None: _raw_pose = _c_tmp.text
             else:
                 _raw_pose = el.get("pose")
-            if _raw_pose is None: _raw_pose = "0 0 0 0 0 0"
-            _pose = _parse_pose(_raw_pose)
-            if isinstance(_pose, SDFError):
-                return _pose.extend("@pose")
+            if _raw_pose is not None:
+                _pose = _parse_pose(_raw_pose)
+                if isinstance(_pose, SDFError):
+                    return _pose.extend("@pose")
+            else:
+                _pose = None
             return cls(sdf_version=version, pose=_pose)
 
     def __init__(
@@ -273,10 +275,12 @@ class Collision(BaseModel):
             if _c_tmp is not None: _raw_laser_retro = _c_tmp.text
         else:
             _raw_laser_retro = el.get("laser_retro")
-        if _raw_laser_retro is None: _raw_laser_retro = 0
-        _laser_retro = _parse_double(_raw_laser_retro)
-        if isinstance(_laser_retro, SDFError):
-            return _laser_retro.extend("@laser_retro")
+        if _raw_laser_retro is not None:
+            _laser_retro = _parse_double(_raw_laser_retro)
+            if isinstance(_laser_retro, SDFError):
+                return _laser_retro.extend("@laser_retro")
+        else:
+            _laser_retro = None
         _c_tmp = el.find("mass")
         if _c_tmp is not None:
             _text = _c_tmp.text if _c_tmp.text is not None else 0
@@ -295,9 +299,13 @@ class Collision(BaseModel):
             _max_contacts = _val
         else:
             _max_contacts = None
-        _name = el.get("name", "__default__")
-        if isinstance(_name, SDFError):
-            return _name.extend("@name")
+        _raw_name = el.get("name")
+        if _raw_name is not None:
+            _name = _raw_name
+            if isinstance(_name, SDFError):
+                return _name.extend("@name")
+        else:
+            _name = None
         _c_origin = el.find("origin")
         if _c_origin is not None:
             _res = cls.Origin._from_sdf(_c_origin, version)

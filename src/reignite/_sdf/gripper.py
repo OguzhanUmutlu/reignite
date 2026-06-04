@@ -67,30 +67,36 @@ class Gripper(BaseModel):
                 if _c_tmp is not None: _raw_attach_steps = _c_tmp.text
             else:
                 _raw_attach_steps = el.get("attach_steps")
-            if _raw_attach_steps is None: _raw_attach_steps = 20
-            _attach_steps = _parse_int32(_raw_attach_steps)
-            if isinstance(_attach_steps, SDFError):
-                return _attach_steps.extend("@attach_steps")
+            if _raw_attach_steps is not None:
+                _attach_steps = _parse_int32(_raw_attach_steps)
+                if isinstance(_attach_steps, SDFError):
+                    return _attach_steps.extend("@attach_steps")
+            else:
+                _attach_steps = None
             _raw_detach_steps = None
             if cmp_version(version, "1.2") >= 0:
                 _c_tmp = el.find("detach_steps")
                 if _c_tmp is not None: _raw_detach_steps = _c_tmp.text
             else:
                 _raw_detach_steps = el.get("detach_steps")
-            if _raw_detach_steps is None: _raw_detach_steps = 40
-            _detach_steps = _parse_int32(_raw_detach_steps)
-            if isinstance(_detach_steps, SDFError):
-                return _detach_steps.extend("@detach_steps")
+            if _raw_detach_steps is not None:
+                _detach_steps = _parse_int32(_raw_detach_steps)
+                if isinstance(_detach_steps, SDFError):
+                    return _detach_steps.extend("@detach_steps")
+            else:
+                _detach_steps = None
             _raw_min_contact_count = None
             if cmp_version(version, "1.2") >= 0:
                 _c_tmp = el.find("min_contact_count")
                 if _c_tmp is not None: _raw_min_contact_count = _c_tmp.text
             else:
                 _raw_min_contact_count = el.get("min_contact_count")
-            if _raw_min_contact_count is None: _raw_min_contact_count = 2
-            _min_contact_count = _parse_uint32(_raw_min_contact_count)
-            if isinstance(_min_contact_count, SDFError):
-                return _min_contact_count.extend("@min_contact_count")
+            if _raw_min_contact_count is not None:
+                _min_contact_count = _parse_uint32(_raw_min_contact_count)
+                if isinstance(_min_contact_count, SDFError):
+                    return _min_contact_count.extend("@min_contact_count")
+            else:
+                _min_contact_count = None
             return cls(sdf_version=version, attach_steps=_attach_steps, detach_steps=_detach_steps, min_contact_count=_min_contact_count)
 
     def __init__(
@@ -164,9 +170,13 @@ class Gripper(BaseModel):
             if isinstance(_val, SDFError):
                 return _val.extend("gripper_link")
             _gripper_links.append(_val)
-        _name = el.get("name", "__default__")
-        if isinstance(_name, SDFError):
-            return _name.extend("@name")
+        _raw_name = el.get("name")
+        if _raw_name is not None:
+            _name = _raw_name
+            if isinstance(_name, SDFError):
+                return _name.extend("@name")
+        else:
+            _name = None
         _c_tmp = el.find("palm_link")
         if _c_tmp is not None:
             _text = _c_tmp.text if _c_tmp.text is not None else "__default__"

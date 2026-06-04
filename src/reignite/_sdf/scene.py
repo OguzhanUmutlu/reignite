@@ -50,19 +50,24 @@ class Scene(BaseModel):
 
         @classmethod
         def _from_sdf(cls, el: ET.Element, version: str) -> "Scene.Ambient | SDFError":
-            _text = el.text or "0.0 0.0 0.0 1.0"
-            _ambient = _parse_color(_text)
-            if isinstance(_ambient, SDFError):
-                return _ambient
+            _raw_ambient = el.text
+            if _raw_ambient is not None:
+                _ambient = _parse_color(_raw_ambient)
+                if isinstance(_ambient, SDFError):
+                    return _ambient
+            else:
+                _ambient = None
             _raw_rgba = None
             if cmp_version(version, "1.2") >= 0:
                 _raw_rgba = el.text
             else:
                 _raw_rgba = el.get("rgba")
-            if _raw_rgba is None: _raw_rgba = "0.0 0.0 0.0 1.0"
-            _rgba = _parse_color(_raw_rgba)
-            if isinstance(_rgba, SDFError):
-                return _rgba.extend("@rgba")
+            if _raw_rgba is not None:
+                _rgba = _parse_color(_raw_rgba)
+                if isinstance(_rgba, SDFError):
+                    return _rgba.extend("@rgba")
+            else:
+                _rgba = None
             return cls(sdf_version=version, ambient=_ambient, rgba=_rgba)
 
     class Background(BaseModel):
@@ -87,9 +92,13 @@ class Scene(BaseModel):
 
             @classmethod
             def _from_sdf(cls, el: ET.Element, version: str) -> "Scene.Background.Sky | SDFError":
-                _material = el.get("material", "Gazebo/CloudySky")
-                if isinstance(_material, SDFError):
-                    return _material.extend("@material")
+                _raw_material = el.get("material")
+                if _raw_material is not None:
+                    _material = _raw_material
+                    if isinstance(_material, SDFError):
+                        return _material.extend("@material")
+                else:
+                    _material = None
                 return cls(sdf_version=version, material=_material)
 
         def __init__(
@@ -141,10 +150,12 @@ class Scene(BaseModel):
                 _raw_rgba = el.text
             else:
                 _raw_rgba = el.get("rgba")
-            if _raw_rgba is None: _raw_rgba = ".7 .7 .7 1"
-            _rgba = _parse_color(_raw_rgba)
-            if isinstance(_rgba, SDFError):
-                return _rgba.extend("@rgba")
+            if _raw_rgba is not None:
+                _rgba = _parse_color(_raw_rgba)
+                if isinstance(_rgba, SDFError):
+                    return _rgba.extend("@rgba")
+            else:
+                _rgba = None
             _c_sky = el.find("sky")
             if _c_sky is not None:
                 _res = cls.Sky._from_sdf(_c_sky, version)
@@ -246,50 +257,60 @@ class Scene(BaseModel):
                 if _c_tmp is not None: _raw_density = _c_tmp.text
             else:
                 _raw_density = el.get("density")
-            if _raw_density is None: _raw_density = 1.0
-            _density = _parse_double(_raw_density)
-            if isinstance(_density, SDFError):
-                return _density.extend("@density")
+            if _raw_density is not None:
+                _density = _parse_double(_raw_density)
+                if isinstance(_density, SDFError):
+                    return _density.extend("@density")
+            else:
+                _density = None
             _raw_end = None
             if cmp_version(version, "1.2") >= 0:
                 _c_tmp = el.find("end")
                 if _c_tmp is not None: _raw_end = _c_tmp.text
             else:
                 _raw_end = el.get("end")
-            if _raw_end is None: _raw_end = 100.0
-            _end = _parse_double(_raw_end)
-            if isinstance(_end, SDFError):
-                return _end.extend("@end")
+            if _raw_end is not None:
+                _end = _parse_double(_raw_end)
+                if isinstance(_end, SDFError):
+                    return _end.extend("@end")
+            else:
+                _end = None
             _raw_rgba = None
             if cmp_version(version, "1.2") >= 0:
                 _c_tmp = el.find("color")
                 if _c_tmp is not None: _raw_rgba = _c_tmp.text
             else:
                 _raw_rgba = el.get("rgba")
-            if _raw_rgba is None: _raw_rgba = "1 1 1 1"
-            _rgba = _parse_color(_raw_rgba)
-            if isinstance(_rgba, SDFError):
-                return _rgba.extend("@rgba")
+            if _raw_rgba is not None:
+                _rgba = _parse_color(_raw_rgba)
+                if isinstance(_rgba, SDFError):
+                    return _rgba.extend("@rgba")
+            else:
+                _rgba = None
             _raw_start = None
             if cmp_version(version, "1.2") >= 0:
                 _c_tmp = el.find("start")
                 if _c_tmp is not None: _raw_start = _c_tmp.text
             else:
                 _raw_start = el.get("start")
-            if _raw_start is None: _raw_start = 1.0
-            _start = _parse_double(_raw_start)
-            if isinstance(_start, SDFError):
-                return _start.extend("@start")
+            if _raw_start is not None:
+                _start = _parse_double(_raw_start)
+                if isinstance(_start, SDFError):
+                    return _start.extend("@start")
+            else:
+                _start = None
             _raw_type = None
             if cmp_version(version, "1.2") >= 0:
                 _c_tmp = el.find("type")
                 if _c_tmp is not None: _raw_type = _c_tmp.text
             else:
                 _raw_type = el.get("type")
-            if _raw_type is None: _raw_type = "linear"
-            _type = _raw_type
-            if isinstance(_type, SDFError):
-                return _type.extend("@type")
+            if _raw_type is not None:
+                _type = _raw_type
+                if isinstance(_type, SDFError):
+                    return _type.extend("@type")
+            else:
+                _type = None
             return cls(sdf_version=version, color=_color, density=_density, end=_end, rgba=_rgba, start=_start, type=_type)
 
     class Grid(BaseModel):
@@ -329,14 +350,19 @@ class Scene(BaseModel):
                 _raw_enabled = el.text
             else:
                 _raw_enabled = el.get("enabled")
-            if _raw_enabled is None: _raw_enabled = True
-            _enabled = str(_raw_enabled).strip().lower() == 'true'
-            if isinstance(_enabled, SDFError):
-                return _enabled.extend("@enabled")
-            _text = el.text or True
-            _grid = str(_text).strip().lower() == 'true'
-            if isinstance(_grid, SDFError):
-                return _grid
+            if _raw_enabled is not None:
+                _enabled = str(_raw_enabled).strip().lower() == 'true'
+                if isinstance(_enabled, SDFError):
+                    return _enabled.extend("@enabled")
+            else:
+                _enabled = None
+            _raw_grid = el.text
+            if _raw_grid is not None:
+                _grid = str(_raw_grid).strip().lower() == 'true'
+                if isinstance(_grid, SDFError):
+                    return _grid
+            else:
+                _grid = None
             return cls(sdf_version=version, enabled=_enabled, grid=_grid)
 
     class SceneSky(BaseModel):
@@ -584,14 +610,19 @@ class Scene(BaseModel):
                 _raw_enabled = el.text
             else:
                 _raw_enabled = el.get("enabled")
-            if _raw_enabled is None: _raw_enabled = True
-            _enabled = str(_raw_enabled).strip().lower() == 'true'
-            if isinstance(_enabled, SDFError):
-                return _enabled.extend("@enabled")
-            _text = el.text or True
-            _shadows = str(_text).strip().lower() == 'true'
-            if isinstance(_shadows, SDFError):
-                return _shadows
+            if _raw_enabled is not None:
+                _enabled = str(_raw_enabled).strip().lower() == 'true'
+                if isinstance(_enabled, SDFError):
+                    return _enabled.extend("@enabled")
+            else:
+                _enabled = None
+            _raw_shadows = el.text
+            if _raw_shadows is not None:
+                _shadows = str(_raw_shadows).strip().lower() == 'true'
+                if isinstance(_shadows, SDFError):
+                    return _shadows
+            else:
+                _shadows = None
             return cls(sdf_version=version, enabled=_enabled, shadows=_shadows)
 
     def __init__(

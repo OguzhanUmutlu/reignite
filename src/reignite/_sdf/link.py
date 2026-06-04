@@ -120,10 +120,12 @@ class Link(BaseModel):
                 if _c_tmp is not None: _raw_pose = _c_tmp.text
             else:
                 _raw_pose = el.get("pose")
-            if _raw_pose is None: _raw_pose = "0 0 0 0 0 0"
-            _pose = _parse_pose(_raw_pose)
-            if isinstance(_pose, SDFError):
-                return _pose.extend("@pose")
+            if _raw_pose is not None:
+                _pose = _parse_pose(_raw_pose)
+                if isinstance(_pose, SDFError):
+                    return _pose.extend("@pose")
+            else:
+                _pose = None
             return cls(sdf_version=version, pose=_pose)
 
     class VelocityDecay(BaseModel):
@@ -646,10 +648,12 @@ class Link(BaseModel):
             if _c_tmp is not None: _raw_gravity = _c_tmp.text
         else:
             _raw_gravity = el.get("gravity")
-        if _raw_gravity is None: _raw_gravity = True
-        _gravity = str(_raw_gravity).strip().lower() == 'true'
-        if isinstance(_gravity, SDFError):
-            return _gravity.extend("@gravity")
+        if _raw_gravity is not None:
+            _gravity = str(_raw_gravity).strip().lower() == 'true'
+            if isinstance(_gravity, SDFError):
+                return _gravity.extend("@gravity")
+        else:
+            _gravity = None
         _c_inertial = el.find("inertial")
         if _c_inertial is not None:
             _res = Inertial._from_sdf(_c_inertial, version)
@@ -664,10 +668,12 @@ class Link(BaseModel):
             if _c_tmp is not None: _raw_kinematic = _c_tmp.text
         else:
             _raw_kinematic = el.get("kinematic")
-        if _raw_kinematic is None: _raw_kinematic = False
-        _kinematic = str(_raw_kinematic).strip().lower() == 'true'
-        if isinstance(_kinematic, SDFError):
-            return _kinematic.extend("@kinematic")
+        if _raw_kinematic is not None:
+            _kinematic = str(_raw_kinematic).strip().lower() == 'true'
+            if isinstance(_kinematic, SDFError):
+                return _kinematic.extend("@kinematic")
+        else:
+            _kinematic = None
         _lights = []
         for c in el.findall("light"):
             _res = Light._from_sdf(c, version)
@@ -687,9 +693,13 @@ class Link(BaseModel):
             _must_be_base_link = None
         if _must_be_base_link is not None and cmp_version(version, "1.4") < 0:
             return SDFError(f"'must_be_base_link' is not supported in SDF version {version} (added in 1.4)")
-        _name = el.get("name", "__default__")
-        if isinstance(_name, SDFError):
-            return _name.extend("@name")
+        _raw_name = el.get("name")
+        if _raw_name is not None:
+            _name = _raw_name
+            if isinstance(_name, SDFError):
+                return _name.extend("@name")
+        else:
+            _name = None
         _c_origin = el.find("origin")
         if _c_origin is not None:
             _res = cls.Origin._from_sdf(_c_origin, version)
@@ -730,10 +740,12 @@ class Link(BaseModel):
             if _c_tmp is not None: _raw_self_collide = _c_tmp.text
         else:
             _raw_self_collide = el.get("self_collide")
-        if _raw_self_collide is None: _raw_self_collide = False
-        _self_collide = str(_raw_self_collide).strip().lower() == 'true'
-        if isinstance(_self_collide, SDFError):
-            return _self_collide.extend("@self_collide")
+        if _raw_self_collide is not None:
+            _self_collide = str(_raw_self_collide).strip().lower() == 'true'
+            if isinstance(_self_collide, SDFError):
+                return _self_collide.extend("@self_collide")
+        else:
+            _self_collide = None
         _c_sensor = el.find("sensor")
         if _c_sensor is not None:
             _res = Sensor._from_sdf(_c_sensor, version)

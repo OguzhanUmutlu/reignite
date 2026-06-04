@@ -150,9 +150,13 @@ class Model(BaseModel):
             from ..elements.model_state import ModelState
             from ..elements.plugin import Plugin
             from ..elements.pose import Pose
-            _merge = str(el.get("merge", False)).strip().lower() == 'true'
-            if isinstance(_merge, SDFError):
-                return _merge.extend("@merge")
+            _raw_merge = el.get("merge")
+            if _raw_merge is not None:
+                _merge = str(_raw_merge).strip().lower() == 'true'
+                if isinstance(_merge, SDFError):
+                    return _merge.extend("@merge")
+            else:
+                _merge = None
             if _merge is not None and cmp_version(version, "1.9") < 0:
                 if _merge != False:
                     return SDFError(f"'merge' is not supported in SDF version {version} (added in 1.9)")
@@ -250,10 +254,12 @@ class Model(BaseModel):
                 if _c_tmp is not None: _raw_pose = _c_tmp.text
             else:
                 _raw_pose = el.get("pose")
-            if _raw_pose is None: _raw_pose = "0 0 0 0 0 0"
-            _pose = _parse_pose(_raw_pose)
-            if isinstance(_pose, SDFError):
-                return _pose.extend("@pose")
+            if _raw_pose is not None:
+                _pose = _parse_pose(_raw_pose)
+                if isinstance(_pose, SDFError):
+                    return _pose.extend("@pose")
+            else:
+                _pose = None
             return cls(sdf_version=version, pose=_pose)
 
     def __init__(
@@ -567,9 +573,13 @@ class Model(BaseModel):
             _allow_auto_disable = None
         if _allow_auto_disable is not None and cmp_version(version, "1.2") < 0:
             return SDFError(f"'allow_auto_disable' is not supported in SDF version {version} (added in 1.2)")
-        _canonical_link = el.get("canonical_link", None)
-        if isinstance(_canonical_link, SDFError):
-            return _canonical_link.extend("@canonical_link")
+        _raw_canonical_link = el.get("canonical_link")
+        if _raw_canonical_link is not None:
+            _canonical_link = _raw_canonical_link
+            if isinstance(_canonical_link, SDFError):
+                return _canonical_link.extend("@canonical_link")
+        else:
+            _canonical_link = None
         if _canonical_link is not None and cmp_version(version, "1.7") < 0:
             if _canonical_link != None:
                 return SDFError(f"'canonical_link' is not supported in SDF version {version} (added in 1.7)")
@@ -634,9 +644,13 @@ class Model(BaseModel):
             _models.append(_res)
         if _models and cmp_version(version, "1.5") < 0:
             return SDFError(f"'models' is not supported in SDF version {version} (added in 1.5)")
-        _name = el.get("name", "__default__")
-        if isinstance(_name, SDFError):
-            return _name.extend("@name")
+        _raw_name = el.get("name")
+        if _raw_name is not None:
+            _name = _raw_name
+            if isinstance(_name, SDFError):
+                return _name.extend("@name")
+        else:
+            _name = None
         _c_origin = el.find("origin")
         if _c_origin is not None:
             _res = cls.Origin._from_sdf(_c_origin, version)
@@ -645,9 +659,13 @@ class Model(BaseModel):
             _origin = _res
         else:
             _origin = None
-        _placement_frame = el.get("placement_frame", None)
-        if isinstance(_placement_frame, SDFError):
-            return _placement_frame.extend("@placement_frame")
+        _raw_placement_frame = el.get("placement_frame")
+        if _raw_placement_frame is not None:
+            _placement_frame = _raw_placement_frame
+            if isinstance(_placement_frame, SDFError):
+                return _placement_frame.extend("@placement_frame")
+        else:
+            _placement_frame = None
         if _placement_frame is not None and cmp_version(version, "1.8") < 0:
             if _placement_frame != None:
                 return SDFError(f"'placement_frame' is not supported in SDF version {version} (added in 1.8)")
@@ -684,8 +702,10 @@ class Model(BaseModel):
             if _c_tmp is not None: _raw_static = _c_tmp.text
         else:
             _raw_static = el.get("static")
-        if _raw_static is None: _raw_static = False
-        _static = str(_raw_static).strip().lower() == 'true'
-        if isinstance(_static, SDFError):
-            return _static.extend("@static")
+        if _raw_static is not None:
+            _static = str(_raw_static).strip().lower() == 'true'
+            if isinstance(_static, SDFError):
+                return _static.extend("@static")
+        else:
+            _static = None
         return cls(sdf_version=version, allow_auto_disable=_allow_auto_disable, canonical_link=_canonical_link, enable_wind=_enable_wind, frames=_frames, grippers=_grippers, includes=_includes, joints=_joints, links=_links, model_states=_model_states, models=_models, name=_name, origin=_origin, placement_frame=_placement_frame, plugins=_plugins, pose=_pose, self_collide=_self_collide, static=_static)

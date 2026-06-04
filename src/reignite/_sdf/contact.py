@@ -41,13 +41,20 @@ class Contact(BaseModel):
 
         @classmethod
         def _from_sdf(cls, el: ET.Element, version: str) -> "Contact.Collision | SDFError":
-            _text = el.text or "__default__"
-            _collision = _text
-            if isinstance(_collision, SDFError):
-                return _collision
-            _name = el.get("name", "__default__")
-            if isinstance(_name, SDFError):
-                return _name.extend("@name")
+            _raw_collision = el.text
+            if _raw_collision is not None:
+                _collision = _raw_collision
+                if isinstance(_collision, SDFError):
+                    return _collision
+            else:
+                _collision = None
+            _raw_name = el.get("name")
+            if _raw_name is not None:
+                _name = _raw_name
+                if isinstance(_name, SDFError):
+                    return _name.extend("@name")
+            else:
+                _name = None
             return cls(sdf_version=version, collision=_collision, name=_name)
 
     def __init__(

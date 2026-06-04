@@ -202,9 +202,13 @@ class World(BaseModel):
             from ..elements.model_state import ModelState
             from ..elements.plugin import Plugin
             from ..elements.pose import Pose
-            _merge = str(el.get("merge", False)).strip().lower() == 'true'
-            if isinstance(_merge, SDFError):
-                return _merge.extend("@merge")
+            _raw_merge = el.get("merge")
+            if _raw_merge is not None:
+                _merge = str(_raw_merge).strip().lower() == 'true'
+                if isinstance(_merge, SDFError):
+                    return _merge.extend("@merge")
+            else:
+                _merge = None
             if _merge is not None and cmp_version(version, "1.10") < 0:
                 if _merge != False:
                     return SDFError(f"'merge' is not supported in SDF version {version} (added in 1.10)")
@@ -819,9 +823,13 @@ class World(BaseModel):
             if isinstance(_res, SDFError):
                 return _res.extend("model")
             _models.append(_res)
-        _name = el.get("name", "__default__")
-        if isinstance(_name, SDFError):
-            return _name.extend("@name")
+        _raw_name = el.get("name")
+        if _raw_name is not None:
+            _name = _raw_name
+            if isinstance(_name, SDFError):
+                return _name.extend("@name")
+        else:
+            _name = None
         _c_physics = el.find("physics")
         if _c_physics is not None:
             _res = Physics._from_sdf(_c_physics, version)
