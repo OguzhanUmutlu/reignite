@@ -176,7 +176,7 @@ class Pose:
         if x == 0.0 and y == 0.0:
             return 0.0
 
-        return (degrees(atan2(x, y)) + 360.0) % 360.0
+        return (atan2(x, y) + radians(360.0)) % radians(360.0)
 
     def inclination_to(self, other: Pose):
         lat1 = radians(self.lat)
@@ -193,7 +193,7 @@ class Pose:
         if ground_distance == 0.0:
             return 90.0 if alt_difference > 0 else -90.0 if alt_difference < 0 else 0.0
 
-        return degrees(atan2(alt_difference, ground_distance))
+        return atan2(alt_difference, ground_distance)
 
     def two_point_boundary(self, b: Pose, padding=50.0):
         min_lat = min(self.lat, b.lat)
