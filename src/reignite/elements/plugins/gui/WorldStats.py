@@ -17,7 +17,7 @@ class WorldStatsPlugin(Plugin):
                  ):
         super().__init__(name=name, filename="WorldStats", elements=[
             GzGui(
-                **{"title": "World stats", "show_title_bar": True, "resizable": False, "height": 110.0, "width": 290.0,
+                **{"title": "World stats", "show_title_bar": False, "resizable": False, "height": 110.0, "width": 290.0,
                    "z": 1.0, "state": "floating", "anchor": "3D View", "anchors": [
                         GzGui.Anchor("right", "right"),
                         GzGui.Anchor("bottom", "bottom")
