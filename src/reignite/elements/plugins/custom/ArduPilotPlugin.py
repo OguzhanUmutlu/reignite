@@ -269,7 +269,7 @@ class ArduPilotPlugin(Plugin):
         )
 
     def to_sdf(self, version: str | None = None) -> ET.Element:
-        el = super().to_sdf(version)
+        el = ET.Element("plugin", name=self.name, filename=self.filename)
         
         def _add(k, v):
             if v is not None:
@@ -303,4 +303,8 @@ class ArduPilotPlugin(Plugin):
         return el
 
     def to_version(self, target_version: str):
+        for c in self.controls:
+            c.to_version(target_version)
+        for s in self.sensors:
+            s.to_version(target_version)
         return self
