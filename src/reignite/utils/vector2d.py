@@ -6,6 +6,8 @@ _Vector2dT = Union[float, tuple[float, float], "Vector2d"]
 
 
 def _vector2d(x: float | tuple[float, float] | Vector2d | str, y: float = None) -> Vector2d:
+    if isinstance(x, float) and y is None:
+        y = x
     if isinstance(x, Vector2d):
         return x
     if isinstance(x, str):
