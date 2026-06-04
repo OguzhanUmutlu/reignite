@@ -3,25 +3,15 @@ from ..utils.color import Color, _ColorT, _color
 
 
 class SimpleMaterial(Material):
-    def __init__(self, color: _ColorT, metalness=0.0, roughness=0.3):
+    def __init__(self, color: _ColorT):
         color = _color(color)
-        if color.a != 255:
-            super().__init__(
-                ambient=color, diffuse=color, double_sided=True,
-                pbr=Material.Pbr(
-                    metal=Material.Pbr.Metal(
-                        albedo_map=f"{color}", metalness=f"{metalness}", roughness=f"{roughness}",
-                        emissive_map=f"{color}"
-                    )
-                )
-            )
-        else:
-            super().__init__(
-                ambient=color,
-                diffuse=color,
-                emissive=color,
-                specular=Color(127, 127, 127)
-            )
+        super().__init__(
+            ambient=color,
+            diffuse=color,
+            emissive=color,
+            specular=Color(127, 127, 127),
+            double_sided=color.a != 255
+        )
 
 
 class ScriptMaterial(Material):
