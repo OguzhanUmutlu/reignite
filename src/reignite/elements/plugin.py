@@ -113,12 +113,14 @@ class Plugin(_Base):
             self.elements.append(TextElement(k, v))
 
     def to_version(self, target_version: str) -> "Plugin":
-        return self.__class__(
-            sdf_version=target_version,
-            elements=deepcopy(self.elements),
-            filename=self.filename,
-            name=self.name
-        )
+        from copy import copy, deepcopy
+        new_plugin = copy(self)
+        new_plugin.sdfversion = target_version
+        new_plugin.elements = [
+            e.to_version(target_version) if hasattr(e, "to_version") else deepcopy(e)
+            for e in self.elements
+        ]
+        return new_plugin
 
     def to_sdf(self, version: Optional[str] = None) -> ET.Element:
         el = super().to_sdf(version)
