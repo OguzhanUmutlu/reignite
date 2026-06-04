@@ -105,8 +105,8 @@ class Sensor(BaseModel):
         plugins: List["Plugin"] = None,
         pose: "Pose" = None,
         ray: "Ray" = None,
-        rfid: "Rfid" = None,
-        rfidtag: "Rfidtag" = None,
+        rfid: "Rfidtag" = None,
+        rfidtag: "Rfid" = None,
         sonar: "Sonar" = None,
         topic: str | None = "__default",
         transceiver: "Transceiver" = None,
@@ -754,7 +754,7 @@ class Sensor(BaseModel):
             _ray = None
         _c_rfid = el.find("rfid")
         if _c_rfid is not None:
-            _res = Rfid._from_sdf(_c_rfid, version)
+            _res = Rfidtag._from_sdf(_c_rfid, version)
             if isinstance(_res, SDFError):
                 return _res.extend("rfid")
             _rfid = _res
@@ -762,7 +762,7 @@ class Sensor(BaseModel):
             _rfid = None
         _c_rfidtag = el.find("rfidtag")
         if _c_rfidtag is not None:
-            _res = Rfidtag._from_sdf(_c_rfidtag, version)
+            _res = Rfid._from_sdf(_c_rfidtag, version)
             if isinstance(_res, SDFError):
                 return _res.extend("rfidtag")
             _rfidtag = _res

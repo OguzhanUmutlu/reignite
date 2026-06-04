@@ -15,7 +15,6 @@ from ..utils.version import cmp_version
 if typing.TYPE_CHECKING:
     from ..elements.frame import Frame
     from ..elements.joint_state import JointState
-    from ..elements.link import Link
     from ..elements.link_state import LinkState
     from ..elements.pose import Pose
 
@@ -130,7 +129,7 @@ class ModelState(BaseModel):
         joint_states: List["JointState"] = None,
         joints: List["ModelState.Joint"] = None,
         link_states: List["LinkState"] = None,
-        links: List["Link"] = None,
+        links: List["LinkState"] = None,
         model_states: List["ModelState"] = None,
         models: List["ModelState"] = None,
         name: str | None = "__default__",
@@ -216,7 +215,7 @@ class ModelState(BaseModel):
             self.link_states = []
         self.link_states.extend(items)
 
-    def add_link(self, *items: "Link"):
+    def add_link(self, *items: "LinkState"):
         if self.links is None:
             self.links = []
         self.links.extend(items)
@@ -235,7 +234,6 @@ class ModelState(BaseModel):
         from ..elements.frame import Frame
         from ..elements.joint_state import JointState
         from ..elements.link_state import LinkState
-        from ..elements.link import Link
         from ..elements.pose import Pose
         if self.joint_states is not None and cmp_version(target_version, "1.12") < 0:
             raise ValueError(f"'joint_states' is not supported in SDF version {target_version} (added in 1.12)")
@@ -258,7 +256,6 @@ class ModelState(BaseModel):
         from ..elements.frame import Frame
         from ..elements.joint_state import JointState
         from ..elements.link_state import LinkState
-        from ..elements.link import Link
         from ..elements.pose import Pose
         if self.sdfversion is None and version is not None:
             self.sdfversion = version
@@ -342,7 +339,6 @@ class ModelState(BaseModel):
         from ..elements.frame import Frame
         from ..elements.joint_state import JointState
         from ..elements.link_state import LinkState
-        from ..elements.link import Link
         from ..elements.pose import Pose
         _frames = []
         for c in el.findall("frame"):
@@ -374,7 +370,7 @@ class ModelState(BaseModel):
             return SDFError(f"'link_states' is not supported in SDF version {version} (added in 1.12)")
         _links = []
         for c in el.findall("link"):
-            _res = Link._from_sdf(c, version)
+            _res = LinkState._from_sdf(c, version)
             if isinstance(_res, SDFError):
                 return _res.extend("link")
             _links.append(_res)

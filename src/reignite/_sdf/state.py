@@ -188,9 +188,9 @@ class State(BaseModel):
         iterations: int | None = 0,
         joint_states: List["JointState"] = None,
         light_states: List["LightState"] = None,
-        lights: List["Light"] = None,
+        lights: List["LightState"] = None,
         model_states: List["ModelState"] = None,
-        models: List["Model"] = None,
+        models: List["ModelState"] = None,
         real_time: float | None = 0.0,
         sim_time: float | None = 0.0,
         time: float | None = 0.0,
@@ -262,7 +262,7 @@ class State(BaseModel):
             self.light_states = []
         self.light_states.extend(items)
 
-    def add_light(self, *items: "Light"):
+    def add_light(self, *items: "LightState"):
         if self.lights is None:
             self.lights = []
         self.lights.extend(items)
@@ -272,7 +272,7 @@ class State(BaseModel):
             self.model_states = []
         self.model_states.extend(items)
 
-    def add_model(self, *items: "Model"):
+    def add_model(self, *items: "ModelState"):
         if self.models is None:
             self.models = []
         self.models.extend(items)
@@ -457,7 +457,7 @@ class State(BaseModel):
             return SDFError(f"'light_states' is not supported in SDF version {version} (added in 1.12)")
         _lights = []
         for c in el.findall("light"):
-            _res = Light._from_sdf(c, version)
+            _res = LightState._from_sdf(c, version)
             if isinstance(_res, SDFError):
                 return _res.extend("light")
             _lights.append(_res)
@@ -473,7 +473,7 @@ class State(BaseModel):
             return SDFError(f"'model_states' is not supported in SDF version {version} (added in 1.12)")
         _models = []
         for c in el.findall("model"):
-            _res = Model._from_sdf(c, version)
+            _res = ModelState._from_sdf(c, version)
             if isinstance(_res, SDFError):
                 return _res.extend("model")
             _models.append(_res)

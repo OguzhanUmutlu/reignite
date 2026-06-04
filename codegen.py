@@ -218,7 +218,7 @@ def union_schema(base: dict, new: dict, version: Optional[str]):
                     base["_required_history"][BASE_VERSION] = base["_required"]
             base["_required_history"][version] = new["_required"]
 
-    for k in ("_description", "_type", "_default", "_required", "_is_include", "_ref"):
+    for k in ("_description", "_type", "_default", "_required", "_is_include", "_ref", "_include_filename"):
         if k in new and k not in base:
             base[k] = new[k]
 
@@ -277,7 +277,7 @@ def _fixup_include_refs(node: dict, schema_keys: set[str]):
             continue
         inc_fname = v.get("_include_filename")
         if inc_fname and v.get("_is_include") and "_ref" not in v:
-            if k not in schema_keys and inc_fname in schema_keys:
+            if inc_fname != k and inc_fname in schema_keys:
                 v["_ref"] = inc_fname
         _fixup_include_refs(v, schema_keys)
 
