@@ -16,7 +16,7 @@ def resolve_path(path: str | Path):
     if isinstance(path, Path):
         return path
     if path.startswith("model://"):
-        rel = path[len("model://")]
+        rel = path[len("model://"):]
         if "GZ_SIM_RESOURCE_PATH" not in os.environ:
             return path
         for p in os.environ["GZ_SIM_RESOURCE_PATH"].split(":"):
