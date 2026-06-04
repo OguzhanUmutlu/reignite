@@ -1,17 +1,17 @@
-from typing import Optional
 from ...plugin import Plugin
+
 
 @Plugin.register("GstCameraPlugin", "GstCameraPlugin")
 class GstCameraPlugin(Plugin):
     def __init__(
             self,
-            udp_host: Optional[str] = None,
-            udp_port: Optional[int] = None,
-            rtmp_location: Optional[str] = None,
-            use_basic_pipeline: Optional[bool] = None,
-            use_cuda: Optional[bool] = None,
-            image_topic: Optional[str] = None,
-            enable_topic: Optional[str] = None,
+            udp_host: str | None = None,
+            udp_port: int | None = None,
+            rtmp_location: str | None = None,
+            use_basic_pipeline: bool | None = None,
+            use_cuda: bool | None = None,
+            image_topic: str | None = None,
+            enable_topic: str | None = None,
             **kwargs
     ):
         super().__init__(

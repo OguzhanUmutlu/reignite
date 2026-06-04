@@ -1,4 +1,3 @@
-from typing import Optional
 from xml.etree import ElementTree as ET
 
 from ....utils.errors import SDFError
@@ -11,10 +10,10 @@ class GzGui(BaseModel):
             self.own = own
             self.target = target
 
-    def __init__(self, title: Optional[str] = None, delete_later: Optional[bool] = None,
-                 show_title_bar: Optional[bool] = None, resizable: Optional[bool] = None, width: Optional[float] = None,
-                 height: Optional[float] = None, z: Optional[float] = None, state: Optional[str] = None,
-                 anchor: Optional[str] = None, anchors: Optional[list[Anchor]] = None):
+    def __init__(self, title: str | None = None, delete_later: bool | None = None,
+                 show_title_bar: bool | None = None, resizable: bool | None = None, width: float | None = None,
+                 height: float | None = None, z: float | None = None, state: str | None = None,
+                 anchor: str | None = None, anchors: list[Anchor | None] = None):
         super().__init__()
         self.title = title
         self.delete_later = delete_later

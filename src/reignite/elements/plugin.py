@@ -1,8 +1,6 @@
 import os
 import xml.etree.ElementTree as ET
-from copy import deepcopy
 from pathlib import Path
-from typing import Optional
 
 from .._sdf.plugin import Plugin as _Base
 from ..utils.model import BaseModel
@@ -87,6 +85,7 @@ class ParentElement(BaseModel):
 
 import inspect
 
+
 class Plugin(_Base):
     @classmethod
     def register(cls, *names: str):
@@ -95,6 +94,7 @@ class Plugin(_Base):
                 if name and name != "None":
                     plugin_classes[name] = subclass
             return subclass
+
         return decorator
 
     def __init__(
@@ -122,7 +122,7 @@ class Plugin(_Base):
         ]
         return new_plugin
 
-    def to_sdf(self, version: Optional[str] = None) -> ET.Element:
+    def to_sdf(self, version: str | None = None) -> ET.Element:
         el = super().to_sdf(version)
 
         for item in self.elements:
@@ -158,7 +158,7 @@ class Plugin(_Base):
                     for param_name, param in sig.parameters.items():
                         if param_name in ('self', 'args', 'kwargs', 'gui_kwargs'):
                             continue
-                        
+
                         tag = next((e for e in elements if e.name == param_name), None)
                         if tag is not None:
                             if isinstance(tag, TextElement):
@@ -170,7 +170,7 @@ class Plugin(_Base):
                                 elif param.annotation is bool:
                                     val = str(val).lower() in ('true', '1', 't', 'yes')
                                 kwargs[param_name] = val
-                            
+
                     return target_cls(**kwargs)
                 except Exception:
                     pass

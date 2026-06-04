@@ -5,8 +5,8 @@ from ...plugin import Plugin
 class CameraZoomPlugin(Plugin):
     def __init__(
             self,
-            max_zoom: Optional[float] = None,
-            slew_rate: Optional[float] = None,
+            max_zoom: float | None = None,
+            slew_rate: float | None = None,
             topic: str | list[str] | None = None,
             **kwargs
     ):

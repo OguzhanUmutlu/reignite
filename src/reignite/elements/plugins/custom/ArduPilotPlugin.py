@@ -1,6 +1,7 @@
 from xml.etree import ElementTree as ET
 
 from reignite import BaseModel
+from ...joint import Joint
 from ...plugin import Plugin
 from ....utils.pose import _PoseT, _pose
 
@@ -10,25 +11,25 @@ class ArduPilotPlugin(Plugin):
     class Control(BaseModel):
         def __init__(
                 self,
-                channel=None,
-                type=None,
-                use_force=None,
-                joint_name=None,
-                cmd_topic=None,
-                multiplier=None,
-                offset=None,
-                servo_min=None,
-                servo_max=None,
-                rotor_velocity_slowdown_sim=None,
-                frequency_cutoff=None,
-                sampling_rate=None,
-                p_gain=None,
-                i_gain=None,
-                d_gain=None,
-                i_max=None,
-                i_min=None,
-                cmd_max=None,
-                cmd_min=None,
+                channel: int | None = None,
+                type: str | None = None,
+                use_force: bool | None = None,
+                joint: str | Joint | None = None,
+                cmd_topic: str | None = None,
+                multiplier: float | None = None,
+                offset: float | None = None,
+                servo_min: float | None = None,
+                servo_max: float | None = None,
+                rotor_velocity_slowdown_sim: float | None = None,
+                frequency_cutoff: float | None = None,
+                sampling_rate: float | None = None,
+                p_gain: float | None = None,
+                i_gain: float | None = None,
+                d_gain: float | None = None,
+                i_max: float | None = None,
+                i_min: float | None = None,
+                cmd_max: float | None = None,
+                cmd_min: float | None = None,
         ):
             """
             Defaults:
@@ -52,7 +53,9 @@ class ArduPilotPlugin(Plugin):
             self.channel = channel
             self.type = type
             self.use_force = use_force
-            self.joint_name = joint_name
+            if isinstance(joint, Joint):
+                joint = joint.name
+            self.joint_name = joint
             self.cmd_topic = cmd_topic
             self.multiplier = multiplier
             self.offset = offset
@@ -93,32 +96,37 @@ class ArduPilotPlugin(Plugin):
             cmd_min = el.find("cmd_min")
             return cls(
                 channel=int(channel.text) if channel is not None and channel.text is not None else None,
-                type=_type.text if _type is not None and _type.text is not None else "VELOCITY",
+                type=_type.text if _type is not None and _type.text is not None else None,
                 use_force=use_force.text.lower() == "true" if use_force is not None and use_force.text is not None else True,
-                joint_name=joint_name.text if joint_name is not None and joint_name.text is not None else None,
+                joint=joint_name.text if joint_name is not None and joint_name.text is not None else None,
                 cmd_topic=cmd_topic.text if cmd_topic is not None and cmd_topic.text is not None else None,
-                multiplier=float(multiplier.text) if multiplier is not None and multiplier.text is not None else 1.0,
-                offset=float(offset.text) if offset is not None and offset.text is not None else 0.0,
-                servo_min=float(servo_min.text) if servo_min is not None and servo_min.text is not None else 1000.0,
-                servo_max=float(servo_max.text) if servo_max is not None and servo_max.text is not None else 2000.0,
+                multiplier=float(multiplier.text) if multiplier is not None and multiplier.text is not None else None,
+                offset=float(offset.text) if offset is not None and offset.text is not None else None,
+                servo_min=float(servo_min.text) if servo_min is not None and servo_min.text is not None else None,
+                servo_max=float(servo_max.text) if servo_max is not None and servo_max.text is not None else None,
                 rotor_velocity_slowdown_sim=float(
-                    rotor_velocity_slowdown_sim.text) if rotor_velocity_slowdown_sim is not None and rotor_velocity_slowdown_sim.text is not None else 1.0,
+                    rotor_velocity_slowdown_sim.text) if rotor_velocity_slowdown_sim is not None and rotor_velocity_slowdown_sim.text is not None else None,
                 frequency_cutoff=float(
-                    frequency_cutoff.text) if frequency_cutoff is not None and frequency_cutoff.text is not None else 5.0,
+                    frequency_cutoff.text) if frequency_cutoff is not None and frequency_cutoff.text is not None else None,
                 sampling_rate=float(
-                    sampling_rate.text) if sampling_rate is not None and sampling_rate.text is not None else 0.2,
-                p_gain=float(p_gain.text) if p_gain is not None and p_gain.text is not None else 0.1,
-                i_gain=float(i_gain.text) if i_gain is not None and i_gain.text is not None else 0.0,
-                d_gain=float(d_gain.text) if d_gain is not None and d_gain.text is not None else 0.0,
-                i_max=float(i_max.text) if i_max is not None and i_max.text is not None else 0.0,
-                i_min=float(i_min.text) if i_min is not None and i_min.text is not None else 0.0,
-                cmd_max=float(cmd_max.text) if cmd_max is not None and cmd_max.text is not None else 1.0,
-                cmd_min=float(cmd_min.text) if cmd_min is not None and cmd_min.text is not None else -1.0
+                    sampling_rate.text) if sampling_rate is not None and sampling_rate.text is not None else None,
+                p_gain=float(p_gain.text) if p_gain is not None and p_gain.text is not None else None,
+                i_gain=float(i_gain.text) if i_gain is not None and i_gain.text is not None else None,
+                d_gain=float(d_gain.text) if d_gain is not None and d_gain.text is not None else None,
+                i_max=float(i_max.text) if i_max is not None and i_max.text is not None else None,
+                i_min=float(i_min.text) if i_min is not None and i_min.text is not None else None,
+                cmd_max=float(cmd_max.text) if cmd_max is not None and cmd_max.text is not None else None,
+                cmd_min=float(cmd_min.text) if cmd_min is not None and cmd_min.text is not None else None
             )
 
-        def to_sdf(self, version: str = None) -> ET.Element:
+        def to_sdf(self, version: str | None = None) -> ET.Element:
             el = ET.Element("control")
             for key, value in self.__dict__.items():
+                if key == "joint":
+                    child = ET.Element("jointName")
+                    child.text = str(value)
+                    el.append(child)
+                    continue
                 if key == "channel" and value is not None:
                     child = ET.Element("channel")
                     child.text = str(value)
@@ -150,7 +158,7 @@ class ArduPilotPlugin(Plugin):
                 topic=topic_el.text if topic_el is not None and topic_el.text is not None else None
             )
 
-        def to_sdf(self, version: str = None) -> ET.Element:
+        def to_sdf(self, version: str | None = None) -> ET.Element:
             el = ET.Element("sensor")
             for key, value in self.__dict__.items():
                 if value is not None:
@@ -164,8 +172,8 @@ class ArduPilotPlugin(Plugin):
 
     def __init__(
             self,
-            pose_transform: _PoseT = None,
-            gazebo_to_ned: _PoseT = None,
+            pose_transform: _PoseT | None = None,
+            gazebo_to_ned: _PoseT | None = None,
             connection_timeout_max_count=None,
             lock_step=None,
             no_time_sync=None,
@@ -174,8 +182,8 @@ class ArduPilotPlugin(Plugin):
             anemometer=None,
             fdm_addr=None,
             fdm_port_in=None,
-            controls: list[Control] = None,
-            sensors: list[Sensor] = None
+            controls: list[Control] | None = None,
+            sensors: list[Sensor] | None = None
     ):
         """
         Defaults:
@@ -190,33 +198,19 @@ class ArduPilotPlugin(Plugin):
         fdm_addr: "127.0.0.1"
         fdm_port_in: 9002
         """
-        self.pose_transform = pose_transform
-        self.gazebo_to_ned = gazebo_to_ned
-        self.connection_timeout_max_count = connection_timeout_max_count
-        self.lock_step = lock_step
-        self.no_time_sync = no_time_sync
-        self.have_32_channels = have_32_channels
-        self.imu_name = imu_name
-        self.anemometer = anemometer
-        self.fdm_addr = fdm_addr
-        self.fdm_port_in = fdm_port_in
-        self.controls = controls or []
-        self.sensors = sensors or []
-
         super().__init__(
             sdf_version=None,
             filename="ArduPilotPlugin",
             name="ArduPilotPlugin",
-            elements=[*self.controls, *self.sensors],
-            modelXYZToAirplaneXForwardZDown=_pose(
-                self.pose_transform).to_sdf() if self.pose_transform is not None else None,
-            gazeboXYZToNED=_pose(self.gazebo_to_ned).to_sdf() if self.gazebo_to_ned is not None else None,
-            connectionTimeoutMaxCount=self.connection_timeout_max_count,
-            lock_step=self.lock_step,
-            no_time_sync=self.no_time_sync,
-            have_32_channels=self.have_32_channels,
-            imuName=self.imu_name,
-            anemometer=self.anemometer,
-            fdm_addr=self.fdm_addr,
-            fdm_port_in=self.fdm_port_in,
+            elements=[*(controls or []), *(sensors or [])],
+            modelXYZToAirplaneXForwardZDown=_pose(pose_transform).to_sdf() if pose_transform is not None else None,
+            gazeboXYZToNED=_pose(gazebo_to_ned).to_sdf() if gazebo_to_ned is not None else None,
+            connectionTimeoutMaxCount=connection_timeout_max_count,
+            lock_step=lock_step,
+            no_time_sync=no_time_sync,
+            have_32_channels=have_32_channels,
+            imuName=imu_name,
+            anemometer=anemometer,
+            fdm_addr=fdm_addr,
+            fdm_port_in=fdm_port_in,
         )

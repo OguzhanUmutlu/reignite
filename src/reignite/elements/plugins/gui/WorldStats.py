@@ -1,5 +1,3 @@
-from typing import Optional
-
 from .GzGui import GzGui
 from ...plugin import Plugin
 
@@ -11,7 +9,7 @@ class WorldStatsPlugin(Plugin):
                  real_time: bool = True,
                  real_time_factor: bool = True,
                  iterations: bool = True,
-                 topic: Optional[str] = None,
+                 topic: str | None = None,
 
                  name="World stats", **gui_kwargs
                  ):

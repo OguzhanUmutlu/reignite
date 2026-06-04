@@ -1,13 +1,13 @@
-from typing import Optional
 from ...plugin import Plugin
+
 
 @Plugin.register("ParachutePlugin", "ParachutePlugin")
 class ParachutePlugin(Plugin):
     def __init__(
             self,
-            parent_link: Optional[str] = None,
-            child_model: Optional[str] = None,
-            child_link: Optional[str] = None,
+            parent_link: str | None = None,
+            child_model: str | None = None,
+            child_link: str | None = None,
             child_pose: list[float] | str | dict | None = None,
             cmd_topic: str | list[str] | None = None,
             **kwargs

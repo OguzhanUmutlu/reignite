@@ -1,5 +1,3 @@
-from typing import Optional
-
 from .GzGui import GzGui
 from ...plugin import Plugin
 
@@ -11,7 +9,7 @@ class WorldControlPlugin(Plugin):
                  step: bool = True,
                  start_paused: bool = False,
                  use_event: bool = True,
-                 stats_topic: Optional[str] = None,
+                 stats_topic: str | None = None,
 
                  name="World control", **gui_kwargs
                  ):
