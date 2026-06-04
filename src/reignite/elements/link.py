@@ -11,12 +11,12 @@ class Link(_Link):
     def _find_element(self, search: str):
         if not search:
             return None
-        search, rest = Link.__search(search)
+        search, rest = Link._search(search)
         if self.sensor is not None and self.sensor.name == search:
             return self.sensor.find_element(rest)
-        return Link.__find_help(self.batteries, search, rest) \
-            or Link.__find_help(self.collisions, search, rest) \
-            or Link.__find_help(self.frames, search, rest) \
-            or Link.__find_help(self.lights, search, rest) \
-            or Link.__find_help(self.particle_emitters, search, rest) \
-            or Link.__find_help(self.visuals, search, rest)
+        return Link._find_help(self.batteries, search, rest) \
+            or Link._find_help(self.collisions, search, rest) \
+            or Link._find_help(self.frames, search, rest) \
+            or Link._find_help(self.lights, search, rest) \
+            or Link._find_help(self.particle_emitters, search, rest) \
+            or Link._find_help(self.visuals, search, rest)

@@ -5,5 +5,5 @@ class Inertial(_Inertial):
     def _find_element(self, search: str):
         if not search:
             return None
-        search, rest = Inertial.__search(search)
-        return Inertial.__find_help(self.frames, search, rest)
+        search, rest = Inertial._search(search)
+        return Inertial._find_help(self.frames, search, rest)

@@ -42,12 +42,12 @@ class BaseModel:
         return result
 
     @staticmethod
-    def __find_help(s, search: str, rest: str):
+    def _find_help(s, search: str, rest: str):
         if s.name == search:
             return s.find_element(rest)
         return None
 
     @staticmethod
-    def __search(search: str):
+    def _search(search: str):
         spl = search.split("::")
         return spl[0], "::".join(spl[1:])

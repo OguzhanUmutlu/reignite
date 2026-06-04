@@ -6,15 +6,15 @@ class Gui(_Gui):
         def _find_element(self, search: str):
             if not search:
                 return None
-            search, rest = Gui.Camera.__search(search)
+            search, rest = Gui.Camera._search(search)
             if self.track_visual is not None and self.track_visual.name == search:
                 return self.track_visual.find_element(rest)
-            return Gui.Camera.__find_help(self.frames, search, rest)
+            return Gui.Camera._find_help(self.frames, search, rest)
 
     def _find_element(self, search: str):
         if not search:
             return None
-        search, rest = Gui.__search(search)
+        search, rest = Gui._search(search)
         if self.camera is not None and self.camera.name == search:
             return self.camera.find_element(rest)
-        return Gui.__find_help(self.plugins, search, rest)
+        return Gui._find_help(self.plugins, search, rest)

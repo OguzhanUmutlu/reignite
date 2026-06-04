@@ -5,5 +5,5 @@ class AudioSource(_AudioSource):
     def _find_element(self, search: str):
         if not search:
             return None
-        search, rest = AudioSource.__search(search)
-        return AudioSource.__find_help(self.frames, search, rest)
+        search, rest = AudioSource._search(search)
+        return AudioSource._find_help(self.frames, search, rest)
