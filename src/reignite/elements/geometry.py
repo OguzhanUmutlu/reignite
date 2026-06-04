@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from . import Heightmap
+from .heightmap import Heightmap
 from .box import Box
 from .capsule import Capsule
 from .cone import Cone
