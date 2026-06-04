@@ -45,6 +45,8 @@ class BaseModel:
     def _find_help(k, search: str, rest: str):
         for s in k:
             if s.name == search:
+                if not rest:
+                    return s
                 return s.find_element(rest)
         return None
 
