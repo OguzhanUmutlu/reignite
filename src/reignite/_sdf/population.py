@@ -32,16 +32,16 @@ class Population(BaseModel):
         def __init__(
             self,
             sdf_version: str | None = None,
-            cols: int | None = 1,
-            rows: int | None = 1,
+            cols: int | None = None,
+            rows: int | None = None,
             step: _Vector3T | None = None,
-            type: str | None = "random"
+            type: str | None = None
         ):
             super().__init__(sdf_version)
-            self.cols = cols if cols is not None else 1
-            self.rows = rows if rows is not None else 1
-            self.step = _vector3("0.5 0.5 0") if step is None else _vector3(step)
-            self.type = type if type is not None else "random"
+            self.cols = cols
+            self.rows = rows
+            self.step = _vector3(step) if step is not None else None
+            self.type = type
 
         def to_version(self, target_version: str) -> "Population.Distribution":
             kwargs: dict = {"sdf_version": target_version, "cols": self.cols, "rows": self.rows, "step": self.step, "type": self.type}
@@ -118,7 +118,7 @@ class Population(BaseModel):
         cylinder: "Cylinder" = None,
         distribution: "Population.Distribution" = None,
         frames: List["Frame"] = None,
-        model_count: int | None = 1,
+        model_count: int | None = None,
         models: List["Model"] = None,
         name: str | None = "__default__",
         pose: "Pose" = None
@@ -128,9 +128,9 @@ class Population(BaseModel):
         self.cylinder = cylinder
         self.distribution = distribution
         self.frames = frames or []
-        self.model_count = model_count if model_count is not None else 1
+        self.model_count = model_count
         self.models = models or []
-        self.name = name if name is not None else "__default__"
+        self.name = name
         self.pose = pose
         if self.box is not None and hasattr(self.box, 'to_version'):
             if getattr(self.box, 'sdfversion', None) is None:

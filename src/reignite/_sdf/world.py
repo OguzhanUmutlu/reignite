@@ -40,9 +40,9 @@ def _parse_vector3(raw: str) -> _Vector3T | SDFError:
 # noinspection PyUnusedImports
 class World(BaseModel):
     class Audio(BaseModel):
-        def __init__(self, sdf_version: str | None = None, device: str | None = "default"):
+        def __init__(self, sdf_version: str | None = None, device: str | None = None):
             super().__init__(sdf_version)
-            self.device = device if device is not None else "default"
+            self.device = device
 
         def to_version(self, target_version: str) -> "World.Audio":
             kwargs: dict = {"sdf_version": target_version, "device": self.device}
@@ -83,18 +83,18 @@ class World(BaseModel):
             placement_frame: str | None = "",
             plugins: List["Plugin"] = None,
             pose: "Pose" = None,
-            static: bool | None = False,
-            uri: str | None = "__default__"
+            static: bool | None = None,
+            uri: str | None = None
         ):
             super().__init__(sdf_version)
-            self.merge = merge if merge is not None else False
+            self.merge = merge
             self.model_states = model_states or []
-            self.name = name if name is not None else ""
-            self.placement_frame = placement_frame if placement_frame is not None else ""
+            self.name = name
+            self.placement_frame = placement_frame
             self.plugins = plugins or []
             self.pose = pose
-            self.static = static if static is not None else False
-            self.uri = uri if uri is not None else "__default__"
+            self.static = static
+            self.uri = uri
             for _i, _c in enumerate(self.model_states):
                 if not hasattr(_c, 'to_version'): continue
                 if getattr(_c, 'sdfversion', None) is None:
@@ -281,7 +281,7 @@ class World(BaseModel):
     class Wind(BaseModel):
         def __init__(self, sdf_version: str | None = None, linear_velocity: _Vector3T | None = None):
             super().__init__(sdf_version)
-            self.linear_velocity = _vector3("0 0 0") if linear_velocity is None else _vector3(linear_velocity)
+            self.linear_velocity = _vector3(linear_velocity) if linear_velocity is not None else None
 
         def to_version(self, target_version: str) -> "World.Wind":
             kwargs: dict = {"sdf_version": target_version, "linear_velocity": self.linear_velocity}
@@ -343,14 +343,14 @@ class World(BaseModel):
         self.atmosphere = atmosphere
         self.audio = audio
         self.frames = frames or []
-        self.gravity = _vector3("0 0 -9.8") if gravity is None else _vector3(gravity)
+        self.gravity = _vector3(gravity) if gravity is not None else None
         self.gui = gui
         self.includes = includes or []
         self.joints = joints or []
         self.lights = lights or []
-        self.magnetic_field = _vector3("5.5645e-6 22.8758e-6 -42.3884e-6") if magnetic_field is None else _vector3(magnetic_field)
+        self.magnetic_field = _vector3(magnetic_field) if magnetic_field is not None else None
         self.models = models or []
-        self.name = name if name is not None else "__default__"
+        self.name = name
         self.physics = physics
         self.plugins = plugins or []
         self.populations = populations or []

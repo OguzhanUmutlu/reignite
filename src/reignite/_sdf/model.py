@@ -39,18 +39,18 @@ class Model(BaseModel):
             placement_frame: str | None = "",
             plugins: List["Plugin"] = None,
             pose: "Pose" = None,
-            static: bool | None = False,
-            uri: str | None = "__default__"
+            static: bool | None = None,
+            uri: str | None = None
         ):
             super().__init__(sdf_version)
-            self.merge = merge if merge is not None else False
+            self.merge = merge
             self.model_states = model_states or []
-            self.name = name if name is not None else ""
-            self.placement_frame = placement_frame if placement_frame is not None else ""
+            self.name = name
+            self.placement_frame = placement_frame
             self.plugins = plugins or []
             self.pose = pose
-            self.static = static if static is not None else False
-            self.uri = uri if uri is not None else "__default__"
+            self.static = static
+            self.uri = uri
             for _i, _c in enumerate(self.model_states):
                 if not hasattr(_c, 'to_version'): continue
                 if getattr(_c, 'sdfversion', None) is None:
@@ -221,7 +221,7 @@ class Model(BaseModel):
     class Origin(BaseModel):
         def __init__(self, sdf_version: str | None = None, pose: _PoseT | None = None):
             super().__init__(sdf_version)
-            self.pose = _pose("0 0 0 0 0 0") if pose is None else _pose(pose)
+            self.pose = _pose(pose) if pose is not None else None
 
         def to_version(self, target_version: str) -> "Model.Origin":
             kwargs: dict = {"sdf_version": target_version, "pose": self.pose}
@@ -259,9 +259,9 @@ class Model(BaseModel):
     def __init__(
         self,
         sdf_version: str | None = None,
-        allow_auto_disable: bool | None = True,
+        allow_auto_disable: bool | None = None,
         canonical_link: str | None = "",
-        enable_wind: bool | None = False,
+        enable_wind: bool | None = None,
         frames: List["Frame"] = None,
         grippers: List["Gripper"] = None,
         includes: List["Model.Include"] = None,
@@ -274,13 +274,13 @@ class Model(BaseModel):
         placement_frame: str | None = "",
         plugins: List["Plugin"] = None,
         pose: "Pose" = None,
-        self_collide: bool | None = False,
+        self_collide: bool | None = None,
         static: bool | None = False
     ):
         super().__init__(sdf_version)
-        self.allow_auto_disable = allow_auto_disable if allow_auto_disable is not None else True
-        self.canonical_link = canonical_link if canonical_link is not None else ""
-        self.enable_wind = enable_wind if enable_wind is not None else False
+        self.allow_auto_disable = allow_auto_disable
+        self.canonical_link = canonical_link
+        self.enable_wind = enable_wind
         self.frames = frames or []
         self.grippers = grippers or []
         self.includes = includes or []
@@ -288,13 +288,13 @@ class Model(BaseModel):
         self.links = links or []
         self.model_states = model_states or []
         self.models = models or []
-        self.name = name if name is not None else "__default__"
+        self.name = name
         self.origin = origin
-        self.placement_frame = placement_frame if placement_frame is not None else ""
+        self.placement_frame = placement_frame
         self.plugins = plugins or []
         self.pose = pose
-        self.self_collide = self_collide if self_collide is not None else False
-        self.static = static if static is not None else False
+        self.self_collide = self_collide
+        self.static = static
         for _i, _c in enumerate(self.frames):
             if not hasattr(_c, 'to_version'): continue
             if getattr(_c, 'sdfversion', None) is None:

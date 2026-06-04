@@ -14,24 +14,24 @@ class SphericalCoordinates(BaseModel):
     def __init__(
         self,
         sdf_version: str | None = None,
-        elevation: float | None = 0.0,
-        heading_deg: float | None = 0.0,
-        latitude_deg: float | None = 0.0,
-        longitude_deg: float | None = 0.0,
-        surface_axis_equatorial: float | None = 0.0,
-        surface_axis_polar: float | None = 0.0,
-        surface_model: str | None = "EARTH_WGS84",
-        world_frame_orientation: str | None = "ENU"
+        elevation: float | None = None,
+        heading_deg: float | None = None,
+        latitude_deg: float | None = None,
+        longitude_deg: float | None = None,
+        surface_axis_equatorial: float | None = None,
+        surface_axis_polar: float | None = None,
+        surface_model: str | None = None,
+        world_frame_orientation: str | None = None
     ):
         super().__init__(sdf_version)
-        self.elevation = elevation if elevation is not None else 0.0
-        self.heading_deg = heading_deg if heading_deg is not None else 0.0
-        self.latitude_deg = latitude_deg if latitude_deg is not None else 0.0
-        self.longitude_deg = longitude_deg if longitude_deg is not None else 0.0
-        self.surface_axis_equatorial = surface_axis_equatorial if surface_axis_equatorial is not None else 0.0
-        self.surface_axis_polar = surface_axis_polar if surface_axis_polar is not None else 0.0
-        self.surface_model = surface_model if surface_model is not None else "EARTH_WGS84"
-        self.world_frame_orientation = world_frame_orientation if world_frame_orientation is not None else "ENU"
+        self.elevation = elevation
+        self.heading_deg = heading_deg
+        self.latitude_deg = latitude_deg
+        self.longitude_deg = longitude_deg
+        self.surface_axis_equatorial = surface_axis_equatorial
+        self.surface_axis_polar = surface_axis_polar
+        self.surface_model = surface_model
+        self.world_frame_orientation = world_frame_orientation
 
     def to_version(self, target_version: str) -> "SphericalCoordinates":
         if self.surface_axis_equatorial is not None and cmp_version(target_version, "1.10") < 0:

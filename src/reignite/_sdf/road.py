@@ -30,13 +30,13 @@ class Road(BaseModel):
         material: "Material" = None,
         name: str | None = "__default__",
         points: List[_Vector3T] | None = None,
-        width: float | None = 1.0
+        width: float | None = None
     ):
         super().__init__(sdf_version)
         self.material = material
-        self.name = name if name is not None else "__default__"
+        self.name = name
         self.points = list(map(_vector3, points)) if points is not None else []
-        self.width = width if width is not None else 1.0
+        self.width = width
         if self.material is not None and hasattr(self.material, 'to_version'):
             if getattr(self.material, 'sdfversion', None) is None:
                 self.material.sdfversion = self.sdfversion

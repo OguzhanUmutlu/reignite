@@ -18,7 +18,7 @@ def _parse_vector3(raw: str) -> _Vector3T | SDFError:
 class Ellipsoid(BaseModel):
     def __init__(self, sdf_version: str | None = None, radii: _Vector3T | None = None):
         super().__init__(sdf_version)
-        self.radii = _vector3("1 1 1") if radii is None else _vector3(radii)
+        self.radii = _vector3(radii) if radii is not None else None
 
     def to_version(self, target_version: str) -> "Ellipsoid":
         kwargs: dict = {"sdf_version": target_version, "radii": self.radii}

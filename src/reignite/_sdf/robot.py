@@ -39,9 +39,9 @@ class Robot(BaseModel):
         self.grippers = grippers or []
         self.joints = joints or []
         self.links = links or []
-        self.name = name if name is not None else "__default__"
+        self.name = name
         self.plugins = plugins or []
-        self.pose = _pose("0 0 0 0 0 0") if pose is None else _pose(pose)
+        self.pose = _pose(pose) if pose is not None else None
         for _i, _c in enumerate(self.grippers):
             if not hasattr(_c, 'to_version'): continue
             if getattr(_c, 'sdfversion', None) is None:

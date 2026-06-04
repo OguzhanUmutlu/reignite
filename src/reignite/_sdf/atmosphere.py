@@ -13,16 +13,16 @@ class Atmosphere(BaseModel):
     def __init__(
         self,
         sdf_version: str | None = None,
-        pressure: float | None = 101325,
-        temperature: float | None = 288.15,
-        temperature_gradient: float | None = -0.0065,
+        pressure: float | None = None,
+        temperature: float | None = None,
+        temperature_gradient: float | None = None,
         type: str | None = "adiabatic"
     ):
         super().__init__(sdf_version)
-        self.pressure = pressure if pressure is not None else 101325
-        self.temperature = temperature if temperature is not None else 288.15
-        self.temperature_gradient = temperature_gradient if temperature_gradient is not None else -0.0065
-        self.type = type if type is not None else "adiabatic"
+        self.pressure = pressure
+        self.temperature = temperature
+        self.temperature_gradient = temperature_gradient
+        self.type = type
 
     def to_version(self, target_version: str) -> "Atmosphere":
         kwargs: dict = {"sdf_version": target_version, "pressure": self.pressure, "temperature": self.temperature, "temperature_gradient": self.temperature_gradient, "type": self.type}

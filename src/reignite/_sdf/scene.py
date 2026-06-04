@@ -26,8 +26,8 @@ class Scene(BaseModel):
             rgba: _ColorT | None = None
         ):
             super().__init__(sdf_version)
-            self.ambient = _color("0.0 0.0 0.0 1.0") if ambient is None else _color(ambient)
-            self.rgba = _color("0.0 0.0 0.0 1.0") if rgba is None else _color(rgba)
+            self.ambient = _color(ambient) if ambient is not None else None
+            self.rgba = _color(rgba) if rgba is not None else None
 
         def to_version(self, target_version: str) -> "Scene.Ambient":
             if self.rgba is not None and cmp_version(target_version, "1.2") >= 0:
@@ -71,7 +71,7 @@ class Scene(BaseModel):
         class Sky(BaseModel):
             def __init__(self, sdf_version: str | None = None, material: str | None = "Gazebo/CloudySky"):
                 super().__init__(sdf_version)
-                self.material = material if material is not None else "Gazebo/CloudySky"
+                self.material = material
 
             def to_version(self, target_version: str) -> "Scene.Background.Sky":
                 kwargs: dict = {"sdf_version": target_version, "material": self.material}
@@ -101,7 +101,7 @@ class Scene(BaseModel):
             sky: "Scene.Background.Sky" = None
         ):
             super().__init__(sdf_version)
-            self.rgba = _color(".7 .7 .7 1") if rgba is None else _color(rgba)
+            self.rgba = _color(rgba) if rgba is not None else None
             self.sky = sky
             if self.sky is not None and hasattr(self.sky, 'to_version'):
                 if getattr(self.sky, 'sdfversion', None) is None:
@@ -171,12 +171,12 @@ class Scene(BaseModel):
             type: str | None = "linear"
         ):
             super().__init__(sdf_version)
-            self.color = _color("1 1 1 1") if color is None else _color(color)
-            self.density = density if density is not None else 1.0
-            self.end = end if end is not None else 100.0
-            self.rgba = _color("1 1 1 1") if rgba is None else _color(rgba)
-            self.start = start if start is not None else 1.0
-            self.type = type if type is not None else "linear"
+            self.color = _color(color) if color is not None else None
+            self.density = density
+            self.end = end
+            self.rgba = _color(rgba) if rgba is not None else None
+            self.start = start
+            self.type = type
 
         def to_version(self, target_version: str) -> "Scene.Fog":
             if self.color is not None and cmp_version(target_version, "1.2") < 0:
@@ -263,11 +263,11 @@ class Scene(BaseModel):
             self,
             sdf_version: str | None = None,
             enabled: bool | None = True,
-            grid: bool | None = True
+            grid: bool | None = None
         ):
             super().__init__(sdf_version)
-            self.enabled = enabled if enabled is not None else True
-            self.grid = grid if grid is not None else True
+            self.enabled = enabled
+            self.grid = grid
 
         def to_version(self, target_version: str) -> "Scene.Grid":
             if self.enabled is not None and cmp_version(target_version, "1.2") >= 0:
@@ -313,17 +313,17 @@ class Scene(BaseModel):
                 self,
                 sdf_version: str | None = None,
                 ambient: _ColorT | None = None,
-                direction: float | None = 0.0,
-                humidity: float | None = 0.5,
-                mean_size: float | None = 0.5,
-                speed: float | None = 0.6
+                direction: float | None = None,
+                humidity: float | None = None,
+                mean_size: float | None = None,
+                speed: float | None = None
             ):
                 super().__init__(sdf_version)
-                self.ambient = _color(".8 .8 .8 1") if ambient is None else _color(ambient)
-                self.direction = direction if direction is not None else 0.0
-                self.humidity = humidity if humidity is not None else 0.5
-                self.mean_size = mean_size if mean_size is not None else 0.5
-                self.speed = speed if speed is not None else 0.6
+                self.ambient = _color(ambient) if ambient is not None else None
+                self.direction = direction
+                self.humidity = humidity
+                self.mean_size = mean_size
+                self.speed = speed
 
             def to_version(self, target_version: str) -> "Scene.SceneSky.Clouds":
                 kwargs: dict = {"sdf_version": target_version, "ambient": self.ambient, "direction": self.direction, "humidity": self.humidity, "mean_size": self.mean_size, "speed": self.speed}
@@ -411,16 +411,16 @@ class Scene(BaseModel):
             sdf_version: str | None = None,
             clouds: "Scene.SceneSky.Clouds" = None,
             cubemap_uri: str | None = "",
-            sunrise: float | None = 6.0,
-            sunset: float | None = 20.0,
-            time: float | None = 10.0
+            sunrise: float | None = None,
+            sunset: float | None = None,
+            time: float | None = None
         ):
             super().__init__(sdf_version)
             self.clouds = clouds
-            self.cubemap_uri = cubemap_uri if cubemap_uri is not None else ""
-            self.sunrise = sunrise if sunrise is not None else 6.0
-            self.sunset = sunset if sunset is not None else 20.0
-            self.time = time if time is not None else 10.0
+            self.cubemap_uri = cubemap_uri
+            self.sunrise = sunrise
+            self.sunset = sunset
+            self.time = time
             if self.clouds is not None and hasattr(self.clouds, 'to_version'):
                 if getattr(self.clouds, 'sdfversion', None) is None:
                     self.clouds.sdfversion = self.sdfversion
@@ -520,11 +520,11 @@ class Scene(BaseModel):
             self,
             sdf_version: str | None = None,
             enabled: bool | None = True,
-            shadows: bool | None = True
+            shadows: bool | None = None
         ):
             super().__init__(sdf_version)
-            self.enabled = enabled if enabled is not None else True
-            self.shadows = shadows if shadows is not None else True
+            self.enabled = enabled
+            self.shadows = shadows
 
         def to_version(self, target_version: str) -> "Scene.Shadows":
             if self.enabled is not None and cmp_version(target_version, "1.2") >= 0:
@@ -571,7 +571,7 @@ class Scene(BaseModel):
         background: "Scene.Background" = None,
         fog: "Scene.Fog" = None,
         grid: "Scene.Grid" = None,
-        origin_visual: bool | None = True,
+        origin_visual: bool | None = None,
         shadows: "Scene.Shadows" = None,
         sky: "Scene.SceneSky" = None
     ):
@@ -580,7 +580,7 @@ class Scene(BaseModel):
         self.background = background
         self.fog = fog
         self.grid = grid
-        self.origin_visual = origin_visual if origin_visual is not None else True
+        self.origin_visual = origin_visual
         self.shadows = shadows
         self.sky = sky
         if self.ambient is not None and hasattr(self.ambient, 'to_version'):

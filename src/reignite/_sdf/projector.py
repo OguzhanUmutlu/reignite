@@ -22,26 +22,26 @@ class Projector(BaseModel):
     def __init__(
         self,
         sdf_version: str | None = None,
-        far_clip: float | None = 10.0,
-        fov: float | None = 0.785,
+        far_clip: float | None = None,
+        fov: float | None = None,
         frames: List["Frame"] = None,
         name: str | None = "__default__",
-        near_clip: float | None = 0.1,
+        near_clip: float | None = None,
         plugins: List["Plugin"] = None,
         pose: "Pose" = None,
-        texture: str | None = "__default__",
-        visibility_flags: int | None = 4294967295
+        texture: str | None = None,
+        visibility_flags: int | None = None
     ):
         super().__init__(sdf_version)
-        self.far_clip = far_clip if far_clip is not None else 10.0
-        self.fov = fov if fov is not None else 0.785
+        self.far_clip = far_clip
+        self.fov = fov
         self.frames = frames or []
-        self.name = name if name is not None else "__default__"
-        self.near_clip = near_clip if near_clip is not None else 0.1
+        self.name = name
+        self.near_clip = near_clip
         self.plugins = plugins or []
         self.pose = pose
-        self.texture = texture if texture is not None else "__default__"
-        self.visibility_flags = visibility_flags if visibility_flags is not None else 4294967295
+        self.texture = texture
+        self.visibility_flags = visibility_flags
         for _i, _c in enumerate(self.frames):
             if not hasattr(_c, 'to_version'): continue
             if getattr(_c, 'sdfversion', None) is None:

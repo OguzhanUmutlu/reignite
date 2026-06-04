@@ -14,12 +14,12 @@ class JointState(BaseModel):
         def __init__(
             self,
             sdf_version: str | None = None,
-            angle: float | None = 0,
+            angle: float | None = None,
             axis: int | None = 0
         ):
             super().__init__(sdf_version)
-            self.angle = angle if angle is not None else 0
-            self.axis = axis if axis is not None else 0
+            self.angle = angle
+            self.axis = axis
 
         def to_version(self, target_version: str) -> "JointState.Angle":
             kwargs: dict = {"sdf_version": target_version, "angle": self.angle, "axis": self.axis}
@@ -53,12 +53,12 @@ class JointState(BaseModel):
             def __init__(
                 self,
                 sdf_version: str | None = None,
-                acceleration: float | None = 0,
+                acceleration: float | None = None,
                 degrees: bool | None = False
             ):
                 super().__init__(sdf_version)
-                self.acceleration = acceleration if acceleration is not None else 0
-                self.degrees = degrees if degrees is not None else False
+                self.acceleration = acceleration
+                self.degrees = degrees
 
             def to_version(self, target_version: str) -> "JointState.Axis2State.Acceleration":
                 kwargs: dict = {"sdf_version": target_version, "acceleration": self.acceleration, "degrees": self.degrees}
@@ -92,11 +92,11 @@ class JointState(BaseModel):
                 self,
                 sdf_version: str | None = None,
                 degrees: bool | None = False,
-                position: float | None = 0
+                position: float | None = None
             ):
                 super().__init__(sdf_version)
-                self.degrees = degrees if degrees is not None else False
-                self.position = position if position is not None else 0
+                self.degrees = degrees
+                self.position = position
 
             def to_version(self, target_version: str) -> "JointState.Axis2State.Position":
                 kwargs: dict = {"sdf_version": target_version, "degrees": self.degrees, "position": self.position}
@@ -130,11 +130,11 @@ class JointState(BaseModel):
                 self,
                 sdf_version: str | None = None,
                 degrees: bool | None = False,
-                velocity: float | None = 0
+                velocity: float | None = None
             ):
                 super().__init__(sdf_version)
-                self.degrees = degrees if degrees is not None else False
-                self.velocity = velocity if velocity is not None else 0
+                self.degrees = degrees
+                self.velocity = velocity
 
             def to_version(self, target_version: str) -> "JointState.Axis2State.Velocity":
                 kwargs: dict = {"sdf_version": target_version, "degrees": self.degrees, "velocity": self.velocity}
@@ -167,13 +167,13 @@ class JointState(BaseModel):
             self,
             sdf_version: str | None = None,
             acceleration: "JointState.Axis2State.Acceleration" = None,
-            effort: float | None = 0,
+            effort: float | None = None,
             position: "JointState.Axis2State.Position" = None,
             velocity: "JointState.Axis2State.Velocity" = None
         ):
             super().__init__(sdf_version)
             self.acceleration = acceleration
-            self.effort = effort if effort is not None else 0
+            self.effort = effort
             self.position = position
             self.velocity = velocity
             if self.acceleration is not None and hasattr(self.acceleration, 'to_version'):
@@ -274,13 +274,13 @@ class JointState(BaseModel):
             self,
             sdf_version: str | None = None,
             acceleration: "Acceleration" = None,
-            effort: float | None = 0,
+            effort: float | None = None,
             position: "Position" = None,
             velocity: "Velocity" = None
         ):
             super().__init__(sdf_version)
             self.acceleration = acceleration
-            self.effort = effort if effort is not None else 0
+            self.effort = effort
             self.position = position
             self.velocity = velocity
             if self.acceleration is not None and hasattr(self.acceleration, 'to_version'):
@@ -388,7 +388,7 @@ class JointState(BaseModel):
         self.angle = angle
         self.axis2_state = axis2_state
         self.axis_state = axis_state
-        self.name = name if name is not None else "__default__"
+        self.name = name
         if self.angle is not None and hasattr(self.angle, 'to_version'):
             if getattr(self.angle, 'sdfversion', None) is None:
                 self.angle.sdfversion = self.sdfversion

@@ -18,7 +18,7 @@ def _parse_vector3(raw: str) -> _Vector3T | SDFError:
 class Box(BaseModel):
     def __init__(self, sdf_version: str | None = None, size: _Vector3T | None = None):
         super().__init__(sdf_version)
-        self.size = _vector3("1 1 1") if size is None else _vector3(size)
+        self.size = _vector3(size) if size is not None else None
 
     def to_version(self, target_version: str) -> "Box":
         kwargs: dict = {"sdf_version": target_version, "size": self.size}

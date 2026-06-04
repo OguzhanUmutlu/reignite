@@ -38,10 +38,10 @@ class Actor(BaseModel):
             scale: float | None = 1.0
         ):
             super().__init__(sdf_version)
-            self.filename = filename if filename is not None else "__default__"
-            self.interpolate_x = interpolate_x if interpolate_x is not None else False
-            self.name = name if name is not None else "__default__"
-            self.scale = scale if scale is not None else 1.0
+            self.filename = filename
+            self.interpolate_x = interpolate_x
+            self.name = name
+            self.scale = scale
 
         def to_version(self, target_version: str) -> "Actor.Animation":
             if self.filename is not None and cmp_version(target_version, "1.2") >= 0:
@@ -88,7 +88,7 @@ class Actor(BaseModel):
     class Origin(BaseModel):
         def __init__(self, sdf_version: str | None = None, pose: _PoseT | None = None):
             super().__init__(sdf_version)
-            self.pose = _pose("0 0 0 0 0 0") if pose is None else _pose(pose)
+            self.pose = _pose(pose) if pose is not None else None
 
         def to_version(self, target_version: str) -> "Actor.Origin":
             kwargs: dict = {"sdf_version": target_version, "pose": self.pose}
@@ -133,8 +133,8 @@ class Actor(BaseModel):
                     time: float | None = 0.0
                 ):
                     super().__init__(sdf_version)
-                    self.pose = _pose("0 0 0 0 0 0") if pose is None else _pose(pose)
-                    self.time = time if time is not None else 0.0
+                    self.pose = _pose(pose) if pose is not None else None
+                    self.time = time
 
                 def to_version(self, target_version: str) -> "Actor.Script.Trajectory.Waypoint":
                     if self.pose is not None and cmp_version(target_version, "1.2") >= 0:
@@ -175,9 +175,9 @@ class Actor(BaseModel):
                 waypoints: List["Actor.Script.Trajectory.Waypoint"] = None
             ):
                 super().__init__(sdf_version)
-                self.id = id if id is not None else 0
-                self.tension = tension if tension is not None else 0.0
-                self.type = type if type is not None else "__default__"
+                self.id = id
+                self.tension = tension
+                self.type = type
                 self.waypoints = waypoints or []
                 for _i, _c in enumerate(self.waypoints):
                     if not hasattr(_c, 'to_version'): continue
@@ -250,9 +250,9 @@ class Actor(BaseModel):
             trajectories: List["Actor.Script.Trajectory"] = None
         ):
             super().__init__(sdf_version)
-            self.auto_start = auto_start if auto_start is not None else True
-            self.delay_start = delay_start if delay_start is not None else 0.0
-            self.loop = loop if loop is not None else True
+            self.auto_start = auto_start
+            self.delay_start = delay_start
+            self.loop = loop
             self.trajectories = trajectories or []
             for _i, _c in enumerate(self.trajectories):
                 if not hasattr(_c, 'to_version'): continue
@@ -325,8 +325,8 @@ class Actor(BaseModel):
             scale: float | None = 1.0
         ):
             super().__init__(sdf_version)
-            self.filename = filename if filename is not None else "__default__"
-            self.scale = scale if scale is not None else 1.0
+            self.filename = filename
+            self.scale = scale
 
         def to_version(self, target_version: str) -> "Actor.Skin":
             if self.filename is not None and cmp_version(target_version, "1.2") >= 0:
@@ -378,13 +378,13 @@ class Actor(BaseModel):
         self.frames = frames or []
         self.joints = joints or []
         self.links = links or []
-        self.name = name if name is not None else "__default__"
+        self.name = name
         self.origin = origin
         self.plugins = plugins or []
         self.pose = pose
         self.script = script
         self.skin = skin
-        self.static = static if static is not None else False
+        self.static = static
         for _i, _c in enumerate(self.animations):
             if not hasattr(_c, 'to_version'): continue
             if getattr(_c, 'sdfversion', None) is None:

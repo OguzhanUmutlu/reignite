@@ -12,7 +12,7 @@ class CollisionEngine(BaseModel):
     class Bullet(BaseModel):
         def __init__(self, sdf_version: str | None = None, type: str | None = "__default__"):
             super().__init__(sdf_version)
-            self.type = type if type is not None else "__default__"
+            self.type = type
 
         def to_version(self, target_version: str) -> "CollisionEngine.Bullet":
             kwargs: dict = {"sdf_version": target_version, "type": self.type}
@@ -38,7 +38,7 @@ class CollisionEngine(BaseModel):
     class Ode(BaseModel):
         def __init__(self, sdf_version: str | None = None, type: str | None = "__default__"):
             super().__init__(sdf_version)
-            self.type = type if type is not None else "__default__"
+            self.type = type
 
         def to_version(self, target_version: str) -> "CollisionEngine.Ode":
             kwargs: dict = {"sdf_version": target_version, "type": self.type}

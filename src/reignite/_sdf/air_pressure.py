@@ -63,11 +63,11 @@ class AirPressure(BaseModel):
         self,
         sdf_version: str | None = None,
         pressure: "AirPressure.Pressure" = None,
-        reference_altitude: float | None = 0.0
+        reference_altitude: float | None = None
     ):
         super().__init__(sdf_version)
         self.pressure = pressure
-        self.reference_altitude = reference_altitude if reference_altitude is not None else 0.0
+        self.reference_altitude = reference_altitude
         if self.pressure is not None and hasattr(self.pressure, 'to_version'):
             if getattr(self.pressure, 'sdfversion', None) is None:
                 self.pressure.sdfversion = self.sdfversion

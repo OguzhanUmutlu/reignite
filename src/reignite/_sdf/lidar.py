@@ -15,14 +15,14 @@ class Lidar(BaseModel):
         def __init__(
             self,
             sdf_version: str | None = None,
-            mean: float | None = 0.0,
-            stddev: float | None = 0.0,
-            type: str | None = "gaussian"
+            mean: float | None = None,
+            stddev: float | None = None,
+            type: str | None = None
         ):
             super().__init__(sdf_version)
-            self.mean = mean if mean is not None else 0.0
-            self.stddev = stddev if stddev is not None else 0.0
-            self.type = type if type is not None else "gaussian"
+            self.mean = mean
+            self.stddev = stddev
+            self.type = type
 
         def to_version(self, target_version: str) -> "Lidar.Noise":
             kwargs: dict = {"sdf_version": target_version, "mean": self.mean, "stddev": self.stddev, "type": self.type}
@@ -83,14 +83,14 @@ class Lidar(BaseModel):
         def __init__(
             self,
             sdf_version: str | None = None,
-            max: float | None = 0,
-            min: float | None = 0,
-            resolution: float | None = 0
+            max: float | None = None,
+            min: float | None = None,
+            resolution: float | None = None
         ):
             super().__init__(sdf_version)
-            self.max = max if max is not None else 0
-            self.min = min if min is not None else 0
-            self.resolution = resolution if resolution is not None else 0
+            self.max = max
+            self.min = min
+            self.resolution = resolution
 
         def to_version(self, target_version: str) -> "Lidar.Range":
             kwargs: dict = {"sdf_version": target_version, "max": self.max, "min": self.min, "resolution": self.resolution}
@@ -152,16 +152,16 @@ class Lidar(BaseModel):
             def __init__(
                 self,
                 sdf_version: str | None = None,
-                max_angle: float | None = 0,
-                min_angle: float | None = 0,
-                resolution: float | None = 1,
-                samples: int | None = 640
+                max_angle: float | None = None,
+                min_angle: float | None = None,
+                resolution: float | None = None,
+                samples: int | None = None
             ):
                 super().__init__(sdf_version)
-                self.max_angle = max_angle if max_angle is not None else 0
-                self.min_angle = min_angle if min_angle is not None else 0
-                self.resolution = resolution if resolution is not None else 1
-                self.samples = samples if samples is not None else 640
+                self.max_angle = max_angle
+                self.min_angle = min_angle
+                self.resolution = resolution
+                self.samples = samples
 
             def to_version(self, target_version: str) -> "Lidar.Scan.Horizontal":
                 kwargs: dict = {"sdf_version": target_version, "max_angle": self.max_angle, "min_angle": self.min_angle, "resolution": self.resolution, "samples": self.samples}
@@ -235,16 +235,16 @@ class Lidar(BaseModel):
             def __init__(
                 self,
                 sdf_version: str | None = None,
-                max_angle: float | None = 0,
-                min_angle: float | None = 0,
-                resolution: float | None = 1,
-                samples: int | None = 1
+                max_angle: float | None = None,
+                min_angle: float | None = None,
+                resolution: float | None = None,
+                samples: int | None = None
             ):
                 super().__init__(sdf_version)
-                self.max_angle = max_angle if max_angle is not None else 0
-                self.min_angle = min_angle if min_angle is not None else 0
-                self.resolution = resolution if resolution is not None else 1
-                self.samples = samples if samples is not None else 1
+                self.max_angle = max_angle
+                self.min_angle = min_angle
+                self.resolution = resolution
+                self.samples = samples
 
             def to_version(self, target_version: str) -> "Lidar.Scan.Vertical":
                 kwargs: dict = {"sdf_version": target_version, "max_angle": self.max_angle, "min_angle": self.min_angle, "resolution": self.resolution, "samples": self.samples}
@@ -388,13 +388,13 @@ class Lidar(BaseModel):
         noise: "Lidar.Noise" = None,
         range: "Lidar.Range" = None,
         scan: "Lidar.Scan" = None,
-        visibility_mask: int | None = 4294967295
+        visibility_mask: int | None = None
     ):
         super().__init__(sdf_version)
         self.noise = noise
         self.range = range
         self.scan = scan
-        self.visibility_mask = visibility_mask if visibility_mask is not None else 4294967295
+        self.visibility_mask = visibility_mask
         if self.noise is not None and hasattr(self.noise, 'to_version'):
             if getattr(self.noise, 'sdfversion', None) is None:
                 self.noise.sdfversion = self.sdfversion

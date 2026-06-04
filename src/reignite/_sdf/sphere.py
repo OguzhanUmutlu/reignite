@@ -10,9 +10,9 @@ from ..utils.errors import SDFError
 
 # noinspection PyUnusedImports
 class Sphere(BaseModel):
-    def __init__(self, sdf_version: str | None = None, radius: float | None = 1):
+    def __init__(self, sdf_version: str | None = None, radius: float | None = None):
         super().__init__(sdf_version)
-        self.radius = radius if radius is not None else 1
+        self.radius = radius
 
     def to_version(self, target_version: str) -> "Sphere":
         kwargs: dict = {"sdf_version": target_version, "radius": self.radius}

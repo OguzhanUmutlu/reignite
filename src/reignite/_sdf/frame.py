@@ -22,8 +22,8 @@ class Frame(BaseModel):
         pose: "Pose" = None
     ):
         super().__init__(sdf_version)
-        self.attached_to = attached_to if attached_to is not None else ""
-        self.name = name if name is not None else ""
+        self.attached_to = attached_to
+        self.name = name
         self.pose = pose
         if self.pose is not None and hasattr(self.pose, 'to_version'):
             if getattr(self.pose, 'sdfversion', None) is None:

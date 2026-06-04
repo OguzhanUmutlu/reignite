@@ -42,14 +42,14 @@ class Joint(BaseModel):
                 sdf_version: str | None = None,
                 damping: float | None = 0,
                 friction: float | None = 0,
-                spring_reference: float | None = 0,
-                spring_stiffness: float | None = 0
+                spring_reference: float | None = None,
+                spring_stiffness: float | None = None
             ):
                 super().__init__(sdf_version)
-                self.damping = damping if damping is not None else 0
-                self.friction = friction if friction is not None else 0
-                self.spring_reference = spring_reference if spring_reference is not None else 0
-                self.spring_stiffness = spring_stiffness if spring_stiffness is not None else 0
+                self.damping = damping
+                self.friction = friction
+                self.spring_reference = spring_reference
+                self.spring_stiffness = spring_stiffness
 
             def to_version(self, target_version: str) -> "Joint.Axis.Dynamics":
                 if self.damping is not None and cmp_version(target_version, "1.2") >= 0:
@@ -119,20 +119,20 @@ class Joint(BaseModel):
             def __init__(
                 self,
                 sdf_version: str | None = None,
-                dissipation: float | None = 1.0,
+                dissipation: float | None = None,
                 effort: float | None = 0,
                 lower: float | None = -1e16,
-                stiffness: float | None = 1e8,
+                stiffness: float | None = None,
                 upper: float | None = 1e16,
                 velocity: float | None = 0
             ):
                 super().__init__(sdf_version)
-                self.dissipation = dissipation if dissipation is not None else 1.0
-                self.effort = effort if effort is not None else 0
-                self.lower = lower if lower is not None else -1e16
-                self.stiffness = stiffness if stiffness is not None else 1e8
-                self.upper = upper if upper is not None else 1e16
-                self.velocity = velocity if velocity is not None else 0
+                self.dissipation = dissipation
+                self.effort = effort
+                self.lower = lower
+                self.stiffness = stiffness
+                self.upper = upper
+                self.velocity = velocity
 
             def to_version(self, target_version: str) -> "Joint.Axis.Limit":
                 if self.dissipation is not None and cmp_version(target_version, "1.4") < 0:
@@ -220,8 +220,8 @@ class Joint(BaseModel):
                 xyz: _Vector3T | None = None
             ):
                 super().__init__(sdf_version)
-                self.expressed_in = expressed_in if expressed_in is not None else ""
-                self.xyz = _vector3("0 0 1") if xyz is None else _vector3(xyz)
+                self.expressed_in = expressed_in
+                self.xyz = _vector3(xyz) if xyz is not None else None
 
             def to_version(self, target_version: str) -> "Joint.Axis.Xyz":
                 if self.expressed_in is not None and cmp_version(target_version, "1.7") < 0:
@@ -266,19 +266,19 @@ class Joint(BaseModel):
             self,
             sdf_version: str | None = None,
             dynamics: "Joint.Axis.Dynamics" = None,
-            initial_position: float | None = 0,
+            initial_position: float | None = None,
             limit: "Joint.Axis.Limit" = None,
             mimic: "Mimic" = None,
-            use_parent_model_frame: bool | None = False,
+            use_parent_model_frame: bool | None = None,
             xyz: _Vector3T | None = None
         ):
             super().__init__(sdf_version)
             self.dynamics = dynamics
-            self.initial_position = initial_position if initial_position is not None else 0
+            self.initial_position = initial_position
             self.limit = limit
             self.mimic = mimic
-            self.use_parent_model_frame = use_parent_model_frame if use_parent_model_frame is not None else False
-            self.xyz = _vector3("0 0 1") if xyz is None else _vector3(xyz)
+            self.use_parent_model_frame = use_parent_model_frame
+            self.xyz = _vector3(xyz) if xyz is not None else None
             if self.dynamics is not None and hasattr(self.dynamics, 'to_version'):
                 if getattr(self.dynamics, 'sdfversion', None) is None:
                     self.dynamics.sdfversion = self.sdfversion
@@ -418,20 +418,20 @@ class Joint(BaseModel):
             def __init__(
                 self,
                 sdf_version: str | None = None,
-                dissipation: float | None = 1.0,
+                dissipation: float | None = None,
                 effort: float | None = 0,
                 lower: float | None = -1e16,
-                stiffness: float | None = 1e8,
+                stiffness: float | None = None,
                 upper: float | None = 1e16,
                 velocity: float | None = 0
             ):
                 super().__init__(sdf_version)
-                self.dissipation = dissipation if dissipation is not None else 1.0
-                self.effort = effort if effort is not None else 0
-                self.lower = lower if lower is not None else -1e16
-                self.stiffness = stiffness if stiffness is not None else 1e8
-                self.upper = upper if upper is not None else 1e16
-                self.velocity = velocity if velocity is not None else 0
+                self.dissipation = dissipation
+                self.effort = effort
+                self.lower = lower
+                self.stiffness = stiffness
+                self.upper = upper
+                self.velocity = velocity
 
             def to_version(self, target_version: str) -> "Joint.Axis2.Axis2Limit":
                 if self.dissipation is not None and cmp_version(target_version, "1.4") < 0:
@@ -517,19 +517,19 @@ class Joint(BaseModel):
             self,
             sdf_version: str | None = None,
             dynamics: "Dynamics" = None,
-            initial_position: float | None = 0,
+            initial_position: float | None = None,
             limit: "Joint.Axis2.Axis2Limit" = None,
             mimic: "Mimic" = None,
-            use_parent_model_frame: bool | None = False,
+            use_parent_model_frame: bool | None = None,
             xyz: _Vector3T | None = None
         ):
             super().__init__(sdf_version)
             self.dynamics = dynamics
-            self.initial_position = initial_position if initial_position is not None else 0
+            self.initial_position = initial_position
             self.limit = limit
             self.mimic = mimic
-            self.use_parent_model_frame = use_parent_model_frame if use_parent_model_frame is not None else False
-            self.xyz = _vector3("0 0 1") if xyz is None else _vector3(xyz)
+            self.use_parent_model_frame = use_parent_model_frame
+            self.xyz = _vector3(xyz) if xyz is not None else None
             if self.dynamics is not None and hasattr(self.dynamics, 'to_version'):
                 if getattr(self.dynamics, 'sdfversion', None) is None:
                     self.dynamics.sdfversion = self.sdfversion
@@ -668,12 +668,12 @@ class Joint(BaseModel):
         def __init__(
             self,
             sdf_version: str | None = None,
-            child: str | None = "__default__",
+            child: str | None = None,
             link: str | None = "__default__"
         ):
             super().__init__(sdf_version)
-            self.child = child if child is not None else "__default__"
-            self.link = link if link is not None else "__default__"
+            self.child = child
+            self.link = link
 
         def to_version(self, target_version: str) -> "Joint.Child":
             if self.link is not None and cmp_version(target_version, "1.2") >= 0:
@@ -716,7 +716,7 @@ class Joint(BaseModel):
     class Origin(BaseModel):
         def __init__(self, sdf_version: str | None = None, pose: _PoseT | None = None):
             super().__init__(sdf_version)
-            self.pose = _pose("0 0 0 0 0 0") if pose is None else _pose(pose)
+            self.pose = _pose(pose) if pose is not None else None
 
         def to_version(self, target_version: str) -> "Joint.Origin":
             kwargs: dict = {"sdf_version": target_version, "pose": self.pose}
@@ -756,11 +756,11 @@ class Joint(BaseModel):
             self,
             sdf_version: str | None = None,
             link: str | None = "__default__",
-            parent: str | None = "__default__"
+            parent: str | None = None
         ):
             super().__init__(sdf_version)
-            self.link = link if link is not None else "__default__"
-            self.parent = parent if parent is not None else "__default__"
+            self.link = link
+            self.parent = parent
 
         def to_version(self, target_version: str) -> "Joint.Parent":
             if self.link is not None and cmp_version(target_version, "1.2") >= 0:
@@ -810,8 +810,8 @@ class Joint(BaseModel):
                     erp: float | None = 0.2
                 ):
                     super().__init__(sdf_version)
-                    self.cfm = cfm if cfm is not None else 0.0
-                    self.erp = erp if erp is not None else 0.2
+                    self.cfm = cfm
+                    self.erp = erp
 
                 def to_version(self, target_version: str) -> "Joint.Physics.Ode.OdeLimit":
                     if self.cfm is not None and cmp_version(target_version, "1.2") >= 0:
@@ -851,8 +851,8 @@ class Joint(BaseModel):
                     erp: float | None = 0.2
                 ):
                     super().__init__(sdf_version)
-                    self.cfm = cfm if cfm is not None else 0.0
-                    self.erp = erp if erp is not None else 0.2
+                    self.cfm = cfm
+                    self.erp = erp
 
                 def to_version(self, target_version: str) -> "Joint.Physics.Ode.Suspension":
                     if self.cfm is not None and cmp_version(target_version, "1.2") >= 0:
@@ -887,30 +887,30 @@ class Joint(BaseModel):
             def __init__(
                 self,
                 sdf_version: str | None = None,
-                bounce: float | None = 0,
-                cfm: float | None = 0,
-                cfm_damping: bool | None = False,
-                erp: float | None = 0.2,
-                fudge_factor: float | None = 0,
-                implicit_spring_damper: bool | None = False,
+                bounce: float | None = None,
+                cfm: float | None = None,
+                cfm_damping: bool | None = None,
+                erp: float | None = None,
+                fudge_factor: float | None = None,
+                implicit_spring_damper: bool | None = None,
                 limit: "Joint.Physics.Ode.OdeLimit" = None,
-                max_force: float | None = 0,
-                provide_feedback: bool | None = False,
+                max_force: float | None = None,
+                provide_feedback: bool | None = None,
                 suspension: "Joint.Physics.Ode.Suspension" = None,
-                velocity: float | None = 0
+                velocity: float | None = None
             ):
                 super().__init__(sdf_version)
-                self.bounce = bounce if bounce is not None else 0
-                self.cfm = cfm if cfm is not None else 0
-                self.cfm_damping = cfm_damping if cfm_damping is not None else False
-                self.erp = erp if erp is not None else 0.2
-                self.fudge_factor = fudge_factor if fudge_factor is not None else 0
-                self.implicit_spring_damper = implicit_spring_damper if implicit_spring_damper is not None else False
+                self.bounce = bounce
+                self.cfm = cfm
+                self.cfm_damping = cfm_damping
+                self.erp = erp
+                self.fudge_factor = fudge_factor
+                self.implicit_spring_damper = implicit_spring_damper
                 self.limit = limit
-                self.max_force = max_force if max_force is not None else 0
-                self.provide_feedback = provide_feedback if provide_feedback is not None else False
+                self.max_force = max_force
+                self.provide_feedback = provide_feedback
                 self.suspension = suspension
-                self.velocity = velocity if velocity is not None else 0
+                self.velocity = velocity
                 if self.limit is not None and hasattr(self.limit, 'to_version'):
                     if getattr(self.limit, 'sdfversion', None) is None:
                         self.limit.sdfversion = self.sdfversion
@@ -1106,9 +1106,9 @@ class Joint(BaseModel):
                 return cls(sdf_version=version, bounce=_bounce, cfm=_cfm, cfm_damping=_cfm_damping, erp=_erp, fudge_factor=_fudge_factor, implicit_spring_damper=_implicit_spring_damper, limit=_limit, max_force=_max_force, provide_feedback=_provide_feedback, suspension=_suspension, velocity=_velocity)
 
         class Simbody(BaseModel):
-            def __init__(self, sdf_version: str | None = None, must_be_loop_joint: bool | None = False):
+            def __init__(self, sdf_version: str | None = None, must_be_loop_joint: bool | None = None):
                 super().__init__(sdf_version)
-                self.must_be_loop_joint = must_be_loop_joint if must_be_loop_joint is not None else False
+                self.must_be_loop_joint = must_be_loop_joint
 
             def to_version(self, target_version: str) -> "Joint.Physics.Simbody":
                 kwargs: dict = {"sdf_version": target_version, "must_be_loop_joint": self.must_be_loop_joint}
@@ -1145,12 +1145,12 @@ class Joint(BaseModel):
             self,
             sdf_version: str | None = None,
             ode: "Joint.Physics.Ode" = None,
-            provide_feedback: bool | None = False,
+            provide_feedback: bool | None = None,
             simbody: "Joint.Physics.Simbody" = None
         ):
             super().__init__(sdf_version)
             self.ode = ode
-            self.provide_feedback = provide_feedback if provide_feedback is not None else False
+            self.provide_feedback = provide_feedback
             self.simbody = simbody
             if self.ode is not None and hasattr(self.ode, 'to_version'):
                 if getattr(self.ode, 'sdfversion', None) is None:
@@ -1241,16 +1241,16 @@ class Joint(BaseModel):
         axis2: "Joint.Axis2" = None,
         child: "Joint.Child" = None,
         frames: List["Frame"] = None,
-        gearbox_ratio: float | None = 1.0,
-        gearbox_reference_body: str | None = "__default__",
+        gearbox_ratio: float | None = None,
+        gearbox_reference_body: str | None = None,
         name: str | None = "__default__",
         origin: "Joint.Origin" = None,
         parent: "Joint.Parent" = None,
         physics: "Joint.Physics" = None,
         pose: "Pose" = None,
-        screw_thread_pitch: float | None = 1.0,
+        screw_thread_pitch: float | None = None,
         sensor: "Sensor" = None,
-        thread_pitch: float | None = 1.0,
+        thread_pitch: float | None = None,
         type: str | None = "__default__"
     ):
         super().__init__(sdf_version)
@@ -1258,17 +1258,17 @@ class Joint(BaseModel):
         self.axis2 = axis2
         self.child = child
         self.frames = frames or []
-        self.gearbox_ratio = gearbox_ratio if gearbox_ratio is not None else 1.0
-        self.gearbox_reference_body = gearbox_reference_body if gearbox_reference_body is not None else "__default__"
-        self.name = name if name is not None else "__default__"
+        self.gearbox_ratio = gearbox_ratio
+        self.gearbox_reference_body = gearbox_reference_body
+        self.name = name
         self.origin = origin
         self.parent = parent
         self.physics = physics
         self.pose = pose
-        self.screw_thread_pitch = screw_thread_pitch if screw_thread_pitch is not None else 1.0
+        self.screw_thread_pitch = screw_thread_pitch
         self.sensor = sensor
-        self.thread_pitch = thread_pitch if thread_pitch is not None else 1.0
-        self.type = type if type is not None else "__default__"
+        self.thread_pitch = thread_pitch
+        self.type = type
         if self.axis is not None and hasattr(self.axis, 'to_version'):
             if getattr(self.axis, 'sdfversion', None) is None:
                 self.axis.sdfversion = self.sdfversion

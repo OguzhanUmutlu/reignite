@@ -33,8 +33,8 @@ class Camera(BaseModel):
             near: float | None = .1
         ):
             super().__init__(sdf_version)
-            self.far = far if far is not None else 100
-            self.near = near if near is not None else .1
+            self.far = far
+            self.near = near
 
         def to_version(self, target_version: str) -> "Camera.Clip":
             if self.far is not None and cmp_version(target_version, "1.2") >= 0:
@@ -71,12 +71,12 @@ class Camera(BaseModel):
             def __init__(
                 self,
                 sdf_version: str | None = None,
-                far: float | None = 10.0,
-                near: float | None = .1
+                far: float | None = None,
+                near: float | None = None
             ):
                 super().__init__(sdf_version)
-                self.far = far if far is not None else 10.0
-                self.near = near if near is not None else .1
+                self.far = far
+                self.near = near
 
             def to_version(self, target_version: str) -> "Camera.DepthCamera.DepthCameraClip":
                 kwargs: dict = {"sdf_version": target_version, "far": self.far, "near": self.near}
@@ -128,7 +128,7 @@ class Camera(BaseModel):
         ):
             super().__init__(sdf_version)
             self.clip = clip
-            self.output = output if output is not None else "depths"
+            self.output = output
             if self.clip is not None and hasattr(self.clip, 'to_version'):
                 if getattr(self.clip, 'sdfversion', None) is None:
                     self.clip.sdfversion = self.sdfversion
@@ -183,19 +183,19 @@ class Camera(BaseModel):
             self,
             sdf_version: str | None = None,
             center: _Vector2dT | None = None,
-            k1: float | None = 0.0,
-            k2: float | None = 0.0,
-            k3: float | None = 0.0,
-            p1: float | None = 0.0,
-            p2: float | None = 0.0
+            k1: float | None = None,
+            k2: float | None = None,
+            k3: float | None = None,
+            p1: float | None = None,
+            p2: float | None = None
         ):
             super().__init__(sdf_version)
-            self.center = _vector2d("0.5 0.5") if center is None else _vector2d(center)
-            self.k1 = k1 if k1 is not None else 0.0
-            self.k2 = k2 if k2 is not None else 0.0
-            self.k3 = k3 if k3 is not None else 0.0
-            self.p1 = p1 if p1 is not None else 0.0
-            self.p2 = p2 if p2 is not None else 0.0
+            self.center = _vector2d(center) if center is not None else None
+            self.k1 = k1
+            self.k2 = k2
+            self.k3 = k3
+            self.p1 = p1
+            self.p2 = p2
 
         def to_version(self, target_version: str) -> "Camera.Distortion":
             kwargs: dict = {"sdf_version": target_version, "center": self.center, "k1": self.k1, "k2": self.k2, "k3": self.k3, "p1": self.p1, "p2": self.p2}
@@ -296,11 +296,11 @@ class Camera(BaseModel):
             self,
             sdf_version: str | None = None,
             angle: float | None = 1.047,
-            horizontal_fov: float | None = 1.047
+            horizontal_fov: float | None = None
         ):
             super().__init__(sdf_version)
-            self.angle = angle if angle is not None else 1.047
-            self.horizontal_fov = horizontal_fov if horizontal_fov is not None else 1.047
+            self.angle = angle
+            self.horizontal_fov = horizontal_fov
 
         def to_version(self, target_version: str) -> "Camera.HorizontalFov":
             if self.angle is not None and cmp_version(target_version, "1.2") >= 0:
@@ -344,16 +344,16 @@ class Camera(BaseModel):
         def __init__(
             self,
             sdf_version: str | None = None,
-            anti_aliasing: int | None = 4,
+            anti_aliasing: int | None = None,
             format: str | None = "R8G8B8",
             height: int | None = 240,
             width: int | None = 320
         ):
             super().__init__(sdf_version)
-            self.anti_aliasing = anti_aliasing if anti_aliasing is not None else 4
-            self.format = format if format is not None else "R8G8B8"
-            self.height = height if height is not None else 240
-            self.width = width if width is not None else 320
+            self.anti_aliasing = anti_aliasing
+            self.format = format
+            self.height = height
+            self.width = width
 
         def to_version(self, target_version: str) -> "Camera.Image":
             if self.anti_aliasing is not None and cmp_version(target_version, "1.7") < 0:
@@ -414,18 +414,18 @@ class Camera(BaseModel):
             def __init__(
                 self,
                 sdf_version: str | None = None,
-                c1: float | None = 1,
-                c2: float | None = 1,
-                c3: float | None = 0,
-                f: float | None = 1,
-                fun: str | None = "tan"
+                c1: float | None = None,
+                c2: float | None = None,
+                c3: float | None = None,
+                f: float | None = None,
+                fun: str | None = None
             ):
                 super().__init__(sdf_version)
-                self.c1 = c1 if c1 is not None else 1
-                self.c2 = c2 if c2 is not None else 1
-                self.c3 = c3 if c3 is not None else 0
-                self.f = f if f is not None else 1
-                self.fun = fun if fun is not None else "tan"
+                self.c1 = c1
+                self.c2 = c2
+                self.c3 = c3
+                self.f = f
+                self.fun = fun
 
             def to_version(self, target_version: str) -> "Camera.Lens.CustomFunction":
                 kwargs: dict = {"sdf_version": target_version, "c1": self.c1, "c2": self.c2, "c3": self.c3, "f": self.f, "fun": self.fun}
@@ -512,18 +512,18 @@ class Camera(BaseModel):
             def __init__(
                 self,
                 sdf_version: str | None = None,
-                cx: float | None = 160,
-                cy: float | None = 120,
-                fx: float | None = 277,
-                fy: float | None = 277,
-                s: float | None = 0.0
+                cx: float | None = None,
+                cy: float | None = None,
+                fx: float | None = None,
+                fy: float | None = None,
+                s: float | None = None
             ):
                 super().__init__(sdf_version)
-                self.cx = cx if cx is not None else 160
-                self.cy = cy if cy is not None else 120
-                self.fx = fx if fx is not None else 277
-                self.fy = fy if fy is not None else 277
-                self.s = s if s is not None else 0.0
+                self.cx = cx
+                self.cy = cy
+                self.fx = fx
+                self.fy = fy
+                self.s = s
 
             def to_version(self, target_version: str) -> "Camera.Lens.Intrinsics":
                 kwargs: dict = {"sdf_version": target_version, "cx": self.cx, "cy": self.cy, "fx": self.fx, "fy": self.fy, "s": self.s}
@@ -610,20 +610,20 @@ class Camera(BaseModel):
             def __init__(
                 self,
                 sdf_version: str | None = None,
-                p_cx: float | None = 160,
-                p_cy: float | None = 120,
-                p_fx: float | None = 277,
-                p_fy: float | None = 277,
-                tx: float | None = 0.0,
-                ty: float | None = 0.0
+                p_cx: float | None = None,
+                p_cy: float | None = None,
+                p_fx: float | None = None,
+                p_fy: float | None = None,
+                tx: float | None = None,
+                ty: float | None = None
             ):
                 super().__init__(sdf_version)
-                self.p_cx = p_cx if p_cx is not None else 160
-                self.p_cy = p_cy if p_cy is not None else 120
-                self.p_fx = p_fx if p_fx is not None else 277
-                self.p_fy = p_fy if p_fy is not None else 277
-                self.tx = tx if tx is not None else 0.0
-                self.ty = ty if ty is not None else 0.0
+                self.p_cx = p_cx
+                self.p_cy = p_cy
+                self.p_fx = p_fx
+                self.p_fy = p_fy
+                self.tx = tx
+                self.ty = ty
 
             def to_version(self, target_version: str) -> "Camera.Lens.Projection":
                 kwargs: dict = {"sdf_version": target_version, "p_cx": self.p_cx, "p_cy": self.p_cy, "p_fx": self.p_fx, "p_fy": self.p_fy, "tx": self.tx, "ty": self.ty}
@@ -723,21 +723,21 @@ class Camera(BaseModel):
             self,
             sdf_version: str | None = None,
             custom_function: "Camera.Lens.CustomFunction" = None,
-            cutoff_angle: float | None = 1.5707,
-            env_texture_size: int | None = 256,
+            cutoff_angle: float | None = None,
+            env_texture_size: int | None = None,
             intrinsics: "Camera.Lens.Intrinsics" = None,
             projection: "Camera.Lens.Projection" = None,
-            scale_to_hfov: bool | None = True,
-            type: str | None = "stereographic"
+            scale_to_hfov: bool | None = None,
+            type: str | None = None
         ):
             super().__init__(sdf_version)
             self.custom_function = custom_function
-            self.cutoff_angle = cutoff_angle if cutoff_angle is not None else 1.5707
-            self.env_texture_size = env_texture_size if env_texture_size is not None else 256
+            self.cutoff_angle = cutoff_angle
+            self.env_texture_size = env_texture_size
             self.intrinsics = intrinsics
             self.projection = projection
-            self.scale_to_hfov = scale_to_hfov if scale_to_hfov is not None else True
-            self.type = type if type is not None else "stereographic"
+            self.scale_to_hfov = scale_to_hfov
+            self.type = type
             if self.custom_function is not None and hasattr(self.custom_function, 'to_version'):
                 if getattr(self.custom_function, 'sdfversion', None) is None:
                     self.custom_function.sdfversion = self.sdfversion
@@ -882,14 +882,14 @@ class Camera(BaseModel):
         def __init__(
             self,
             sdf_version: str | None = None,
-            mean: float | None = 0.0,
-            stddev: float | None = 0.0,
-            type: str | None = "gaussian"
+            mean: float | None = None,
+            stddev: float | None = None,
+            type: str | None = None
         ):
             super().__init__(sdf_version)
-            self.mean = mean if mean is not None else 0.0
-            self.stddev = stddev if stddev is not None else 0.0
-            self.type = type if type is not None else "gaussian"
+            self.mean = mean
+            self.stddev = stddev
+            self.type = type
 
         def to_version(self, target_version: str) -> "Camera.Noise":
             kwargs: dict = {"sdf_version": target_version, "mean": self.mean, "stddev": self.stddev, "type": self.type}
@@ -954,8 +954,8 @@ class Camera(BaseModel):
             path: str | None = "__default__"
         ):
             super().__init__(sdf_version)
-            self.enabled = enabled if enabled is not None else False
-            self.path = path if path is not None else "__default__"
+            self.enabled = enabled
+            self.path = path
 
         def to_version(self, target_version: str) -> "Camera.Save":
             if self.path is not None and cmp_version(target_version, "1.2") >= 0:
@@ -988,8 +988,8 @@ class Camera(BaseModel):
     def __init__(
         self,
         sdf_version: str | None = None,
-        box_type: str | None = "2d",
-        camera_info_topic: str | None = "__default__",
+        box_type: str | None = None,
+        camera_info_topic: str | None = None,
         clip: "Camera.Clip" = None,
         depth_camera: "Camera.DepthCamera" = None,
         distortion: "Camera.Distortion" = None,
@@ -1002,14 +1002,14 @@ class Camera(BaseModel):
         optical_frame_id: str | None = "",
         pose: "Pose" = None,
         save: "Camera.Save" = None,
-        segmentation_type: str | None = "semantic",
+        segmentation_type: str | None = None,
         trigger_topic: str | None = "",
-        triggered: bool | None = False,
-        visibility_mask: int | None = 4294967295
+        triggered: bool | None = None,
+        visibility_mask: int | None = None
     ):
         super().__init__(sdf_version)
-        self.box_type = box_type if box_type is not None else "2d"
-        self.camera_info_topic = camera_info_topic if camera_info_topic is not None else "__default__"
+        self.box_type = box_type
+        self.camera_info_topic = camera_info_topic
         self.clip = clip
         self.depth_camera = depth_camera
         self.distortion = distortion
@@ -1017,15 +1017,15 @@ class Camera(BaseModel):
         self.horizontal_fov = horizontal_fov
         self.image = image
         self.lens = lens
-        self.name = name if name is not None else "__default__"
+        self.name = name
         self.noise = noise
-        self.optical_frame_id = optical_frame_id if optical_frame_id is not None else ""
+        self.optical_frame_id = optical_frame_id
         self.pose = pose
         self.save = save
-        self.segmentation_type = segmentation_type if segmentation_type is not None else "semantic"
-        self.trigger_topic = trigger_topic if trigger_topic is not None else ""
-        self.triggered = triggered if triggered is not None else False
-        self.visibility_mask = visibility_mask if visibility_mask is not None else 4294967295
+        self.segmentation_type = segmentation_type
+        self.trigger_topic = trigger_topic
+        self.triggered = triggered
+        self.visibility_mask = visibility_mask
         if self.clip is not None and hasattr(self.clip, 'to_version'):
             if getattr(self.clip, 'sdfversion', None) is None:
                 self.clip.sdfversion = self.sdfversion

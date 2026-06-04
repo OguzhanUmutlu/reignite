@@ -13,18 +13,18 @@ class Image(BaseModel):
     def __init__(
         self,
         sdf_version: str | None = None,
-        granularity: int | None = 1,
-        height: float | None = 1,
-        scale: float | None = 1,
-        threshold: int | None = 200,
-        uri: str | None = "__default__"
+        granularity: int | None = None,
+        height: float | None = None,
+        scale: float | None = None,
+        threshold: int | None = None,
+        uri: str | None = None
     ):
         super().__init__(sdf_version)
-        self.granularity = granularity if granularity is not None else 1
-        self.height = height if height is not None else 1
-        self.scale = scale if scale is not None else 1
-        self.threshold = threshold if threshold is not None else 200
-        self.uri = uri if uri is not None else "__default__"
+        self.granularity = granularity
+        self.height = height
+        self.scale = scale
+        self.threshold = threshold
+        self.uri = uri
 
     def to_version(self, target_version: str) -> "Image":
         kwargs: dict = {"sdf_version": target_version, "granularity": self.granularity, "height": self.height, "scale": self.scale, "threshold": self.threshold, "uri": self.uri}

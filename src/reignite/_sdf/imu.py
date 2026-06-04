@@ -341,16 +341,16 @@ class Imu(BaseModel):
             def __init__(
                 self,
                 sdf_version: str | None = None,
-                bias_mean: float | None = 0.0,
-                bias_stddev: float | None = 0.0,
-                mean: float | None = 0.0,
-                stddev: float | None = 0.0
+                bias_mean: float | None = None,
+                bias_stddev: float | None = None,
+                mean: float | None = None,
+                stddev: float | None = None
             ):
                 super().__init__(sdf_version)
-                self.bias_mean = bias_mean if bias_mean is not None else 0.0
-                self.bias_stddev = bias_stddev if bias_stddev is not None else 0.0
-                self.mean = mean if mean is not None else 0.0
-                self.stddev = stddev if stddev is not None else 0.0
+                self.bias_mean = bias_mean
+                self.bias_stddev = bias_stddev
+                self.mean = mean
+                self.stddev = stddev
 
             def to_version(self, target_version: str) -> "Imu.Noise.Accel":
                 kwargs: dict = {"sdf_version": target_version, "bias_mean": self.bias_mean, "bias_stddev": self.bias_stddev, "mean": self.mean, "stddev": self.stddev}
@@ -424,16 +424,16 @@ class Imu(BaseModel):
             def __init__(
                 self,
                 sdf_version: str | None = None,
-                bias_mean: float | None = 0.0,
-                bias_stddev: float | None = 0.0,
-                mean: float | None = 0.0,
-                stddev: float | None = 0.0
+                bias_mean: float | None = None,
+                bias_stddev: float | None = None,
+                mean: float | None = None,
+                stddev: float | None = None
             ):
                 super().__init__(sdf_version)
-                self.bias_mean = bias_mean if bias_mean is not None else 0.0
-                self.bias_stddev = bias_stddev if bias_stddev is not None else 0.0
-                self.mean = mean if mean is not None else 0.0
-                self.stddev = stddev if stddev is not None else 0.0
+                self.bias_mean = bias_mean
+                self.bias_stddev = bias_stddev
+                self.mean = mean
+                self.stddev = stddev
 
             def to_version(self, target_version: str) -> "Imu.Noise.Rate":
                 kwargs: dict = {"sdf_version": target_version, "bias_mean": self.bias_mean, "bias_stddev": self.bias_stddev, "mean": self.mean, "stddev": self.stddev}
@@ -508,12 +508,12 @@ class Imu(BaseModel):
             sdf_version: str | None = None,
             accel: "Imu.Noise.Accel" = None,
             rate: "Imu.Noise.Rate" = None,
-            type: str | None = "gaussian"
+            type: str | None = None
         ):
             super().__init__(sdf_version)
             self.accel = accel
             self.rate = rate
-            self.type = type if type is not None else "gaussian"
+            self.type = type
             if self.accel is not None and hasattr(self.accel, 'to_version'):
                 if getattr(self.accel, 'sdfversion', None) is None:
                     self.accel.sdfversion = self.sdfversion
@@ -595,8 +595,8 @@ class Imu(BaseModel):
                 parent_frame: str | None = ""
             ):
                 super().__init__(sdf_version)
-                self.custom_rpy = _vector3("0 0 0") if custom_rpy is None else _vector3(custom_rpy)
-                self.parent_frame = parent_frame if parent_frame is not None else ""
+                self.custom_rpy = _vector3(custom_rpy) if custom_rpy is not None else None
+                self.parent_frame = parent_frame
 
             def to_version(self, target_version: str) -> "Imu.OrientationReferenceFrame.CustomRpy":
                 kwargs: dict = {"sdf_version": target_version, "custom_rpy": self.custom_rpy, "parent_frame": self.parent_frame}
@@ -633,8 +633,8 @@ class Imu(BaseModel):
                 parent_frame: str | None = ""
             ):
                 super().__init__(sdf_version)
-                self.grav_dir_x = _vector3("1 0 0") if grav_dir_x is None else _vector3(grav_dir_x)
-                self.parent_frame = parent_frame if parent_frame is not None else ""
+                self.grav_dir_x = _vector3(grav_dir_x) if grav_dir_x is not None else None
+                self.parent_frame = parent_frame
 
             def to_version(self, target_version: str) -> "Imu.OrientationReferenceFrame.GravDirX":
                 kwargs: dict = {"sdf_version": target_version, "grav_dir_x": self.grav_dir_x, "parent_frame": self.parent_frame}
@@ -668,12 +668,12 @@ class Imu(BaseModel):
             sdf_version: str | None = None,
             custom_rpy: "Imu.OrientationReferenceFrame.CustomRpy" = None,
             grav_dir_x: "Imu.OrientationReferenceFrame.GravDirX" = None,
-            localization: str | None = "CUSTOM"
+            localization: str | None = None
         ):
             super().__init__(sdf_version)
             self.custom_rpy = custom_rpy
             self.grav_dir_x = grav_dir_x
-            self.localization = localization if localization is not None else "CUSTOM"
+            self.localization = localization
             if self.custom_rpy is not None and hasattr(self.custom_rpy, 'to_version'):
                 if getattr(self.custom_rpy, 'sdfversion', None) is None:
                     self.custom_rpy.sdfversion = self.sdfversion
@@ -752,19 +752,19 @@ class Imu(BaseModel):
         self,
         sdf_version: str | None = None,
         angular_velocity: "Imu.AngularVelocity" = None,
-        enable_orientation: bool | None = True,
+        enable_orientation: bool | None = None,
         linear_acceleration: "Imu.LinearAcceleration" = None,
         noise: "Imu.Noise" = None,
         orientation_reference_frame: "Imu.OrientationReferenceFrame" = None,
-        topic: str | None = "__default_topic__"
+        topic: str | None = None
     ):
         super().__init__(sdf_version)
         self.angular_velocity = angular_velocity
-        self.enable_orientation = enable_orientation if enable_orientation is not None else True
+        self.enable_orientation = enable_orientation
         self.linear_acceleration = linear_acceleration
         self.noise = noise
         self.orientation_reference_frame = orientation_reference_frame
-        self.topic = topic if topic is not None else "__default_topic__"
+        self.topic = topic
         if self.angular_velocity is not None and hasattr(self.angular_velocity, 'to_version'):
             if getattr(self.angular_velocity, 'sdfversion', None) is None:
                 self.angular_velocity.sdfversion = self.sdfversion

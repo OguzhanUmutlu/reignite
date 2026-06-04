@@ -13,12 +13,12 @@ class Capsule(BaseModel):
     def __init__(
         self,
         sdf_version: str | None = None,
-        length: float | None = 1,
-        radius: float | None = 0.5
+        length: float | None = None,
+        radius: float | None = None
     ):
         super().__init__(sdf_version)
-        self.length = length if length is not None else 1
-        self.radius = radius if radius is not None else 0.5
+        self.length = length
+        self.radius = radius
 
     def to_version(self, target_version: str) -> "Capsule":
         kwargs: dict = {"sdf_version": target_version, "length": self.length, "radius": self.radius}

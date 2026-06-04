@@ -32,12 +32,12 @@ class ModelState(BaseModel):
             def __init__(
                 self,
                 sdf_version: str | None = None,
-                angle: float | None = 0,
+                angle: float | None = None,
                 axis: int | None = 0
             ):
                 super().__init__(sdf_version)
-                self.angle = angle if angle is not None else 0
-                self.axis = axis if axis is not None else 0
+                self.angle = angle
+                self.axis = axis
 
             def to_version(self, target_version: str) -> "ModelState.Joint.Angle":
                 kwargs: dict = {"sdf_version": target_version, "angle": self.angle, "axis": self.axis}
@@ -74,7 +74,7 @@ class ModelState(BaseModel):
         ):
             super().__init__(sdf_version)
             self.angles = angles or []
-            self.name = name if name is not None else "__default__"
+            self.name = name
             for _i, _c in enumerate(self.angles):
                 if not hasattr(_c, 'to_version'): continue
                 if getattr(_c, 'sdfversion', None) is None:
@@ -144,9 +144,9 @@ class ModelState(BaseModel):
         self.links = links or []
         self.model_states = model_states or []
         self.models = models or []
-        self.name = name if name is not None else "__default__"
+        self.name = name
         self.pose = pose
-        self.scale = _vector3("1 1 1") if scale is None else _vector3(scale)
+        self.scale = _vector3(scale) if scale is not None else None
         for _i, _c in enumerate(self.frames):
             if not hasattr(_c, 'to_version'): continue
             if getattr(_c, 'sdfversion', None) is None:

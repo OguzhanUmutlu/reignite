@@ -15,14 +15,14 @@ class Ray(BaseModel):
         def __init__(
             self,
             sdf_version: str | None = None,
-            mean: float | None = 0.0,
-            stddev: float | None = 0.0,
-            type: str | None = "gaussian"
+            mean: float | None = None,
+            stddev: float | None = None,
+            type: str | None = None
         ):
             super().__init__(sdf_version)
-            self.mean = mean if mean is not None else 0.0
-            self.stddev = stddev if stddev is not None else 0.0
-            self.type = type if type is not None else "gaussian"
+            self.mean = mean
+            self.stddev = stddev
+            self.type = type
 
         def to_version(self, target_version: str) -> "Ray.Noise":
             kwargs: dict = {"sdf_version": target_version, "mean": self.mean, "stddev": self.stddev, "type": self.type}
@@ -88,9 +88,9 @@ class Ray(BaseModel):
             resolution: float | None = 0
         ):
             super().__init__(sdf_version)
-            self.max = max if max is not None else 0
-            self.min = min if min is not None else 0
-            self.resolution = resolution if resolution is not None else 0
+            self.max = max
+            self.min = min
+            self.resolution = resolution
 
         def to_version(self, target_version: str) -> "Ray.Range":
             if self.max is not None and cmp_version(target_version, "1.2") >= 0:
@@ -140,10 +140,10 @@ class Ray(BaseModel):
                 samples: int | None = 1
             ):
                 super().__init__(sdf_version)
-                self.max_angle = max_angle if max_angle is not None else 0
-                self.min_angle = min_angle if min_angle is not None else 0
-                self.resolution = resolution if resolution is not None else 1
-                self.samples = samples if samples is not None else 1
+                self.max_angle = max_angle
+                self.min_angle = min_angle
+                self.resolution = resolution
+                self.samples = samples
 
             def to_version(self, target_version: str) -> "Ray.Scan.Horizontal":
                 if self.max_angle is not None and cmp_version(target_version, "1.2") >= 0:
@@ -199,10 +199,10 @@ class Ray(BaseModel):
                 samples: int | None = 1
             ):
                 super().__init__(sdf_version)
-                self.max_angle = max_angle if max_angle is not None else 0
-                self.min_angle = min_angle if min_angle is not None else 0
-                self.resolution = resolution if resolution is not None else 1
-                self.samples = samples if samples is not None else 1
+                self.max_angle = max_angle
+                self.min_angle = min_angle
+                self.resolution = resolution
+                self.samples = samples
 
             def to_version(self, target_version: str) -> "Ray.Scan.Vertical":
                 if self.max_angle is not None and cmp_version(target_version, "1.2") >= 0:
@@ -322,13 +322,13 @@ class Ray(BaseModel):
         noise: "Ray.Noise" = None,
         range: "Ray.Range" = None,
         scan: "Ray.Scan" = None,
-        visibility_mask: int | None = 4294967295
+        visibility_mask: int | None = None
     ):
         super().__init__(sdf_version)
         self.noise = noise
         self.range = range
         self.scan = scan
-        self.visibility_mask = visibility_mask if visibility_mask is not None else 4294967295
+        self.visibility_mask = visibility_mask
         if self.noise is not None and hasattr(self.noise, 'to_version'):
             if getattr(self.noise, 'sdfversion', None) is None:
                 self.noise.sdfversion = self.sdfversion

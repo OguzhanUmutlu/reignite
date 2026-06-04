@@ -14,24 +14,24 @@ class Noise(BaseModel):
     def __init__(
         self,
         sdf_version: str | None = None,
-        bias_mean: float | None = 0.0,
-        bias_stddev: float | None = 0.0,
-        dynamic_bias_correlation_time: float | None = 0.0,
-        dynamic_bias_stddev: float | None = 0.0,
-        mean: float | None = 0.0,
-        precision: float | None = 0.0,
-        stddev: float | None = 0.0,
+        bias_mean: float | None = None,
+        bias_stddev: float | None = None,
+        dynamic_bias_correlation_time: float | None = None,
+        dynamic_bias_stddev: float | None = None,
+        mean: float | None = None,
+        precision: float | None = None,
+        stddev: float | None = None,
         type: str | None = "none"
     ):
         super().__init__(sdf_version)
-        self.bias_mean = bias_mean if bias_mean is not None else 0.0
-        self.bias_stddev = bias_stddev if bias_stddev is not None else 0.0
-        self.dynamic_bias_correlation_time = dynamic_bias_correlation_time if dynamic_bias_correlation_time is not None else 0.0
-        self.dynamic_bias_stddev = dynamic_bias_stddev if dynamic_bias_stddev is not None else 0.0
-        self.mean = mean if mean is not None else 0.0
-        self.precision = precision if precision is not None else 0.0
-        self.stddev = stddev if stddev is not None else 0.0
-        self.type = type if type is not None else "none"
+        self.bias_mean = bias_mean
+        self.bias_stddev = bias_stddev
+        self.dynamic_bias_correlation_time = dynamic_bias_correlation_time
+        self.dynamic_bias_stddev = dynamic_bias_stddev
+        self.mean = mean
+        self.precision = precision
+        self.stddev = stddev
+        self.type = type
 
     def to_version(self, target_version: str) -> "Noise":
         if self.dynamic_bias_correlation_time is not None and cmp_version(target_version, "1.6") < 0:

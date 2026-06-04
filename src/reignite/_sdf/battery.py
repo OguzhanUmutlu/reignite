@@ -14,11 +14,11 @@ class Battery(BaseModel):
         self,
         sdf_version: str | None = None,
         name: str | None = "__default__",
-        voltage: float | None = 0.0
+        voltage: float | None = None
     ):
         super().__init__(sdf_version)
-        self.name = name if name is not None else "__default__"
-        self.voltage = voltage if voltage is not None else 0.0
+        self.name = name
+        self.voltage = voltage
 
     def to_version(self, target_version: str) -> "Battery":
         kwargs: dict = {"sdf_version": target_version, "name": self.name, "voltage": self.voltage}

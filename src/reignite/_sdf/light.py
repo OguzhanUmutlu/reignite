@@ -49,10 +49,10 @@ class Light(BaseModel):
             range: float | None = 10
         ):
             super().__init__(sdf_version)
-            self.constant = constant if constant is not None else 1
-            self.linear = linear if linear is not None else 1
-            self.quadratic = quadratic if quadratic is not None else 0
-            self.range = range if range is not None else 10
+            self.constant = constant
+            self.linear = linear
+            self.quadratic = quadratic
+            self.range = range
 
         def to_version(self, target_version: str) -> "Light.Attenuation":
             if self.constant is not None and cmp_version(target_version, "1.2") >= 0:
@@ -106,8 +106,8 @@ class Light(BaseModel):
             rgba: _ColorT | None = None
         ):
             super().__init__(sdf_version)
-            self.diffuse = _color("1 1 1 1") if diffuse is None else _color(diffuse)
-            self.rgba = _color("1 1 1 1") if rgba is None else _color(rgba)
+            self.diffuse = _color(diffuse) if diffuse is not None else None
+            self.rgba = _color(rgba) if rgba is not None else None
 
         def to_version(self, target_version: str) -> "Light.Diffuse":
             if self.rgba is not None and cmp_version(target_version, "1.2") >= 0:
@@ -155,8 +155,8 @@ class Light(BaseModel):
             xyz: _Vector3T | None = None
         ):
             super().__init__(sdf_version)
-            self.direction = _vector3("0 0 -1") if direction is None else _vector3(direction)
-            self.xyz = _vector3("0 0 -1") if xyz is None else _vector3(xyz)
+            self.direction = _vector3(direction) if direction is not None else None
+            self.xyz = _vector3(xyz) if xyz is not None else None
 
         def to_version(self, target_version: str) -> "Light.Direction":
             if self.xyz is not None and cmp_version(target_version, "1.2") >= 0:
@@ -199,7 +199,7 @@ class Light(BaseModel):
     class Origin(BaseModel):
         def __init__(self, sdf_version: str | None = None, pose: _PoseT | None = None):
             super().__init__(sdf_version)
-            self.pose = _pose("0 0 0 0 0 0") if pose is None else _pose(pose)
+            self.pose = _pose(pose) if pose is not None else None
 
         def to_version(self, target_version: str) -> "Light.Origin":
             kwargs: dict = {"sdf_version": target_version, "pose": self.pose}
@@ -242,8 +242,8 @@ class Light(BaseModel):
             specular: _ColorT | None = None
         ):
             super().__init__(sdf_version)
-            self.rgba = _color(".1 .1 .1 1") if rgba is None else _color(rgba)
-            self.specular = _color(".1 .1 .1 1") if specular is None else _color(specular)
+            self.rgba = _color(rgba) if rgba is not None else None
+            self.specular = _color(specular) if specular is not None else None
 
         def to_version(self, target_version: str) -> "Light.Specular":
             if self.rgba is not None and cmp_version(target_version, "1.2") >= 0:
@@ -292,9 +292,9 @@ class Light(BaseModel):
             outer_angle: float | None = 0
         ):
             super().__init__(sdf_version)
-            self.falloff = falloff if falloff is not None else 0
-            self.inner_angle = inner_angle if inner_angle is not None else 0
-            self.outer_angle = outer_angle if outer_angle is not None else 0
+            self.falloff = falloff
+            self.inner_angle = inner_angle
+            self.outer_angle = outer_angle
 
         def to_version(self, target_version: str) -> "Light.Spot":
             if self.falloff is not None and cmp_version(target_version, "1.2") >= 0:
@@ -341,31 +341,31 @@ class Light(BaseModel):
         diffuse: "Light.Diffuse" = None,
         direction: "Light.Direction" = None,
         frames: List["Frame"] = None,
-        intensity: float | None = 1,
-        light_on: bool | None = True,
+        intensity: float | None = None,
+        light_on: bool | None = None,
         name: str | None = "__default__",
         origin: "Light.Origin" = None,
         pose: "Pose" = None,
         specular: "Light.Specular" = None,
         spot: "Light.Spot" = None,
         type: str | None = "point",
-        visualize: bool | None = True
+        visualize: bool | None = None
     ):
         super().__init__(sdf_version)
         self.attenuation = attenuation
-        self.cast_shadows = cast_shadows if cast_shadows is not None else False
+        self.cast_shadows = cast_shadows
         self.diffuse = diffuse
         self.direction = direction
         self.frames = frames or []
-        self.intensity = intensity if intensity is not None else 1
-        self.light_on = light_on if light_on is not None else True
-        self.name = name if name is not None else "__default__"
+        self.intensity = intensity
+        self.light_on = light_on
+        self.name = name
         self.origin = origin
         self.pose = pose
         self.specular = specular
         self.spot = spot
-        self.type = type if type is not None else "point"
-        self.visualize = visualize if visualize is not None else True
+        self.type = type
+        self.visualize = visualize
         if self.attenuation is not None and hasattr(self.attenuation, 'to_version'):
             if getattr(self.attenuation, 'sdfversion', None) is None:
                 self.attenuation.sdfversion = self.sdfversion

@@ -30,11 +30,11 @@ class Pose(BaseModel):
         rotation_format: str | None = "euler_rpy"
     ):
         super().__init__(sdf_version)
-        self.degrees = degrees if degrees is not None else False
-        self.frame = frame if frame is not None else ""
-        self.pose = _pose("0 0 0 0 0 0") if pose is None else _pose(pose)
-        self.relative_to = relative_to if relative_to is not None else ""
-        self.rotation_format = rotation_format if rotation_format is not None else "euler_rpy"
+        self.degrees = degrees
+        self.frame = frame
+        self.pose = _pose(pose) if pose is not None else None
+        self.relative_to = relative_to
+        self.rotation_format = rotation_format
 
     def to_version(self, target_version: str) -> "Pose":
         if self.degrees is not None and cmp_version(target_version, "1.9") < 0:

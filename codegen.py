@@ -493,8 +493,8 @@ def _collect_class_spec(
         all_convert_ops: dict[str, list[dict]],
         parent_name: str = None,
         external_imports: set[str] = None,
-        qualified_names=None,  # NEW: bare_cls -> "Root.Parent.Cls"
-        my_qualified_prefix=""  # NEW: e.g. "Navsat.PositionSensing."
+        qualified_names=None, 
+        my_qualified_prefix=""  
 ) -> dict:
     if qualified_names is None:
         qualified_names = {}
@@ -664,11 +664,7 @@ def _collect_class_spec(
         schema_default = lnode.get("_default", "")
         if schema_default != "":
             raw_default = _format_default(hint, schema_default)
-            if mod:
-                default = "None"
-                init_default_expr = f"_{mod}({raw_default})"
-            else:
-                default = raw_default
+            default = "None"
         item_raw_default = raw_default
 
         renames = {}
@@ -727,8 +723,7 @@ def _collect_class_spec(
                     renames[op["_version"]] = {"kind": "attr", "name": op["to_attribute"]}
         required_history = cnode.get("_required_history", {})
         effective_req = _effective_required(required, required_history)
-        # Defaulting of single child elements is handled by the SDF engine,
-        # so we don't enforce required-ness or auto-instantiate them.
+
         is_required = effective_req == "+"
         if is_required and cnode.get("_default", "") != "":
             is_required = False
@@ -756,11 +751,7 @@ def _collect_class_spec(
             schema_default = node.get("_default", "")
             if schema_default != "":
                 raw_default = _format_default(hint, schema_default)
-                if mod:
-                    default = "None"
-                    init_default_expr = f"_{mod}({raw_default})"
-                else:
-                    default = raw_default
+                default = "None"
             renames = {}
             for op in applicable_ops:
                 if op.get("type") == "rename" and op.get("from_element") == name and not op.get("from_attribute"):
@@ -919,19 +910,12 @@ def _render_class(spec: dict, file_external_imports: set[str], indent: int = 0,
         if p.is_list and p.mod:
             block.append(
                 f"        self.{p.py_name} = list(map(_{p.mod}, {p.py_name})) if {p.py_name} is not None else []")
-        elif p.init_default_expr:
-            if p.mod:
-                block.append(
-                    f"        self.{p.py_name} = {p.init_default_expr} if {p.py_name} is None else _{p.mod}({p.py_name})")
-            else:
-                block.append(
-                    f"        self.{p.py_name} = {p.init_default_expr} if {p.py_name} is None else {p.py_name}")
         elif p.mod:
-            block.append(f"        self.{p.py_name} = _{p.mod}({p.py_name})")
-        elif p.raw_default != "None":
-            block.append(f"        self.{p.py_name} = {p.py_name} if {p.py_name} is not None else {p.raw_default}")
+            block.append(f"        self.{p.py_name} = _{p.mod}({p.py_name}) if {p.py_name} is not None else None")
+        elif p.is_list:
+            block.append(f"        self.{p.py_name} = {p.py_name} or []")
         else:
-            block.append(f"        self.{p.py_name} = {p.py_name}" + (" or []" if p.is_list else ""))
+            block.append(f"        self.{p.py_name} = {p.py_name}")
 
     for p in params:
         if p.kind == "child":

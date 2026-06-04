@@ -60,20 +60,20 @@ class AudioSource(BaseModel):
         sdf_version: str | None = None,
         contact: "AudioSource.Contact" = None,
         frames: List["Frame"] = None,
-        gain: float | None = 1.0,
-        loop: bool | None = False,
-        pitch: float | None = 1.0,
+        gain: float | None = None,
+        loop: bool | None = None,
+        pitch: float | None = None,
         pose: "Pose" = None,
-        uri: str | None = "__default__"
+        uri: str | None = None
     ):
         super().__init__(sdf_version)
         self.contact = contact
         self.frames = frames or []
-        self.gain = gain if gain is not None else 1.0
-        self.loop = loop if loop is not None else False
-        self.pitch = pitch if pitch is not None else 1.0
+        self.gain = gain
+        self.loop = loop
+        self.pitch = pitch
         self.pose = pose
-        self.uri = uri if uri is not None else "__default__"
+        self.uri = uri
         if self.contact is not None and hasattr(self.contact, 'to_version'):
             if getattr(self.contact, 'sdfversion', None) is None:
                 self.contact.sdfversion = self.sdfversion

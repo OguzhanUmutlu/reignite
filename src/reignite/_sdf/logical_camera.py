@@ -13,16 +13,16 @@ class LogicalCamera(BaseModel):
     def __init__(
         self,
         sdf_version: str | None = None,
-        aspect_ratio: float | None = 1,
-        far: float | None = 1,
-        horizontal_fov: float | None = 1,
-        near: float | None = 0
+        aspect_ratio: float | None = None,
+        far: float | None = None,
+        horizontal_fov: float | None = None,
+        near: float | None = None
     ):
         super().__init__(sdf_version)
-        self.aspect_ratio = aspect_ratio if aspect_ratio is not None else 1
-        self.far = far if far is not None else 1
-        self.horizontal_fov = horizontal_fov if horizontal_fov is not None else 1
-        self.near = near if near is not None else 0
+        self.aspect_ratio = aspect_ratio
+        self.far = far
+        self.horizontal_fov = horizontal_fov
+        self.near = near
 
     def to_version(self, target_version: str) -> "LogicalCamera":
         kwargs: dict = {"sdf_version": target_version, "aspect_ratio": self.aspect_ratio, "far": self.far, "horizontal_fov": self.horizontal_fov, "near": self.near}

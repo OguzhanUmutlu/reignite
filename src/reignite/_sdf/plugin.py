@@ -16,8 +16,8 @@ class Plugin(BaseModel):
         name: str | None = "__default__"
     ):
         super().__init__(sdf_version)
-        self.filename = filename if filename is not None else "__default__"
-        self.name = name if name is not None else "__default__"
+        self.filename = filename
+        self.name = name
 
     def to_version(self, target_version: str) -> "Plugin":
         kwargs: dict = {"sdf_version": target_version, "filename": self.filename, "name": self.name}

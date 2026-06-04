@@ -31,7 +31,7 @@ class Gazebo(BaseModel):
         self.actors = actors or []
         self.lights = lights or []
         self.models = models or []
-        self.version = version if version is not None else "1.0"
+        self.version = version
         self.worlds = worlds or []
         for _i, _c in enumerate(self.actors):
             if not hasattr(_c, 'to_version'): continue

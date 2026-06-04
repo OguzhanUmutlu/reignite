@@ -37,7 +37,7 @@ class Gui(BaseModel):
         class Origin(BaseModel):
             def __init__(self, sdf_version: str | None = None, pose: _PoseT | None = None):
                 super().__init__(sdf_version)
-                self.pose = _pose("0 0 0 0 0 0") if pose is None else _pose(pose)
+                self.pose = _pose(pose) if pose is not None else None
 
             def to_version(self, target_version: str) -> "Gui.Camera.Origin":
                 kwargs: dict = {"sdf_version": target_version, "pose": self.pose}
@@ -76,22 +76,22 @@ class Gui(BaseModel):
             def __init__(
                 self,
                 sdf_version: str | None = None,
-                inherit_yaw: bool | None = False,
-                max_dist: float | None = 0,
-                min_dist: float | None = 0,
-                name: str | None = "__default__",
-                static: bool | None = False,
-                use_model_frame: bool | None = True,
+                inherit_yaw: bool | None = None,
+                max_dist: float | None = None,
+                min_dist: float | None = None,
+                name: str | None = None,
+                static: bool | None = None,
+                use_model_frame: bool | None = None,
                 xyz: _Vector3T | None = None
             ):
                 super().__init__(sdf_version)
-                self.inherit_yaw = inherit_yaw if inherit_yaw is not None else False
-                self.max_dist = max_dist if max_dist is not None else 0
-                self.min_dist = min_dist if min_dist is not None else 0
-                self.name = name if name is not None else "__default__"
-                self.static = static if static is not None else False
-                self.use_model_frame = use_model_frame if use_model_frame is not None else True
-                self.xyz = _vector3("-5.0 0.0 3.0") if xyz is None else _vector3(xyz)
+                self.inherit_yaw = inherit_yaw
+                self.max_dist = max_dist
+                self.min_dist = min_dist
+                self.name = name
+                self.static = static
+                self.use_model_frame = use_model_frame
+                self.xyz = _vector3(xyz) if xyz is not None else None
 
             def to_version(self, target_version: str) -> "Gui.Camera.TrackVisual":
                 if self.inherit_yaw is not None and cmp_version(target_version, "1.6") < 0:
@@ -223,18 +223,18 @@ class Gui(BaseModel):
             name: str | None = "user_camera",
             origin: "Gui.Camera.Origin" = None,
             pose: "Pose" = None,
-            projection_type: str | None = "perspective",
+            projection_type: str | None = None,
             track_visual: "Gui.Camera.TrackVisual" = None,
-            view_controller: str | None = "oribit"
+            view_controller: str | None = None
         ):
             super().__init__(sdf_version)
             self.frames = frames or []
-            self.name = name if name is not None else "user_camera"
+            self.name = name
             self.origin = origin
             self.pose = pose
-            self.projection_type = projection_type if projection_type is not None else "perspective"
+            self.projection_type = projection_type
             self.track_visual = track_visual
-            self.view_controller = view_controller if view_controller is not None else "oribit"
+            self.view_controller = view_controller
             for _i, _c in enumerate(self.frames):
                 if not hasattr(_c, 'to_version'): continue
                 if getattr(_c, 'sdfversion', None) is None:
@@ -402,7 +402,7 @@ class Gui(BaseModel):
     ):
         super().__init__(sdf_version)
         self.camera = camera
-        self.fullscreen = fullscreen if fullscreen is not None else False
+        self.fullscreen = fullscreen
         self.plugins = plugins or []
         if self.camera is not None and hasattr(self.camera, 'to_version'):
             if getattr(self.camera, 'sdfversion', None) is None:

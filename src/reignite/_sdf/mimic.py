@@ -15,16 +15,16 @@ class Mimic(BaseModel):
         sdf_version: str | None = None,
         axis: str | None = "axis",
         joint: str | None = "",
-        multiplier: float | None = 1.0,
-        offset: float | None = 0,
-        reference: float | None = 0
+        multiplier: float | None = None,
+        offset: float | None = None,
+        reference: float | None = None
     ):
         super().__init__(sdf_version)
-        self.axis = axis if axis is not None else "axis"
-        self.joint = joint if joint is not None else ""
-        self.multiplier = multiplier if multiplier is not None else 1.0
-        self.offset = offset if offset is not None else 0
-        self.reference = reference if reference is not None else 0
+        self.axis = axis
+        self.joint = joint
+        self.multiplier = multiplier
+        self.offset = offset
+        self.reference = reference
 
     def to_version(self, target_version: str) -> "Mimic":
         kwargs: dict = {"sdf_version": target_version, "axis": self.axis, "joint": self.joint, "multiplier": self.multiplier, "offset": self.offset, "reference": self.reference}

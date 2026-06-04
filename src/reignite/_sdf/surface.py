@@ -26,8 +26,8 @@ class Surface(BaseModel):
             threshold: float | None = 100000
         ):
             super().__init__(sdf_version)
-            self.restitution_coefficient = restitution_coefficient if restitution_coefficient is not None else 0
-            self.threshold = threshold if threshold is not None else 100000
+            self.restitution_coefficient = restitution_coefficient
+            self.threshold = threshold
 
         def to_version(self, target_version: str) -> "Surface.Bounce":
             if self.restitution_coefficient is not None and cmp_version(target_version, "1.2") >= 0:
@@ -64,20 +64,20 @@ class Surface(BaseModel):
             def __init__(
                 self,
                 sdf_version: str | None = None,
-                kd: float | None = 1.0,
-                kp: float | None = 1000000000000.0,
-                soft_cfm: float | None = 0,
-                soft_erp: float | None = 0.2,
-                split_impulse: bool | None = True,
-                split_impulse_penetration_threshold: float | None = -0.01
+                kd: float | None = None,
+                kp: float | None = None,
+                soft_cfm: float | None = None,
+                soft_erp: float | None = None,
+                split_impulse: bool | None = None,
+                split_impulse_penetration_threshold: float | None = None
             ):
                 super().__init__(sdf_version)
-                self.kd = kd if kd is not None else 1.0
-                self.kp = kp if kp is not None else 1000000000000.0
-                self.soft_cfm = soft_cfm if soft_cfm is not None else 0
-                self.soft_erp = soft_erp if soft_erp is not None else 0.2
-                self.split_impulse = split_impulse if split_impulse is not None else True
-                self.split_impulse_penetration_threshold = split_impulse_penetration_threshold if split_impulse_penetration_threshold is not None else -0.01
+                self.kd = kd
+                self.kp = kp
+                self.soft_cfm = soft_cfm
+                self.soft_erp = soft_erp
+                self.split_impulse = split_impulse
+                self.split_impulse_penetration_threshold = split_impulse_penetration_threshold
 
             def to_version(self, target_version: str) -> "Surface.Contact.Bullet":
                 kwargs: dict = {"sdf_version": target_version, "kd": self.kd, "kp": self.kp, "soft_cfm": self.soft_cfm, "soft_erp": self.soft_erp, "split_impulse": self.split_impulse, "split_impulse_penetration_threshold": self.split_impulse_penetration_threshold}
@@ -185,12 +185,12 @@ class Surface(BaseModel):
                 soft_erp: float | None = 0.2
             ):
                 super().__init__(sdf_version)
-                self.kd = kd if kd is not None else 1.0
-                self.kp = kp if kp is not None else 1000000000000.0
-                self.max_vel = max_vel if max_vel is not None else 0.01
-                self.min_depth = min_depth if min_depth is not None else 0
-                self.soft_cfm = soft_cfm if soft_cfm is not None else 0
-                self.soft_erp = soft_erp if soft_erp is not None else 0.2
+                self.kd = kd
+                self.kp = kp
+                self.max_vel = max_vel
+                self.min_depth = min_depth
+                self.soft_cfm = soft_cfm
+                self.soft_erp = soft_erp
 
             def to_version(self, target_version: str) -> "Surface.Contact.Ode":
                 if self.kd is not None and cmp_version(target_version, "1.2") >= 0:
@@ -254,23 +254,23 @@ class Surface(BaseModel):
             self,
             sdf_version: str | None = None,
             bullet: "Surface.Contact.Bullet" = None,
-            category_bitmask: int | None = 65535,
-            collide_bitmask: int | None = 1,
-            collide_without_contact: bool | None = False,
-            collide_without_contact_bitmask: int | None = 1,
-            elastic_modulus: float | None = -1,
+            category_bitmask: int | None = None,
+            collide_bitmask: int | None = None,
+            collide_without_contact: bool | None = None,
+            collide_without_contact_bitmask: int | None = None,
+            elastic_modulus: float | None = None,
             ode: "Surface.Contact.Ode" = None,
-            poissons_ratio: float | None = 0.3
+            poissons_ratio: float | None = None
         ):
             super().__init__(sdf_version)
             self.bullet = bullet
-            self.category_bitmask = category_bitmask if category_bitmask is not None else 65535
-            self.collide_bitmask = collide_bitmask if collide_bitmask is not None else 1
-            self.collide_without_contact = collide_without_contact if collide_without_contact is not None else False
-            self.collide_without_contact_bitmask = collide_without_contact_bitmask if collide_without_contact_bitmask is not None else 1
-            self.elastic_modulus = elastic_modulus if elastic_modulus is not None else -1
+            self.category_bitmask = category_bitmask
+            self.collide_bitmask = collide_bitmask
+            self.collide_without_contact = collide_without_contact
+            self.collide_without_contact_bitmask = collide_without_contact_bitmask
+            self.elastic_modulus = elastic_modulus
             self.ode = ode
-            self.poissons_ratio = poissons_ratio if poissons_ratio is not None else 0.3
+            self.poissons_ratio = poissons_ratio
             if self.bullet is not None and hasattr(self.bullet, 'to_version'):
                 if getattr(self.bullet, 'sdfversion', None) is None:
                     self.bullet.sdfversion = self.sdfversion
@@ -442,15 +442,15 @@ class Surface(BaseModel):
                 self,
                 sdf_version: str | None = None,
                 fdir1: _Vector3T | None = None,
-                friction: float | None = 1,
-                friction2: float | None = 1,
-                rolling_friction: float | None = 1
+                friction: float | None = None,
+                friction2: float | None = None,
+                rolling_friction: float | None = None
             ):
                 super().__init__(sdf_version)
-                self.fdir1 = _vector3("0 0 0") if fdir1 is None else _vector3(fdir1)
-                self.friction = friction if friction is not None else 1
-                self.friction2 = friction2 if friction2 is not None else 1
-                self.rolling_friction = rolling_friction if rolling_friction is not None else 1
+                self.fdir1 = _vector3(fdir1) if fdir1 is not None else None
+                self.friction = friction
+                self.friction2 = friction2
+                self.rolling_friction = rolling_friction
 
             def to_version(self, target_version: str) -> "Surface.Friction.FrictionBullet":
                 kwargs: dict = {"sdf_version": target_version, "fdir1": self.fdir1, "friction": self.friction, "friction2": self.friction2, "rolling_friction": self.rolling_friction}
@@ -531,11 +531,11 @@ class Surface(BaseModel):
                 slip2: float | None = 0.0
             ):
                 super().__init__(sdf_version)
-                self.fdir1 = _vector3("0 0 0") if fdir1 is None else _vector3(fdir1)
-                self.mu = mu if mu is not None else -1
-                self.mu2 = mu2 if mu2 is not None else -1
-                self.slip1 = slip1 if slip1 is not None else 0.0
-                self.slip2 = slip2 if slip2 is not None else 0.0
+                self.fdir1 = _vector3(fdir1) if fdir1 is not None else None
+                self.mu = mu
+                self.mu2 = mu2
+                self.slip1 = slip1
+                self.slip2 = slip2
 
             def to_version(self, target_version: str) -> "Surface.Friction.FrictionOde":
                 if self.fdir1 is not None and cmp_version(target_version, "1.2") >= 0:
@@ -590,9 +590,9 @@ class Surface(BaseModel):
 
         class Torsional(BaseModel):
             class TorsionalOde(BaseModel):
-                def __init__(self, sdf_version: str | None = None, slip: float | None = 0.0):
+                def __init__(self, sdf_version: str | None = None, slip: float | None = None):
                     super().__init__(sdf_version)
-                    self.slip = slip if slip is not None else 0.0
+                    self.slip = slip
 
                 def to_version(self, target_version: str) -> "Surface.Friction.Torsional.TorsionalOde":
                     kwargs: dict = {"sdf_version": target_version, "slip": self.slip}
@@ -626,18 +626,18 @@ class Surface(BaseModel):
             def __init__(
                 self,
                 sdf_version: str | None = None,
-                coefficient: float | None = 1.0,
+                coefficient: float | None = None,
                 ode: "Surface.Friction.Torsional.TorsionalOde" = None,
-                patch_radius: float | None = 0,
-                surface_radius: float | None = 0.0,
-                use_patch_radius: bool | None = True
+                patch_radius: float | None = None,
+                surface_radius: float | None = None,
+                use_patch_radius: bool | None = None
             ):
                 super().__init__(sdf_version)
-                self.coefficient = coefficient if coefficient is not None else 1.0
+                self.coefficient = coefficient
                 self.ode = ode
-                self.patch_radius = patch_radius if patch_radius is not None else 0
-                self.surface_radius = surface_radius if surface_radius is not None else 0.0
-                self.use_patch_radius = use_patch_radius if use_patch_radius is not None else True
+                self.patch_radius = patch_radius
+                self.surface_radius = surface_radius
+                self.use_patch_radius = use_patch_radius
                 if self.ode is not None and hasattr(self.ode, 'to_version'):
                     if getattr(self.ode, 'sdfversion', None) is None:
                         self.ode.sdfversion = self.sdfversion
@@ -832,16 +832,16 @@ class Surface(BaseModel):
             def __init__(
                 self,
                 sdf_version: str | None = None,
-                bone_attachment: float | None = 100.0,
-                damping: float | None = 10.0,
-                flesh_mass_fraction: float | None = 0.05,
-                stiffness: float | None = 100.0
+                bone_attachment: float | None = None,
+                damping: float | None = None,
+                flesh_mass_fraction: float | None = None,
+                stiffness: float | None = None
             ):
                 super().__init__(sdf_version)
-                self.bone_attachment = bone_attachment if bone_attachment is not None else 100.0
-                self.damping = damping if damping is not None else 10.0
-                self.flesh_mass_fraction = flesh_mass_fraction if flesh_mass_fraction is not None else 0.05
-                self.stiffness = stiffness if stiffness is not None else 100.0
+                self.bone_attachment = bone_attachment
+                self.damping = damping
+                self.flesh_mass_fraction = flesh_mass_fraction
+                self.stiffness = stiffness
 
             def to_version(self, target_version: str) -> "Surface.SoftContact.Dart":
                 kwargs: dict = {"sdf_version": target_version, "bone_attachment": self.bone_attachment, "damping": self.damping, "flesh_mass_fraction": self.flesh_mass_fraction, "stiffness": self.stiffness}

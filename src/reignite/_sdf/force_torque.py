@@ -331,14 +331,14 @@ class ForceTorque(BaseModel):
         self,
         sdf_version: str | None = None,
         force: "ForceTorque.Force" = None,
-        frame: str | None = "parent",
-        measure_direction: str | None = "child_to_parent",
+        frame: str | None = None,
+        measure_direction: str | None = None,
         torque: "ForceTorque.Torque" = None
     ):
         super().__init__(sdf_version)
         self.force = force
-        self.frame = frame if frame is not None else "parent"
-        self.measure_direction = measure_direction if measure_direction is not None else "child_to_parent"
+        self.frame = frame
+        self.measure_direction = measure_direction
         self.torque = torque
         if self.force is not None and hasattr(self.force, 'to_version'):
             if getattr(self.force, 'sdfversion', None) is None:

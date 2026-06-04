@@ -24,18 +24,18 @@ class Physics(BaseModel):
             def __init__(
                 self,
                 sdf_version: str | None = None,
-                cfm: float | None = 0,
-                contact_surface_layer: float | None = 0.001,
-                erp: float | None = 0.2,
-                split_impulse: bool | None = True,
-                split_impulse_penetration_threshold: float | None = -0.01
+                cfm: float | None = None,
+                contact_surface_layer: float | None = None,
+                erp: float | None = None,
+                split_impulse: bool | None = None,
+                split_impulse_penetration_threshold: float | None = None
             ):
                 super().__init__(sdf_version)
-                self.cfm = cfm if cfm is not None else 0
-                self.contact_surface_layer = contact_surface_layer if contact_surface_layer is not None else 0.001
-                self.erp = erp if erp is not None else 0.2
-                self.split_impulse = split_impulse if split_impulse is not None else True
-                self.split_impulse_penetration_threshold = split_impulse_penetration_threshold if split_impulse_penetration_threshold is not None else -0.01
+                self.cfm = cfm
+                self.contact_surface_layer = contact_surface_layer
+                self.erp = erp
+                self.split_impulse = split_impulse
+                self.split_impulse_penetration_threshold = split_impulse_penetration_threshold
 
             def to_version(self, target_version: str) -> "Physics.Bullet.Constraints":
                 kwargs: dict = {"sdf_version": target_version, "cfm": self.cfm, "contact_surface_layer": self.contact_surface_layer, "erp": self.erp, "split_impulse": self.split_impulse, "split_impulse_penetration_threshold": self.split_impulse_penetration_threshold}
@@ -122,16 +122,16 @@ class Physics(BaseModel):
             def __init__(
                 self,
                 sdf_version: str | None = None,
-                iters: int | None = 50,
-                min_step_size: float | None = 0.0001,
-                sor: float | None = 1.3,
-                type: str | None = "sequential_impulse"
+                iters: int | None = None,
+                min_step_size: float | None = None,
+                sor: float | None = None,
+                type: str | None = None
             ):
                 super().__init__(sdf_version)
-                self.iters = iters if iters is not None else 50
-                self.min_step_size = min_step_size if min_step_size is not None else 0.0001
-                self.sor = sor if sor is not None else 1.3
-                self.type = type if type is not None else "sequential_impulse"
+                self.iters = iters
+                self.min_step_size = min_step_size
+                self.sor = sor
+                self.type = type
 
             def to_version(self, target_version: str) -> "Physics.Bullet.Solver":
                 kwargs: dict = {"sdf_version": target_version, "iters": self.iters, "min_step_size": self.min_step_size, "sor": self.sor, "type": self.type}
@@ -205,12 +205,12 @@ class Physics(BaseModel):
             self,
             sdf_version: str | None = None,
             constraints: "Physics.Bullet.Constraints" = None,
-            dt: float | None = 0.003,
+            dt: float | None = None,
             solver: "Physics.Bullet.Solver" = None
         ):
             super().__init__(sdf_version)
             self.constraints = constraints
-            self.dt = dt if dt is not None else 0.003
+            self.dt = dt
             self.solver = solver
             if self.constraints is not None and hasattr(self.constraints, 'to_version'):
                 if getattr(self.constraints, 'sdfversion', None) is None:
@@ -296,9 +296,9 @@ class Physics(BaseModel):
 
     class Dart(BaseModel):
         class DartSolver(BaseModel):
-            def __init__(self, sdf_version: str | None = None, solver_type: str | None = "dantzig"):
+            def __init__(self, sdf_version: str | None = None, solver_type: str | None = None):
                 super().__init__(sdf_version)
-                self.solver_type = solver_type if solver_type is not None else "dantzig"
+                self.solver_type = solver_type
 
             def to_version(self, target_version: str) -> "Physics.Dart.DartSolver":
                 kwargs: dict = {"sdf_version": target_version, "solver_type": self.solver_type}
@@ -332,11 +332,11 @@ class Physics(BaseModel):
         def __init__(
             self,
             sdf_version: str | None = None,
-            collision_detector: str | None = "fcl",
+            collision_detector: str | None = None,
             solver: "Physics.Dart.DartSolver" = None
         ):
             super().__init__(sdf_version)
-            self.collision_detector = collision_detector if collision_detector is not None else "fcl"
+            self.collision_detector = collision_detector
             self.solver = solver
             if self.solver is not None and hasattr(self.solver, 'to_version'):
                 if getattr(self.solver, 'sdfversion', None) is None:
@@ -397,8 +397,8 @@ class Physics(BaseModel):
             xyz: _Vector3T | None = None
         ):
             super().__init__(sdf_version)
-            self.gravity = _vector3("0 0 -9.8") if gravity is None else _vector3(gravity)
-            self.xyz = _vector3("0 0 -9.8") if xyz is None else _vector3(xyz)
+            self.gravity = _vector3(gravity) if gravity is not None else None
+            self.xyz = _vector3(xyz) if xyz is not None else None
 
         def to_version(self, target_version: str) -> "Physics.Gravity":
             if self.gravity is not None and cmp_version(target_version, "1.6") >= 0:
@@ -451,10 +451,10 @@ class Physics(BaseModel):
                 erp: float | None = 0.2
             ):
                 super().__init__(sdf_version)
-                self.cfm = cfm if cfm is not None else 0
-                self.contact_max_correcting_vel = contact_max_correcting_vel if contact_max_correcting_vel is not None else 100.0
-                self.contact_surface_layer = contact_surface_layer if contact_surface_layer is not None else 0.001
-                self.erp = erp if erp is not None else 0.2
+                self.cfm = cfm
+                self.contact_max_correcting_vel = contact_max_correcting_vel
+                self.contact_surface_layer = contact_surface_layer
+                self.erp = erp
 
             def to_version(self, target_version: str) -> "Physics.Ode.OdeConstraints":
                 if self.cfm is not None and cmp_version(target_version, "1.2") >= 0:
@@ -505,27 +505,27 @@ class Physics(BaseModel):
                 self,
                 sdf_version: str | None = None,
                 dt: float | None = 0.001,
-                friction_model: str | None = "pyramid_model",
-                island_threads: int | None = 0,
+                friction_model: str | None = None,
+                island_threads: int | None = None,
                 iters: int | None = 50,
-                min_step_size: float | None = 0.0001,
+                min_step_size: float | None = None,
                 precon_iters: int | None = 0,
                 sor: float | None = 1.3,
-                thread_position_correction: bool | None = False,
+                thread_position_correction: bool | None = None,
                 type: str | None = "quick",
-                use_dynamic_moi_rescaling: bool | None = False
+                use_dynamic_moi_rescaling: bool | None = None
             ):
                 super().__init__(sdf_version)
-                self.dt = dt if dt is not None else 0.001
-                self.friction_model = friction_model if friction_model is not None else "pyramid_model"
-                self.island_threads = island_threads if island_threads is not None else 0
-                self.iters = iters if iters is not None else 50
-                self.min_step_size = min_step_size if min_step_size is not None else 0.0001
-                self.precon_iters = precon_iters if precon_iters is not None else 0
-                self.sor = sor if sor is not None else 1.3
-                self.thread_position_correction = thread_position_correction if thread_position_correction is not None else False
-                self.type = type if type is not None else "quick"
-                self.use_dynamic_moi_rescaling = use_dynamic_moi_rescaling if use_dynamic_moi_rescaling is not None else False
+                self.dt = dt
+                self.friction_model = friction_model
+                self.island_threads = island_threads
+                self.iters = iters
+                self.min_step_size = min_step_size
+                self.precon_iters = precon_iters
+                self.sor = sor
+                self.thread_position_correction = thread_position_correction
+                self.type = type
+                self.use_dynamic_moi_rescaling = use_dynamic_moi_rescaling
 
             def to_version(self, target_version: str) -> "Physics.Ode.OdeSolver":
                 if self.dt is not None and cmp_version(target_version, "1.2") >= 0:
@@ -736,26 +736,26 @@ class Physics(BaseModel):
             def __init__(
                 self,
                 sdf_version: str | None = None,
-                dissipation: float | None = 100,
-                dynamic_friction: float | None = 0.9,
-                override_impact_capture_velocity: float | None = 0.001,
-                override_stiction_transition_velocity: float | None = 0.001,
-                plastic_coef_restitution: float | None = 0.5,
-                plastic_impact_velocity: float | None = 0.5,
-                static_friction: float | None = 0.9,
-                stiffness: float | None = 1e8,
-                viscous_friction: float | None = 0.0
+                dissipation: float | None = None,
+                dynamic_friction: float | None = None,
+                override_impact_capture_velocity: float | None = None,
+                override_stiction_transition_velocity: float | None = None,
+                plastic_coef_restitution: float | None = None,
+                plastic_impact_velocity: float | None = None,
+                static_friction: float | None = None,
+                stiffness: float | None = None,
+                viscous_friction: float | None = None
             ):
                 super().__init__(sdf_version)
-                self.dissipation = dissipation if dissipation is not None else 100
-                self.dynamic_friction = dynamic_friction if dynamic_friction is not None else 0.9
-                self.override_impact_capture_velocity = override_impact_capture_velocity if override_impact_capture_velocity is not None else 0.001
-                self.override_stiction_transition_velocity = override_stiction_transition_velocity if override_stiction_transition_velocity is not None else 0.001
-                self.plastic_coef_restitution = plastic_coef_restitution if plastic_coef_restitution is not None else 0.5
-                self.plastic_impact_velocity = plastic_impact_velocity if plastic_impact_velocity is not None else 0.5
-                self.static_friction = static_friction if static_friction is not None else 0.9
-                self.stiffness = stiffness if stiffness is not None else 1e8
-                self.viscous_friction = viscous_friction if viscous_friction is not None else 0.0
+                self.dissipation = dissipation
+                self.dynamic_friction = dynamic_friction
+                self.override_impact_capture_velocity = override_impact_capture_velocity
+                self.override_stiction_transition_velocity = override_stiction_transition_velocity
+                self.plastic_coef_restitution = plastic_coef_restitution
+                self.plastic_impact_velocity = plastic_impact_velocity
+                self.static_friction = static_friction
+                self.stiffness = stiffness
+                self.viscous_friction = viscous_friction
 
             def to_version(self, target_version: str) -> "Physics.Simbody.Contact":
                 kwargs: dict = {"sdf_version": target_version, "dissipation": self.dissipation, "dynamic_friction": self.dynamic_friction, "override_impact_capture_velocity": self.override_impact_capture_velocity, "override_stiction_transition_velocity": self.override_stiction_transition_velocity, "plastic_coef_restitution": self.plastic_coef_restitution, "plastic_impact_velocity": self.plastic_impact_velocity, "static_friction": self.static_friction, "stiffness": self.stiffness, "viscous_friction": self.viscous_friction}
@@ -893,16 +893,16 @@ class Physics(BaseModel):
         def __init__(
             self,
             sdf_version: str | None = None,
-            accuracy: float | None = 1e-3,
+            accuracy: float | None = None,
             contact: "Physics.Simbody.Contact" = None,
-            max_transient_velocity: float | None = 0.01,
-            min_step_size: float | None = 0.0001
+            max_transient_velocity: float | None = None,
+            min_step_size: float | None = None
         ):
             super().__init__(sdf_version)
-            self.accuracy = accuracy if accuracy is not None else 1e-3
+            self.accuracy = accuracy
             self.contact = contact
-            self.max_transient_velocity = max_transient_velocity if max_transient_velocity is not None else 0.01
-            self.min_step_size = min_step_size if min_step_size is not None else 0.0001
+            self.max_transient_velocity = max_transient_velocity
+            self.min_step_size = min_step_size
             if self.contact is not None and hasattr(self.contact, 'to_version'):
                 if getattr(self.contact, 'sdfversion', None) is None:
                     self.contact.sdfversion = self.sdfversion
@@ -990,12 +990,12 @@ class Physics(BaseModel):
         default: bool | None = False,
         gravity: "Physics.Gravity" = None,
         magnetic_field: _Vector3T | None = None,
-        max_contacts: int | None = 20,
-        max_step_size: float | None = 0.001,
+        max_contacts: int | None = None,
+        max_step_size: float | None = None,
         name: str | None = "default_physics",
         ode: "Physics.Ode" = None,
-        real_time_factor: float | None = 1.0,
-        real_time_update_rate: float | None = 1000,
+        real_time_factor: float | None = None,
+        real_time_update_rate: float | None = None,
         simbody: "Physics.Simbody" = None,
         type: str | None = "ode",
         update_rate: float | None = 0
@@ -1003,18 +1003,18 @@ class Physics(BaseModel):
         super().__init__(sdf_version)
         self.bullet = bullet
         self.dart = dart
-        self.default = default if default is not None else False
+        self.default = default
         self.gravity = gravity
-        self.magnetic_field = _vector3("5.5645e-6 22.8758e-6 -42.3884e-6") if magnetic_field is None else _vector3(magnetic_field)
-        self.max_contacts = max_contacts if max_contacts is not None else 20
-        self.max_step_size = max_step_size if max_step_size is not None else 0.001
-        self.name = name if name is not None else "default_physics"
+        self.magnetic_field = _vector3(magnetic_field) if magnetic_field is not None else None
+        self.max_contacts = max_contacts
+        self.max_step_size = max_step_size
+        self.name = name
         self.ode = ode
-        self.real_time_factor = real_time_factor if real_time_factor is not None else 1.0
-        self.real_time_update_rate = real_time_update_rate if real_time_update_rate is not None else 1000
+        self.real_time_factor = real_time_factor
+        self.real_time_update_rate = real_time_update_rate
         self.simbody = simbody
-        self.type = type if type is not None else "ode"
-        self.update_rate = update_rate if update_rate is not None else 0
+        self.type = type
+        self.update_rate = update_rate
         if self.bullet is not None and hasattr(self.bullet, 'to_version'):
             if getattr(self.bullet, 'sdfversion', None) is None:
                 self.bullet.sdfversion = self.sdfversion

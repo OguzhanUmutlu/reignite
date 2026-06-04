@@ -24,12 +24,12 @@ class Heightmap(BaseModel):
         def __init__(
             self,
             sdf_version: str | None = None,
-            fade_dist: float | None = 0,
-            min_height: float | None = 0
+            fade_dist: float | None = None,
+            min_height: float | None = None
         ):
             super().__init__(sdf_version)
-            self.fade_dist = fade_dist if fade_dist is not None else 0
-            self.min_height = min_height if min_height is not None else 0
+            self.fade_dist = fade_dist
+            self.min_height = min_height
 
         def to_version(self, target_version: str) -> "Heightmap.Blend":
             kwargs: dict = {"sdf_version": target_version, "fade_dist": self.fade_dist, "min_height": self.min_height}
@@ -77,14 +77,14 @@ class Heightmap(BaseModel):
         def __init__(
             self,
             sdf_version: str | None = None,
-            diffuse: str | None = "__default__",
-            normal: str | None = "__default__",
-            size: float | None = 10
+            diffuse: str | None = None,
+            normal: str | None = None,
+            size: float | None = None
         ):
             super().__init__(sdf_version)
-            self.diffuse = diffuse if diffuse is not None else "__default__"
-            self.normal = normal if normal is not None else "__default__"
-            self.size = size if size is not None else 10
+            self.diffuse = diffuse
+            self.normal = normal
+            self.size = size
 
         def to_version(self, target_version: str) -> "Heightmap.Texture":
             kwargs: dict = {"sdf_version": target_version, "diffuse": self.diffuse, "normal": self.normal, "size": self.size}
@@ -146,20 +146,20 @@ class Heightmap(BaseModel):
         sdf_version: str | None = None,
         blends: List["Heightmap.Blend"] = None,
         pos: _Vector3T | None = None,
-        sampling: int | None = 2,
+        sampling: int | None = None,
         size: _Vector3T | None = None,
         textures: List["Heightmap.Texture"] = None,
-        uri: str | None = "__default__",
-        use_terrain_paging: bool | None = False
+        uri: str | None = None,
+        use_terrain_paging: bool | None = None
     ):
         super().__init__(sdf_version)
         self.blends = blends or []
-        self.pos = _vector3("0 0 0") if pos is None else _vector3(pos)
-        self.sampling = sampling if sampling is not None else 2
-        self.size = _vector3("1 1 1") if size is None else _vector3(size)
+        self.pos = _vector3(pos) if pos is not None else None
+        self.sampling = sampling
+        self.size = _vector3(size) if size is not None else None
         self.textures = textures or []
-        self.uri = uri if uri is not None else "__default__"
-        self.use_terrain_paging = use_terrain_paging if use_terrain_paging is not None else False
+        self.uri = uri
+        self.use_terrain_paging = use_terrain_paging
         for _i, _c in enumerate(self.blends):
             if not hasattr(_c, 'to_version'): continue
             if getattr(_c, 'sdfversion', None) is None:

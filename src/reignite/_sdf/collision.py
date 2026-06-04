@@ -30,7 +30,7 @@ class Collision(BaseModel):
     class Origin(BaseModel):
         def __init__(self, sdf_version: str | None = None, pose: _PoseT | None = None):
             super().__init__(sdf_version)
-            self.pose = _pose("0 0 0 0 0 0") if pose is None else _pose(pose)
+            self.pose = _pose(pose) if pose is not None else None
 
         def to_version(self, target_version: str) -> "Collision.Origin":
             kwargs: dict = {"sdf_version": target_version, "pose": self.pose}
@@ -69,12 +69,12 @@ class Collision(BaseModel):
         self,
         sdf_version: str | None = None,
         auto_inertia_params: None | None = None,
-        density: float | None = 1000.0,
+        density: float | None = None,
         frames: List["Frame"] = None,
         geometry: "Geometry" = None,
         laser_retro: float | None = 0,
-        mass: float | None = 0,
-        max_contacts: int | None = 10,
+        mass: float | None = None,
+        max_contacts: int | None = None,
         name: str | None = "__default__",
         origin: "Collision.Origin" = None,
         pose: "Pose" = None,
@@ -82,13 +82,13 @@ class Collision(BaseModel):
     ):
         super().__init__(sdf_version)
         self.auto_inertia_params = auto_inertia_params
-        self.density = density if density is not None else 1000.0
+        self.density = density
         self.frames = frames or []
         self.geometry = geometry
-        self.laser_retro = laser_retro if laser_retro is not None else 0
-        self.mass = mass if mass is not None else 0
-        self.max_contacts = max_contacts if max_contacts is not None else 10
-        self.name = name if name is not None else "__default__"
+        self.laser_retro = laser_retro
+        self.mass = mass
+        self.max_contacts = max_contacts
+        self.name = name
         self.origin = origin
         self.pose = pose
         self.surface = surface

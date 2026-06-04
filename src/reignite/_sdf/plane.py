@@ -30,8 +30,8 @@ class Plane(BaseModel):
         size: _Vector2dT | None = None
     ):
         super().__init__(sdf_version)
-        self.normal = _vector3("0 0 1") if normal is None else _vector3(normal)
-        self.size = _vector2d("1 1") if size is None else _vector2d(size)
+        self.normal = _vector3(normal) if normal is not None else None
+        self.size = _vector2d(size) if size is not None else None
 
     def to_version(self, target_version: str) -> "Plane":
         kwargs: dict = {"sdf_version": target_version, "normal": self.normal, "size": self.size}

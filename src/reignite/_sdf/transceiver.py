@@ -13,22 +13,22 @@ class Transceiver(BaseModel):
     def __init__(
         self,
         sdf_version: str | None = None,
-        essid: str | None = "wireless",
-        frequency: float | None = 2442,
-        gain: float | None = 2.5,
-        max_frequency: float | None = 2484,
-        min_frequency: float | None = 2412,
-        power: float | None = 14.50,
-        sensitivity: float | None = -90
+        essid: str | None = None,
+        frequency: float | None = None,
+        gain: float | None = None,
+        max_frequency: float | None = None,
+        min_frequency: float | None = None,
+        power: float | None = None,
+        sensitivity: float | None = None
     ):
         super().__init__(sdf_version)
-        self.essid = essid if essid is not None else "wireless"
-        self.frequency = frequency if frequency is not None else 2442
-        self.gain = gain if gain is not None else 2.5
-        self.max_frequency = max_frequency if max_frequency is not None else 2484
-        self.min_frequency = min_frequency if min_frequency is not None else 2412
-        self.power = power if power is not None else 14.50
-        self.sensitivity = sensitivity if sensitivity is not None else -90
+        self.essid = essid
+        self.frequency = frequency
+        self.gain = gain
+        self.max_frequency = max_frequency
+        self.min_frequency = min_frequency
+        self.power = power
+        self.sensitivity = sensitivity
 
     def to_version(self, target_version: str) -> "Transceiver":
         kwargs: dict = {"sdf_version": target_version, "essid": self.essid, "frequency": self.frequency, "gain": self.gain, "max_frequency": self.max_frequency, "min_frequency": self.min_frequency, "power": self.power, "sensitivity": self.sensitivity}

@@ -26,7 +26,7 @@ class LightState(BaseModel):
     ):
         super().__init__(sdf_version)
         self.frames = frames or []
-        self.name = name if name is not None else "__default__"
+        self.name = name
         self.pose = pose
         for _i, _c in enumerate(self.frames):
             if not hasattr(_c, 'to_version'): continue

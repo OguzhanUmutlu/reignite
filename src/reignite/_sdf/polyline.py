@@ -22,11 +22,11 @@ class Polyline(BaseModel):
     def __init__(
         self,
         sdf_version: str | None = None,
-        height: float | None = 1.0,
+        height: float | None = None,
         points: List[_Vector2dT] | None = None
     ):
         super().__init__(sdf_version)
-        self.height = height if height is not None else 1.0
+        self.height = height
         self.points = list(map(_vector2d, points)) if points is not None else []
 
     def add_point(self, *items: _Vector2dT):

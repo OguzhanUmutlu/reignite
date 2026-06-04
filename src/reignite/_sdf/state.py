@@ -185,32 +185,32 @@ class State(BaseModel):
         sdf_version: str | None = None,
         deletions: "State.Deletions" = None,
         insertions: "State.Insertions" = None,
-        iterations: int | None = 0,
+        iterations: int | None = None,
         joint_states: List["JointState"] = None,
         light_states: List["LightState"] = None,
         lights: List["LightState"] = None,
         model_states: List["ModelState"] = None,
         models: List["ModelState"] = None,
-        real_time: float | None = 0.0,
-        sim_time: float | None = 0.0,
+        real_time: float | None = None,
+        sim_time: float | None = None,
         time: float | None = 0.0,
-        wall_time: float | None = 0.0,
+        wall_time: float | None = None,
         world_name: str | None = "__default__"
     ):
         super().__init__(sdf_version)
         self.deletions = deletions
         self.insertions = insertions
-        self.iterations = iterations if iterations is not None else 0
+        self.iterations = iterations
         self.joint_states = joint_states or []
         self.light_states = light_states or []
         self.lights = lights or []
         self.model_states = model_states or []
         self.models = models or []
-        self.real_time = real_time if real_time is not None else 0.0
-        self.sim_time = sim_time if sim_time is not None else 0.0
-        self.time = time if time is not None else 0.0
-        self.wall_time = wall_time if wall_time is not None else 0.0
-        self.world_name = world_name if world_name is not None else "__default__"
+        self.real_time = real_time
+        self.sim_time = sim_time
+        self.time = time
+        self.wall_time = wall_time
+        self.world_name = world_name
         if self.deletions is not None and hasattr(self.deletions, 'to_version'):
             if getattr(self.deletions, 'sdfversion', None) is None:
                 self.deletions.sdfversion = self.sdfversion

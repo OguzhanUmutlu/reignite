@@ -30,8 +30,8 @@ class Material(BaseModel):
                     uv_set: int | None = 0
                 ):
                     super().__init__(sdf_version)
-                    self.light_map = light_map if light_map is not None else ""
-                    self.uv_set = uv_set if uv_set is not None else 0
+                    self.light_map = light_map
+                    self.uv_set = uv_set
 
                 def to_version(self, target_version: str) -> "Material.Pbr.Metal.LightMap":
                     if self.light_map is not None and cmp_version(target_version, "1.7") < 0:
@@ -73,8 +73,8 @@ class Material(BaseModel):
                     type: str | None = "tangent"
                 ):
                     super().__init__(sdf_version)
-                    self.normal_map = normal_map if normal_map is not None else ""
-                    self.type = type if type is not None else "tangent"
+                    self.normal_map = normal_map
+                    self.type = type
 
                 def to_version(self, target_version: str) -> "Material.Pbr.Metal.NormalMap":
                     kwargs: dict = {"sdf_version": target_version, "normal_map": self.normal_map, "type": self.type}
@@ -111,23 +111,23 @@ class Material(BaseModel):
                 emissive_map: str | None = "",
                 environment_map: str | None = "",
                 light_map: "Material.Pbr.Metal.LightMap" = None,
-                metalness: str | None = "0.5",
+                metalness: str | None = None,
                 metalness_map: str | None = "",
                 normal_map: "Material.Pbr.Metal.NormalMap" = None,
-                roughness: str | None = "0.5",
+                roughness: str | None = None,
                 roughness_map: str | None = ""
             ):
                 super().__init__(sdf_version)
-                self.albedo_map = albedo_map if albedo_map is not None else ""
-                self.ambient_occlusion_map = ambient_occlusion_map if ambient_occlusion_map is not None else ""
-                self.emissive_map = emissive_map if emissive_map is not None else ""
-                self.environment_map = environment_map if environment_map is not None else ""
+                self.albedo_map = albedo_map
+                self.ambient_occlusion_map = ambient_occlusion_map
+                self.emissive_map = emissive_map
+                self.environment_map = environment_map
                 self.light_map = light_map
-                self.metalness = metalness if metalness is not None else "0.5"
-                self.metalness_map = metalness_map if metalness_map is not None else ""
+                self.metalness = metalness
+                self.metalness_map = metalness_map
                 self.normal_map = normal_map
-                self.roughness = roughness if roughness is not None else "0.5"
-                self.roughness_map = roughness_map if roughness_map is not None else ""
+                self.roughness = roughness
+                self.roughness_map = roughness_map
                 if self.light_map is not None and hasattr(self.light_map, 'to_version'):
                     if getattr(self.light_map, 'sdfversion', None) is None:
                         self.light_map.sdfversion = self.sdfversion
@@ -303,22 +303,22 @@ class Material(BaseModel):
                 ambient_occlusion_map: str | None = "",
                 emissive_map: str | None = "",
                 environment_map: str | None = "",
-                glossiness: str | None = "0",
+                glossiness: str | None = None,
                 glossiness_map: str | None = "",
                 light_map: "LightMap" = None,
                 normal_map: "NormalMap" = None,
                 specular_map: str | None = ""
             ):
                 super().__init__(sdf_version)
-                self.albedo_map = albedo_map if albedo_map is not None else ""
-                self.ambient_occlusion_map = ambient_occlusion_map if ambient_occlusion_map is not None else ""
-                self.emissive_map = emissive_map if emissive_map is not None else ""
-                self.environment_map = environment_map if environment_map is not None else ""
-                self.glossiness = glossiness if glossiness is not None else "0"
-                self.glossiness_map = glossiness_map if glossiness_map is not None else ""
+                self.albedo_map = albedo_map
+                self.ambient_occlusion_map = ambient_occlusion_map
+                self.emissive_map = emissive_map
+                self.environment_map = environment_map
+                self.glossiness = glossiness
+                self.glossiness_map = glossiness_map
                 self.light_map = light_map
                 self.normal_map = normal_map
-                self.specular_map = specular_map if specular_map is not None else ""
+                self.specular_map = specular_map
                 if self.light_map is not None and hasattr(self.light_map, 'to_version'):
                     if getattr(self.light_map, 'sdfversion', None) is None:
                         self.light_map.sdfversion = self.sdfversion
@@ -545,11 +545,11 @@ class Material(BaseModel):
         def __init__(
             self,
             sdf_version: str | None = None,
-            name: str | None = "__default__",
+            name: str | None = None,
             uris: List[str] | None = None
         ):
             super().__init__(sdf_version)
-            self.name = name if name is not None else "__default__"
+            self.name = name
             self.uris = uris or []
 
         def add_uri(self, *items: str):
@@ -601,12 +601,12 @@ class Material(BaseModel):
         def __init__(
             self,
             sdf_version: str | None = None,
-            normal_map: str | None = "__default__",
+            normal_map: str | None = None,
             type: str | None = "pixel"
         ):
             super().__init__(sdf_version)
-            self.normal_map = normal_map if normal_map is not None else "__default__"
-            self.type = type if type is not None else "pixel"
+            self.normal_map = normal_map
+            self.type = type
 
         def to_version(self, target_version: str) -> "Material.Shader":
             kwargs: dict = {"sdf_version": target_version, "normal_map": self.normal_map, "type": self.type}
@@ -647,28 +647,28 @@ class Material(BaseModel):
         sdf_version: str | None = None,
         ambient: _ColorT | None = None,
         diffuse: _ColorT | None = None,
-        double_sided: bool | None = False,
+        double_sided: bool | None = None,
         emissive: _ColorT | None = None,
-        lighting: bool | None = True,
+        lighting: bool | None = None,
         pbr: "Material.Pbr" = None,
-        render_order: float | None = 0.0,
+        render_order: float | None = None,
         script: "Material.Script" = None,
         shader: "Material.Shader" = None,
-        shininess: float | None = 0,
+        shininess: float | None = None,
         specular: _ColorT | None = None
     ):
         super().__init__(sdf_version)
-        self.ambient = _color("0 0 0 1") if ambient is None else _color(ambient)
-        self.diffuse = _color("0 0 0 1") if diffuse is None else _color(diffuse)
-        self.double_sided = double_sided if double_sided is not None else False
-        self.emissive = _color("0 0 0 1") if emissive is None else _color(emissive)
-        self.lighting = lighting if lighting is not None else True
+        self.ambient = _color(ambient) if ambient is not None else None
+        self.diffuse = _color(diffuse) if diffuse is not None else None
+        self.double_sided = double_sided
+        self.emissive = _color(emissive) if emissive is not None else None
+        self.lighting = lighting
         self.pbr = pbr
-        self.render_order = render_order if render_order is not None else 0.0
+        self.render_order = render_order
         self.script = script
         self.shader = shader
-        self.shininess = shininess if shininess is not None else 0
-        self.specular = _color("0 0 0 1") if specular is None else _color(specular)
+        self.shininess = shininess
+        self.specular = _color(specular) if specular is not None else None
         if self.pbr is not None and hasattr(self.pbr, 'to_version'):
             if getattr(self.pbr, 'sdfversion', None) is None:
                 self.pbr.sdfversion = self.sdfversion

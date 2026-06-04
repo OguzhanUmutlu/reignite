@@ -14,16 +14,16 @@ class Sonar(BaseModel):
     def __init__(
         self,
         sdf_version: str | None = None,
-        geometry: str | None = "cone",
-        max: float | None = 1.0,
-        min: float | None = 0,
-        radius: float | None = 0.5
+        geometry: str | None = None,
+        max: float | None = None,
+        min: float | None = None,
+        radius: float | None = None
     ):
         super().__init__(sdf_version)
-        self.geometry = geometry if geometry is not None else "cone"
-        self.max = max if max is not None else 1.0
-        self.min = min if min is not None else 0
-        self.radius = radius if radius is not None else 0.5
+        self.geometry = geometry
+        self.max = max
+        self.min = min
+        self.radius = radius
 
     def to_version(self, target_version: str) -> "Sonar":
         if self.geometry is not None and cmp_version(target_version, "1.6") < 0:

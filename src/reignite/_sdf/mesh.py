@@ -22,12 +22,12 @@ class Mesh(BaseModel):
         def __init__(
             self,
             sdf_version: str | None = None,
-            max_convex_hulls: int | None = 16,
-            voxel_resolution: int | None = 200000
+            max_convex_hulls: int | None = None,
+            voxel_resolution: int | None = None
         ):
             super().__init__(sdf_version)
-            self.max_convex_hulls = max_convex_hulls if max_convex_hulls is not None else 16
-            self.voxel_resolution = voxel_resolution if voxel_resolution is not None else 200000
+            self.max_convex_hulls = max_convex_hulls
+            self.voxel_resolution = voxel_resolution
 
         def to_version(self, target_version: str) -> "Mesh.ConvexDecomposition":
             kwargs: dict = {"sdf_version": target_version, "max_convex_hulls": self.max_convex_hulls, "voxel_resolution": self.voxel_resolution}
@@ -75,12 +75,12 @@ class Mesh(BaseModel):
         def __init__(
             self,
             sdf_version: str | None = None,
-            center: bool | None = False,
-            name: str | None = "__default__"
+            center: bool | None = None,
+            name: str | None = None
         ):
             super().__init__(sdf_version)
-            self.center = center if center is not None else False
-            self.name = name if name is not None else "__default__"
+            self.center = center
+            self.name = name
 
         def to_version(self, target_version: str) -> "Mesh.Submesh":
             kwargs: dict = {"sdf_version": target_version, "center": self.center, "name": self.name}
@@ -131,14 +131,14 @@ class Mesh(BaseModel):
         optimization: str | None = "",
         scale: _Vector3T | None = None,
         submesh: "Mesh.Submesh" = None,
-        uri: str | None = "__default__"
+        uri: str | None = None
     ):
         super().__init__(sdf_version)
         self.convex_decomposition = convex_decomposition
-        self.optimization = optimization if optimization is not None else ""
-        self.scale = _vector3("1 1 1") if scale is None else _vector3(scale)
+        self.optimization = optimization
+        self.scale = _vector3(scale) if scale is not None else None
         self.submesh = submesh
-        self.uri = uri if uri is not None else "__default__"
+        self.uri = uri
         if self.convex_decomposition is not None and hasattr(self.convex_decomposition, 'to_version'):
             if getattr(self.convex_decomposition, 'sdfversion', None) is None:
                 self.convex_decomposition.sdfversion = self.sdfversion

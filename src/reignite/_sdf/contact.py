@@ -14,12 +14,12 @@ class Contact(BaseModel):
         def __init__(
             self,
             sdf_version: str | None = None,
-            collision: str | None = "__default__",
+            collision: str | None = None,
             name: str | None = "__default__"
         ):
             super().__init__(sdf_version)
-            self.collision = collision if collision is not None else "__default__"
-            self.name = name if name is not None else "__default__"
+            self.collision = collision
+            self.name = name
 
         def to_version(self, target_version: str) -> "Contact.Collision":
             if self.name is not None and cmp_version(target_version, "1.2") >= 0:
@@ -54,11 +54,11 @@ class Contact(BaseModel):
         self,
         sdf_version: str | None = None,
         collision: "Contact.Collision" = None,
-        topic: str | None = "__default_topic__"
+        topic: str | None = None
     ):
         super().__init__(sdf_version)
         self.collision = collision
-        self.topic = topic if topic is not None else "__default_topic__"
+        self.topic = topic
         if self.collision is not None and hasattr(self.collision, 'to_version'):
             if getattr(self.collision, 'sdfversion', None) is None:
                 self.collision.sdfversion = self.sdfversion

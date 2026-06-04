@@ -39,12 +39,12 @@ class Link(BaseModel):
         def __init__(
             self,
             sdf_version: str | None = None,
-            angular: float | None = 0.0,
-            linear: float | None = 0.0
+            angular: float | None = None,
+            linear: float | None = None
         ):
             super().__init__(sdf_version)
-            self.angular = angular if angular is not None else 0.0
-            self.linear = linear if linear is not None else 0.0
+            self.angular = angular
+            self.linear = linear
 
         def to_version(self, target_version: str) -> "Link.Damping":
             kwargs: dict = {"sdf_version": target_version, "angular": self.angular, "linear": self.linear}
@@ -91,7 +91,7 @@ class Link(BaseModel):
     class Origin(BaseModel):
         def __init__(self, sdf_version: str | None = None, pose: _PoseT | None = None):
             super().__init__(sdf_version)
-            self.pose = _pose("0 0 0 0 0 0") if pose is None else _pose(pose)
+            self.pose = _pose(pose) if pose is not None else None
 
         def to_version(self, target_version: str) -> "Link.Origin":
             kwargs: dict = {"sdf_version": target_version, "pose": self.pose}
@@ -130,12 +130,12 @@ class Link(BaseModel):
         def __init__(
             self,
             sdf_version: str | None = None,
-            angular: float | None = 0.0,
-            linear: float | None = 0.0
+            angular: float | None = None,
+            linear: float | None = None
         ):
             super().__init__(sdf_version)
-            self.angular = angular if angular is not None else 0.0
-            self.linear = linear if linear is not None else 0.0
+            self.angular = angular
+            self.linear = linear
 
         def to_version(self, target_version: str) -> "Link.VelocityDecay":
             kwargs: dict = {"sdf_version": target_version, "angular": self.angular, "linear": self.linear}
@@ -187,13 +187,13 @@ class Link(BaseModel):
         batteries: List["Battery"] = None,
         collisions: List["Collision"] = None,
         damping: "Link.Damping" = None,
-        enable_wind: bool | None = False,
+        enable_wind: bool | None = None,
         frames: List["Frame"] = None,
         gravity: bool | None = True,
         inertial: "Inertial" = None,
         kinematic: bool | None = False,
         lights: List["Light"] = None,
-        must_be_base_link: bool | None = False,
+        must_be_base_link: bool | None = None,
         name: str | None = "__default__",
         origin: "Link.Origin" = None,
         particle_emitters: List["ParticleEmitter"] = None,
@@ -210,19 +210,19 @@ class Link(BaseModel):
         self.batteries = batteries or []
         self.collisions = collisions or []
         self.damping = damping
-        self.enable_wind = enable_wind if enable_wind is not None else False
+        self.enable_wind = enable_wind
         self.frames = frames or []
-        self.gravity = gravity if gravity is not None else True
+        self.gravity = gravity
         self.inertial = inertial
-        self.kinematic = kinematic if kinematic is not None else False
+        self.kinematic = kinematic
         self.lights = lights or []
-        self.must_be_base_link = must_be_base_link if must_be_base_link is not None else False
-        self.name = name if name is not None else "__default__"
+        self.must_be_base_link = must_be_base_link
+        self.name = name
         self.origin = origin
         self.particle_emitters = particle_emitters or []
         self.pose = pose
         self.projector = projector
-        self.self_collide = self_collide if self_collide is not None else False
+        self.self_collide = self_collide
         self.sensor = sensor
         self.velocity_decay = velocity_decay
         self.visuals = visuals or []

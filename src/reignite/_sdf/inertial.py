@@ -29,50 +29,50 @@ class Inertial(BaseModel):
         def __init__(
             self,
             sdf_version: str | None = None,
-            pp: float | None = 0.0,
-            pq: float | None = 0.0,
-            pr: float | None = 0.0,
-            qq: float | None = 0.0,
-            qr: float | None = 0.0,
-            rr: float | None = 0.0,
-            xp: float | None = 0.0,
-            xq: float | None = 0.0,
-            xr: float | None = 0.0,
-            xx: float | None = 0.0,
-            xy: float | None = 0.0,
-            xz: float | None = 0.0,
-            yp: float | None = 0.0,
-            yq: float | None = 0.0,
-            yr: float | None = 0.0,
-            yy: float | None = 0.0,
-            yz: float | None = 0.0,
-            zp: float | None = 0.0,
-            zq: float | None = 0.0,
-            zr: float | None = 0.0,
-            zz: float | None = 0.0
+            pp: float | None = None,
+            pq: float | None = None,
+            pr: float | None = None,
+            qq: float | None = None,
+            qr: float | None = None,
+            rr: float | None = None,
+            xp: float | None = None,
+            xq: float | None = None,
+            xr: float | None = None,
+            xx: float | None = None,
+            xy: float | None = None,
+            xz: float | None = None,
+            yp: float | None = None,
+            yq: float | None = None,
+            yr: float | None = None,
+            yy: float | None = None,
+            yz: float | None = None,
+            zp: float | None = None,
+            zq: float | None = None,
+            zr: float | None = None,
+            zz: float | None = None
         ):
             super().__init__(sdf_version)
-            self.pp = pp if pp is not None else 0.0
-            self.pq = pq if pq is not None else 0.0
-            self.pr = pr if pr is not None else 0.0
-            self.qq = qq if qq is not None else 0.0
-            self.qr = qr if qr is not None else 0.0
-            self.rr = rr if rr is not None else 0.0
-            self.xp = xp if xp is not None else 0.0
-            self.xq = xq if xq is not None else 0.0
-            self.xr = xr if xr is not None else 0.0
-            self.xx = xx if xx is not None else 0.0
-            self.xy = xy if xy is not None else 0.0
-            self.xz = xz if xz is not None else 0.0
-            self.yp = yp if yp is not None else 0.0
-            self.yq = yq if yq is not None else 0.0
-            self.yr = yr if yr is not None else 0.0
-            self.yy = yy if yy is not None else 0.0
-            self.yz = yz if yz is not None else 0.0
-            self.zp = zp if zp is not None else 0.0
-            self.zq = zq if zq is not None else 0.0
-            self.zr = zr if zr is not None else 0.0
-            self.zz = zz if zz is not None else 0.0
+            self.pp = pp
+            self.pq = pq
+            self.pr = pr
+            self.qq = qq
+            self.qr = qr
+            self.rr = rr
+            self.xp = xp
+            self.xq = xq
+            self.xr = xr
+            self.xx = xx
+            self.xy = xy
+            self.xz = xz
+            self.yp = yp
+            self.yq = yq
+            self.yr = yr
+            self.yy = yy
+            self.yz = yz
+            self.zp = zp
+            self.zq = zq
+            self.zr = zr
+            self.zz = zz
 
         def to_version(self, target_version: str) -> "Inertial.FluidAddedMass":
             kwargs: dict = {"sdf_version": target_version, "pp": self.pp, "pq": self.pq, "pr": self.pr, "qq": self.qq, "qr": self.qr, "rr": self.rr, "xp": self.xp, "xq": self.xq, "xr": self.xr, "xx": self.xx, "xy": self.xy, "xz": self.xz, "yp": self.yp, "yq": self.yq, "yr": self.yr, "yy": self.yy, "yz": self.yz, "zp": self.zp, "zq": self.zq, "zr": self.zr, "zz": self.zz}
@@ -375,12 +375,12 @@ class Inertial(BaseModel):
             izz: float | None = 0.0
         ):
             super().__init__(sdf_version)
-            self.ixx = ixx if ixx is not None else 0.0
-            self.ixy = ixy if ixy is not None else 0.0
-            self.ixz = ixz if ixz is not None else 0.0
-            self.iyy = iyy if iyy is not None else 0.0
-            self.iyz = iyz if iyz is not None else 0.0
-            self.izz = izz if izz is not None else 0.0
+            self.ixx = ixx
+            self.ixy = ixy
+            self.ixz = ixz
+            self.iyy = iyy
+            self.iyz = iyz
+            self.izz = izz
 
         def to_version(self, target_version: str) -> "Inertial.Inertia":
             if self.ixx is not None and cmp_version(target_version, "1.2") >= 0:
@@ -443,7 +443,7 @@ class Inertial(BaseModel):
     class Origin(BaseModel):
         def __init__(self, sdf_version: str | None = None, pose: _PoseT | None = None):
             super().__init__(sdf_version)
-            self.pose = _pose("0 0 0 0 0 0") if pose is None else _pose(pose)
+            self.pose = _pose(pose) if pose is not None else None
 
         def to_version(self, target_version: str) -> "Inertial.Origin":
             kwargs: dict = {"sdf_version": target_version, "pose": self.pose}
@@ -492,13 +492,13 @@ class Inertial(BaseModel):
         pose: "Pose" = None
     ):
         super().__init__(sdf_version)
-        self.auto = auto if auto is not None else False
+        self.auto = auto
         self.auto_inertia_params = auto_inertia_params
-        self.density = density if density is not None else 1.0
+        self.density = density
         self.fluid_added_mass = fluid_added_mass
         self.frames = frames or []
         self.inertia = inertia
-        self.mass = mass if mass is not None else 1.0
+        self.mass = mass
         self.origin = origin
         self.pose = pose
         if self.fluid_added_mass is not None and hasattr(self.fluid_added_mass, 'to_version'):

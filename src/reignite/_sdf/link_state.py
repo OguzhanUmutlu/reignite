@@ -39,8 +39,8 @@ class LinkState(BaseModel):
             degrees: bool | None = False
         ):
             super().__init__(sdf_version)
-            self.angular_acceleration = _vector3("0 0 0") if angular_acceleration is None else _vector3(angular_acceleration)
-            self.degrees = degrees if degrees is not None else False
+            self.angular_acceleration = _vector3(angular_acceleration) if angular_acceleration is not None else None
+            self.degrees = degrees
 
         def to_version(self, target_version: str) -> "LinkState.AngularAcceleration":
             if self.angular_acceleration is not None and cmp_version(target_version, "1.12") < 0:
@@ -82,8 +82,8 @@ class LinkState(BaseModel):
             degrees: bool | None = False
         ):
             super().__init__(sdf_version)
-            self.angular_velocity = _vector3("0 0 0") if angular_velocity is None else _vector3(angular_velocity)
-            self.degrees = degrees if degrees is not None else False
+            self.angular_velocity = _vector3(angular_velocity) if angular_velocity is not None else None
+            self.degrees = degrees
 
         def to_version(self, target_version: str) -> "LinkState.AngularVelocity":
             if self.angular_velocity is not None and cmp_version(target_version, "1.12") < 0:
@@ -120,7 +120,7 @@ class LinkState(BaseModel):
     class Collision(BaseModel):
         def __init__(self, sdf_version: str | None = None, name: str | None = "__default__"):
             super().__init__(sdf_version)
-            self.name = name if name is not None else "__default__"
+            self.name = name
 
         def to_version(self, target_version: str) -> "LinkState.Collision":
             kwargs: dict = {"sdf_version": target_version, "name": self.name}
@@ -146,7 +146,7 @@ class LinkState(BaseModel):
     class CollisionState(BaseModel):
         def __init__(self, sdf_version: str | None = None, name: str | None = "__default__"):
             super().__init__(sdf_version)
-            self.name = name if name is not None else "__default__"
+            self.name = name
 
         def to_version(self, target_version: str) -> "LinkState.CollisionState":
             kwargs: dict = {"sdf_version": target_version, "name": self.name}
@@ -188,20 +188,20 @@ class LinkState(BaseModel):
         wrench: _PoseT | None = None
     ):
         super().__init__(sdf_version)
-        self.acceleration = _pose("0 0 0 0 0 0") if acceleration is None else _pose(acceleration)
+        self.acceleration = _pose(acceleration) if acceleration is not None else None
         self.angular_acceleration = angular_acceleration
         self.angular_velocity = angular_velocity
         self.collision_states = collision_states or []
         self.collisions = collisions or []
-        self.force = _vector3("0 0 0") if force is None else _vector3(force)
+        self.force = _vector3(force) if force is not None else None
         self.frames = frames or []
-        self.linear_acceleration = _vector3("0 0 0") if linear_acceleration is None else _vector3(linear_acceleration)
-        self.linear_velocity = _vector3("0 0 0") if linear_velocity is None else _vector3(linear_velocity)
-        self.name = name if name is not None else "__default__"
+        self.linear_acceleration = _vector3(linear_acceleration) if linear_acceleration is not None else None
+        self.linear_velocity = _vector3(linear_velocity) if linear_velocity is not None else None
+        self.name = name
         self.pose = pose
-        self.torque = _vector3("0 0 0") if torque is None else _vector3(torque)
-        self.velocity = _pose("0 0 0 0 0 0") if velocity is None else _pose(velocity)
-        self.wrench = _pose("0 0 0 0 0 0") if wrench is None else _pose(wrench)
+        self.torque = _vector3(torque) if torque is not None else None
+        self.velocity = _pose(velocity) if velocity is not None else None
+        self.wrench = _pose(wrench) if wrench is not None else None
         if self.angular_acceleration is not None and hasattr(self.angular_acceleration, 'to_version'):
             if getattr(self.angular_acceleration, 'sdfversion', None) is None:
                 self.angular_acceleration.sdfversion = self.sdfversion

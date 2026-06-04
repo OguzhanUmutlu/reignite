@@ -46,7 +46,7 @@ class Sensor(BaseModel):
     class Origin(BaseModel):
         def __init__(self, sdf_version: str | None = None, pose: _PoseT | None = None):
             super().__init__(sdf_version)
-            self.pose = _pose("0 0 0 0 0 0") if pose is None else _pose(pose)
+            self.pose = _pose(pose) if pose is not None else None
 
         def to_version(self, target_version: str) -> "Sensor.Origin":
             kwargs: dict = {"sdf_version": target_version, "pose": self.pose}
@@ -90,7 +90,7 @@ class Sensor(BaseModel):
         always_on: bool | None = False,
         camera: "Camera" = None,
         contact: "Contact" = None,
-        enable_metrics: bool | None = False,
+        enable_metrics: bool | None = None,
         force_torque: "ForceTorque" = None,
         frame_id: str | None = "",
         frames: List["Frame"] = None,
@@ -108,7 +108,7 @@ class Sensor(BaseModel):
         rfid: "Rfidtag" = None,
         rfidtag: "Rfid" = None,
         sonar: "Sonar" = None,
-        topic: str | None = "__default",
+        topic: str | None = None,
         transceiver: "Transceiver" = None,
         type: str | None = "__default__",
         update_rate: float | None = 0,
@@ -118,19 +118,19 @@ class Sensor(BaseModel):
         self.air_pressure = air_pressure
         self.air_speed = air_speed
         self.altimeter = altimeter
-        self.always_on = always_on if always_on is not None else False
+        self.always_on = always_on
         self.camera = camera
         self.contact = contact
-        self.enable_metrics = enable_metrics if enable_metrics is not None else False
+        self.enable_metrics = enable_metrics
         self.force_torque = force_torque
-        self.frame_id = frame_id if frame_id is not None else ""
+        self.frame_id = frame_id
         self.frames = frames or []
         self.gps = gps
         self.imu = imu
         self.lidar = lidar
         self.logical_camera = logical_camera
         self.magnetometer = magnetometer
-        self.name = name if name is not None else "__default__"
+        self.name = name
         self.navsat = navsat
         self.origin = origin
         self.plugins = plugins or []
@@ -139,11 +139,11 @@ class Sensor(BaseModel):
         self.rfid = rfid
         self.rfidtag = rfidtag
         self.sonar = sonar
-        self.topic = topic if topic is not None else "__default"
+        self.topic = topic
         self.transceiver = transceiver
-        self.type = type if type is not None else "__default__"
-        self.update_rate = update_rate if update_rate is not None else 0
-        self.visualize = visualize if visualize is not None else False
+        self.type = type
+        self.update_rate = update_rate
+        self.visualize = visualize
         if self.air_pressure is not None and hasattr(self.air_pressure, 'to_version'):
             if getattr(self.air_pressure, 'sdfversion', None) is None:
                 self.air_pressure.sdfversion = self.sdfversion

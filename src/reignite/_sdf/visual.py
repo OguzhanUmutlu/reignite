@@ -29,9 +29,9 @@ def _parse_pose(raw: str) -> _PoseT | SDFError:
 # noinspection PyUnusedImports
 class Visual(BaseModel):
     class Meta(BaseModel):
-        def __init__(self, sdf_version: str | None = None, layer: int | None = 0):
+        def __init__(self, sdf_version: str | None = None, layer: int | None = None):
             super().__init__(sdf_version)
-            self.layer = layer if layer is not None else 0
+            self.layer = layer
 
         def to_version(self, target_version: str) -> "Visual.Meta":
             kwargs: dict = {"sdf_version": target_version, "layer": self.layer}
@@ -65,7 +65,7 @@ class Visual(BaseModel):
     class Origin(BaseModel):
         def __init__(self, sdf_version: str | None = None, pose: _PoseT | None = None):
             super().__init__(sdf_version)
-            self.pose = _pose("0 0 0 0 0 0") if pose is None else _pose(pose)
+            self.pose = _pose(pose) if pose is not None else None
 
         def to_version(self, target_version: str) -> "Visual.Origin":
             kwargs: dict = {"sdf_version": target_version, "pose": self.pose}
@@ -114,21 +114,21 @@ class Visual(BaseModel):
         plugins: List["Plugin"] = None,
         pose: "Pose" = None,
         transparency: float | None = 0.0,
-        visibility_flags: int | None = 4294967295
+        visibility_flags: int | None = None
     ):
         super().__init__(sdf_version)
-        self.cast_shadows = cast_shadows if cast_shadows is not None else True
+        self.cast_shadows = cast_shadows
         self.frames = frames or []
         self.geometry = geometry
-        self.laser_retro = laser_retro if laser_retro is not None else 0.0
+        self.laser_retro = laser_retro
         self.material = material
         self.meta = meta
-        self.name = name if name is not None else "__default__"
+        self.name = name
         self.origin = origin
         self.plugins = plugins or []
         self.pose = pose
-        self.transparency = transparency if transparency is not None else 0.0
-        self.visibility_flags = visibility_flags if visibility_flags is not None else 4294967295
+        self.transparency = transparency
+        self.visibility_flags = visibility_flags
         for _i, _c in enumerate(self.frames):
             if not hasattr(_c, 'to_version'): continue
             if getattr(_c, 'sdfversion', None) is None:

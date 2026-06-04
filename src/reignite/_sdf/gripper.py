@@ -22,9 +22,9 @@ class Gripper(BaseModel):
             min_contact_count: int | None = 2
         ):
             super().__init__(sdf_version)
-            self.attach_steps = attach_steps if attach_steps is not None else 20
-            self.detach_steps = detach_steps if detach_steps is not None else 40
-            self.min_contact_count = min_contact_count if min_contact_count is not None else 2
+            self.attach_steps = attach_steps
+            self.detach_steps = detach_steps
+            self.min_contact_count = min_contact_count
 
         def to_version(self, target_version: str) -> "Gripper.GraspCheck":
             if self.attach_steps is not None and cmp_version(target_version, "1.2") >= 0:
@@ -69,13 +69,13 @@ class Gripper(BaseModel):
         grasp_check: "Gripper.GraspCheck" = None,
         gripper_links: List[str] | None = None,
         name: str | None = "__default__",
-        palm_link: str | None = "__default__"
+        palm_link: str | None = None
     ):
         super().__init__(sdf_version)
         self.grasp_check = grasp_check
         self.gripper_links = gripper_links or []
-        self.name = name if name is not None else "__default__"
-        self.palm_link = palm_link if palm_link is not None else "__default__"
+        self.name = name
+        self.palm_link = palm_link
         if self.grasp_check is not None and hasattr(self.grasp_check, 'to_version'):
             if getattr(self.grasp_check, 'sdfversion', None) is None:
                 self.grasp_check.sdfversion = self.sdfversion
