@@ -239,9 +239,6 @@ class Physics(BaseModel):
             elif version is not None and version != self.sdfversion:
                 return self.to_version(str(version)).to_sdf()
             el = ET.Element("bullet")
-            if cmp_version(version, "1.4") >= 0:
-                if self.constraints is None:
-                    self.constraints = self.__class__.Constraints(sdf_version=version)
             if self.constraints is not None:
                 _child_res = self.constraints.to_sdf(version)
                 if isinstance(_child_res, str):
@@ -254,9 +251,6 @@ class Physics(BaseModel):
                 _c_tmp = ET.Element("dt")
                 _c_tmp.text = str(self.dt)
                 el.append(_c_tmp)
-            if cmp_version(version, "1.4") >= 0:
-                if self.solver is None:
-                    self.solver = self.__class__.Solver(sdf_version=version)
             if self.solver is not None:
                 _child_res = self.solver.to_sdf(version)
                 if isinstance(_child_res, str):
@@ -276,10 +270,7 @@ class Physics(BaseModel):
                     return _res.extend("constraints")
                 _constraints = _res
             else:
-                _res = cls.Constraints._from_sdf(ET.Element("constraints"), version)
-                if isinstance(_res, SDFError):
-                    return _res.extend("constraints")
-                _constraints = _res
+                _constraints = None
             if _constraints is not None and cmp_version(version, "1.4") < 0:
                 return SDFError(f"'constraints' is not supported in SDF version {version} (added in 1.4)")
             _c_tmp = el.find("dt")
@@ -298,10 +289,7 @@ class Physics(BaseModel):
                     return _res.extend("solver")
                 _solver = _res
             else:
-                _res = cls.Solver._from_sdf(ET.Element("solver"), version)
-                if isinstance(_res, SDFError):
-                    return _res.extend("solver")
-                _solver = _res
+                _solver = None
             if _solver is not None and cmp_version(version, "1.4") < 0:
                 return SDFError(f"'solver' is not supported in SDF version {version} (added in 1.4)")
             return cls(sdf_version=version, constraints=_constraints, dt=_dt, solver=_solver)
@@ -370,8 +358,6 @@ class Physics(BaseModel):
                 _c_tmp = ET.Element("collision_detector")
                 _c_tmp.text = self.collision_detector
                 el.append(_c_tmp)
-            if self.solver is None:
-                self.solver = self.__class__.DartSolver(sdf_version=version)
             if self.solver is not None:
                 _child_res = self.solver.to_sdf(version)
                 if isinstance(_child_res, str):
@@ -400,10 +386,7 @@ class Physics(BaseModel):
                     return _res.extend("solver")
                 _solver = _res
             else:
-                _res = cls.DartSolver._from_sdf(ET.Element("solver"), version)
-                if isinstance(_res, SDFError):
-                    return _res.extend("solver")
-                _solver = _res
+                _solver = None
             return cls(sdf_version=version, collision_detector=_collision_detector, solver=_solver)
 
     class Gravity(BaseModel):
@@ -710,8 +693,6 @@ class Physics(BaseModel):
             elif version is not None and version != self.sdfversion:
                 return self.to_version(str(version)).to_sdf()
             el = ET.Element("ode")
-            if self.constraints is None:
-                self.constraints = self.__class__.OdeConstraints(sdf_version=version)
             if self.constraints is not None:
                 _child_res = self.constraints.to_sdf(version)
                 if isinstance(_child_res, str):
@@ -720,8 +701,6 @@ class Physics(BaseModel):
                 else:
                     _item_el = _child_res
                 el.append(_item_el)
-            if self.solver is None:
-                self.solver = self.__class__.OdeSolver(sdf_version=version)
             if self.solver is not None:
                 _child_res = self.solver.to_sdf(version)
                 if isinstance(_child_res, str):
@@ -741,10 +720,7 @@ class Physics(BaseModel):
                     return _res.extend("constraints")
                 _constraints = _res
             else:
-                _res = cls.OdeConstraints._from_sdf(ET.Element("constraints"), version)
-                if isinstance(_res, SDFError):
-                    return _res.extend("constraints")
-                _constraints = _res
+                _constraints = None
             _c_solver = el.find("solver")
             if _c_solver is not None:
                 _res = cls.OdeSolver._from_sdf(_c_solver, version)
@@ -752,10 +728,7 @@ class Physics(BaseModel):
                     return _res.extend("solver")
                 _solver = _res
             else:
-                _res = cls.OdeSolver._from_sdf(ET.Element("solver"), version)
-                if isinstance(_res, SDFError):
-                    return _res.extend("solver")
-                _solver = _res
+                _solver = None
             return cls(sdf_version=version, constraints=_constraints, solver=_solver)
 
     class Simbody(BaseModel):

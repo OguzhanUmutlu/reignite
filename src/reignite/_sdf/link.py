@@ -448,9 +448,6 @@ class Link(BaseModel):
             else:
                 _item_el = _child_res
             el.append(_item_el)
-        if cmp_version(version, "1.2") < 0:
-            if self.damping is None:
-                self.damping = self.__class__.Damping(sdf_version=version)
         if self.damping is not None:
             _child_res = self.damping.to_sdf(version)
             if isinstance(_child_res, str):
@@ -616,10 +613,7 @@ class Link(BaseModel):
                 return _res.extend("damping")
             _damping = _res
         else:
-            _res = cls.Damping._from_sdf(ET.Element("damping"), version)
-            if isinstance(_res, SDFError):
-                return _res.extend("damping")
-            _damping = _res
+            _damping = None
         _c_tmp = el.find("enable_wind")
         if _c_tmp is not None:
             _text = _c_tmp.text if _c_tmp.text is not None else False

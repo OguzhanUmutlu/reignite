@@ -46,8 +46,6 @@ class Imu(BaseModel):
                 elif version is not None and version != self.sdfversion:
                     return self.to_version(str(version)).to_sdf()
                 el = ET.Element("x")
-                if self.noise is None:
-                    self.noise = Noise(sdf_version=version)
                 if self.noise is not None:
                     _child_res = self.noise.to_sdf(version)
                     if isinstance(_child_res, str):
@@ -68,10 +66,7 @@ class Imu(BaseModel):
                         return _res.extend("noise")
                     _noise = _res
                 else:
-                    _res = Noise._from_sdf(ET.Element("noise"), version)
-                    if isinstance(_res, SDFError):
-                        return _res.extend("noise")
-                    _noise = _res
+                    _noise = None
                 return cls(sdf_version=version, noise=_noise)
 
         class Y(BaseModel):
@@ -96,8 +91,6 @@ class Imu(BaseModel):
                 elif version is not None and version != self.sdfversion:
                     return self.to_version(str(version)).to_sdf()
                 el = ET.Element("y")
-                if self.noise is None:
-                    self.noise = Noise(sdf_version=version)
                 if self.noise is not None:
                     _child_res = self.noise.to_sdf(version)
                     if isinstance(_child_res, str):
@@ -118,10 +111,7 @@ class Imu(BaseModel):
                         return _res.extend("noise")
                     _noise = _res
                 else:
-                    _res = Noise._from_sdf(ET.Element("noise"), version)
-                    if isinstance(_res, SDFError):
-                        return _res.extend("noise")
-                    _noise = _res
+                    _noise = None
                 return cls(sdf_version=version, noise=_noise)
 
         class Z(BaseModel):
@@ -146,8 +136,6 @@ class Imu(BaseModel):
                 elif version is not None and version != self.sdfversion:
                     return self.to_version(str(version)).to_sdf()
                 el = ET.Element("z")
-                if self.noise is None:
-                    self.noise = Noise(sdf_version=version)
                 if self.noise is not None:
                     _child_res = self.noise.to_sdf(version)
                     if isinstance(_child_res, str):
@@ -168,10 +156,7 @@ class Imu(BaseModel):
                         return _res.extend("noise")
                     _noise = _res
                 else:
-                    _res = Noise._from_sdf(ET.Element("noise"), version)
-                    if isinstance(_res, SDFError):
-                        return _res.extend("noise")
-                    _noise = _res
+                    _noise = None
                 return cls(sdf_version=version, noise=_noise)
 
         def __init__(
@@ -550,8 +535,6 @@ class Imu(BaseModel):
             elif version is not None and version != self.sdfversion:
                 return self.to_version(str(version)).to_sdf()
             el = ET.Element("noise")
-            if self.accel is None:
-                self.accel = self.__class__.Accel(sdf_version=version)
             if self.accel is not None:
                 _child_res = self.accel.to_sdf(version)
                 if isinstance(_child_res, str):
@@ -560,8 +543,6 @@ class Imu(BaseModel):
                 else:
                     _item_el = _child_res
                 el.append(_item_el)
-            if self.rate is None:
-                self.rate = self.__class__.Rate(sdf_version=version)
             if self.rate is not None:
                 _child_res = self.rate.to_sdf(version)
                 if isinstance(_child_res, str):
@@ -585,10 +566,7 @@ class Imu(BaseModel):
                     return _res.extend("accel")
                 _accel = _res
             else:
-                _res = cls.Accel._from_sdf(ET.Element("accel"), version)
-                if isinstance(_res, SDFError):
-                    return _res.extend("accel")
-                _accel = _res
+                _accel = None
             _c_rate = el.find("rate")
             if _c_rate is not None:
                 _res = cls.Rate._from_sdf(_c_rate, version)
@@ -596,10 +574,7 @@ class Imu(BaseModel):
                     return _res.extend("rate")
                 _rate = _res
             else:
-                _res = cls.Rate._from_sdf(ET.Element("rate"), version)
-                if isinstance(_res, SDFError):
-                    return _res.extend("rate")
-                _rate = _res
+                _rate = None
             _c_tmp = el.find("type")
             if _c_tmp is not None:
                 _text = _c_tmp.text if _c_tmp.text is not None else "gaussian"

@@ -333,8 +333,6 @@ class Joint(BaseModel):
                 _c_tmp = ET.Element("initial_position")
                 _c_tmp.text = str(self.initial_position)
                 el.append(_c_tmp)
-            if self.limit is None:
-                self.limit = self.__class__.Limit(sdf_version=version)
             if self.limit is not None:
                 _child_res = self.limit.to_sdf(version)
                 if isinstance(_child_res, str):
@@ -388,10 +386,7 @@ class Joint(BaseModel):
                     return _res.extend("limit")
                 _limit = _res
             else:
-                _res = cls.Limit._from_sdf(ET.Element("limit"), version)
-                if isinstance(_res, SDFError):
-                    return _res.extend("limit")
-                _limit = _res
+                _limit = None
             _c_mimic = el.find("mimic")
             if _c_mimic is not None:
                 _res = Mimic._from_sdf(_c_mimic, version)
@@ -589,9 +584,6 @@ class Joint(BaseModel):
                 _c_tmp = ET.Element("initial_position")
                 _c_tmp.text = str(self.initial_position)
                 el.append(_c_tmp)
-            if cmp_version(version, "1.6") >= 0:
-                if self.limit is None:
-                    self.limit = self.__class__.Axis2Limit(sdf_version=version)
             if self.limit is not None:
                 _child_res = self.limit.to_sdf(version)
                 if isinstance(_child_res, str):
@@ -645,10 +637,7 @@ class Joint(BaseModel):
                     return _res.extend("limit")
                 _limit = _res
             else:
-                _res = cls.Axis2Limit._from_sdf(ET.Element("limit"), version)
-                if isinstance(_res, SDFError):
-                    return _res.extend("limit")
-                _limit = _res
+                _limit = None
             _c_mimic = el.find("mimic")
             if _c_mimic is not None:
                 _res = Mimic._from_sdf(_c_mimic, version)

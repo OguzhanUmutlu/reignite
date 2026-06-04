@@ -1133,8 +1133,6 @@ class Camera(BaseModel):
             _c_tmp = ET.Element("camera_info_topic")
             _c_tmp.text = self.camera_info_topic
             el.append(_c_tmp)
-        if self.clip is None:
-            self.clip = self.__class__.Clip(sdf_version=version)
         if self.clip is not None:
             _child_res = self.clip.to_sdf(version)
             if isinstance(_child_res, str):
@@ -1175,8 +1173,6 @@ class Camera(BaseModel):
             else:
                 _item_el = _child_res
             el.append(_item_el)
-        if self.image is None:
-            self.image = self.__class__.Image(sdf_version=version)
         if self.image is not None:
             _child_res = self.image.to_sdf(version)
             if isinstance(_child_res, str):
@@ -1274,10 +1270,7 @@ class Camera(BaseModel):
                 return _res.extend("clip")
             _clip = _res
         else:
-            _res = cls.Clip._from_sdf(ET.Element("clip"), version)
-            if isinstance(_res, SDFError):
-                return _res.extend("clip")
-            _clip = _res
+            _clip = None
         _c_depth_camera = el.find("depth_camera")
         if _c_depth_camera is not None:
             _res = cls.DepthCamera._from_sdf(_c_depth_camera, version)
@@ -1319,10 +1312,7 @@ class Camera(BaseModel):
                 return _res.extend("image")
             _image = _res
         else:
-            _res = cls.Image._from_sdf(ET.Element("image"), version)
-            if isinstance(_res, SDFError):
-                return _res.extend("image")
-            _image = _res
+            _image = None
         _c_lens = el.find("lens")
         if _c_lens is not None:
             _res = cls.Lens._from_sdf(_c_lens, version)

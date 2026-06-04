@@ -213,8 +213,6 @@ class Population(BaseModel):
             else:
                 _item_el = _child_res
             el.append(_item_el)
-        if self.distribution is None:
-            self.distribution = self.__class__.Distribution(sdf_version=version)
         if self.distribution is not None:
             _child_res = self.distribution.to_sdf(version)
             if isinstance(_child_res, str):
@@ -285,10 +283,7 @@ class Population(BaseModel):
                 return _res.extend("distribution")
             _distribution = _res
         else:
-            _res = cls.Distribution._from_sdf(ET.Element("distribution"), version)
-            if isinstance(_res, SDFError):
-                return _res.extend("distribution")
-            _distribution = _res
+            _distribution = None
         _frames = []
         for c in el.findall("frame"):
             _res = Frame._from_sdf(c, version)

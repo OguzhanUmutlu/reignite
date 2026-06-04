@@ -727,7 +727,9 @@ def _collect_class_spec(
                     renames[op["_version"]] = {"kind": "attr", "name": op["to_attribute"]}
         required_history = cnode.get("_required_history", {})
         effective_req = _effective_required(required, required_history)
-        is_required = effective_req == "1" or effective_req == "+"
+        # Defaulting of single child elements is handled by the SDF engine,
+        # so we don't enforce required-ness or auto-instantiate them.
+        is_required = effective_req == "+"
         if is_required and cnode.get("_default", "") != "":
             is_required = False
         params.append(ClassParam(

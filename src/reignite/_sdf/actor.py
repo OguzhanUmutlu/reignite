@@ -549,8 +549,6 @@ class Actor(BaseModel):
             else:
                 _item_el = _child_res
             el.append(_item_el)
-        if self.script is None:
-            self.script = self.__class__.Script(sdf_version=version)
         if self.script is not None:
             _child_res = self.script.to_sdf(version)
             if isinstance(_child_res, str):
@@ -638,10 +636,7 @@ class Actor(BaseModel):
                 return _res.extend("script")
             _script = _res
         else:
-            _res = cls.Script._from_sdf(ET.Element("script"), version)
-            if isinstance(_res, SDFError):
-                return _res.extend("script")
-            _script = _res
+            _script = None
         _c_skin = el.find("skin")
         if _c_skin is not None:
             _res = cls.Skin._from_sdf(_c_skin, version)

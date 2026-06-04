@@ -344,8 +344,6 @@ class Lidar(BaseModel):
             elif version is not None and version != self.sdfversion:
                 return self.to_version(str(version)).to_sdf()
             el = ET.Element("scan")
-            if self.horizontal is None:
-                self.horizontal = self.__class__.Horizontal(sdf_version=version)
             if self.horizontal is not None:
                 _child_res = self.horizontal.to_sdf(version)
                 if isinstance(_child_res, str):
@@ -373,10 +371,7 @@ class Lidar(BaseModel):
                     return _res.extend("horizontal")
                 _horizontal = _res
             else:
-                _res = cls.Horizontal._from_sdf(ET.Element("horizontal"), version)
-                if isinstance(_res, SDFError):
-                    return _res.extend("horizontal")
-                _horizontal = _res
+                _horizontal = None
             _c_vertical = el.find("vertical")
             if _c_vertical is not None:
                 _res = cls.Vertical._from_sdf(_c_vertical, version)
@@ -436,8 +431,6 @@ class Lidar(BaseModel):
             else:
                 _item_el = _child_res
             el.append(_item_el)
-        if self.range is None:
-            self.range = self.__class__.Range(sdf_version=version)
         if self.range is not None:
             _child_res = self.range.to_sdf(version)
             if isinstance(_child_res, str):
@@ -446,8 +439,6 @@ class Lidar(BaseModel):
             else:
                 _item_el = _child_res
             el.append(_item_el)
-        if self.scan is None:
-            self.scan = self.__class__.Scan(sdf_version=version)
         if self.scan is not None:
             _child_res = self.scan.to_sdf(version)
             if isinstance(_child_res, str):
@@ -479,10 +470,7 @@ class Lidar(BaseModel):
                 return _res.extend("range")
             _range = _res
         else:
-            _res = cls.Range._from_sdf(ET.Element("range"), version)
-            if isinstance(_res, SDFError):
-                return _res.extend("range")
-            _range = _res
+            _range = None
         _c_scan = el.find("scan")
         if _c_scan is not None:
             _res = cls.Scan._from_sdf(_c_scan, version)
@@ -490,10 +478,7 @@ class Lidar(BaseModel):
                 return _res.extend("scan")
             _scan = _res
         else:
-            _res = cls.Scan._from_sdf(ET.Element("scan"), version)
-            if isinstance(_res, SDFError):
-                return _res.extend("scan")
-            _scan = _res
+            _scan = None
         _c_tmp = el.find("visibility_mask")
         if _c_tmp is not None:
             _text = _c_tmp.text if _c_tmp.text is not None else 4294967295

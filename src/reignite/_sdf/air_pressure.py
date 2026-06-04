@@ -36,8 +36,6 @@ class AirPressure(BaseModel):
             elif version is not None and version != self.sdfversion:
                 return self.to_version(str(version)).to_sdf()
             el = ET.Element("pressure")
-            if self.noise is None:
-                self.noise = Noise(sdf_version=version)
             if self.noise is not None:
                 _child_res = self.noise.to_sdf(version)
                 if isinstance(_child_res, str):
@@ -58,10 +56,7 @@ class AirPressure(BaseModel):
                     return _res.extend("noise")
                 _noise = _res
             else:
-                _res = Noise._from_sdf(ET.Element("noise"), version)
-                if isinstance(_res, SDFError):
-                    return _res.extend("noise")
-                _noise = _res
+                _noise = None
             return cls(sdf_version=version, noise=_noise)
 
     def __init__(
