@@ -152,6 +152,9 @@ class Plugin(_Base):
         if cls is Plugin:
             target_cls = plugin_classes.get(filename) or plugin_classes.get(name)
             if target_cls and target_cls is not Plugin:
+                if hasattr(target_cls, "_from_sdf") and target_cls._from_sdf.__func__ is not Plugin._from_sdf.__func__:
+                    return target_cls._from_sdf(el, version)
+
                 try:
                     kwargs = {}
                     sig = inspect.signature(target_cls.__init__)

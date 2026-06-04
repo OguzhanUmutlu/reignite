@@ -85,7 +85,7 @@ class ArduPilotPlugin(Plugin):
             return cls(
                 channel=channel,
                 type=_type.text if _type is not None and _type.text is not None else None,
-                use_force=use_force.text.lower() == "true" if use_force is not None and use_force.text is not None else None,
+                use_force=use_force.text.lower() in ("true", "1", "yes", "t") if use_force is not None and use_force.text is not None else None,
                 joint=joint_name.text if joint_name is not None and joint_name.text is not None else None,
                 cmd_topic=cmd_topic.text if cmd_topic is not None and cmd_topic.text is not None else None,
                 multiplier=float(multiplier.text) if multiplier is not None and multiplier.text is not None else None,
@@ -225,13 +225,13 @@ class ArduPilotPlugin(Plugin):
         connection_timeout_max_count = int(ctmc_el.text) if ctmc_el is not None and ctmc_el.text is not None else None
         
         ls_el = el.find("lock_step")
-        lock_step = ls_el.text.lower() == "true" if ls_el is not None and ls_el.text is not None else None
+        lock_step = ls_el.text.lower() in ("true", "1", "yes", "t") if ls_el is not None and ls_el.text is not None else None
         
         nts_el = el.find("no_time_sync")
-        no_time_sync = nts_el.text.lower() == "true" if nts_el is not None and nts_el.text is not None else None
+        no_time_sync = nts_el.text.lower() in ("true", "1", "yes", "t") if nts_el is not None and nts_el.text is not None else None
         
         h32_el = el.find("have_32_channels")
-        have_32_channels = h32_el.text.lower() == "true" if h32_el is not None and h32_el.text is not None else None
+        have_32_channels = h32_el.text.lower() in ("true", "1", "yes", "t") if h32_el is not None and h32_el.text is not None else None
         
         imu_el = el.find("imuName")
         imu_name = imu_el.text if imu_el is not None and imu_el.text is not None else None
