@@ -85,7 +85,7 @@ class Model(BaseModel):
             from ..elements.pose import Pose
             if self.merge is not None and cmp_version(target_version, "1.9") < 0:
                 raise ValueError(f"'merge' is not supported in SDF version {target_version} (added in 1.9)")
-            if self.model_states is not None and cmp_version(target_version, "1.12") < 0:
+            if self.model_states and cmp_version(target_version, "1.12") < 0:
                 raise ValueError(f"'model_states' is not supported in SDF version {target_version} (added in 1.12)")
             if self.placement_frame is not None and cmp_version(target_version, "1.8") < 0:
                 raise ValueError(f"'placement_frame' is not supported in SDF version {target_version} (added in 1.8)")
@@ -408,13 +408,13 @@ class Model(BaseModel):
             raise ValueError(f"'canonical_link' is not supported in SDF version {target_version} (added in 1.7)")
         if self.enable_wind is not None and cmp_version(target_version, "1.6") < 0:
             raise ValueError(f"'enable_wind' is not supported in SDF version {target_version} (added in 1.6)")
-        if self.frames is not None and cmp_version(target_version, "1.5") < 0:
+        if self.frames and cmp_version(target_version, "1.5") < 0:
             raise ValueError(f"'frames' is not supported in SDF version {target_version} (added in 1.5)")
-        if self.includes is not None and cmp_version(target_version, "1.5") < 0:
+        if self.includes and cmp_version(target_version, "1.5") < 0:
             raise ValueError(f"'includes' is not supported in SDF version {target_version} (added in 1.5)")
-        if self.model_states is not None and cmp_version(target_version, "1.12") < 0:
+        if self.model_states and cmp_version(target_version, "1.12") < 0:
             raise ValueError(f"'model_states' is not supported in SDF version {target_version} (added in 1.12)")
-        if self.models is not None and cmp_version(target_version, "1.5") < 0:
+        if self.models and cmp_version(target_version, "1.5") < 0:
             raise ValueError(f"'models' is not supported in SDF version {target_version} (added in 1.5)")
         if self.origin is not None and cmp_version(target_version, "1.2") >= 0:
             raise ValueError(f"'origin' is not supported in SDF version {target_version} (removed in 1.2)")

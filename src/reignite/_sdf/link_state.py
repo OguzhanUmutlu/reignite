@@ -258,13 +258,13 @@ class LinkState(BaseModel):
             raise ValueError(f"'angular_acceleration' is not supported in SDF version {target_version} (added in 1.12)")
         if self.angular_velocity is not None and cmp_version(target_version, "1.12") < 0:
             raise ValueError(f"'angular_velocity' is not supported in SDF version {target_version} (added in 1.12)")
-        if self.collision_states is not None and cmp_version(target_version, "1.12") < 0:
+        if self.collision_states and cmp_version(target_version, "1.12") < 0:
             raise ValueError(f"'collision_states' is not supported in SDF version {target_version} (added in 1.12)")
-        if self.collisions is not None and cmp_version(target_version, "1.12") >= 0:
+        if self.collisions and cmp_version(target_version, "1.12") >= 0:
             raise ValueError(f"'collisions' is not supported in SDF version {target_version} (removed in 1.12)")
         if self.force is not None and cmp_version(target_version, "1.12") < 0:
             raise ValueError(f"'force' is not supported in SDF version {target_version} (added in 1.12)")
-        if self.frames is not None and cmp_version(target_version, "1.7") >= 0:
+        if self.frames and cmp_version(target_version, "1.7") >= 0:
             raise ValueError(f"'frames' is not supported in SDF version {target_version} (removed in 1.7)")
         if self.linear_acceleration is not None and cmp_version(target_version, "1.12") < 0:
             raise ValueError(f"'linear_acceleration' is not supported in SDF version {target_version} (added in 1.12)")

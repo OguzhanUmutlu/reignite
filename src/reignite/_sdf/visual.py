@@ -183,15 +183,15 @@ class Visual(BaseModel):
         from ..elements.material import Material
         from ..elements.plugin import Plugin
         from ..elements.pose import Pose
-        if self.frames is not None and cmp_version(target_version, "1.5") < 0:
+        if self.frames and cmp_version(target_version, "1.5") < 0:
             raise ValueError(f"'frames' is not supported in SDF version {target_version} (added in 1.5)")
-        if self.frames is not None and cmp_version(target_version, "1.7") >= 0:
+        if self.frames and cmp_version(target_version, "1.7") >= 0:
             raise ValueError(f"'frames' is not supported in SDF version {target_version} (removed in 1.7)")
         if self.meta is not None and cmp_version(target_version, "1.5") < 0:
             raise ValueError(f"'meta' is not supported in SDF version {target_version} (added in 1.5)")
         if self.origin is not None and cmp_version(target_version, "1.2") >= 0:
             raise ValueError(f"'origin' is not supported in SDF version {target_version} (removed in 1.2)")
-        if self.plugins is not None and cmp_version(target_version, "1.3") < 0:
+        if self.plugins and cmp_version(target_version, "1.3") < 0:
             raise ValueError(f"'plugins' is not supported in SDF version {target_version} (added in 1.3)")
         if self.pose is not None and cmp_version(target_version, "1.2") < 0:
             raise ValueError(f"'pose' is not supported in SDF version {target_version} (added in 1.2)")

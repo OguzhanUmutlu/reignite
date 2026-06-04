@@ -295,9 +295,9 @@ class Sensor(BaseModel):
             raise ValueError(f"'force_torque' is not supported in SDF version {target_version} (added in 1.4)")
         if self.frame_id is not None and cmp_version(target_version, "1.12") < 0:
             raise ValueError(f"'frame_id' is not supported in SDF version {target_version} (added in 1.12)")
-        if self.frames is not None and cmp_version(target_version, "1.5") < 0:
+        if self.frames and cmp_version(target_version, "1.5") < 0:
             raise ValueError(f"'frames' is not supported in SDF version {target_version} (added in 1.5)")
-        if self.frames is not None and cmp_version(target_version, "1.7") >= 0:
+        if self.frames and cmp_version(target_version, "1.7") >= 0:
             raise ValueError(f"'frames' is not supported in SDF version {target_version} (removed in 1.7)")
         if self.gps is not None and cmp_version(target_version, "1.4") < 0:
             raise ValueError(f"'gps' is not supported in SDF version {target_version} (added in 1.4)")

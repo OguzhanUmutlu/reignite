@@ -363,25 +363,25 @@ class Link(BaseModel):
         from ..elements.projector import Projector
         from ..elements.sensor import Sensor
         from ..elements.visual import Visual
-        if self.audio_sinks is not None and cmp_version(target_version, "1.4") < 0:
+        if self.audio_sinks and cmp_version(target_version, "1.4") < 0:
             raise ValueError(f"'audio_sinks' is not supported in SDF version {target_version} (added in 1.4)")
-        if self.audio_sources is not None and cmp_version(target_version, "1.4") < 0:
+        if self.audio_sources and cmp_version(target_version, "1.4") < 0:
             raise ValueError(f"'audio_sources' is not supported in SDF version {target_version} (added in 1.4)")
-        if self.batteries is not None and cmp_version(target_version, "1.5") < 0:
+        if self.batteries and cmp_version(target_version, "1.5") < 0:
             raise ValueError(f"'batteries' is not supported in SDF version {target_version} (added in 1.5)")
         if self.enable_wind is not None and cmp_version(target_version, "1.6") < 0:
             raise ValueError(f"'enable_wind' is not supported in SDF version {target_version} (added in 1.6)")
-        if self.frames is not None and cmp_version(target_version, "1.5") < 0:
+        if self.frames and cmp_version(target_version, "1.5") < 0:
             raise ValueError(f"'frames' is not supported in SDF version {target_version} (added in 1.5)")
-        if self.frames is not None and cmp_version(target_version, "1.7") >= 0:
+        if self.frames and cmp_version(target_version, "1.7") >= 0:
             raise ValueError(f"'frames' is not supported in SDF version {target_version} (removed in 1.7)")
-        if self.lights is not None and cmp_version(target_version, "1.6") < 0:
+        if self.lights and cmp_version(target_version, "1.6") < 0:
             raise ValueError(f"'lights' is not supported in SDF version {target_version} (added in 1.6)")
         if self.must_be_base_link is not None and cmp_version(target_version, "1.4") < 0:
             raise ValueError(f"'must_be_base_link' is not supported in SDF version {target_version} (added in 1.4)")
         if self.origin is not None and cmp_version(target_version, "1.2") >= 0:
             raise ValueError(f"'origin' is not supported in SDF version {target_version} (removed in 1.2)")
-        if self.particle_emitters is not None and cmp_version(target_version, "1.6") < 0:
+        if self.particle_emitters and cmp_version(target_version, "1.6") < 0:
             raise ValueError(f"'particle_emitters' is not supported in SDF version {target_version} (added in 1.6)")
         if self.pose is not None and cmp_version(target_version, "1.2") < 0:
             raise ValueError(f"'pose' is not supported in SDF version {target_version} (added in 1.2)")

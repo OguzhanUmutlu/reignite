@@ -1150,9 +1150,9 @@ class Camera(BaseModel):
             raise ValueError(f"'camera_info_topic' is not supported in SDF version {target_version} (added in 1.7)")
         if self.distortion is not None and cmp_version(target_version, "1.5") < 0:
             raise ValueError(f"'distortion' is not supported in SDF version {target_version} (added in 1.5)")
-        if self.frames is not None and cmp_version(target_version, "1.5") < 0:
+        if self.frames and cmp_version(target_version, "1.5") < 0:
             raise ValueError(f"'frames' is not supported in SDF version {target_version} (added in 1.5)")
-        if self.frames is not None and cmp_version(target_version, "1.7") >= 0:
+        if self.frames and cmp_version(target_version, "1.7") >= 0:
             raise ValueError(f"'frames' is not supported in SDF version {target_version} (removed in 1.7)")
         if self.lens is not None and cmp_version(target_version, "1.5") < 0:
             raise ValueError(f"'lens' is not supported in SDF version {target_version} (added in 1.5)")

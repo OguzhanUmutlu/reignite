@@ -129,13 +129,13 @@ class World(BaseModel):
             from ..elements.pose import Pose
             if self.merge is not None and cmp_version(target_version, "1.10") < 0:
                 raise ValueError(f"'merge' is not supported in SDF version {target_version} (added in 1.10)")
-            if self.model_states is not None and cmp_version(target_version, "1.12") < 0:
+            if self.model_states and cmp_version(target_version, "1.12") < 0:
                 raise ValueError(f"'model_states' is not supported in SDF version {target_version} (added in 1.12)")
             if self.name is not None and cmp_version(target_version, "1.5") < 0:
                 raise ValueError(f"'name' is not supported in SDF version {target_version} (added in 1.5)")
             if self.placement_frame is not None and cmp_version(target_version, "1.8") < 0:
                 raise ValueError(f"'placement_frame' is not supported in SDF version {target_version} (added in 1.8)")
-            if self.plugins is not None and cmp_version(target_version, "1.5") < 0:
+            if self.plugins and cmp_version(target_version, "1.5") < 0:
                 raise ValueError(f"'plugins' is not supported in SDF version {target_version} (added in 1.5)")
             if self.pose is not None and cmp_version(target_version, "1.5") < 0:
                 raise ValueError(f"'pose' is not supported in SDF version {target_version} (added in 1.5)")
@@ -524,17 +524,17 @@ class World(BaseModel):
             raise ValueError(f"'atmosphere' is not supported in SDF version {target_version} (added in 1.6)")
         if self.audio is not None and cmp_version(target_version, "1.4") < 0:
             raise ValueError(f"'audio' is not supported in SDF version {target_version} (added in 1.4)")
-        if self.frames is not None and cmp_version(target_version, "1.7") < 0:
+        if self.frames and cmp_version(target_version, "1.7") < 0:
             raise ValueError(f"'frames' is not supported in SDF version {target_version} (added in 1.7)")
         if self.gravity is not None and cmp_version(target_version, "1.6") < 0:
             raise ValueError(f"'gravity' is not supported in SDF version {target_version} (added in 1.6)")
-        if self.includes is not None and cmp_version(target_version, "1.4") < 0:
+        if self.includes and cmp_version(target_version, "1.4") < 0:
             raise ValueError(f"'includes' is not supported in SDF version {target_version} (added in 1.4)")
-        if self.joints is not None and cmp_version(target_version, "1.7") >= 0:
+        if self.joints and cmp_version(target_version, "1.7") >= 0:
             raise ValueError(f"'joints' is not supported in SDF version {target_version} (removed in 1.7)")
         if self.magnetic_field is not None and cmp_version(target_version, "1.6") < 0:
             raise ValueError(f"'magnetic_field' is not supported in SDF version {target_version} (added in 1.6)")
-        if self.populations is not None and cmp_version(target_version, "1.5") < 0:
+        if self.populations and cmp_version(target_version, "1.5") < 0:
             raise ValueError(f"'populations' is not supported in SDF version {target_version} (added in 1.5)")
         if self.spherical_coordinates is not None and cmp_version(target_version, "1.4") < 0:
             raise ValueError(f"'spherical_coordinates' is not supported in SDF version {target_version} (added in 1.4)")

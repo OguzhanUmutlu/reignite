@@ -960,13 +960,15 @@ def _render_class(spec: dict, file_external_imports: set[str], indent: int = 0,
         block.extend(local_import_lines)
     for p in params:
         if p.added_in:
+            cond = f"self.{p.py_name}" if p.is_list else f"self.{p.py_name} is not None"
             block.append(
-                f"        if self.{p.py_name} is not None and cmp_version(target_version, \"{p.added_in}\") < 0:")
+                f"        if {cond} and cmp_version(target_version, \"{p.added_in}\") < 0:")
             block.append(
                 f'            raise ValueError(f"\'{p.py_name}\' is not supported in SDF version {{target_version}} (added in {p.added_in})")')
         if p.removed_in and not p.renames:
+            cond = f"self.{p.py_name}" if p.is_list else f"self.{p.py_name} is not None"
             block.append(
-                f"        if self.{p.py_name} is not None and cmp_version(target_version, \"{p.removed_in}\") >= 0:")
+                f"        if {cond} and cmp_version(target_version, \"{p.removed_in}\") >= 0:")
             block.append(
                 f'            raise ValueError(f"\'{p.py_name}\' is not supported in SDF version {{target_version}} (removed in {p.removed_in})")')
 

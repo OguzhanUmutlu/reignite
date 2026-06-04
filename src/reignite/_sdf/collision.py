@@ -133,9 +133,9 @@ class Collision(BaseModel):
             raise ValueError(f"'auto_inertia_params' is not supported in SDF version {target_version} (added in 1.11)")
         if self.density is not None and cmp_version(target_version, "1.11") < 0:
             raise ValueError(f"'density' is not supported in SDF version {target_version} (added in 1.11)")
-        if self.frames is not None and cmp_version(target_version, "1.5") < 0:
+        if self.frames and cmp_version(target_version, "1.5") < 0:
             raise ValueError(f"'frames' is not supported in SDF version {target_version} (added in 1.5)")
-        if self.frames is not None and cmp_version(target_version, "1.7") >= 0:
+        if self.frames and cmp_version(target_version, "1.7") >= 0:
             raise ValueError(f"'frames' is not supported in SDF version {target_version} (removed in 1.7)")
         if self.mass is not None and cmp_version(target_version, "1.2") >= 0:
             raise ValueError(f"'mass' is not supported in SDF version {target_version} (removed in 1.2)")

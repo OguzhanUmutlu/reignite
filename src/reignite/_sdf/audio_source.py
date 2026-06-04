@@ -99,9 +99,9 @@ class AudioSource(BaseModel):
     def to_version(self, target_version: str) -> "AudioSource":
         from ..elements.frame import Frame
         from ..elements.pose import Pose
-        if self.frames is not None and cmp_version(target_version, "1.5") < 0:
+        if self.frames and cmp_version(target_version, "1.5") < 0:
             raise ValueError(f"'frames' is not supported in SDF version {target_version} (added in 1.5)")
-        if self.frames is not None and cmp_version(target_version, "1.7") >= 0:
+        if self.frames and cmp_version(target_version, "1.7") >= 0:
             raise ValueError(f"'frames' is not supported in SDF version {target_version} (removed in 1.7)")
         kwargs: dict = {"sdf_version": target_version, "contact": self.contact.to_version(target_version) if self.contact is not None and hasattr(self.contact, "to_version") else self.contact, "frames": [c.to_version(target_version) if hasattr(c, "to_version") else c for c in (self.frames or [])], "gain": self.gain, "loop": self.loop, "pitch": self.pitch, "pose": self.pose.to_version(target_version) if self.pose is not None and hasattr(self.pose, "to_version") else self.pose, "uri": self.uri}
         return self.__class__(**kwargs)

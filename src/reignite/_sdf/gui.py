@@ -265,9 +265,9 @@ class Gui(BaseModel):
         def to_version(self, target_version: str) -> "Gui.Camera":
             from ..elements.frame import Frame
             from ..elements.pose import Pose
-            if self.frames is not None and cmp_version(target_version, "1.5") < 0:
+            if self.frames and cmp_version(target_version, "1.5") < 0:
                 raise ValueError(f"'frames' is not supported in SDF version {target_version} (added in 1.5)")
-            if self.frames is not None and cmp_version(target_version, "1.7") >= 0:
+            if self.frames and cmp_version(target_version, "1.7") >= 0:
                 raise ValueError(f"'frames' is not supported in SDF version {target_version} (removed in 1.7)")
             if self.origin is not None and cmp_version(target_version, "1.2") >= 0:
                 raise ValueError(f"'origin' is not supported in SDF version {target_version} (removed in 1.2)")
@@ -423,7 +423,7 @@ class Gui(BaseModel):
 
     def to_version(self, target_version: str) -> "Gui":
         from ..elements.plugin import Plugin
-        if self.plugins is not None and cmp_version(target_version, "1.5") < 0:
+        if self.plugins and cmp_version(target_version, "1.5") < 0:
             raise ValueError(f"'plugins' is not supported in SDF version {target_version} (added in 1.5)")
         kwargs: dict = {"sdf_version": target_version, "camera": self.camera.to_version(target_version) if self.camera is not None and hasattr(self.camera, "to_version") else self.camera, "fullscreen": self.fullscreen, "plugins": [c.to_version(target_version) if hasattr(c, "to_version") else c for c in (self.plugins or [])]}
         return self.__class__(**kwargs)

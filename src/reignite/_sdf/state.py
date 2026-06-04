@@ -109,9 +109,9 @@ class State(BaseModel):
             from ..elements.joint import Joint
             from ..elements.light import Light
             from ..elements.model import Model
-            if self.joints is not None and cmp_version(target_version, "1.12") < 0:
+            if self.joints and cmp_version(target_version, "1.12") < 0:
                 raise ValueError(f"'joints' is not supported in SDF version {target_version} (added in 1.12)")
-            if self.lights is not None and cmp_version(target_version, "1.6") < 0:
+            if self.lights and cmp_version(target_version, "1.6") < 0:
                 raise ValueError(f"'lights' is not supported in SDF version {target_version} (added in 1.6)")
             kwargs: dict = {"sdf_version": target_version, "joints": [c.to_version(target_version) if hasattr(c, "to_version") else c for c in (self.joints or [])], "lights": [c.to_version(target_version) if hasattr(c, "to_version") else c for c in (self.lights or [])], "models": [c.to_version(target_version) if hasattr(c, "to_version") else c for c in (self.models or [])]}
             return self.__class__(**kwargs)
@@ -289,17 +289,17 @@ class State(BaseModel):
             raise ValueError(f"'insertions' is not supported in SDF version {target_version} (added in 1.3)")
         if self.iterations is not None and cmp_version(target_version, "1.5") < 0:
             raise ValueError(f"'iterations' is not supported in SDF version {target_version} (added in 1.5)")
-        if self.joint_states is not None and cmp_version(target_version, "1.12") < 0:
+        if self.joint_states and cmp_version(target_version, "1.12") < 0:
             raise ValueError(f"'joint_states' is not supported in SDF version {target_version} (added in 1.12)")
-        if self.light_states is not None and cmp_version(target_version, "1.12") < 0:
+        if self.light_states and cmp_version(target_version, "1.12") < 0:
             raise ValueError(f"'light_states' is not supported in SDF version {target_version} (added in 1.12)")
-        if self.lights is not None and cmp_version(target_version, "1.5") < 0:
+        if self.lights and cmp_version(target_version, "1.5") < 0:
             raise ValueError(f"'lights' is not supported in SDF version {target_version} (added in 1.5)")
-        if self.lights is not None and cmp_version(target_version, "1.12") >= 0:
+        if self.lights and cmp_version(target_version, "1.12") >= 0:
             raise ValueError(f"'lights' is not supported in SDF version {target_version} (removed in 1.12)")
-        if self.model_states is not None and cmp_version(target_version, "1.12") < 0:
+        if self.model_states and cmp_version(target_version, "1.12") < 0:
             raise ValueError(f"'model_states' is not supported in SDF version {target_version} (added in 1.12)")
-        if self.models is not None and cmp_version(target_version, "1.12") >= 0:
+        if self.models and cmp_version(target_version, "1.12") >= 0:
             raise ValueError(f"'models' is not supported in SDF version {target_version} (removed in 1.12)")
         if self.real_time is not None and cmp_version(target_version, "1.3") < 0:
             raise ValueError(f"'real_time' is not supported in SDF version {target_version} (added in 1.3)")

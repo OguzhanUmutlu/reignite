@@ -235,17 +235,17 @@ class ModelState(BaseModel):
         from ..elements.joint_state import JointState
         from ..elements.link_state import LinkState
         from ..elements.pose import Pose
-        if self.joint_states is not None and cmp_version(target_version, "1.12") < 0:
+        if self.joint_states and cmp_version(target_version, "1.12") < 0:
             raise ValueError(f"'joint_states' is not supported in SDF version {target_version} (added in 1.12)")
-        if self.joints is not None and cmp_version(target_version, "1.12") >= 0:
+        if self.joints and cmp_version(target_version, "1.12") >= 0:
             raise ValueError(f"'joints' is not supported in SDF version {target_version} (removed in 1.12)")
-        if self.link_states is not None and cmp_version(target_version, "1.12") < 0:
+        if self.link_states and cmp_version(target_version, "1.12") < 0:
             raise ValueError(f"'link_states' is not supported in SDF version {target_version} (added in 1.12)")
-        if self.links is not None and cmp_version(target_version, "1.12") >= 0:
+        if self.links and cmp_version(target_version, "1.12") >= 0:
             raise ValueError(f"'links' is not supported in SDF version {target_version} (removed in 1.12)")
-        if self.model_states is not None and cmp_version(target_version, "1.12") < 0:
+        if self.model_states and cmp_version(target_version, "1.12") < 0:
             raise ValueError(f"'model_states' is not supported in SDF version {target_version} (added in 1.12)")
-        if self.models is not None and cmp_version(target_version, "1.12") >= 0:
+        if self.models and cmp_version(target_version, "1.12") >= 0:
             raise ValueError(f"'models' is not supported in SDF version {target_version} (removed in 1.12)")
         if self.scale is not None and cmp_version(target_version, "1.6") < 0:
             raise ValueError(f"'scale' is not supported in SDF version {target_version} (added in 1.6)")
