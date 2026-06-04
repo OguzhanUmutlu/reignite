@@ -1,6 +1,7 @@
 from ...plugin import Plugin
 
 
+@Plugin.register("gz-sim-mecanum-drive-system", "gz::sim::systems::MecanumDrive")
 class MecanumDrivePlugin(Plugin):
     def __init__(
             self,

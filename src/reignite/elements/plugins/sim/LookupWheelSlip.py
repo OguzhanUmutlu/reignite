@@ -1,6 +1,7 @@
 from ...plugin import Plugin
 
 
+@Plugin.register("gz-sim-lookup-wheel-slip-system", "gz::sim::systems::LookupWheelSlip")
 class LookupWheelSlipPlugin(Plugin):
     def __init__(
             self,

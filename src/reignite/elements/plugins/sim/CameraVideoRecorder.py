@@ -1,6 +1,7 @@
 from ...plugin import Plugin
 
 
+@Plugin.register("gz-sim-camera-video-recorder-system", "gz::sim::systems::CameraVideoRecorder")
 class CameraVideoRecorderPlugin(Plugin):
     def __init__(
             self,

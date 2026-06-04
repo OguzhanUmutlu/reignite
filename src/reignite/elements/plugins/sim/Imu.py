@@ -1,6 +1,7 @@
 from ...plugin import Plugin
 
 
+@Plugin.register("gz-sim-imu-system", "gz::sim::systems::Imu")
 class ImuPlugin(Plugin):
     def __init__(self):
         super().__init__(

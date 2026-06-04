@@ -2,6 +2,7 @@ from ...joint import Joint
 from ...plugin import Plugin
 
 
+@Plugin.register("gz-sim-ackermann-steering-system", "gz::sim::systems::AckermannSteering")
 class AckermannSteeringPlugin(Plugin):
     def __init__(
             self,

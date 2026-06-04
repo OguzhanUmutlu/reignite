@@ -1,6 +1,7 @@
 from ...plugin import Plugin
 
 
+@Plugin.register("gz-sim-model-photo-shoot-system", "gz::sim::systems::ModelPhotoShoot")
 class ModelPhotoShootPlugin(Plugin):
     def __init__(
             self,

@@ -2,6 +2,7 @@ from .GzGui import GzGui
 from ...plugin import Plugin
 
 
+@Plugin.register("EntityTree", "Entity tree")
 class EntityTreePlugin(Plugin):
     def __init__(self, name="Entity tree", **gui_kwargs):
         super().__init__(name=name, filename="EntityTree", elements=[

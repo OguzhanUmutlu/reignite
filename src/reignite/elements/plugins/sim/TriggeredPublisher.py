@@ -21,6 +21,7 @@ _messages = {
 }
 
 
+@Plugin.register("gz-sim-triggered-publisher-system", "gz::sim::systems::TriggeredPublisher")
 class TriggeredPublisherPlugin(Plugin):
     class Match(TextElement):
         def __init__(self, value: str, field: str | None = None, tol: float | None = None,

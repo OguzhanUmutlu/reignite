@@ -1,6 +1,7 @@
 from ...plugin import Plugin
 
 
+@Plugin.register("gz-sim-hydrodynamics-system", "gz::sim::systems::Hydrodynamics")
 class HydrodynamicsPlugin(Plugin):
     def __init__(
             self,

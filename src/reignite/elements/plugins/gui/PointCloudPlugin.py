@@ -2,6 +2,7 @@ from .GzGui import GzGui
 from ...plugin import Plugin
 
 
+@Plugin.register("PointCloud", "PointCloud")
 class PointCloudPlugin(Plugin):
     def __init__(
             self,

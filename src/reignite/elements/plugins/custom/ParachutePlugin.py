@@ -1,6 +1,7 @@
 from typing import Optional
 from ...plugin import Plugin
 
+@Plugin.register("ParachutePlugin", "ParachutePlugin")
 class ParachutePlugin(Plugin):
     def __init__(
             self,

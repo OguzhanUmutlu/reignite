@@ -2,6 +2,7 @@ from ...joint import Joint
 from ...plugin import Plugin
 
 
+@Plugin.register("gz-sim-elevator-system", "gz::sim::systems::Elevator")
 class ElevatorPlugin(Plugin):
     def __init__(
             self,

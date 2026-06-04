@@ -2,6 +2,7 @@ from .GzGui import GzGui
 from ...plugin import Plugin
 
 
+@Plugin.register("Publisher", "Publisher")
 class PublisherPlugin(Plugin):
     def __init__(
             self,

@@ -1,6 +1,7 @@
 from reignite.elements.plugin import Plugin
 
 
+@Plugin.register("gz-sim-multicopter-motor-model-system", "gz::sim::systems::MulticopterMotorModel")
 class MulticopterMotorModelPlugin(Plugin):
     def __init__(
             self,

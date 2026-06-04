@@ -1,6 +1,7 @@
 from ...plugin import Plugin
 
 
+@Plugin.register("gz-sim-environment-preload-system", "gz::sim::systems::EnvironmentPreload")
 class EnvironmentPreloadPlugin(Plugin):
     def __init__(
             self,

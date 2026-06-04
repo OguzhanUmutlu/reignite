@@ -2,6 +2,7 @@ from ...link import Link
 from ...plugin import Plugin
 
 
+@Plugin.register("gz-sim-buoyancy-engine-system", "gz::sim::systems::BuoyancyEngine")
 class BuoyancyEnginePlugin(Plugin):
     def __init__(
             self,

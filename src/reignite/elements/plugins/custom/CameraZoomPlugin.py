@@ -1,6 +1,7 @@
 from typing import Optional
 from ...plugin import Plugin
 
+@Plugin.register("CameraZoomPlugin", "CameraZoomPlugin")
 class CameraZoomPlugin(Plugin):
     def __init__(
             self,

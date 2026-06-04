@@ -2,6 +2,7 @@ from ...joint import Joint
 from ...plugin import Plugin
 
 
+@Plugin.register("gz-sim-joint-trajectory-controller-system", "gz::sim::systems::JointTrajectoryController")
 class JointTrajectoryControllerPlugin(Plugin):
     def __init__(
             self,

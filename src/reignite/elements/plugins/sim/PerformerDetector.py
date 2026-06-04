@@ -1,6 +1,7 @@
 from reignite.elements.plugin import Plugin, ParentElement, TextElement
 
 
+@Plugin.register("gz-sim-performer-detector-system", "gz::sim::systems::PerformerDetector")
 class PerformerDetectorPlugin(Plugin):
     class Box(ParentElement):
         def __init__(self, size: list[float] | str):

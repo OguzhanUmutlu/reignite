@@ -2,6 +2,7 @@ from .GzGui import GzGui
 from ...plugin import Plugin
 
 
+@Plugin.register("CameraTracking", "CameraTrackingConfig")
 class CameraTrackingConfigPlugin(Plugin):
     def __init__(
             self,

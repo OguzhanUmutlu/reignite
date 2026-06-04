@@ -4,6 +4,7 @@ from .GzGui import GzGui
 from ...plugin import Plugin
 
 
+@Plugin.register("WorldControl", "World control")
 class WorldControlPlugin(Plugin):
     def __init__(self,
                  play_pause: bool = True,

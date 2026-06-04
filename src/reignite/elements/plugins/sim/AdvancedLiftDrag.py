@@ -5,6 +5,7 @@ from reignite.elements.link import Link
 from reignite.elements.plugin import Plugin, ParentElement, TextElement
 
 
+@Plugin.register("gz-sim-advanced-lift-drag-system", "gz::sim::systems::AdvancedLiftDrag")
 class AdvancedLiftDragPlugin(Plugin):
     class ControlSurface(ParentElement):
         def __init__(

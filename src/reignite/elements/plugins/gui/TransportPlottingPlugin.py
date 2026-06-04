@@ -2,6 +2,7 @@ from .GzGui import GzGui
 from ...plugin import Plugin
 
 
+@Plugin.register("TransportPlotting", "TransportPlotting")
 class TransportPlottingPlugin(Plugin):
     def __init__(
             self,

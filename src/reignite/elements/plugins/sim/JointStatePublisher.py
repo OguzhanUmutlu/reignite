@@ -2,6 +2,7 @@ from ...joint import Joint
 from ...plugin import Plugin
 
 
+@Plugin.register("gz-sim-joint-state-publisher-system", "gz::sim::systems::JointStatePublisher")
 class JointStatePublisherPlugin(Plugin):
     def __init__(
             self,

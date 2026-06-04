@@ -4,6 +4,7 @@ from .GzGui import GzGui
 from ...plugin import Plugin
 
 
+@Plugin.register("WorldControl", "World stats")
 class WorldStatsPlugin(Plugin):
     def __init__(self,
                  sim_time: bool = True,

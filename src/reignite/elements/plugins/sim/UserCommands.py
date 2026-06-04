@@ -1,6 +1,7 @@
 from ...plugin import Plugin
 
 
+@Plugin.register("gz-sim-user-commands-system", "gz::sim::systems::UserCommands")
 class UserCommandsPlugin(Plugin):
     def __init__(
             self,

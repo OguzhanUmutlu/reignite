@@ -2,6 +2,7 @@ from .GzGui import GzGui
 from ...plugin import Plugin
 
 
+@Plugin.register("NavSatMap", "NavSatMap")
 class NavSatMapPlugin(Plugin):
     def __init__(
             self,

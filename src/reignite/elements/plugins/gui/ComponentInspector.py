@@ -2,6 +2,7 @@ from .GzGui import GzGui
 from ...plugin import Plugin
 
 
+@Plugin.register("ComponentInspector", "Component inspector")
 class ComponentInspectorPlugin(Plugin):
     def __init__(self, name="Component inspector", **gui_kwargs):
         super().__init__(name=name, filename="ComponentInspector", elements=[

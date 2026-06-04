@@ -1,6 +1,7 @@
 from reignite.elements.plugin import Plugin
 
 
+@Plugin.register("gz-sim-optical-tactile-plugin-system", "gz::sim::systems::OpticalTactilePlugin")
 class OpticalTactilePlugin(Plugin):
     def __init__(
             self,

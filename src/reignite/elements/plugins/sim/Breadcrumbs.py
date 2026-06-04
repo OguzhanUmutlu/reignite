@@ -2,6 +2,7 @@ from reignite import BaseModel
 from reignite.elements.plugin import Plugin, ParentElement, TextElement
 
 
+@Plugin.register("gz-sim-breadcrumbs-system", "gz::sim::systems::Breadcrumbs")
 class BreadcrumbsPlugin(Plugin):
     class Box(ParentElement):
         def __init__(self, size: list[float] | str):

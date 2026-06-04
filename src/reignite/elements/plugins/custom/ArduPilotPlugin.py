@@ -5,6 +5,7 @@ from ...plugin import Plugin
 from ....utils.pose import _PoseT, _pose
 
 
+@Plugin.register("ArduPilotPlugin", "ArduPilotPlugin")
 class ArduPilotPlugin(Plugin):
     class Control(BaseModel):
         def __init__(

@@ -1,6 +1,7 @@
 from ...plugin import Plugin
 
 
+@Plugin.register("gz-sim-scene-broadcaster-system", "gz::sim::systems::SceneBroadcaster")
 class SceneBroadcasterPlugin(Plugin):
     def __init__(
             self,

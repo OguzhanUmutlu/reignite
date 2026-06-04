@@ -1,6 +1,7 @@
 from reignite.elements.plugin import Plugin, ParentElement, TextElement
 
 
+@Plugin.register("gz-sim-trajectory-follower-system", "gz::sim::systems::TrajectoryFollower")
 class TrajectoryFollowerPlugin(Plugin):
     class Waypoints(ParentElement):
         def __init__(self, waypoints: list[list[float]]):

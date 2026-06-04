@@ -1,6 +1,7 @@
 from ...plugin import Plugin
 
 
+@Plugin.register("gz-sim-free-space-explorer-system", "gz::sim::systems::FreeSpaceExplorer")
 class FreeSpaceExplorerPlugin(Plugin):
     def __init__(
             self,

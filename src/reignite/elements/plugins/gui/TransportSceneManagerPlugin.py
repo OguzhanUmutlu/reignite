@@ -2,6 +2,7 @@ from .GzGui import GzGui
 from ...plugin import Plugin
 
 
+@Plugin.register("TransportSceneManager", "TransportSceneManager")
 class TransportSceneManagerPlugin(Plugin):
     def __init__(
             self,

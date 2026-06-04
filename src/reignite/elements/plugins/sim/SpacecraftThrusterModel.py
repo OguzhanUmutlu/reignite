@@ -1,6 +1,7 @@
 from ...plugin import Plugin
 
 
+@Plugin.register("gz-sim-spacecraft-thruster-model-system", "gz::sim::systems::SpacecraftThrusterModel")
 class SpacecraftThrusterModelPlugin(Plugin):
     def __init__(
             self,

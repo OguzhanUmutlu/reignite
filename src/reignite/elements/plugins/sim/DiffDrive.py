@@ -2,6 +2,7 @@ from ...joint import Joint
 from ...plugin import Plugin
 
 
+@Plugin.register("gz-sim-diff-drive-system", "gz::sim::systems::DiffDrive")
 class DiffDrivePlugin(Plugin):
     def __init__(
             self,

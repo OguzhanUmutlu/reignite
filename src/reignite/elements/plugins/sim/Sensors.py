@@ -1,6 +1,7 @@
 from reignite.elements.plugin import Plugin, ParentElement, TextElement
 
 
+@Plugin.register("gz-sim-sensors-system", "gz::sim::systems::Sensors")
 class SensorsPlugin(Plugin):
     class GlobalIllumination(ParentElement):
         def __init__(

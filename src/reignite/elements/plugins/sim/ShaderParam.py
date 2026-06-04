@@ -1,6 +1,7 @@
 from reignite.elements.plugin import Plugin, ParentElement, TextElement
 
 
+@Plugin.register("gz-sim-shader-param-system", "gz::sim::systems::ShaderParam")
 class ShaderParamPlugin(Plugin):
     class Param(ParentElement):
         def __init__(self, name: str, shader: str, type: str | None = None, value: str | None = None,

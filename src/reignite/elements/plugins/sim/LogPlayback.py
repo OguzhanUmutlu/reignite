@@ -1,6 +1,7 @@
 from ...plugin import Plugin
 
 
+@Plugin.register("gz-sim-log-playback-system", "gz::sim::systems::LogPlayback")
 class LogPlaybackPlugin(Plugin):
     def __init__(
             self,

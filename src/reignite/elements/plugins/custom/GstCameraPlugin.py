@@ -1,6 +1,7 @@
 from typing import Optional
 from ...plugin import Plugin
 
+@Plugin.register("GstCameraPlugin", "GstCameraPlugin")
 class GstCameraPlugin(Plugin):
     def __init__(
             self,

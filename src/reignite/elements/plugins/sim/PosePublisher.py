@@ -1,6 +1,7 @@
 from reignite.elements.plugin import Plugin
 
 
+@Plugin.register("gz-sim-pose-publisher-system", "gz::sim::systems::PosePublisher")
 class PosePublisherPlugin(Plugin):
     def __init__(
             self,

@@ -1,6 +1,7 @@
 from reignite.elements.plugin import Plugin, ParentElement, TextElement
 
 
+@Plugin.register("gz-sim-wind-effects-system", "gz::sim::systems::WindEffects")
 class WindEffectsPlugin(Plugin):
     class Sin(ParentElement):
         def __init__(self, amplitude: float | None = None, amplitude_percent: float | None = None,

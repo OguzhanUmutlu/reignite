@@ -1,6 +1,7 @@
 from ...plugin import Plugin
 
 
+@Plugin.register("gz-sim-kinetic-energy-monitor-system", "gz::sim::systems::KineticEnergyMonitor")
 class KineticEnergyMonitorPlugin(Plugin):
     def __init__(
             self,

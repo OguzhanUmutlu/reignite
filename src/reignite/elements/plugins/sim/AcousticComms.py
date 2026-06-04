@@ -1,6 +1,7 @@
 from reignite.elements.plugin import Plugin, ParentElement, TextElement
 
 
+@Plugin.register("gz-sim-acoustic-comms-system", "gz::sim::systems::AcousticComms")
 class AcousticCommsPlugin(Plugin):
     class PropagationModel(ParentElement):
         def __init__(

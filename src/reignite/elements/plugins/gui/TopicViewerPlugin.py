@@ -2,6 +2,7 @@ from .GzGui import GzGui
 from ...plugin import Plugin
 
 
+@Plugin.register("TopicViewer", "TopicViewer")
 class TopicViewerPlugin(Plugin):
     def __init__(
             self,

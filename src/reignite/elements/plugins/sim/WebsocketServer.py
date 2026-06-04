@@ -1,6 +1,7 @@
 from reignite.elements.plugin import Plugin, ParentElement, TextElement
 
 
+@Plugin.register("gz-sim-websocket-server-system", "gz::sim::systems::WebsocketServer")
 class WebsocketServerPlugin(Plugin):
     class Subscription(ParentElement):
         def __init__(self, msg_type: str, limit: int):

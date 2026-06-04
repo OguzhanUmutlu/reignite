@@ -85,7 +85,18 @@ class ParentElement(BaseModel):
         return self
 
 
+import inspect
+
 class Plugin(_Base):
+    @classmethod
+    def register(cls, *names: str):
+        def decorator(subclass):
+            for name in names:
+                if name and name != "None":
+                    plugin_classes[name] = subclass
+            return subclass
+        return decorator
+
     def __init__(
             self,
             sdf_version: str | None = None,
@@ -119,6 +130,9 @@ class Plugin(_Base):
 
     @classmethod
     def _from_sdf(cls, el: ET.Element, version: str):
+        filename = el.get("filename", "__default__")
+        name = el.get("name", "__default__")
+
         elements = []
 
         def _parse_et(e: ET.Element) -> BaseModel:
@@ -133,11 +147,37 @@ class Plugin(_Base):
             if c.tag not in ("name", "filename"):
                 elements.append(_parse_et(c))
 
+        if cls is Plugin:
+            target_cls = plugin_classes.get(filename) or plugin_classes.get(name)
+            if target_cls and target_cls is not Plugin:
+                try:
+                    kwargs = {}
+                    sig = inspect.signature(target_cls.__init__)
+                    for param_name, param in sig.parameters.items():
+                        if param_name in ('self', 'args', 'kwargs', 'gui_kwargs'):
+                            continue
+                        
+                        tag = next((e for e in elements if e.name == param_name), None)
+                        if tag is not None:
+                            if isinstance(tag, TextElement):
+                                val = tag.text
+                                if param.annotation is float:
+                                    val = float(val)
+                                elif param.annotation is int:
+                                    val = int(val)
+                                elif param.annotation is bool:
+                                    val = str(val).lower() in ('true', '1', 't', 'yes')
+                                kwargs[param_name] = val
+                            
+                    return target_cls(**kwargs)
+                except Exception:
+                    pass
+
         return cls(
             sdf_version=version,
             elements=elements,
-            filename=el.get("filename", "__default__"),
-            name=el.get("name", "__default__")
+            filename=filename,
+            name=name
         )
 
     """@classmethod

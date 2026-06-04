@@ -1,6 +1,7 @@
 from ...plugin import Plugin
 
 
+@Plugin.register("gz-sim-lighter-than-air-dynamics-system", "gz::sim::systems::LighterThanAirDynamics")
 class LighterThanAirDynamicsPlugin(Plugin):
     def __init__(
             self,

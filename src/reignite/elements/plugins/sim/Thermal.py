@@ -1,6 +1,7 @@
 from ...plugin import Plugin
 
 
+@Plugin.register("gz-sim-thermal-system", "gz::sim::systems::Thermal")
 class ThermalPlugin(Plugin):
     def __init__(
             self,

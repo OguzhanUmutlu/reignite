@@ -1,6 +1,7 @@
 from ...plugin import Plugin
 
 
+@Plugin.register("gz-sim-lens-flare-system", "gz::sim::systems::LensFlare")
 class LensFlarePlugin(Plugin):
     def __init__(
             self,

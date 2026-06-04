@@ -1,6 +1,7 @@
 from reignite.elements.plugin import Plugin, TextElement
 
 
+@Plugin.register("gz-sim-velocity-control-system", "gz::sim::systems::VelocityControl")
 class VelocityControlPlugin(Plugin):
     def __init__(
             self,

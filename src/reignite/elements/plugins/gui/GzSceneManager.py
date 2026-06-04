@@ -2,6 +2,7 @@ from .GzGui import GzGui
 from ...plugin import Plugin
 
 
+@Plugin.register("GzSceneManager", "Scene Manager")
 class GzSceneManagerPlugin(Plugin):
     def __init__(self, name="Scene Manager", **gui_kwargs):
         super().__init__(name=name, filename="GzSceneManager", elements=[

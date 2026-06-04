@@ -1,6 +1,7 @@
 from ...plugin import Plugin
 
 
+@Plugin.register("gz-sim-python-system-loader-system", "gz::sim::systems::PythonSystemLoader")
 class PythonSystemLoaderPlugin(Plugin):
     def __init__(
             self,

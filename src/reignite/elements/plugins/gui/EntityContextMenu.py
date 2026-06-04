@@ -2,6 +2,7 @@ from .GzGui import GzGui
 from ...plugin import Plugin
 
 
+@Plugin.register("EntityContextMenuPlugin", "Entity context menu")
 class EntityContextMenuPlugin(Plugin):
     def __init__(self, name="Entity context menu", **gui_kwargs):
         super().__init__(name=name, filename="EntityContextMenuPlugin", elements=[

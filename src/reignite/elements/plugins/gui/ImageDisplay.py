@@ -2,6 +2,7 @@ from .GzGui import GzGui
 from ...plugin import Plugin
 
 
+@Plugin.register("WorldControl", "Camera")
 class ImageDisplayPlugin(Plugin):
     def __init__(self, topic: str, topic_picker: bool = True, show_depth_flip: bool = True, name="Camera",
                  **gui_kwargs):

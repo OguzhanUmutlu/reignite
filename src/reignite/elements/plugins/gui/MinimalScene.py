@@ -4,6 +4,7 @@ from ....utils.color import _ColorT, _color
 from ....utils.pose import _PoseT, _pose
 
 
+@Plugin.register("MinimalScene", "3D View")
 class MinimalScenePlugin(Plugin):
     def __init__(self,
                  camera_pose: _PoseT = _pose("0 -10 3 0 0.2 1.5708"),

@@ -2,6 +2,7 @@ from .GzGui import GzGui
 from ...plugin import Plugin
 
 
+@Plugin.register("InteractiveViewControl", "Interactive view control")
 class InteractiveViewControlPlugin(Plugin):
     def __init__(self, name="Interactive view control", **gui_kwargs):
         super().__init__(name=name, filename="InteractiveViewControl", elements=[

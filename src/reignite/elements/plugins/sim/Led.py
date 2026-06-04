@@ -1,6 +1,7 @@
 from reignite.elements.plugin import Plugin, ParentElement, TextElement
 
 
+@Plugin.register("gz-sim-led-plugin-system", "gz::sim::systems::LedPlugin")
 class LedPlugin(Plugin):
     class DefaultState(ParentElement):
         def __init__(self, color: list[float] | str | None = None, intensity: float | None = None):

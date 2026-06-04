@@ -1,6 +1,7 @@
 from ...plugin import Plugin
 
 
+@Plugin.register("gz-sim-log-record-system", "gz::sim::systems::LogRecord")
 class LogRecordPlugin(Plugin):
     def __init__(
             self,

@@ -2,6 +2,7 @@ from .GzGui import GzGui
 from ...plugin import Plugin
 
 
+@Plugin.register("Teleop", "Teleop")
 class TeleopPlugin(Plugin):
     def __init__(
             self,

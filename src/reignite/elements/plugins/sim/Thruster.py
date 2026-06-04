@@ -1,6 +1,7 @@
 from reignite.elements.plugin import Plugin
 
 
+@Plugin.register("gz-sim-thruster-system", "gz::sim::systems::Thruster")
 class ThrusterPlugin(Plugin):
     def __init__(
             self,

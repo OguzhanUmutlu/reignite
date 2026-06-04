@@ -1,6 +1,7 @@
 from reignite.elements.plugin import Plugin, ParentElement, TextElement
 
 
+@Plugin.register("gz-sim-physics-system", "gz::sim::systems::Physics")
 class PhysicsPlugin(Plugin):
     class Engine(ParentElement):
         def __init__(self, filename: str):

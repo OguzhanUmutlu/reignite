@@ -3,6 +3,7 @@ from reignite.elements.plugin import Plugin, ParentElement, TextElement
 from .GzGui import GzGui
 
 
+@Plugin.register("GridConfig", "GridConfig")
 class GridConfigPlugin(Plugin):
     class Insert(ParentElement):
         def __init__(

@@ -1,6 +1,7 @@
 from reignite.elements.plugin import Plugin, ParentElement, TextElement
 
 
+@Plugin.register("gz-sim-tracked-vehicle-system", "gz::sim::systems::TrackedVehicle")
 class TrackedVehiclePlugin(Plugin):
     class Track(ParentElement):
         def __init__(

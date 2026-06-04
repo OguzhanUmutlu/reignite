@@ -1,6 +1,7 @@
 from reignite.elements.plugin import Plugin, TextElement
 
 
+@Plugin.register("gz-sim-touchplugin-system", "gz::sim::systems::TouchPlugin")
 class TouchPlugin(Plugin):
     def __init__(
             self,

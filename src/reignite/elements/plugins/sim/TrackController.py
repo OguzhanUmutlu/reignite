@@ -1,6 +1,7 @@
 from reignite.elements.plugin import Plugin
 
 
+@Plugin.register("gz-sim-track-controller-system", "gz::sim::systems::TrackController")
 class TrackControllerPlugin(Plugin):
     def __init__(
             self,

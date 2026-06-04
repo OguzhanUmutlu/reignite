@@ -1,6 +1,7 @@
 from reignite.elements.plugin import Plugin
 
 
+@Plugin.register("gz-sim-odometry-publisher-system", "gz::sim::systems::OdometryPublisher")
 class OdometryPublisherPlugin(Plugin):
     def __init__(
             self,

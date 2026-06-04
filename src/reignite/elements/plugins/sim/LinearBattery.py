@@ -1,6 +1,7 @@
 from ...plugin import Plugin
 
 
+@Plugin.register("gz-sim-linearbatteryplugin-system", "gz::sim::systems::LinearBatteryPlugin")
 class LinearBatteryPlugin(Plugin):
     def __init__(
             self,

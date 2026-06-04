@@ -2,6 +2,7 @@ from .GzGui import GzGui
 from ...plugin import Plugin
 
 
+@Plugin.register("Screenshot", "Screenshot")
 class ScreenshotPlugin(Plugin):
     def __init__(
             self,

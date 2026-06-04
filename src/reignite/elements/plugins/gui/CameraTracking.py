@@ -2,6 +2,7 @@ from .GzGui import GzGui
 from ...plugin import Plugin
 
 
+@Plugin.register("CameraTracking", "Camera Tracking")
 class CameraTrackingPlugin(Plugin):
     def __init__(self, name="Camera Tracking", **gui_kwargs):
         super().__init__(name=name, filename="CameraTracking", elements=[

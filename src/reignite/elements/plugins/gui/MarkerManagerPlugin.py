@@ -2,6 +2,7 @@ from .GzGui import GzGui
 from ...plugin import Plugin
 
 
+@Plugin.register("MarkerManager", "MarkerManager")
 class MarkerManagerPlugin(Plugin):
     def __init__(
             self,

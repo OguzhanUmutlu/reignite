@@ -1,6 +1,7 @@
 from ...plugin import Plugin
 
 
+@Plugin.register("gz-sim-drive-to-pose-controller-system", "gz::sim::systems::DriveToPoseController")
 class DriveToPoseControllerPlugin(Plugin):
     def __init__(
             self,

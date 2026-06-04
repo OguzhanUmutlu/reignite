@@ -1,6 +1,7 @@
 from reignite.elements.plugin import Plugin, ParentElement, TextElement
 
 
+@Plugin.register("gz-sim-log-video-recorder-system", "gz::sim::systems::LogVideoRecorder")
 class LogVideoRecorderPlugin(Plugin):
     class Region(ParentElement):
         def __init__(self, min: list[float] | tuple[float, float, float] | str,

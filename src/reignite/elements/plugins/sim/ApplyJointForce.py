@@ -2,6 +2,7 @@ from ...joint import Joint
 from ...plugin import Plugin
 
 
+@Plugin.register("gz-sim-apply-joint-force-system", "gz::sim::systems::ApplyJointForce")
 class ApplyJointForcePlugin(Plugin):
     def __init__(
             self,

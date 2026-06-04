@@ -1,6 +1,7 @@
 from reignite.elements.plugin import Plugin
 
 
+@Plugin.register("gz-sim-rf-comms-system", "gz::sim::systems::RFComms")
 class RFCommsPlugin(Plugin):
     def __init__(
             self,

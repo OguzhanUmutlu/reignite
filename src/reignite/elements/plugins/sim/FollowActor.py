@@ -1,6 +1,7 @@
 from ...plugin import Plugin
 
 
+@Plugin.register("gz-sim-follow-actor-system", "gz::sim::systems::FollowActor")
 class FollowActorPlugin(Plugin):
     def __init__(
             self,

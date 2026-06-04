@@ -3,6 +3,7 @@ from ...model import Model
 from ...plugin import Plugin
 
 
+@Plugin.register("gz-sim-detachable-joint-system", "gz::sim:systems::DetachableJoint")
 class DetachableJointPlugin(Plugin):
     def __init__(
             self,

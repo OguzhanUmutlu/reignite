@@ -1,6 +1,7 @@
 from ...plugin import Plugin
 
 
+@Plugin.register("gz-sim-label-system", "gz::sim::systems::Label")
 class LabelPlugin(Plugin):
     def __init__(
             self,

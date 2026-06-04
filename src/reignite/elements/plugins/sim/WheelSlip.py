@@ -1,6 +1,7 @@
 from reignite.elements.plugin import Plugin, ParentElement
 
 
+@Plugin.register("gz-sim-wheel-slip-system", "gz::sim::systems::WheelSlip")
 class WheelSlipPlugin(Plugin):
     class Wheel(ParentElement):
         def __init__(

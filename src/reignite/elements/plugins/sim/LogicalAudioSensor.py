@@ -1,6 +1,7 @@
 from reignite.elements.plugin import Plugin, ParentElement, TextElement
 
 
+@Plugin.register("gz-sim-logical-audio-sensor-plugin-system", "gz::sim::systems::LogicalAudioSensorPlugin")
 class LogicalAudioSensorPlugin(Plugin):
     class Source(ParentElement):
         def __init__(

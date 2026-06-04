@@ -1,6 +1,7 @@
 from ...plugin import Plugin
 
 
+@Plugin.register("gz-sim-magnetometer-system", "gz::sim::systems::Magnetometer")
 class MagnetometerPlugin(Plugin):
     def __init__(
             self,

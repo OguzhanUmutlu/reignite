@@ -1,6 +1,7 @@
 from reignite.elements.plugin import Plugin, ParentElement, TextElement
 
 
+@Plugin.register("gz-sim-buoyancy-system", "gz::sim::systems::Buoyancy")
 class BuoyancyPlugin(Plugin):
     class DensityChange(ParentElement):
         def __init__(self, above_depth: float, density: float):

@@ -2,6 +2,7 @@ from .GzGui import GzGui
 from ...plugin import Plugin
 
 
+@Plugin.register("TopicEcho", "TopicEcho")
 class TopicEchoPlugin(Plugin):
     def __init__(
             self,

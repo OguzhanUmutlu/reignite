@@ -2,6 +2,7 @@ from ...link import Link
 from ...plugin import Plugin
 
 
+@Plugin.register("gz-sim-lift-drag-system", "gz::sim::systems::LiftDrag")
 class LiftDragPlugin(Plugin):
     def __init__(
             self,
