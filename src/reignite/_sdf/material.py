@@ -26,8 +26,8 @@ class Material(BaseModel):
                 def __init__(
                     self,
                     sdf_version: str | None = None,
-                    light_map: str | None = "",
-                    uv_set: int | None = 0
+                    light_map: str | None = None,
+                    uv_set: int | None = None
                 ):
                     super().__init__(sdf_version)
                     self.light_map = light_map
@@ -53,12 +53,12 @@ class Material(BaseModel):
 
                 @classmethod
                 def _from_sdf(cls, el: ET.Element, version: str) -> "Material.Pbr.Metal.LightMap | SDFError":
-                    _text = el.text or ""
+                    _text = el.text or None
                     _light_map = _text
                     if isinstance(_light_map, SDFError):
                         return _light_map
                     if _light_map is not None and cmp_version(version, "1.7") < 0:
-                        if _light_map != "":
+                        if _light_map != None:
                             return SDFError(f"'light_map' is not supported in SDF version {version} (added in 1.7)")
                     _uv_set = _parse_uint32(el.get("uv_set", 0))
                     if isinstance(_uv_set, SDFError):
@@ -69,8 +69,8 @@ class Material(BaseModel):
                 def __init__(
                     self,
                     sdf_version: str | None = None,
-                    normal_map: str | None = "",
-                    type: str | None = "tangent"
+                    normal_map: str | None = None,
+                    type: str | None = None
                 ):
                     super().__init__(sdf_version)
                     self.normal_map = normal_map
@@ -94,7 +94,7 @@ class Material(BaseModel):
 
                 @classmethod
                 def _from_sdf(cls, el: ET.Element, version: str) -> "Material.Pbr.Metal.NormalMap | SDFError":
-                    _text = el.text or ""
+                    _text = el.text or None
                     _normal_map = _text
                     if isinstance(_normal_map, SDFError):
                         return _normal_map
@@ -106,16 +106,16 @@ class Material(BaseModel):
             def __init__(
                 self,
                 sdf_version: str | None = None,
-                albedo_map: str | None = "",
-                ambient_occlusion_map: str | None = "",
-                emissive_map: str | None = "",
-                environment_map: str | None = "",
+                albedo_map: str | None = None,
+                ambient_occlusion_map: str | None = None,
+                emissive_map: str | None = None,
+                environment_map: str | None = None,
                 light_map: "Material.Pbr.Metal.LightMap" = None,
                 metalness: str | None = None,
-                metalness_map: str | None = "",
+                metalness_map: str | None = None,
                 normal_map: "Material.Pbr.Metal.NormalMap" = None,
                 roughness: str | None = None,
-                roughness_map: str | None = ""
+                roughness_map: str | None = None
             ):
                 super().__init__(sdf_version)
                 self.albedo_map = albedo_map
@@ -205,7 +205,7 @@ class Material(BaseModel):
             def _from_sdf(cls, el: ET.Element, version: str) -> "Material.Pbr.Metal | SDFError":
                 _c_tmp = el.find("albedo_map")
                 if _c_tmp is not None:
-                    _text = _c_tmp.text if _c_tmp.text is not None else ""
+                    _text = _c_tmp.text if _c_tmp.text is not None else None
                     _val = _text
                     if isinstance(_val, SDFError):
                         return _val.extend("albedo_map")
@@ -214,7 +214,7 @@ class Material(BaseModel):
                     _albedo_map = None
                 _c_tmp = el.find("ambient_occlusion_map")
                 if _c_tmp is not None:
-                    _text = _c_tmp.text if _c_tmp.text is not None else ""
+                    _text = _c_tmp.text if _c_tmp.text is not None else None
                     _val = _text
                     if isinstance(_val, SDFError):
                         return _val.extend("ambient_occlusion_map")
@@ -223,7 +223,7 @@ class Material(BaseModel):
                     _ambient_occlusion_map = None
                 _c_tmp = el.find("emissive_map")
                 if _c_tmp is not None:
-                    _text = _c_tmp.text if _c_tmp.text is not None else ""
+                    _text = _c_tmp.text if _c_tmp.text is not None else None
                     _val = _text
                     if isinstance(_val, SDFError):
                         return _val.extend("emissive_map")
@@ -232,7 +232,7 @@ class Material(BaseModel):
                     _emissive_map = None
                 _c_tmp = el.find("environment_map")
                 if _c_tmp is not None:
-                    _text = _c_tmp.text if _c_tmp.text is not None else ""
+                    _text = _c_tmp.text if _c_tmp.text is not None else None
                     _val = _text
                     if isinstance(_val, SDFError):
                         return _val.extend("environment_map")
@@ -260,7 +260,7 @@ class Material(BaseModel):
                     _metalness = None
                 _c_tmp = el.find("metalness_map")
                 if _c_tmp is not None:
-                    _text = _c_tmp.text if _c_tmp.text is not None else ""
+                    _text = _c_tmp.text if _c_tmp.text is not None else None
                     _val = _text
                     if isinstance(_val, SDFError):
                         return _val.extend("metalness_map")
@@ -286,7 +286,7 @@ class Material(BaseModel):
                     _roughness = None
                 _c_tmp = el.find("roughness_map")
                 if _c_tmp is not None:
-                    _text = _c_tmp.text if _c_tmp.text is not None else ""
+                    _text = _c_tmp.text if _c_tmp.text is not None else None
                     _val = _text
                     if isinstance(_val, SDFError):
                         return _val.extend("roughness_map")
@@ -299,15 +299,15 @@ class Material(BaseModel):
             def __init__(
                 self,
                 sdf_version: str | None = None,
-                albedo_map: str | None = "",
-                ambient_occlusion_map: str | None = "",
-                emissive_map: str | None = "",
-                environment_map: str | None = "",
+                albedo_map: str | None = None,
+                ambient_occlusion_map: str | None = None,
+                emissive_map: str | None = None,
+                environment_map: str | None = None,
                 glossiness: str | None = None,
-                glossiness_map: str | None = "",
+                glossiness_map: str | None = None,
                 light_map: "LightMap" = None,
                 normal_map: "NormalMap" = None,
-                specular_map: str | None = ""
+                specular_map: str | None = None
             ):
                 super().__init__(sdf_version)
                 self.albedo_map = albedo_map
@@ -392,7 +392,7 @@ class Material(BaseModel):
             def _from_sdf(cls, el: ET.Element, version: str) -> "Material.Pbr.Specular | SDFError":
                 _c_tmp = el.find("albedo_map")
                 if _c_tmp is not None:
-                    _text = _c_tmp.text if _c_tmp.text is not None else ""
+                    _text = _c_tmp.text if _c_tmp.text is not None else None
                     _val = _text
                     if isinstance(_val, SDFError):
                         return _val.extend("albedo_map")
@@ -401,7 +401,7 @@ class Material(BaseModel):
                     _albedo_map = None
                 _c_tmp = el.find("ambient_occlusion_map")
                 if _c_tmp is not None:
-                    _text = _c_tmp.text if _c_tmp.text is not None else ""
+                    _text = _c_tmp.text if _c_tmp.text is not None else None
                     _val = _text
                     if isinstance(_val, SDFError):
                         return _val.extend("ambient_occlusion_map")
@@ -410,7 +410,7 @@ class Material(BaseModel):
                     _ambient_occlusion_map = None
                 _c_tmp = el.find("emissive_map")
                 if _c_tmp is not None:
-                    _text = _c_tmp.text if _c_tmp.text is not None else ""
+                    _text = _c_tmp.text if _c_tmp.text is not None else None
                     _val = _text
                     if isinstance(_val, SDFError):
                         return _val.extend("emissive_map")
@@ -419,7 +419,7 @@ class Material(BaseModel):
                     _emissive_map = None
                 _c_tmp = el.find("environment_map")
                 if _c_tmp is not None:
-                    _text = _c_tmp.text if _c_tmp.text is not None else ""
+                    _text = _c_tmp.text if _c_tmp.text is not None else None
                     _val = _text
                     if isinstance(_val, SDFError):
                         return _val.extend("environment_map")
@@ -437,7 +437,7 @@ class Material(BaseModel):
                     _glossiness = None
                 _c_tmp = el.find("glossiness_map")
                 if _c_tmp is not None:
-                    _text = _c_tmp.text if _c_tmp.text is not None else ""
+                    _text = _c_tmp.text if _c_tmp.text is not None else None
                     _val = _text
                     if isinstance(_val, SDFError):
                         return _val.extend("glossiness_map")
@@ -464,7 +464,7 @@ class Material(BaseModel):
                     _normal_map = None
                 _c_tmp = el.find("specular_map")
                 if _c_tmp is not None:
-                    _text = _c_tmp.text if _c_tmp.text is not None else ""
+                    _text = _c_tmp.text if _c_tmp.text is not None else None
                     _val = _text
                     if isinstance(_val, SDFError):
                         return _val.extend("specular_map")
@@ -602,7 +602,7 @@ class Material(BaseModel):
             self,
             sdf_version: str | None = None,
             normal_map: str | None = None,
-            type: str | None = "pixel"
+            type: str | None = None
         ):
             super().__init__(sdf_version)
             self.normal_map = normal_map

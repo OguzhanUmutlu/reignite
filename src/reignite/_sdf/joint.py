@@ -40,8 +40,8 @@ class Joint(BaseModel):
             def __init__(
                 self,
                 sdf_version: str | None = None,
-                damping: float | None = 0,
-                friction: float | None = 0,
+                damping: float | None = None,
+                friction: float | None = None,
                 spring_reference: float | None = None,
                 spring_stiffness: float | None = None
             ):
@@ -52,10 +52,6 @@ class Joint(BaseModel):
                 self.spring_stiffness = spring_stiffness
 
             def to_version(self, target_version: str) -> "Joint.Axis.Dynamics":
-                if self.damping is not None and cmp_version(target_version, "1.2") >= 0:
-                    raise ValueError(f"'damping' is not supported in SDF version {target_version} (removed in 1.2)")
-                if self.friction is not None and cmp_version(target_version, "1.2") >= 0:
-                    raise ValueError(f"'friction' is not supported in SDF version {target_version} (removed in 1.2)")
                 if self.spring_reference is not None and cmp_version(target_version, "1.5") < 0:
                     raise ValueError(f"'spring_reference' is not supported in SDF version {target_version} (added in 1.5)")
                 if self.spring_stiffness is not None and cmp_version(target_version, "1.5") < 0:
@@ -70,9 +66,19 @@ class Joint(BaseModel):
                     return self.to_version(str(version)).to_sdf()
                 el = ET.Element("dynamics")
                 if self.damping is not None:
-                    el.set("damping", str(self.damping))
+                    if cmp_version(version, "1.2") >= 0:
+                        _c_tmp = ET.Element("damping")
+                        _c_tmp.text = str(self.damping)
+                        el.append(_c_tmp)
+                    else:
+                        el.set("damping", str(self.damping))
                 if self.friction is not None:
-                    el.set("friction", str(self.friction))
+                    if cmp_version(version, "1.2") >= 0:
+                        _c_tmp = ET.Element("friction")
+                        _c_tmp.text = str(self.friction)
+                        el.append(_c_tmp)
+                    else:
+                        el.set("friction", str(self.friction))
                 if self.spring_reference is not None:
                     _c_tmp = ET.Element("spring_reference")
                     _c_tmp.text = str(self.spring_reference)
@@ -85,10 +91,24 @@ class Joint(BaseModel):
 
             @classmethod
             def _from_sdf(cls, el: ET.Element, version: str) -> "Joint.Axis.Dynamics | SDFError":
-                _damping = _parse_double(el.get("damping", 0))
+                _raw_damping = None
+                if cmp_version(version, "1.2") >= 0:
+                    _c_tmp = el.find("damping")
+                    if _c_tmp is not None: _raw_damping = _c_tmp.text
+                else:
+                    _raw_damping = el.get("damping")
+                if _raw_damping is None: _raw_damping = 0
+                _damping = _parse_double(_raw_damping)
                 if isinstance(_damping, SDFError):
                     return _damping.extend("@damping")
-                _friction = _parse_double(el.get("friction", 0))
+                _raw_friction = None
+                if cmp_version(version, "1.2") >= 0:
+                    _c_tmp = el.find("friction")
+                    if _c_tmp is not None: _raw_friction = _c_tmp.text
+                else:
+                    _raw_friction = el.get("friction")
+                if _raw_friction is None: _raw_friction = 0
+                _friction = _parse_double(_raw_friction)
                 if isinstance(_friction, SDFError):
                     return _friction.extend("@friction")
                 _c_tmp = el.find("spring_reference")
@@ -120,11 +140,11 @@ class Joint(BaseModel):
                 self,
                 sdf_version: str | None = None,
                 dissipation: float | None = None,
-                effort: float | None = 0,
-                lower: float | None = -1e16,
+                effort: float | None = None,
+                lower: float | None = None,
                 stiffness: float | None = None,
-                upper: float | None = 1e16,
-                velocity: float | None = 0
+                upper: float | None = None,
+                velocity: float | None = None
             ):
                 super().__init__(sdf_version)
                 self.dissipation = dissipation
@@ -137,16 +157,8 @@ class Joint(BaseModel):
             def to_version(self, target_version: str) -> "Joint.Axis.Limit":
                 if self.dissipation is not None and cmp_version(target_version, "1.4") < 0:
                     raise ValueError(f"'dissipation' is not supported in SDF version {target_version} (added in 1.4)")
-                if self.effort is not None and cmp_version(target_version, "1.2") >= 0:
-                    raise ValueError(f"'effort' is not supported in SDF version {target_version} (removed in 1.2)")
-                if self.lower is not None and cmp_version(target_version, "1.2") >= 0:
-                    raise ValueError(f"'lower' is not supported in SDF version {target_version} (removed in 1.2)")
                 if self.stiffness is not None and cmp_version(target_version, "1.4") < 0:
                     raise ValueError(f"'stiffness' is not supported in SDF version {target_version} (added in 1.4)")
-                if self.upper is not None and cmp_version(target_version, "1.2") >= 0:
-                    raise ValueError(f"'upper' is not supported in SDF version {target_version} (removed in 1.2)")
-                if self.velocity is not None and cmp_version(target_version, "1.2") >= 0:
-                    raise ValueError(f"'velocity' is not supported in SDF version {target_version} (removed in 1.2)")
                 kwargs: dict = {"sdf_version": target_version, "dissipation": self.dissipation, "effort": self.effort, "lower": self.lower, "stiffness": self.stiffness, "upper": self.upper, "velocity": self.velocity}
                 return self.__class__(**kwargs)
 
@@ -161,17 +173,37 @@ class Joint(BaseModel):
                     _c_tmp.text = str(self.dissipation)
                     el.append(_c_tmp)
                 if self.effort is not None:
-                    el.set("effort", str(self.effort))
+                    if cmp_version(version, "1.2") >= 0:
+                        _c_tmp = ET.Element("effort")
+                        _c_tmp.text = str(self.effort)
+                        el.append(_c_tmp)
+                    else:
+                        el.set("effort", str(self.effort))
                 if self.lower is not None:
-                    el.set("lower", str(self.lower))
+                    if cmp_version(version, "1.2") >= 0:
+                        _c_tmp = ET.Element("lower")
+                        _c_tmp.text = str(self.lower)
+                        el.append(_c_tmp)
+                    else:
+                        el.set("lower", str(self.lower))
                 if self.stiffness is not None:
                     _c_tmp = ET.Element("stiffness")
                     _c_tmp.text = str(self.stiffness)
                     el.append(_c_tmp)
                 if self.upper is not None:
-                    el.set("upper", str(self.upper))
+                    if cmp_version(version, "1.2") >= 0:
+                        _c_tmp = ET.Element("upper")
+                        _c_tmp.text = str(self.upper)
+                        el.append(_c_tmp)
+                    else:
+                        el.set("upper", str(self.upper))
                 if self.velocity is not None:
-                    el.set("velocity", str(self.velocity))
+                    if cmp_version(version, "1.2") >= 0:
+                        _c_tmp = ET.Element("velocity")
+                        _c_tmp.text = str(self.velocity)
+                        el.append(_c_tmp)
+                    else:
+                        el.set("velocity", str(self.velocity))
                 return el
 
             @classmethod
@@ -187,10 +219,24 @@ class Joint(BaseModel):
                     _dissipation = None
                 if _dissipation is not None and cmp_version(version, "1.4") < 0:
                     return SDFError(f"'dissipation' is not supported in SDF version {version} (added in 1.4)")
-                _effort = _parse_double(el.get("effort", 0))
+                _raw_effort = None
+                if cmp_version(version, "1.2") >= 0:
+                    _c_tmp = el.find("effort")
+                    if _c_tmp is not None: _raw_effort = _c_tmp.text
+                else:
+                    _raw_effort = el.get("effort")
+                if _raw_effort is None: _raw_effort = 0
+                _effort = _parse_double(_raw_effort)
                 if isinstance(_effort, SDFError):
                     return _effort.extend("@effort")
-                _lower = _parse_double(el.get("lower", -1e16))
+                _raw_lower = None
+                if cmp_version(version, "1.2") >= 0:
+                    _c_tmp = el.find("lower")
+                    if _c_tmp is not None: _raw_lower = _c_tmp.text
+                else:
+                    _raw_lower = el.get("lower")
+                if _raw_lower is None: _raw_lower = -1e16
+                _lower = _parse_double(_raw_lower)
                 if isinstance(_lower, SDFError):
                     return _lower.extend("@lower")
                 _c_tmp = el.find("stiffness")
@@ -204,10 +250,24 @@ class Joint(BaseModel):
                     _stiffness = None
                 if _stiffness is not None and cmp_version(version, "1.4") < 0:
                     return SDFError(f"'stiffness' is not supported in SDF version {version} (added in 1.4)")
-                _upper = _parse_double(el.get("upper", 1e16))
+                _raw_upper = None
+                if cmp_version(version, "1.2") >= 0:
+                    _c_tmp = el.find("upper")
+                    if _c_tmp is not None: _raw_upper = _c_tmp.text
+                else:
+                    _raw_upper = el.get("upper")
+                if _raw_upper is None: _raw_upper = 1e16
+                _upper = _parse_double(_raw_upper)
                 if isinstance(_upper, SDFError):
                     return _upper.extend("@upper")
-                _velocity = _parse_double(el.get("velocity", 0))
+                _raw_velocity = None
+                if cmp_version(version, "1.2") >= 0:
+                    _c_tmp = el.find("velocity")
+                    if _c_tmp is not None: _raw_velocity = _c_tmp.text
+                else:
+                    _raw_velocity = el.get("velocity")
+                if _raw_velocity is None: _raw_velocity = 0
+                _velocity = _parse_double(_raw_velocity)
                 if isinstance(_velocity, SDFError):
                     return _velocity.extend("@velocity")
                 return cls(sdf_version=version, dissipation=_dissipation, effort=_effort, lower=_lower, stiffness=_stiffness, upper=_upper, velocity=_velocity)
@@ -216,7 +276,7 @@ class Joint(BaseModel):
             def __init__(
                 self,
                 sdf_version: str | None = None,
-                expressed_in: str | None = "",
+                expressed_in: str | None = None,
                 xyz: _Vector3T | None = None
             ):
                 super().__init__(sdf_version)
@@ -245,11 +305,11 @@ class Joint(BaseModel):
 
             @classmethod
             def _from_sdf(cls, el: ET.Element, version: str) -> "Joint.Axis.Xyz | SDFError":
-                _expressed_in = el.get("expressed_in", "")
+                _expressed_in = el.get("expressed_in", None)
                 if isinstance(_expressed_in, SDFError):
                     return _expressed_in.extend("@expressed_in")
                 if _expressed_in is not None and cmp_version(version, "1.7") < 0:
-                    if _expressed_in != "":
+                    if _expressed_in != None:
                         return SDFError(f"'expressed_in' is not supported in SDF version {version} (added in 1.7)")
                 _text = el.text or "0 0 1"
                 _xyz = _parse_vector3(_text)
@@ -307,8 +367,6 @@ class Joint(BaseModel):
                 raise ValueError(f"'use_parent_model_frame' is not supported in SDF version {target_version} (added in 1.5)")
             if self.use_parent_model_frame is not None and cmp_version(target_version, "1.7") >= 0:
                 raise ValueError(f"'use_parent_model_frame' is not supported in SDF version {target_version} (removed in 1.7)")
-            if self.xyz is not None and cmp_version(target_version, "1.2") >= 0:
-                raise ValueError(f"'xyz' is not supported in SDF version {target_version} (removed in 1.2)")
             kwargs: dict = {"sdf_version": target_version, "dynamics": self.dynamics.to_version(target_version) if self.dynamics is not None and hasattr(self.dynamics, "to_version") else self.dynamics, "initial_position": self.initial_position, "limit": self.limit.to_version(target_version) if self.limit is not None and hasattr(self.limit, "to_version") else self.limit, "mimic": self.mimic.to_version(target_version) if self.mimic is not None and hasattr(self.mimic, "to_version") else self.mimic, "use_parent_model_frame": self.use_parent_model_frame, "xyz": self.xyz}
             new_obj = self.__class__(**kwargs)
             apply_migrations(new_obj, target_version)
@@ -354,7 +412,12 @@ class Joint(BaseModel):
                 _c_tmp.text = str(self.use_parent_model_frame).lower()
                 el.append(_c_tmp)
             if self.xyz is not None:
-                el.set("xyz", str(self.xyz))
+                if cmp_version(version, "1.2") >= 0:
+                    _c_tmp = ET.Element("xyz")
+                    _c_tmp.text = str(self.xyz)
+                    el.append(_c_tmp)
+                else:
+                    el.set("xyz", str(self.xyz))
             return el
 
         @classmethod
@@ -408,7 +471,14 @@ class Joint(BaseModel):
                 _use_parent_model_frame = None
             if _use_parent_model_frame is not None and cmp_version(version, "1.5") < 0:
                 return SDFError(f"'use_parent_model_frame' is not supported in SDF version {version} (added in 1.5)")
-            _xyz = _parse_vector3(el.get("xyz", "0 0 1"))
+            _raw_xyz = None
+            if cmp_version(version, "1.2") >= 0:
+                _c_tmp = el.find("xyz")
+                if _c_tmp is not None: _raw_xyz = _c_tmp.text
+            else:
+                _raw_xyz = el.get("xyz")
+            if _raw_xyz is None: _raw_xyz = "0 0 1"
+            _xyz = _parse_vector3(_raw_xyz)
             if isinstance(_xyz, SDFError):
                 return _xyz.extend("@xyz")
             return cls(sdf_version=version, dynamics=_dynamics, initial_position=_initial_position, limit=_limit, mimic=_mimic, use_parent_model_frame=_use_parent_model_frame, xyz=_xyz)
@@ -419,11 +489,11 @@ class Joint(BaseModel):
                 self,
                 sdf_version: str | None = None,
                 dissipation: float | None = None,
-                effort: float | None = 0,
-                lower: float | None = -1e16,
+                effort: float | None = None,
+                lower: float | None = None,
                 stiffness: float | None = None,
-                upper: float | None = 1e16,
-                velocity: float | None = 0
+                upper: float | None = None,
+                velocity: float | None = None
             ):
                 super().__init__(sdf_version)
                 self.dissipation = dissipation
@@ -436,16 +506,8 @@ class Joint(BaseModel):
             def to_version(self, target_version: str) -> "Joint.Axis2.Axis2Limit":
                 if self.dissipation is not None and cmp_version(target_version, "1.4") < 0:
                     raise ValueError(f"'dissipation' is not supported in SDF version {target_version} (added in 1.4)")
-                if self.effort is not None and cmp_version(target_version, "1.2") >= 0:
-                    raise ValueError(f"'effort' is not supported in SDF version {target_version} (removed in 1.2)")
-                if self.lower is not None and cmp_version(target_version, "1.2") >= 0:
-                    raise ValueError(f"'lower' is not supported in SDF version {target_version} (removed in 1.2)")
                 if self.stiffness is not None and cmp_version(target_version, "1.4") < 0:
                     raise ValueError(f"'stiffness' is not supported in SDF version {target_version} (added in 1.4)")
-                if self.upper is not None and cmp_version(target_version, "1.2") >= 0:
-                    raise ValueError(f"'upper' is not supported in SDF version {target_version} (removed in 1.2)")
-                if self.velocity is not None and cmp_version(target_version, "1.2") >= 0:
-                    raise ValueError(f"'velocity' is not supported in SDF version {target_version} (removed in 1.2)")
                 kwargs: dict = {"sdf_version": target_version, "dissipation": self.dissipation, "effort": self.effort, "lower": self.lower, "stiffness": self.stiffness, "upper": self.upper, "velocity": self.velocity}
                 return self.__class__(**kwargs)
 
@@ -460,17 +522,37 @@ class Joint(BaseModel):
                     _c_tmp.text = str(self.dissipation)
                     el.append(_c_tmp)
                 if self.effort is not None:
-                    el.set("effort", str(self.effort))
+                    if cmp_version(version, "1.2") >= 0:
+                        _c_tmp = ET.Element("effort")
+                        _c_tmp.text = str(self.effort)
+                        el.append(_c_tmp)
+                    else:
+                        el.set("effort", str(self.effort))
                 if self.lower is not None:
-                    el.set("lower", str(self.lower))
+                    if cmp_version(version, "1.2") >= 0:
+                        _c_tmp = ET.Element("lower")
+                        _c_tmp.text = str(self.lower)
+                        el.append(_c_tmp)
+                    else:
+                        el.set("lower", str(self.lower))
                 if self.stiffness is not None:
                     _c_tmp = ET.Element("stiffness")
                     _c_tmp.text = str(self.stiffness)
                     el.append(_c_tmp)
                 if self.upper is not None:
-                    el.set("upper", str(self.upper))
+                    if cmp_version(version, "1.2") >= 0:
+                        _c_tmp = ET.Element("upper")
+                        _c_tmp.text = str(self.upper)
+                        el.append(_c_tmp)
+                    else:
+                        el.set("upper", str(self.upper))
                 if self.velocity is not None:
-                    el.set("velocity", str(self.velocity))
+                    if cmp_version(version, "1.2") >= 0:
+                        _c_tmp = ET.Element("velocity")
+                        _c_tmp.text = str(self.velocity)
+                        el.append(_c_tmp)
+                    else:
+                        el.set("velocity", str(self.velocity))
                 return el
 
             @classmethod
@@ -486,10 +568,24 @@ class Joint(BaseModel):
                     _dissipation = None
                 if _dissipation is not None and cmp_version(version, "1.4") < 0:
                     return SDFError(f"'dissipation' is not supported in SDF version {version} (added in 1.4)")
-                _effort = _parse_double(el.get("effort", 0))
+                _raw_effort = None
+                if cmp_version(version, "1.2") >= 0:
+                    _c_tmp = el.find("effort")
+                    if _c_tmp is not None: _raw_effort = _c_tmp.text
+                else:
+                    _raw_effort = el.get("effort")
+                if _raw_effort is None: _raw_effort = 0
+                _effort = _parse_double(_raw_effort)
                 if isinstance(_effort, SDFError):
                     return _effort.extend("@effort")
-                _lower = _parse_double(el.get("lower", -1e16))
+                _raw_lower = None
+                if cmp_version(version, "1.2") >= 0:
+                    _c_tmp = el.find("lower")
+                    if _c_tmp is not None: _raw_lower = _c_tmp.text
+                else:
+                    _raw_lower = el.get("lower")
+                if _raw_lower is None: _raw_lower = -1e16
+                _lower = _parse_double(_raw_lower)
                 if isinstance(_lower, SDFError):
                     return _lower.extend("@lower")
                 _c_tmp = el.find("stiffness")
@@ -503,10 +599,24 @@ class Joint(BaseModel):
                     _stiffness = None
                 if _stiffness is not None and cmp_version(version, "1.4") < 0:
                     return SDFError(f"'stiffness' is not supported in SDF version {version} (added in 1.4)")
-                _upper = _parse_double(el.get("upper", 1e16))
+                _raw_upper = None
+                if cmp_version(version, "1.2") >= 0:
+                    _c_tmp = el.find("upper")
+                    if _c_tmp is not None: _raw_upper = _c_tmp.text
+                else:
+                    _raw_upper = el.get("upper")
+                if _raw_upper is None: _raw_upper = 1e16
+                _upper = _parse_double(_raw_upper)
                 if isinstance(_upper, SDFError):
                     return _upper.extend("@upper")
-                _velocity = _parse_double(el.get("velocity", 0))
+                _raw_velocity = None
+                if cmp_version(version, "1.2") >= 0:
+                    _c_tmp = el.find("velocity")
+                    if _c_tmp is not None: _raw_velocity = _c_tmp.text
+                else:
+                    _raw_velocity = el.get("velocity")
+                if _raw_velocity is None: _raw_velocity = 0
+                _velocity = _parse_double(_raw_velocity)
                 if isinstance(_velocity, SDFError):
                     return _velocity.extend("@velocity")
                 return cls(sdf_version=version, dissipation=_dissipation, effort=_effort, lower=_lower, stiffness=_stiffness, upper=_upper, velocity=_velocity)
@@ -558,8 +668,6 @@ class Joint(BaseModel):
                 raise ValueError(f"'use_parent_model_frame' is not supported in SDF version {target_version} (added in 1.5)")
             if self.use_parent_model_frame is not None and cmp_version(target_version, "1.7") >= 0:
                 raise ValueError(f"'use_parent_model_frame' is not supported in SDF version {target_version} (removed in 1.7)")
-            if self.xyz is not None and cmp_version(target_version, "1.2") >= 0:
-                raise ValueError(f"'xyz' is not supported in SDF version {target_version} (removed in 1.2)")
             kwargs: dict = {"sdf_version": target_version, "dynamics": self.dynamics.to_version(target_version) if self.dynamics is not None and hasattr(self.dynamics, "to_version") else self.dynamics, "initial_position": self.initial_position, "limit": self.limit.to_version(target_version) if self.limit is not None and hasattr(self.limit, "to_version") else self.limit, "mimic": self.mimic.to_version(target_version) if self.mimic is not None and hasattr(self.mimic, "to_version") else self.mimic, "use_parent_model_frame": self.use_parent_model_frame, "xyz": self.xyz}
             new_obj = self.__class__(**kwargs)
             apply_migrations(new_obj, target_version)
@@ -605,7 +713,12 @@ class Joint(BaseModel):
                 _c_tmp.text = str(self.use_parent_model_frame).lower()
                 el.append(_c_tmp)
             if self.xyz is not None:
-                el.set("xyz", str(self.xyz))
+                if cmp_version(version, "1.2") >= 0:
+                    _c_tmp = ET.Element("xyz")
+                    _c_tmp.text = str(self.xyz)
+                    el.append(_c_tmp)
+                else:
+                    el.set("xyz", str(self.xyz))
             return el
 
         @classmethod
@@ -659,7 +772,14 @@ class Joint(BaseModel):
                 _use_parent_model_frame = None
             if _use_parent_model_frame is not None and cmp_version(version, "1.5") < 0:
                 return SDFError(f"'use_parent_model_frame' is not supported in SDF version {version} (added in 1.5)")
-            _xyz = _parse_vector3(el.get("xyz", "0 0 1"))
+            _raw_xyz = None
+            if cmp_version(version, "1.2") >= 0:
+                _c_tmp = el.find("xyz")
+                if _c_tmp is not None: _raw_xyz = _c_tmp.text
+            else:
+                _raw_xyz = el.get("xyz")
+            if _raw_xyz is None: _raw_xyz = "0 0 1"
+            _xyz = _parse_vector3(_raw_xyz)
             if isinstance(_xyz, SDFError):
                 return _xyz.extend("@xyz")
             return cls(sdf_version=version, dynamics=_dynamics, initial_position=_initial_position, limit=_limit, mimic=_mimic, use_parent_model_frame=_use_parent_model_frame, xyz=_xyz)
@@ -669,15 +789,13 @@ class Joint(BaseModel):
             self,
             sdf_version: str | None = None,
             child: str | None = None,
-            link: str | None = "__default__"
+            link: str | None = None
         ):
             super().__init__(sdf_version)
             self.child = child
             self.link = link
 
         def to_version(self, target_version: str) -> "Joint.Child":
-            if self.link is not None and cmp_version(target_version, "1.2") >= 0:
-                raise ValueError(f"'link' is not supported in SDF version {target_version} (removed in 1.2)")
             kwargs: dict = {"sdf_version": target_version, "child": self.child, "link": self.link}
             return self.__class__(**kwargs)
 
@@ -755,7 +873,7 @@ class Joint(BaseModel):
         def __init__(
             self,
             sdf_version: str | None = None,
-            link: str | None = "__default__",
+            link: str | None = None,
             parent: str | None = None
         ):
             super().__init__(sdf_version)
@@ -763,8 +881,6 @@ class Joint(BaseModel):
             self.parent = parent
 
         def to_version(self, target_version: str) -> "Joint.Parent":
-            if self.link is not None and cmp_version(target_version, "1.2") >= 0:
-                raise ValueError(f"'link' is not supported in SDF version {target_version} (removed in 1.2)")
             kwargs: dict = {"sdf_version": target_version, "link": self.link, "parent": self.parent}
             return self.__class__(**kwargs)
 
@@ -806,18 +922,14 @@ class Joint(BaseModel):
                 def __init__(
                     self,
                     sdf_version: str | None = None,
-                    cfm: float | None = 0.0,
-                    erp: float | None = 0.2
+                    cfm: float | None = None,
+                    erp: float | None = None
                 ):
                     super().__init__(sdf_version)
                     self.cfm = cfm
                     self.erp = erp
 
                 def to_version(self, target_version: str) -> "Joint.Physics.Ode.OdeLimit":
-                    if self.cfm is not None and cmp_version(target_version, "1.2") >= 0:
-                        raise ValueError(f"'cfm' is not supported in SDF version {target_version} (removed in 1.2)")
-                    if self.erp is not None and cmp_version(target_version, "1.2") >= 0:
-                        raise ValueError(f"'erp' is not supported in SDF version {target_version} (removed in 1.2)")
                     kwargs: dict = {"sdf_version": target_version, "cfm": self.cfm, "erp": self.erp}
                     return self.__class__(**kwargs)
 
@@ -828,17 +940,41 @@ class Joint(BaseModel):
                         return self.to_version(str(version)).to_sdf()
                     el = ET.Element("limit")
                     if self.cfm is not None:
-                        el.set("cfm", str(self.cfm))
+                        if cmp_version(version, "1.2") >= 0:
+                            _c_tmp = ET.Element("cfm")
+                            _c_tmp.text = str(self.cfm)
+                            el.append(_c_tmp)
+                        else:
+                            el.set("cfm", str(self.cfm))
                     if self.erp is not None:
-                        el.set("erp", str(self.erp))
+                        if cmp_version(version, "1.2") >= 0:
+                            _c_tmp = ET.Element("erp")
+                            _c_tmp.text = str(self.erp)
+                            el.append(_c_tmp)
+                        else:
+                            el.set("erp", str(self.erp))
                     return el
 
                 @classmethod
                 def _from_sdf(cls, el: ET.Element, version: str) -> "Joint.Physics.Ode.OdeLimit | SDFError":
-                    _cfm = _parse_double(el.get("cfm", 0.0))
+                    _raw_cfm = None
+                    if cmp_version(version, "1.2") >= 0:
+                        _c_tmp = el.find("cfm")
+                        if _c_tmp is not None: _raw_cfm = _c_tmp.text
+                    else:
+                        _raw_cfm = el.get("cfm")
+                    if _raw_cfm is None: _raw_cfm = 0.0
+                    _cfm = _parse_double(_raw_cfm)
                     if isinstance(_cfm, SDFError):
                         return _cfm.extend("@cfm")
-                    _erp = _parse_double(el.get("erp", 0.2))
+                    _raw_erp = None
+                    if cmp_version(version, "1.2") >= 0:
+                        _c_tmp = el.find("erp")
+                        if _c_tmp is not None: _raw_erp = _c_tmp.text
+                    else:
+                        _raw_erp = el.get("erp")
+                    if _raw_erp is None: _raw_erp = 0.2
+                    _erp = _parse_double(_raw_erp)
                     if isinstance(_erp, SDFError):
                         return _erp.extend("@erp")
                     return cls(sdf_version=version, cfm=_cfm, erp=_erp)
@@ -847,18 +983,14 @@ class Joint(BaseModel):
                 def __init__(
                     self,
                     sdf_version: str | None = None,
-                    cfm: float | None = 0.0,
-                    erp: float | None = 0.2
+                    cfm: float | None = None,
+                    erp: float | None = None
                 ):
                     super().__init__(sdf_version)
                     self.cfm = cfm
                     self.erp = erp
 
                 def to_version(self, target_version: str) -> "Joint.Physics.Ode.Suspension":
-                    if self.cfm is not None and cmp_version(target_version, "1.2") >= 0:
-                        raise ValueError(f"'cfm' is not supported in SDF version {target_version} (removed in 1.2)")
-                    if self.erp is not None and cmp_version(target_version, "1.2") >= 0:
-                        raise ValueError(f"'erp' is not supported in SDF version {target_version} (removed in 1.2)")
                     kwargs: dict = {"sdf_version": target_version, "cfm": self.cfm, "erp": self.erp}
                     return self.__class__(**kwargs)
 
@@ -869,17 +1001,41 @@ class Joint(BaseModel):
                         return self.to_version(str(version)).to_sdf()
                     el = ET.Element("suspension")
                     if self.cfm is not None:
-                        el.set("cfm", str(self.cfm))
+                        if cmp_version(version, "1.2") >= 0:
+                            _c_tmp = ET.Element("cfm")
+                            _c_tmp.text = str(self.cfm)
+                            el.append(_c_tmp)
+                        else:
+                            el.set("cfm", str(self.cfm))
                     if self.erp is not None:
-                        el.set("erp", str(self.erp))
+                        if cmp_version(version, "1.2") >= 0:
+                            _c_tmp = ET.Element("erp")
+                            _c_tmp.text = str(self.erp)
+                            el.append(_c_tmp)
+                        else:
+                            el.set("erp", str(self.erp))
                     return el
 
                 @classmethod
                 def _from_sdf(cls, el: ET.Element, version: str) -> "Joint.Physics.Ode.Suspension | SDFError":
-                    _cfm = _parse_double(el.get("cfm", 0.0))
+                    _raw_cfm = None
+                    if cmp_version(version, "1.2") >= 0:
+                        _c_tmp = el.find("cfm")
+                        if _c_tmp is not None: _raw_cfm = _c_tmp.text
+                    else:
+                        _raw_cfm = el.get("cfm")
+                    if _raw_cfm is None: _raw_cfm = 0.0
+                    _cfm = _parse_double(_raw_cfm)
                     if isinstance(_cfm, SDFError):
                         return _cfm.extend("@cfm")
-                    _erp = _parse_double(el.get("erp", 0.2))
+                    _raw_erp = None
+                    if cmp_version(version, "1.2") >= 0:
+                        _c_tmp = el.find("erp")
+                        if _c_tmp is not None: _raw_erp = _c_tmp.text
+                    else:
+                        _raw_erp = el.get("erp")
+                    if _raw_erp is None: _raw_erp = 0.2
+                    _erp = _parse_double(_raw_erp)
                     if isinstance(_erp, SDFError):
                         return _erp.extend("@erp")
                     return cls(sdf_version=version, cfm=_cfm, erp=_erp)
@@ -1243,7 +1399,7 @@ class Joint(BaseModel):
         frames: List["Frame"] = None,
         gearbox_ratio: float | None = None,
         gearbox_reference_body: str | None = None,
-        name: str | None = "__default__",
+        name: str | None = None,
         origin: "Joint.Origin" = None,
         parent: "Joint.Parent" = None,
         physics: "Joint.Physics" = None,
@@ -1251,7 +1407,7 @@ class Joint(BaseModel):
         screw_thread_pitch: float | None = None,
         sensor: "Sensor" = None,
         thread_pitch: float | None = None,
-        type: str | None = "__default__"
+        type: str | None = None
     ):
         super().__init__(sdf_version)
         self.axis = axis

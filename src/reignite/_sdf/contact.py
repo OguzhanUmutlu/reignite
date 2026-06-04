@@ -15,7 +15,7 @@ class Contact(BaseModel):
             self,
             sdf_version: str | None = None,
             collision: str | None = None,
-            name: str | None = "__default__"
+            name: str | None = None
         ):
             super().__init__(sdf_version)
             self.collision = collision

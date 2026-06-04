@@ -24,7 +24,7 @@ class Sdf(BaseModel):
         actors: List["Actor"] = None,
         lights: List["Light"] = None,
         models: List["Model"] = None,
-        version: str | None = "1.3",
+        version: str | None = None,
         worlds: List["World"] = None
     ):
         super().__init__(sdf_version)

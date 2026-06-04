@@ -83,9 +83,9 @@ class Ray(BaseModel):
         def __init__(
             self,
             sdf_version: str | None = None,
-            max: float | None = 0,
-            min: float | None = 0,
-            resolution: float | None = 0
+            max: float | None = None,
+            min: float | None = None,
+            resolution: float | None = None
         ):
             super().__init__(sdf_version)
             self.max = max
@@ -93,12 +93,6 @@ class Ray(BaseModel):
             self.resolution = resolution
 
         def to_version(self, target_version: str) -> "Ray.Range":
-            if self.max is not None and cmp_version(target_version, "1.2") >= 0:
-                raise ValueError(f"'max' is not supported in SDF version {target_version} (removed in 1.2)")
-            if self.min is not None and cmp_version(target_version, "1.2") >= 0:
-                raise ValueError(f"'min' is not supported in SDF version {target_version} (removed in 1.2)")
-            if self.resolution is not None and cmp_version(target_version, "1.2") >= 0:
-                raise ValueError(f"'resolution' is not supported in SDF version {target_version} (removed in 1.2)")
             kwargs: dict = {"sdf_version": target_version, "max": self.max, "min": self.min, "resolution": self.resolution}
             return self.__class__(**kwargs)
 
@@ -109,22 +103,58 @@ class Ray(BaseModel):
                 return self.to_version(str(version)).to_sdf()
             el = ET.Element("range")
             if self.max is not None:
-                el.set("max", str(self.max))
+                if cmp_version(version, "1.2") >= 0:
+                    _c_tmp = ET.Element("max")
+                    _c_tmp.text = str(self.max)
+                    el.append(_c_tmp)
+                else:
+                    el.set("max", str(self.max))
             if self.min is not None:
-                el.set("min", str(self.min))
+                if cmp_version(version, "1.2") >= 0:
+                    _c_tmp = ET.Element("min")
+                    _c_tmp.text = str(self.min)
+                    el.append(_c_tmp)
+                else:
+                    el.set("min", str(self.min))
             if self.resolution is not None:
-                el.set("resolution", str(self.resolution))
+                if cmp_version(version, "1.2") >= 0:
+                    _c_tmp = ET.Element("resolution")
+                    _c_tmp.text = str(self.resolution)
+                    el.append(_c_tmp)
+                else:
+                    el.set("resolution", str(self.resolution))
             return el
 
         @classmethod
         def _from_sdf(cls, el: ET.Element, version: str) -> "Ray.Range | SDFError":
-            _max = _parse_double(el.get("max", 0))
+            _raw_max = None
+            if cmp_version(version, "1.2") >= 0:
+                _c_tmp = el.find("max")
+                if _c_tmp is not None: _raw_max = _c_tmp.text
+            else:
+                _raw_max = el.get("max")
+            if _raw_max is None: _raw_max = 0
+            _max = _parse_double(_raw_max)
             if isinstance(_max, SDFError):
                 return _max.extend("@max")
-            _min = _parse_double(el.get("min", 0))
+            _raw_min = None
+            if cmp_version(version, "1.2") >= 0:
+                _c_tmp = el.find("min")
+                if _c_tmp is not None: _raw_min = _c_tmp.text
+            else:
+                _raw_min = el.get("min")
+            if _raw_min is None: _raw_min = 0
+            _min = _parse_double(_raw_min)
             if isinstance(_min, SDFError):
                 return _min.extend("@min")
-            _resolution = _parse_double(el.get("resolution", 0))
+            _raw_resolution = None
+            if cmp_version(version, "1.2") >= 0:
+                _c_tmp = el.find("resolution")
+                if _c_tmp is not None: _raw_resolution = _c_tmp.text
+            else:
+                _raw_resolution = el.get("resolution")
+            if _raw_resolution is None: _raw_resolution = 0
+            _resolution = _parse_double(_raw_resolution)
             if isinstance(_resolution, SDFError):
                 return _resolution.extend("@resolution")
             return cls(sdf_version=version, max=_max, min=_min, resolution=_resolution)
@@ -134,10 +164,10 @@ class Ray(BaseModel):
             def __init__(
                 self,
                 sdf_version: str | None = None,
-                max_angle: float | None = 0,
-                min_angle: float | None = 0,
-                resolution: float | None = 1,
-                samples: int | None = 1
+                max_angle: float | None = None,
+                min_angle: float | None = None,
+                resolution: float | None = None,
+                samples: int | None = None
             ):
                 super().__init__(sdf_version)
                 self.max_angle = max_angle
@@ -146,14 +176,6 @@ class Ray(BaseModel):
                 self.samples = samples
 
             def to_version(self, target_version: str) -> "Ray.Scan.Horizontal":
-                if self.max_angle is not None and cmp_version(target_version, "1.2") >= 0:
-                    raise ValueError(f"'max_angle' is not supported in SDF version {target_version} (removed in 1.2)")
-                if self.min_angle is not None and cmp_version(target_version, "1.2") >= 0:
-                    raise ValueError(f"'min_angle' is not supported in SDF version {target_version} (removed in 1.2)")
-                if self.resolution is not None and cmp_version(target_version, "1.2") >= 0:
-                    raise ValueError(f"'resolution' is not supported in SDF version {target_version} (removed in 1.2)")
-                if self.samples is not None and cmp_version(target_version, "1.2") >= 0:
-                    raise ValueError(f"'samples' is not supported in SDF version {target_version} (removed in 1.2)")
                 kwargs: dict = {"sdf_version": target_version, "max_angle": self.max_angle, "min_angle": self.min_angle, "resolution": self.resolution, "samples": self.samples}
                 return self.__class__(**kwargs)
 
@@ -164,27 +186,75 @@ class Ray(BaseModel):
                     return self.to_version(str(version)).to_sdf()
                 el = ET.Element("horizontal")
                 if self.max_angle is not None:
-                    el.set("max_angle", str(self.max_angle))
+                    if cmp_version(version, "1.2") >= 0:
+                        _c_tmp = ET.Element("max_angle")
+                        _c_tmp.text = str(self.max_angle)
+                        el.append(_c_tmp)
+                    else:
+                        el.set("max_angle", str(self.max_angle))
                 if self.min_angle is not None:
-                    el.set("min_angle", str(self.min_angle))
+                    if cmp_version(version, "1.2") >= 0:
+                        _c_tmp = ET.Element("min_angle")
+                        _c_tmp.text = str(self.min_angle)
+                        el.append(_c_tmp)
+                    else:
+                        el.set("min_angle", str(self.min_angle))
                 if self.resolution is not None:
-                    el.set("resolution", str(self.resolution))
+                    if cmp_version(version, "1.2") >= 0:
+                        _c_tmp = ET.Element("resolution")
+                        _c_tmp.text = str(self.resolution)
+                        el.append(_c_tmp)
+                    else:
+                        el.set("resolution", str(self.resolution))
                 if self.samples is not None:
-                    el.set("samples", str(self.samples))
+                    if cmp_version(version, "1.2") >= 0:
+                        _c_tmp = ET.Element("samples")
+                        _c_tmp.text = str(self.samples)
+                        el.append(_c_tmp)
+                    else:
+                        el.set("samples", str(self.samples))
                 return el
 
             @classmethod
             def _from_sdf(cls, el: ET.Element, version: str) -> "Ray.Scan.Horizontal | SDFError":
-                _max_angle = _parse_double(el.get("max_angle", 0))
+                _raw_max_angle = None
+                if cmp_version(version, "1.2") >= 0:
+                    _c_tmp = el.find("max_angle")
+                    if _c_tmp is not None: _raw_max_angle = _c_tmp.text
+                else:
+                    _raw_max_angle = el.get("max_angle")
+                if _raw_max_angle is None: _raw_max_angle = 0
+                _max_angle = _parse_double(_raw_max_angle)
                 if isinstance(_max_angle, SDFError):
                     return _max_angle.extend("@max_angle")
-                _min_angle = _parse_double(el.get("min_angle", 0))
+                _raw_min_angle = None
+                if cmp_version(version, "1.2") >= 0:
+                    _c_tmp = el.find("min_angle")
+                    if _c_tmp is not None: _raw_min_angle = _c_tmp.text
+                else:
+                    _raw_min_angle = el.get("min_angle")
+                if _raw_min_angle is None: _raw_min_angle = 0
+                _min_angle = _parse_double(_raw_min_angle)
                 if isinstance(_min_angle, SDFError):
                     return _min_angle.extend("@min_angle")
-                _resolution = _parse_double(el.get("resolution", 1))
+                _raw_resolution = None
+                if cmp_version(version, "1.2") >= 0:
+                    _c_tmp = el.find("resolution")
+                    if _c_tmp is not None: _raw_resolution = _c_tmp.text
+                else:
+                    _raw_resolution = el.get("resolution")
+                if _raw_resolution is None: _raw_resolution = 1
+                _resolution = _parse_double(_raw_resolution)
                 if isinstance(_resolution, SDFError):
                     return _resolution.extend("@resolution")
-                _samples = _parse_uint32(el.get("samples", 1))
+                _raw_samples = None
+                if cmp_version(version, "1.2") >= 0:
+                    _c_tmp = el.find("samples")
+                    if _c_tmp is not None: _raw_samples = _c_tmp.text
+                else:
+                    _raw_samples = el.get("samples")
+                if _raw_samples is None: _raw_samples = 1
+                _samples = _parse_uint32(_raw_samples)
                 if isinstance(_samples, SDFError):
                     return _samples.extend("@samples")
                 return cls(sdf_version=version, max_angle=_max_angle, min_angle=_min_angle, resolution=_resolution, samples=_samples)
@@ -193,10 +263,10 @@ class Ray(BaseModel):
             def __init__(
                 self,
                 sdf_version: str | None = None,
-                max_angle: float | None = 0,
-                min_angle: float | None = 0,
-                resolution: float | None = 1,
-                samples: int | None = 1
+                max_angle: float | None = None,
+                min_angle: float | None = None,
+                resolution: float | None = None,
+                samples: int | None = None
             ):
                 super().__init__(sdf_version)
                 self.max_angle = max_angle
@@ -205,14 +275,6 @@ class Ray(BaseModel):
                 self.samples = samples
 
             def to_version(self, target_version: str) -> "Ray.Scan.Vertical":
-                if self.max_angle is not None and cmp_version(target_version, "1.2") >= 0:
-                    raise ValueError(f"'max_angle' is not supported in SDF version {target_version} (removed in 1.2)")
-                if self.min_angle is not None and cmp_version(target_version, "1.2") >= 0:
-                    raise ValueError(f"'min_angle' is not supported in SDF version {target_version} (removed in 1.2)")
-                if self.resolution is not None and cmp_version(target_version, "1.2") >= 0:
-                    raise ValueError(f"'resolution' is not supported in SDF version {target_version} (removed in 1.2)")
-                if self.samples is not None and cmp_version(target_version, "1.2") >= 0:
-                    raise ValueError(f"'samples' is not supported in SDF version {target_version} (removed in 1.2)")
                 kwargs: dict = {"sdf_version": target_version, "max_angle": self.max_angle, "min_angle": self.min_angle, "resolution": self.resolution, "samples": self.samples}
                 return self.__class__(**kwargs)
 
@@ -223,27 +285,75 @@ class Ray(BaseModel):
                     return self.to_version(str(version)).to_sdf()
                 el = ET.Element("vertical")
                 if self.max_angle is not None:
-                    el.set("max_angle", str(self.max_angle))
+                    if cmp_version(version, "1.2") >= 0:
+                        _c_tmp = ET.Element("max_angle")
+                        _c_tmp.text = str(self.max_angle)
+                        el.append(_c_tmp)
+                    else:
+                        el.set("max_angle", str(self.max_angle))
                 if self.min_angle is not None:
-                    el.set("min_angle", str(self.min_angle))
+                    if cmp_version(version, "1.2") >= 0:
+                        _c_tmp = ET.Element("min_angle")
+                        _c_tmp.text = str(self.min_angle)
+                        el.append(_c_tmp)
+                    else:
+                        el.set("min_angle", str(self.min_angle))
                 if self.resolution is not None:
-                    el.set("resolution", str(self.resolution))
+                    if cmp_version(version, "1.2") >= 0:
+                        _c_tmp = ET.Element("resolution")
+                        _c_tmp.text = str(self.resolution)
+                        el.append(_c_tmp)
+                    else:
+                        el.set("resolution", str(self.resolution))
                 if self.samples is not None:
-                    el.set("samples", str(self.samples))
+                    if cmp_version(version, "1.2") >= 0:
+                        _c_tmp = ET.Element("samples")
+                        _c_tmp.text = str(self.samples)
+                        el.append(_c_tmp)
+                    else:
+                        el.set("samples", str(self.samples))
                 return el
 
             @classmethod
             def _from_sdf(cls, el: ET.Element, version: str) -> "Ray.Scan.Vertical | SDFError":
-                _max_angle = _parse_double(el.get("max_angle", 0))
+                _raw_max_angle = None
+                if cmp_version(version, "1.2") >= 0:
+                    _c_tmp = el.find("max_angle")
+                    if _c_tmp is not None: _raw_max_angle = _c_tmp.text
+                else:
+                    _raw_max_angle = el.get("max_angle")
+                if _raw_max_angle is None: _raw_max_angle = 0
+                _max_angle = _parse_double(_raw_max_angle)
                 if isinstance(_max_angle, SDFError):
                     return _max_angle.extend("@max_angle")
-                _min_angle = _parse_double(el.get("min_angle", 0))
+                _raw_min_angle = None
+                if cmp_version(version, "1.2") >= 0:
+                    _c_tmp = el.find("min_angle")
+                    if _c_tmp is not None: _raw_min_angle = _c_tmp.text
+                else:
+                    _raw_min_angle = el.get("min_angle")
+                if _raw_min_angle is None: _raw_min_angle = 0
+                _min_angle = _parse_double(_raw_min_angle)
                 if isinstance(_min_angle, SDFError):
                     return _min_angle.extend("@min_angle")
-                _resolution = _parse_double(el.get("resolution", 1))
+                _raw_resolution = None
+                if cmp_version(version, "1.2") >= 0:
+                    _c_tmp = el.find("resolution")
+                    if _c_tmp is not None: _raw_resolution = _c_tmp.text
+                else:
+                    _raw_resolution = el.get("resolution")
+                if _raw_resolution is None: _raw_resolution = 1
+                _resolution = _parse_double(_raw_resolution)
                 if isinstance(_resolution, SDFError):
                     return _resolution.extend("@resolution")
-                _samples = _parse_uint32(el.get("samples", 1))
+                _raw_samples = None
+                if cmp_version(version, "1.2") >= 0:
+                    _c_tmp = el.find("samples")
+                    if _c_tmp is not None: _raw_samples = _c_tmp.text
+                else:
+                    _raw_samples = el.get("samples")
+                if _raw_samples is None: _raw_samples = 1
+                _samples = _parse_uint32(_raw_samples)
                 if isinstance(_samples, SDFError):
                     return _samples.extend("@samples")
                 return cls(sdf_version=version, max_angle=_max_angle, min_angle=_min_angle, resolution=_resolution, samples=_samples)

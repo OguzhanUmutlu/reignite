@@ -23,11 +23,11 @@ class Pose(BaseModel):
     def __init__(
         self,
         sdf_version: str | None = None,
-        degrees: bool | None = False,
-        frame: str | None = "",
+        degrees: bool | None = None,
+        frame: str | None = None,
         pose: _PoseT | None = None,
-        relative_to: str | None = "",
-        rotation_format: str | None = "euler_rpy"
+        relative_to: str | None = None,
+        rotation_format: str | None = None
     ):
         super().__init__(sdf_version)
         self.degrees = degrees
@@ -78,7 +78,7 @@ class Pose(BaseModel):
         if _degrees is not None and cmp_version(version, "1.9") < 0:
             if _degrees != False:
                 return SDFError(f"'degrees' is not supported in SDF version {version} (added in 1.9)")
-        _frame = el.get("frame", "")
+        _frame = el.get("frame", None)
         if isinstance(_frame, SDFError):
             return _frame.extend("@frame")
         _text = el.text or "0 0 0 0 0 0"
@@ -88,11 +88,11 @@ class Pose(BaseModel):
         if _pose is not None and cmp_version(version, "1.5") < 0:
             if _pose != "0 0 0 0 0 0":
                 return SDFError(f"'pose' is not supported in SDF version {version} (added in 1.5)")
-        _relative_to = el.get("relative_to", "")
+        _relative_to = el.get("relative_to", None)
         if isinstance(_relative_to, SDFError):
             return _relative_to.extend("@relative_to")
         if _relative_to is not None and cmp_version(version, "1.7") < 0:
-            if _relative_to != "":
+            if _relative_to != None:
                 return SDFError(f"'relative_to' is not supported in SDF version {version} (added in 1.7)")
         _rotation_format = el.get("rotation_format", "euler_rpy")
         if isinstance(_rotation_format, SDFError):

@@ -30,8 +30,6 @@ class Scene(BaseModel):
             self.rgba = _color(rgba) if rgba is not None else None
 
         def to_version(self, target_version: str) -> "Scene.Ambient":
-            if self.rgba is not None and cmp_version(target_version, "1.2") >= 0:
-                raise ValueError(f"'rgba' is not supported in SDF version {target_version} (removed in 1.2)")
             kwargs: dict = {"sdf_version": target_version, "ambient": self.ambient, "rgba": self.rgba}
             return self.__class__(**kwargs)
 
@@ -69,7 +67,7 @@ class Scene(BaseModel):
 
     class Background(BaseModel):
         class Sky(BaseModel):
-            def __init__(self, sdf_version: str | None = None, material: str | None = "Gazebo/CloudySky"):
+            def __init__(self, sdf_version: str | None = None, material: str | None = None):
                 super().__init__(sdf_version)
                 self.material = material
 
@@ -110,8 +108,6 @@ class Scene(BaseModel):
                     self.sky = self.sky.to_version(self.sdfversion)
 
         def to_version(self, target_version: str) -> "Scene.Background":
-            if self.rgba is not None and cmp_version(target_version, "1.2") >= 0:
-                raise ValueError(f"'rgba' is not supported in SDF version {target_version} (removed in 1.2)")
             if self.sky is not None and cmp_version(target_version, "1.2") >= 0:
                 raise ValueError(f"'sky' is not supported in SDF version {target_version} (removed in 1.2)")
             kwargs: dict = {"sdf_version": target_version, "rgba": self.rgba, "sky": self.sky.to_version(target_version) if self.sky is not None and hasattr(self.sky, "to_version") else self.sky}
@@ -164,11 +160,11 @@ class Scene(BaseModel):
             self,
             sdf_version: str | None = None,
             color: _ColorT | None = None,
-            density: float | None = 1.0,
-            end: float | None = 100.0,
+            density: float | None = None,
+            end: float | None = None,
             rgba: _ColorT | None = None,
-            start: float | None = 1.0,
-            type: str | None = "linear"
+            start: float | None = None,
+            type: str | None = None
         ):
             super().__init__(sdf_version)
             self.color = _color(color) if color is not None else None
@@ -181,16 +177,6 @@ class Scene(BaseModel):
         def to_version(self, target_version: str) -> "Scene.Fog":
             if self.color is not None and cmp_version(target_version, "1.2") < 0:
                 raise ValueError(f"'color' is not supported in SDF version {target_version} (added in 1.2)")
-            if self.density is not None and cmp_version(target_version, "1.2") >= 0:
-                raise ValueError(f"'density' is not supported in SDF version {target_version} (removed in 1.2)")
-            if self.end is not None and cmp_version(target_version, "1.2") >= 0:
-                raise ValueError(f"'end' is not supported in SDF version {target_version} (removed in 1.2)")
-            if self.rgba is not None and cmp_version(target_version, "1.2") >= 0:
-                raise ValueError(f"'rgba' is not supported in SDF version {target_version} (removed in 1.2)")
-            if self.start is not None and cmp_version(target_version, "1.2") >= 0:
-                raise ValueError(f"'start' is not supported in SDF version {target_version} (removed in 1.2)")
-            if self.type is not None and cmp_version(target_version, "1.2") >= 0:
-                raise ValueError(f"'type' is not supported in SDF version {target_version} (removed in 1.2)")
             kwargs: dict = {"sdf_version": target_version, "color": self.color, "density": self.density, "end": self.end, "rgba": self.rgba, "start": self.start, "type": self.type}
             return self.__class__(**kwargs)
 
@@ -205,9 +191,19 @@ class Scene(BaseModel):
                 _c_tmp.text = str(self.color)
                 el.append(_c_tmp)
             if self.density is not None:
-                el.set("density", str(self.density))
+                if cmp_version(version, "1.2") >= 0:
+                    _c_tmp = ET.Element("density")
+                    _c_tmp.text = str(self.density)
+                    el.append(_c_tmp)
+                else:
+                    el.set("density", str(self.density))
             if self.end is not None:
-                el.set("end", str(self.end))
+                if cmp_version(version, "1.2") >= 0:
+                    _c_tmp = ET.Element("end")
+                    _c_tmp.text = str(self.end)
+                    el.append(_c_tmp)
+                else:
+                    el.set("end", str(self.end))
             if self.rgba is not None:
                 if cmp_version(version, "1.2") >= 0:
                     _c_tmp = ET.Element("color")
@@ -216,9 +212,19 @@ class Scene(BaseModel):
                 else:
                     el.set("rgba", str(self.rgba))
             if self.start is not None:
-                el.set("start", str(self.start))
+                if cmp_version(version, "1.2") >= 0:
+                    _c_tmp = ET.Element("start")
+                    _c_tmp.text = str(self.start)
+                    el.append(_c_tmp)
+                else:
+                    el.set("start", str(self.start))
             if self.type is not None:
-                el.set("type", self.type)
+                if cmp_version(version, "1.2") >= 0:
+                    _c_tmp = ET.Element("type")
+                    _c_tmp.text = self.type
+                    el.append(_c_tmp)
+                else:
+                    el.set("type", self.type)
             return el
 
         @classmethod
@@ -234,10 +240,24 @@ class Scene(BaseModel):
                 _color = None
             if _color is not None and cmp_version(version, "1.2") < 0:
                 return SDFError(f"'color' is not supported in SDF version {version} (added in 1.2)")
-            _density = _parse_double(el.get("density", 1.0))
+            _raw_density = None
+            if cmp_version(version, "1.2") >= 0:
+                _c_tmp = el.find("density")
+                if _c_tmp is not None: _raw_density = _c_tmp.text
+            else:
+                _raw_density = el.get("density")
+            if _raw_density is None: _raw_density = 1.0
+            _density = _parse_double(_raw_density)
             if isinstance(_density, SDFError):
                 return _density.extend("@density")
-            _end = _parse_double(el.get("end", 100.0))
+            _raw_end = None
+            if cmp_version(version, "1.2") >= 0:
+                _c_tmp = el.find("end")
+                if _c_tmp is not None: _raw_end = _c_tmp.text
+            else:
+                _raw_end = el.get("end")
+            if _raw_end is None: _raw_end = 100.0
+            _end = _parse_double(_raw_end)
             if isinstance(_end, SDFError):
                 return _end.extend("@end")
             _raw_rgba = None
@@ -250,10 +270,24 @@ class Scene(BaseModel):
             _rgba = _parse_color(_raw_rgba)
             if isinstance(_rgba, SDFError):
                 return _rgba.extend("@rgba")
-            _start = _parse_double(el.get("start", 1.0))
+            _raw_start = None
+            if cmp_version(version, "1.2") >= 0:
+                _c_tmp = el.find("start")
+                if _c_tmp is not None: _raw_start = _c_tmp.text
+            else:
+                _raw_start = el.get("start")
+            if _raw_start is None: _raw_start = 1.0
+            _start = _parse_double(_raw_start)
             if isinstance(_start, SDFError):
                 return _start.extend("@start")
-            _type = el.get("type", "linear")
+            _raw_type = None
+            if cmp_version(version, "1.2") >= 0:
+                _c_tmp = el.find("type")
+                if _c_tmp is not None: _raw_type = _c_tmp.text
+            else:
+                _raw_type = el.get("type")
+            if _raw_type is None: _raw_type = "linear"
+            _type = _raw_type
             if isinstance(_type, SDFError):
                 return _type.extend("@type")
             return cls(sdf_version=version, color=_color, density=_density, end=_end, rgba=_rgba, start=_start, type=_type)
@@ -262,7 +296,7 @@ class Scene(BaseModel):
         def __init__(
             self,
             sdf_version: str | None = None,
-            enabled: bool | None = True,
+            enabled: bool | None = None,
             grid: bool | None = None
         ):
             super().__init__(sdf_version)
@@ -270,8 +304,6 @@ class Scene(BaseModel):
             self.grid = grid
 
         def to_version(self, target_version: str) -> "Scene.Grid":
-            if self.enabled is not None and cmp_version(target_version, "1.2") >= 0:
-                raise ValueError(f"'enabled' is not supported in SDF version {target_version} (removed in 1.2)")
             kwargs: dict = {"sdf_version": target_version, "enabled": self.enabled, "grid": self.grid}
             return self.__class__(**kwargs)
 
@@ -410,7 +442,7 @@ class Scene(BaseModel):
             self,
             sdf_version: str | None = None,
             clouds: "Scene.SceneSky.Clouds" = None,
-            cubemap_uri: str | None = "",
+            cubemap_uri: str | None = None,
             sunrise: float | None = None,
             sunset: float | None = None,
             time: float | None = None
@@ -477,7 +509,7 @@ class Scene(BaseModel):
                 _clouds = None
             _c_tmp = el.find("cubemap_uri")
             if _c_tmp is not None:
-                _text = _c_tmp.text if _c_tmp.text is not None else ""
+                _text = _c_tmp.text if _c_tmp.text is not None else None
                 _val = _text
                 if isinstance(_val, SDFError):
                     return _val.extend("cubemap_uri")
@@ -519,7 +551,7 @@ class Scene(BaseModel):
         def __init__(
             self,
             sdf_version: str | None = None,
-            enabled: bool | None = True,
+            enabled: bool | None = None,
             shadows: bool | None = None
         ):
             super().__init__(sdf_version)
@@ -527,8 +559,6 @@ class Scene(BaseModel):
             self.shadows = shadows
 
         def to_version(self, target_version: str) -> "Scene.Shadows":
-            if self.enabled is not None and cmp_version(target_version, "1.2") >= 0:
-                raise ValueError(f"'enabled' is not supported in SDF version {target_version} (removed in 1.2)")
             kwargs: dict = {"sdf_version": target_version, "enabled": self.enabled, "shadows": self.shadows}
             return self.__class__(**kwargs)
 

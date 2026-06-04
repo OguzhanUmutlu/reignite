@@ -16,7 +16,7 @@ class Atmosphere(BaseModel):
         pressure: float | None = None,
         temperature: float | None = None,
         temperature_gradient: float | None = None,
-        type: str | None = "adiabatic"
+        type: str | None = None
     ):
         super().__init__(sdf_version)
         self.pressure = pressure

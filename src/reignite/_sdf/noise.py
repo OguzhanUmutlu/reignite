@@ -21,7 +21,7 @@ class Noise(BaseModel):
         mean: float | None = None,
         precision: float | None = None,
         stddev: float | None = None,
-        type: str | None = "none"
+        type: str | None = None
     ):
         super().__init__(sdf_version)
         self.bias_mean = bias_mean

@@ -13,8 +13,8 @@ class Mimic(BaseModel):
     def __init__(
         self,
         sdf_version: str | None = None,
-        axis: str | None = "axis",
-        joint: str | None = "",
+        axis: str | None = None,
+        joint: str | None = None,
         multiplier: float | None = None,
         offset: float | None = None,
         reference: float | None = None
@@ -63,7 +63,7 @@ class Mimic(BaseModel):
             return _axis.extend("@axis")
         if el.get("joint") is None:
             return SDFError(f"'joint' is required in SDF version {version}")
-        _joint = el.get("joint", "")
+        _joint = el.get("joint", None)
         if isinstance(_joint, SDFError):
             return _joint.extend("@joint")
         _c_tmp = el.find("multiplier")

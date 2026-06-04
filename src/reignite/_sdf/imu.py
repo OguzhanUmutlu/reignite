@@ -592,7 +592,7 @@ class Imu(BaseModel):
                 self,
                 sdf_version: str | None = None,
                 custom_rpy: _Vector3T | None = None,
-                parent_frame: str | None = ""
+                parent_frame: str | None = None
             ):
                 super().__init__(sdf_version)
                 self.custom_rpy = _vector3(custom_rpy) if custom_rpy is not None else None
@@ -620,7 +620,7 @@ class Imu(BaseModel):
                 _custom_rpy = _parse_vector3(_text)
                 if isinstance(_custom_rpy, SDFError):
                     return _custom_rpy
-                _parent_frame = el.get("parent_frame", "")
+                _parent_frame = el.get("parent_frame", None)
                 if isinstance(_parent_frame, SDFError):
                     return _parent_frame.extend("@parent_frame")
                 return cls(sdf_version=version, custom_rpy=_custom_rpy, parent_frame=_parent_frame)
@@ -630,7 +630,7 @@ class Imu(BaseModel):
                 self,
                 sdf_version: str | None = None,
                 grav_dir_x: _Vector3T | None = None,
-                parent_frame: str | None = ""
+                parent_frame: str | None = None
             ):
                 super().__init__(sdf_version)
                 self.grav_dir_x = _vector3(grav_dir_x) if grav_dir_x is not None else None
@@ -658,7 +658,7 @@ class Imu(BaseModel):
                 _grav_dir_x = _parse_vector3(_text)
                 if isinstance(_grav_dir_x, SDFError):
                     return _grav_dir_x
-                _parent_frame = el.get("parent_frame", "")
+                _parent_frame = el.get("parent_frame", None)
                 if isinstance(_parent_frame, SDFError):
                     return _parent_frame.extend("@parent_frame")
                 return cls(sdf_version=version, grav_dir_x=_grav_dir_x, parent_frame=_parent_frame)

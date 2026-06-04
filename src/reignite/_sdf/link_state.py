@@ -36,7 +36,7 @@ class LinkState(BaseModel):
             self,
             sdf_version: str | None = None,
             angular_acceleration: _Vector3T | None = None,
-            degrees: bool | None = False
+            degrees: bool | None = None
         ):
             super().__init__(sdf_version)
             self.angular_acceleration = _vector3(angular_acceleration) if angular_acceleration is not None else None
@@ -79,7 +79,7 @@ class LinkState(BaseModel):
             self,
             sdf_version: str | None = None,
             angular_velocity: _Vector3T | None = None,
-            degrees: bool | None = False
+            degrees: bool | None = None
         ):
             super().__init__(sdf_version)
             self.angular_velocity = _vector3(angular_velocity) if angular_velocity is not None else None
@@ -118,7 +118,7 @@ class LinkState(BaseModel):
             return cls(sdf_version=version, angular_velocity=_angular_velocity, degrees=_degrees)
 
     class Collision(BaseModel):
-        def __init__(self, sdf_version: str | None = None, name: str | None = "__default__"):
+        def __init__(self, sdf_version: str | None = None, name: str | None = None):
             super().__init__(sdf_version)
             self.name = name
 
@@ -144,7 +144,7 @@ class LinkState(BaseModel):
             return cls(sdf_version=version, name=_name)
 
     class CollisionState(BaseModel):
-        def __init__(self, sdf_version: str | None = None, name: str | None = "__default__"):
+        def __init__(self, sdf_version: str | None = None, name: str | None = None):
             super().__init__(sdf_version)
             self.name = name
 
@@ -181,7 +181,7 @@ class LinkState(BaseModel):
         frames: List["Frame"] = None,
         linear_acceleration: _Vector3T | None = None,
         linear_velocity: _Vector3T | None = None,
-        name: str | None = "__default__",
+        name: str | None = None,
         pose: "Pose" = None,
         torque: _Vector3T | None = None,
         velocity: _PoseT | None = None,

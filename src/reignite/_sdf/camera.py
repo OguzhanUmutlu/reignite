@@ -29,18 +29,14 @@ class Camera(BaseModel):
         def __init__(
             self,
             sdf_version: str | None = None,
-            far: float | None = 100,
-            near: float | None = .1
+            far: float | None = None,
+            near: float | None = None
         ):
             super().__init__(sdf_version)
             self.far = far
             self.near = near
 
         def to_version(self, target_version: str) -> "Camera.Clip":
-            if self.far is not None and cmp_version(target_version, "1.2") >= 0:
-                raise ValueError(f"'far' is not supported in SDF version {target_version} (removed in 1.2)")
-            if self.near is not None and cmp_version(target_version, "1.2") >= 0:
-                raise ValueError(f"'near' is not supported in SDF version {target_version} (removed in 1.2)")
             kwargs: dict = {"sdf_version": target_version, "far": self.far, "near": self.near}
             return self.__class__(**kwargs)
 
@@ -51,17 +47,41 @@ class Camera(BaseModel):
                 return self.to_version(str(version)).to_sdf()
             el = ET.Element("clip")
             if self.far is not None:
-                el.set("far", str(self.far))
+                if cmp_version(version, "1.2") >= 0:
+                    _c_tmp = ET.Element("far")
+                    _c_tmp.text = str(self.far)
+                    el.append(_c_tmp)
+                else:
+                    el.set("far", str(self.far))
             if self.near is not None:
-                el.set("near", str(self.near))
+                if cmp_version(version, "1.2") >= 0:
+                    _c_tmp = ET.Element("near")
+                    _c_tmp.text = str(self.near)
+                    el.append(_c_tmp)
+                else:
+                    el.set("near", str(self.near))
             return el
 
         @classmethod
         def _from_sdf(cls, el: ET.Element, version: str) -> "Camera.Clip | SDFError":
-            _far = _parse_double(el.get("far", 100))
+            _raw_far = None
+            if cmp_version(version, "1.2") >= 0:
+                _c_tmp = el.find("far")
+                if _c_tmp is not None: _raw_far = _c_tmp.text
+            else:
+                _raw_far = el.get("far")
+            if _raw_far is None: _raw_far = 100
+            _far = _parse_double(_raw_far)
             if isinstance(_far, SDFError):
                 return _far.extend("@far")
-            _near = _parse_double(el.get("near", .1))
+            _raw_near = None
+            if cmp_version(version, "1.2") >= 0:
+                _c_tmp = el.find("near")
+                if _c_tmp is not None: _raw_near = _c_tmp.text
+            else:
+                _raw_near = el.get("near")
+            if _raw_near is None: _raw_near = .1
+            _near = _parse_double(_raw_near)
             if isinstance(_near, SDFError):
                 return _near.extend("@near")
             return cls(sdf_version=version, far=_far, near=_near)
@@ -124,7 +144,7 @@ class Camera(BaseModel):
             self,
             sdf_version: str | None = None,
             clip: "Camera.DepthCamera.DepthCameraClip" = None,
-            output: str | None = "depths"
+            output: str | None = None
         ):
             super().__init__(sdf_version)
             self.clip = clip
@@ -138,8 +158,6 @@ class Camera(BaseModel):
         def to_version(self, target_version: str) -> "Camera.DepthCamera":
             if self.clip is not None and cmp_version(target_version, "1.6") < 0:
                 raise ValueError(f"'clip' is not supported in SDF version {target_version} (added in 1.6)")
-            if self.output is not None and cmp_version(target_version, "1.2") >= 0:
-                raise ValueError(f"'output' is not supported in SDF version {target_version} (removed in 1.2)")
             kwargs: dict = {"sdf_version": target_version, "clip": self.clip.to_version(target_version) if self.clip is not None and hasattr(self.clip, "to_version") else self.clip, "output": self.output}
             return self.__class__(**kwargs)
 
@@ -158,7 +176,12 @@ class Camera(BaseModel):
                     _item_el = _child_res
                 el.append(_item_el)
             if self.output is not None:
-                el.set("output", self.output)
+                if cmp_version(version, "1.2") >= 0:
+                    _c_tmp = ET.Element("output")
+                    _c_tmp.text = self.output
+                    el.append(_c_tmp)
+                else:
+                    el.set("output", self.output)
             return el
 
         @classmethod
@@ -173,7 +196,14 @@ class Camera(BaseModel):
                 _clip = None
             if _clip is not None and cmp_version(version, "1.6") < 0:
                 return SDFError(f"'clip' is not supported in SDF version {version} (added in 1.6)")
-            _output = el.get("output", "depths")
+            _raw_output = None
+            if cmp_version(version, "1.2") >= 0:
+                _c_tmp = el.find("output")
+                if _c_tmp is not None: _raw_output = _c_tmp.text
+            else:
+                _raw_output = el.get("output")
+            if _raw_output is None: _raw_output = "depths"
+            _output = _raw_output
             if isinstance(_output, SDFError):
                 return _output.extend("@output")
             return cls(sdf_version=version, clip=_clip, output=_output)
@@ -295,7 +325,7 @@ class Camera(BaseModel):
         def __init__(
             self,
             sdf_version: str | None = None,
-            angle: float | None = 1.047,
+            angle: float | None = None,
             horizontal_fov: float | None = None
         ):
             super().__init__(sdf_version)
@@ -303,8 +333,6 @@ class Camera(BaseModel):
             self.horizontal_fov = horizontal_fov
 
         def to_version(self, target_version: str) -> "Camera.HorizontalFov":
-            if self.angle is not None and cmp_version(target_version, "1.2") >= 0:
-                raise ValueError(f"'angle' is not supported in SDF version {target_version} (removed in 1.2)")
             kwargs: dict = {"sdf_version": target_version, "angle": self.angle, "horizontal_fov": self.horizontal_fov}
             return self.__class__(**kwargs)
 
@@ -345,9 +373,9 @@ class Camera(BaseModel):
             self,
             sdf_version: str | None = None,
             anti_aliasing: int | None = None,
-            format: str | None = "R8G8B8",
-            height: int | None = 240,
-            width: int | None = 320
+            format: str | None = None,
+            height: int | None = None,
+            width: int | None = None
         ):
             super().__init__(sdf_version)
             self.anti_aliasing = anti_aliasing
@@ -358,12 +386,6 @@ class Camera(BaseModel):
         def to_version(self, target_version: str) -> "Camera.Image":
             if self.anti_aliasing is not None and cmp_version(target_version, "1.7") < 0:
                 raise ValueError(f"'anti_aliasing' is not supported in SDF version {target_version} (added in 1.7)")
-            if self.format is not None and cmp_version(target_version, "1.2") >= 0:
-                raise ValueError(f"'format' is not supported in SDF version {target_version} (removed in 1.2)")
-            if self.height is not None and cmp_version(target_version, "1.2") >= 0:
-                raise ValueError(f"'height' is not supported in SDF version {target_version} (removed in 1.2)")
-            if self.width is not None and cmp_version(target_version, "1.2") >= 0:
-                raise ValueError(f"'width' is not supported in SDF version {target_version} (removed in 1.2)")
             kwargs: dict = {"sdf_version": target_version, "anti_aliasing": self.anti_aliasing, "format": self.format, "height": self.height, "width": self.width}
             return self.__class__(**kwargs)
 
@@ -378,11 +400,26 @@ class Camera(BaseModel):
                 _c_tmp.text = str(self.anti_aliasing)
                 el.append(_c_tmp)
             if self.format is not None:
-                el.set("format", self.format)
+                if cmp_version(version, "1.2") >= 0:
+                    _c_tmp = ET.Element("format")
+                    _c_tmp.text = self.format
+                    el.append(_c_tmp)
+                else:
+                    el.set("format", self.format)
             if self.height is not None:
-                el.set("height", str(self.height))
+                if cmp_version(version, "1.2") >= 0:
+                    _c_tmp = ET.Element("height")
+                    _c_tmp.text = str(self.height)
+                    el.append(_c_tmp)
+                else:
+                    el.set("height", str(self.height))
             if self.width is not None:
-                el.set("width", str(self.width))
+                if cmp_version(version, "1.2") >= 0:
+                    _c_tmp = ET.Element("width")
+                    _c_tmp.text = str(self.width)
+                    el.append(_c_tmp)
+                else:
+                    el.set("width", str(self.width))
             return el
 
         @classmethod
@@ -398,13 +435,34 @@ class Camera(BaseModel):
                 _anti_aliasing = None
             if _anti_aliasing is not None and cmp_version(version, "1.7") < 0:
                 return SDFError(f"'anti_aliasing' is not supported in SDF version {version} (added in 1.7)")
-            _format = el.get("format", "R8G8B8")
+            _raw_format = None
+            if cmp_version(version, "1.2") >= 0:
+                _c_tmp = el.find("format")
+                if _c_tmp is not None: _raw_format = _c_tmp.text
+            else:
+                _raw_format = el.get("format")
+            if _raw_format is None: _raw_format = "R8G8B8"
+            _format = _raw_format
             if isinstance(_format, SDFError):
                 return _format.extend("@format")
-            _height = _parse_int32(el.get("height", 240))
+            _raw_height = None
+            if cmp_version(version, "1.2") >= 0:
+                _c_tmp = el.find("height")
+                if _c_tmp is not None: _raw_height = _c_tmp.text
+            else:
+                _raw_height = el.get("height")
+            if _raw_height is None: _raw_height = 240
+            _height = _parse_int32(_raw_height)
             if isinstance(_height, SDFError):
                 return _height.extend("@height")
-            _width = _parse_int32(el.get("width", 320))
+            _raw_width = None
+            if cmp_version(version, "1.2") >= 0:
+                _c_tmp = el.find("width")
+                if _c_tmp is not None: _raw_width = _c_tmp.text
+            else:
+                _raw_width = el.get("width")
+            if _raw_width is None: _raw_width = 320
+            _width = _parse_int32(_raw_width)
             if isinstance(_width, SDFError):
                 return _width.extend("@width")
             return cls(sdf_version=version, anti_aliasing=_anti_aliasing, format=_format, height=_height, width=_width)
@@ -950,8 +1008,8 @@ class Camera(BaseModel):
         def __init__(
             self,
             sdf_version: str | None = None,
-            enabled: bool | None = False,
-            path: str | None = "__default__"
+            enabled: bool | None = None,
+            path: str | None = None
         ):
             super().__init__(sdf_version)
             self.enabled = enabled
@@ -997,13 +1055,13 @@ class Camera(BaseModel):
         horizontal_fov: "Camera.HorizontalFov" = None,
         image: "Camera.Image" = None,
         lens: "Camera.Lens" = None,
-        name: str | None = "__default__",
+        name: str | None = None,
         noise: "Camera.Noise" = None,
-        optical_frame_id: str | None = "",
+        optical_frame_id: str | None = None,
         pose: "Pose" = None,
         save: "Camera.Save" = None,
         segmentation_type: str | None = None,
-        trigger_topic: str | None = "",
+        trigger_topic: str | None = None,
         triggered: bool | None = None,
         visibility_mask: int | None = None
     ):
@@ -1341,7 +1399,7 @@ class Camera(BaseModel):
             return SDFError(f"'noise' is not supported in SDF version {version} (added in 1.4)")
         _c_tmp = el.find("optical_frame_id")
         if _c_tmp is not None:
-            _text = _c_tmp.text if _c_tmp.text is not None else ""
+            _text = _c_tmp.text if _c_tmp.text is not None else None
             _val = _text
             if isinstance(_val, SDFError):
                 return _val.extend("optical_frame_id")
@@ -1381,7 +1439,7 @@ class Camera(BaseModel):
             return SDFError(f"'segmentation_type' is not supported in SDF version {version} (added in 1.9)")
         _c_tmp = el.find("trigger_topic")
         if _c_tmp is not None:
-            _text = _c_tmp.text if _c_tmp.text is not None else ""
+            _text = _c_tmp.text if _c_tmp.text is not None else None
             _val = _text
             if isinstance(_val, SDFError):
                 return _val.extend("trigger_topic")

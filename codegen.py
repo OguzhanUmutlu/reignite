@@ -43,13 +43,13 @@ def cmp_version(v1: str, v2: str) -> int:
 
 
 PRIMITIVE_TYPES: dict[str, tuple[str, str, str, str]] = {
-    "string": ("str", '""', "{val}", "{raw}"),
-    "bool": ("bool", "False", "str({val}).lower()", "str({raw}).strip().lower() == 'true'"),
-    "int": ("int", "0", "str({val})", "_parse_int32({raw})"),
-    "unsigned int": ("int", "0", "str({val})", "_parse_uint32({raw})"),
-    "double": ("float", "0.0", "str({val})", "_parse_double({raw})"),
-    "float": ("float", "0.0", "str({val})", "_parse_double({raw})"),
-    "time": ("float", "0.0", "f'{int({val})} {round(({val} - int({val})) * 1e9)}'", "_parse_time({raw})")
+    "string": ("str", "None", "{val}", "{raw}"),
+    "bool": ("bool", "None", "str({val}).lower()", "str({raw}).strip().lower() == 'true'"),
+    "int": ("int", "None", "str({val})", "_parse_int32({raw})"),
+    "unsigned int": ("int", "None", "str({val})", "_parse_uint32({raw})"),
+    "double": ("float", "None", "str({val})", "_parse_double({raw})"),
+    "float": ("float", "None", "str({val})", "_parse_double({raw})"),
+    "time": ("float", "None", "f'{int({val})} {round(({val} - int({val})) * 1e9)}'", "_parse_time({raw})")
 }
 
 
@@ -311,7 +311,7 @@ def parse_all_versions() -> dict:
 
 
 _NOOP_RENAME_RE = re.compile(
-    r'<rename>\n\s+<from attribute="([^"]+)"/>\n\s+<to element="\1"/>\n\s+</rename>'
+    r'<rename>\n\s+<from attribute="([^"]+)"/>\n\s+<to attribute="\1"/>\n\s+</rename>'
 )
 
 _EMPTY_CONVERT_RE = re.compile(
@@ -604,11 +604,7 @@ def _collect_class_spec(
         schema_default = ameta.get("default", "")
         if schema_default != "":
             raw_default = _format_default(hint, schema_default)
-            if mod:
-                default = "None"
-                init_default_expr = f"_{mod}({raw_default})"
-            else:
-                default = raw_default
+            default = "None"
         renames = {}
         for op in applicable_ops:
             if op.get("type") == "rename" and op.get("from_attribute") == aname:
@@ -968,7 +964,7 @@ def _render_class(spec: dict, file_external_imports: set[str], indent: int = 0,
                 f"        if self.{p.py_name} is not None and cmp_version(target_version, \"{p.added_in}\") < 0:")
             block.append(
                 f'            raise ValueError(f"\'{p.py_name}\' is not supported in SDF version {{target_version}} (added in {p.added_in})")')
-        if p.removed_in:
+        if p.removed_in and not p.renames:
             block.append(
                 f"        if self.{p.py_name} is not None and cmp_version(target_version, \"{p.removed_in}\") >= 0:")
             block.append(

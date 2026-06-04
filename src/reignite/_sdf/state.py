@@ -193,9 +193,9 @@ class State(BaseModel):
         models: List["ModelState"] = None,
         real_time: float | None = None,
         sim_time: float | None = None,
-        time: float | None = 0.0,
+        time: float | None = None,
         wall_time: float | None = None,
-        world_name: str | None = "__default__"
+        world_name: str | None = None
     ):
         super().__init__(sdf_version)
         self.deletions = deletions
@@ -305,8 +305,6 @@ class State(BaseModel):
             raise ValueError(f"'real_time' is not supported in SDF version {target_version} (added in 1.3)")
         if self.sim_time is not None and cmp_version(target_version, "1.3") < 0:
             raise ValueError(f"'sim_time' is not supported in SDF version {target_version} (added in 1.3)")
-        if self.time is not None and cmp_version(target_version, "1.2") >= 0:
-            raise ValueError(f"'time' is not supported in SDF version {target_version} (removed in 1.2)")
         if self.wall_time is not None and cmp_version(target_version, "1.3") < 0:
             raise ValueError(f"'wall_time' is not supported in SDF version {target_version} (added in 1.3)")
         kwargs: dict = {"sdf_version": target_version, "deletions": self.deletions.to_version(target_version) if self.deletions is not None and hasattr(self.deletions, "to_version") else self.deletions, "insertions": self.insertions.to_version(target_version) if self.insertions is not None and hasattr(self.insertions, "to_version") else self.insertions, "iterations": self.iterations, "joint_states": [c.to_version(target_version) if hasattr(c, "to_version") else c for c in (self.joint_states or [])], "light_states": [c.to_version(target_version) if hasattr(c, "to_version") else c for c in (self.light_states or [])], "lights": [c.to_version(target_version) if hasattr(c, "to_version") else c for c in (self.lights or [])], "model_states": [c.to_version(target_version) if hasattr(c, "to_version") else c for c in (self.model_states or [])], "models": [c.to_version(target_version) if hasattr(c, "to_version") else c for c in (self.models or [])], "real_time": self.real_time, "sim_time": self.sim_time, "time": self.time, "wall_time": self.wall_time, "world_name": self.world_name}
@@ -392,7 +390,12 @@ class State(BaseModel):
             _c_tmp.text = f'{int(self.sim_time)} {round((self.sim_time - int(self.sim_time)) * 1e9)}'
             el.append(_c_tmp)
         if self.time is not None:
-            el.set("time", f'{int(self.time)} {round((self.time - int(self.time)) * 1e9)}')
+            if cmp_version(version, "1.2") >= 0:
+                _c_tmp = ET.Element("time")
+                _c_tmp.text = f'{int(self.time)} {round((self.time - int(self.time)) * 1e9)}'
+                el.append(_c_tmp)
+            else:
+                el.set("time", f'{int(self.time)} {round((self.time - int(self.time)) * 1e9)}')
         if self.wall_time is not None:
             _c_tmp = ET.Element("wall_time")
             _c_tmp.text = f'{int(self.wall_time)} {round((self.wall_time - int(self.wall_time)) * 1e9)}'
@@ -499,7 +502,14 @@ class State(BaseModel):
             _sim_time = None
         if _sim_time is not None and cmp_version(version, "1.3") < 0:
             return SDFError(f"'sim_time' is not supported in SDF version {version} (added in 1.3)")
-        _time = _parse_time(el.get("time", 0.0))
+        _raw_time = None
+        if cmp_version(version, "1.2") >= 0:
+            _c_tmp = el.find("time")
+            if _c_tmp is not None: _raw_time = _c_tmp.text
+        else:
+            _raw_time = el.get("time")
+        if _raw_time is None: _raw_time = 0.0
+        _time = _parse_time(_raw_time)
         if isinstance(_time, SDFError):
             return _time.extend("@time")
         _c_tmp = el.find("wall_time")

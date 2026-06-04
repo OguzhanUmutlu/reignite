@@ -15,7 +15,7 @@ class JointState(BaseModel):
             self,
             sdf_version: str | None = None,
             angle: float | None = None,
-            axis: int | None = 0
+            axis: int | None = None
         ):
             super().__init__(sdf_version)
             self.angle = angle
@@ -54,7 +54,7 @@ class JointState(BaseModel):
                 self,
                 sdf_version: str | None = None,
                 acceleration: float | None = None,
-                degrees: bool | None = False
+                degrees: bool | None = None
             ):
                 super().__init__(sdf_version)
                 self.acceleration = acceleration
@@ -91,7 +91,7 @@ class JointState(BaseModel):
             def __init__(
                 self,
                 sdf_version: str | None = None,
-                degrees: bool | None = False,
+                degrees: bool | None = None,
                 position: float | None = None
             ):
                 super().__init__(sdf_version)
@@ -129,7 +129,7 @@ class JointState(BaseModel):
             def __init__(
                 self,
                 sdf_version: str | None = None,
-                degrees: bool | None = False,
+                degrees: bool | None = None,
                 velocity: float | None = None
             ):
                 super().__init__(sdf_version)
@@ -382,7 +382,7 @@ class JointState(BaseModel):
         angle: "JointState.Angle" = None,
         axis2_state: "JointState.Axis2State" = None,
         axis_state: "JointState.AxisState" = None,
-        name: str | None = "__default__"
+        name: str | None = None
     ):
         super().__init__(sdf_version)
         self.angle = angle

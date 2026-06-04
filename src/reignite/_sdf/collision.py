@@ -72,10 +72,10 @@ class Collision(BaseModel):
         density: float | None = None,
         frames: List["Frame"] = None,
         geometry: "Geometry" = None,
-        laser_retro: float | None = 0,
+        laser_retro: float | None = None,
         mass: float | None = None,
         max_contacts: int | None = None,
-        name: str | None = "__default__",
+        name: str | None = None,
         origin: "Collision.Origin" = None,
         pose: "Pose" = None,
         surface: "Surface" = None
@@ -137,8 +137,6 @@ class Collision(BaseModel):
             raise ValueError(f"'frames' is not supported in SDF version {target_version} (added in 1.5)")
         if self.frames is not None and cmp_version(target_version, "1.7") >= 0:
             raise ValueError(f"'frames' is not supported in SDF version {target_version} (removed in 1.7)")
-        if self.laser_retro is not None and cmp_version(target_version, "1.2") >= 0:
-            raise ValueError(f"'laser_retro' is not supported in SDF version {target_version} (removed in 1.2)")
         if self.mass is not None and cmp_version(target_version, "1.2") >= 0:
             raise ValueError(f"'mass' is not supported in SDF version {target_version} (removed in 1.2)")
         if self.origin is not None and cmp_version(target_version, "1.2") >= 0:
@@ -183,7 +181,12 @@ class Collision(BaseModel):
                 _item_el = _child_res
             el.append(_item_el)
         if self.laser_retro is not None:
-            el.set("laser_retro", str(self.laser_retro))
+            if cmp_version(version, "1.2") >= 0:
+                _c_tmp = ET.Element("laser_retro")
+                _c_tmp.text = str(self.laser_retro)
+                el.append(_c_tmp)
+            else:
+                el.set("laser_retro", str(self.laser_retro))
         if self.mass is not None:
             _c_tmp = ET.Element("mass")
             _c_tmp.text = str(self.mass)
@@ -264,7 +267,14 @@ class Collision(BaseModel):
             _geometry = _res
         else:
             _geometry = None
-        _laser_retro = _parse_double(el.get("laser_retro", 0))
+        _raw_laser_retro = None
+        if cmp_version(version, "1.2") >= 0:
+            _c_tmp = el.find("laser_retro")
+            if _c_tmp is not None: _raw_laser_retro = _c_tmp.text
+        else:
+            _raw_laser_retro = el.get("laser_retro")
+        if _raw_laser_retro is None: _raw_laser_retro = 0
+        _laser_retro = _parse_double(_raw_laser_retro)
         if isinstance(_laser_retro, SDFError):
             return _laser_retro.extend("@laser_retro")
         _c_tmp = el.find("mass")

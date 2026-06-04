@@ -43,10 +43,10 @@ class Light(BaseModel):
         def __init__(
             self,
             sdf_version: str | None = None,
-            constant: float | None = 1,
-            linear: float | None = 1,
-            quadratic: float | None = 0,
-            range: float | None = 10
+            constant: float | None = None,
+            linear: float | None = None,
+            quadratic: float | None = None,
+            range: float | None = None
         ):
             super().__init__(sdf_version)
             self.constant = constant
@@ -55,14 +55,6 @@ class Light(BaseModel):
             self.range = range
 
         def to_version(self, target_version: str) -> "Light.Attenuation":
-            if self.constant is not None and cmp_version(target_version, "1.2") >= 0:
-                raise ValueError(f"'constant' is not supported in SDF version {target_version} (removed in 1.2)")
-            if self.linear is not None and cmp_version(target_version, "1.2") >= 0:
-                raise ValueError(f"'linear' is not supported in SDF version {target_version} (removed in 1.2)")
-            if self.quadratic is not None and cmp_version(target_version, "1.2") >= 0:
-                raise ValueError(f"'quadratic' is not supported in SDF version {target_version} (removed in 1.2)")
-            if self.range is not None and cmp_version(target_version, "1.2") >= 0:
-                raise ValueError(f"'range' is not supported in SDF version {target_version} (removed in 1.2)")
             kwargs: dict = {"sdf_version": target_version, "constant": self.constant, "linear": self.linear, "quadratic": self.quadratic, "range": self.range}
             return self.__class__(**kwargs)
 
@@ -73,27 +65,75 @@ class Light(BaseModel):
                 return self.to_version(str(version)).to_sdf()
             el = ET.Element("attenuation")
             if self.constant is not None:
-                el.set("constant", str(self.constant))
+                if cmp_version(version, "1.2") >= 0:
+                    _c_tmp = ET.Element("constant")
+                    _c_tmp.text = str(self.constant)
+                    el.append(_c_tmp)
+                else:
+                    el.set("constant", str(self.constant))
             if self.linear is not None:
-                el.set("linear", str(self.linear))
+                if cmp_version(version, "1.2") >= 0:
+                    _c_tmp = ET.Element("linear")
+                    _c_tmp.text = str(self.linear)
+                    el.append(_c_tmp)
+                else:
+                    el.set("linear", str(self.linear))
             if self.quadratic is not None:
-                el.set("quadratic", str(self.quadratic))
+                if cmp_version(version, "1.2") >= 0:
+                    _c_tmp = ET.Element("quadratic")
+                    _c_tmp.text = str(self.quadratic)
+                    el.append(_c_tmp)
+                else:
+                    el.set("quadratic", str(self.quadratic))
             if self.range is not None:
-                el.set("range", str(self.range))
+                if cmp_version(version, "1.2") >= 0:
+                    _c_tmp = ET.Element("range")
+                    _c_tmp.text = str(self.range)
+                    el.append(_c_tmp)
+                else:
+                    el.set("range", str(self.range))
             return el
 
         @classmethod
         def _from_sdf(cls, el: ET.Element, version: str) -> "Light.Attenuation | SDFError":
-            _constant = _parse_double(el.get("constant", 1))
+            _raw_constant = None
+            if cmp_version(version, "1.2") >= 0:
+                _c_tmp = el.find("constant")
+                if _c_tmp is not None: _raw_constant = _c_tmp.text
+            else:
+                _raw_constant = el.get("constant")
+            if _raw_constant is None: _raw_constant = 1
+            _constant = _parse_double(_raw_constant)
             if isinstance(_constant, SDFError):
                 return _constant.extend("@constant")
-            _linear = _parse_double(el.get("linear", 1))
+            _raw_linear = None
+            if cmp_version(version, "1.2") >= 0:
+                _c_tmp = el.find("linear")
+                if _c_tmp is not None: _raw_linear = _c_tmp.text
+            else:
+                _raw_linear = el.get("linear")
+            if _raw_linear is None: _raw_linear = 1
+            _linear = _parse_double(_raw_linear)
             if isinstance(_linear, SDFError):
                 return _linear.extend("@linear")
-            _quadratic = _parse_double(el.get("quadratic", 0))
+            _raw_quadratic = None
+            if cmp_version(version, "1.2") >= 0:
+                _c_tmp = el.find("quadratic")
+                if _c_tmp is not None: _raw_quadratic = _c_tmp.text
+            else:
+                _raw_quadratic = el.get("quadratic")
+            if _raw_quadratic is None: _raw_quadratic = 0
+            _quadratic = _parse_double(_raw_quadratic)
             if isinstance(_quadratic, SDFError):
                 return _quadratic.extend("@quadratic")
-            _range = _parse_double(el.get("range", 10))
+            _raw_range = None
+            if cmp_version(version, "1.2") >= 0:
+                _c_tmp = el.find("range")
+                if _c_tmp is not None: _raw_range = _c_tmp.text
+            else:
+                _raw_range = el.get("range")
+            if _raw_range is None: _raw_range = 10
+            _range = _parse_double(_raw_range)
             if isinstance(_range, SDFError):
                 return _range.extend("@range")
             return cls(sdf_version=version, constant=_constant, linear=_linear, quadratic=_quadratic, range=_range)
@@ -110,8 +150,6 @@ class Light(BaseModel):
             self.rgba = _color(rgba) if rgba is not None else None
 
         def to_version(self, target_version: str) -> "Light.Diffuse":
-            if self.rgba is not None and cmp_version(target_version, "1.2") >= 0:
-                raise ValueError(f"'rgba' is not supported in SDF version {target_version} (removed in 1.2)")
             kwargs: dict = {"sdf_version": target_version, "diffuse": self.diffuse, "rgba": self.rgba}
             return self.__class__(**kwargs)
 
@@ -159,8 +197,6 @@ class Light(BaseModel):
             self.xyz = _vector3(xyz) if xyz is not None else None
 
         def to_version(self, target_version: str) -> "Light.Direction":
-            if self.xyz is not None and cmp_version(target_version, "1.2") >= 0:
-                raise ValueError(f"'xyz' is not supported in SDF version {target_version} (removed in 1.2)")
             kwargs: dict = {"sdf_version": target_version, "direction": self.direction, "xyz": self.xyz}
             return self.__class__(**kwargs)
 
@@ -246,8 +282,6 @@ class Light(BaseModel):
             self.specular = _color(specular) if specular is not None else None
 
         def to_version(self, target_version: str) -> "Light.Specular":
-            if self.rgba is not None and cmp_version(target_version, "1.2") >= 0:
-                raise ValueError(f"'rgba' is not supported in SDF version {target_version} (removed in 1.2)")
             kwargs: dict = {"sdf_version": target_version, "rgba": self.rgba, "specular": self.specular}
             return self.__class__(**kwargs)
 
@@ -287,9 +321,9 @@ class Light(BaseModel):
         def __init__(
             self,
             sdf_version: str | None = None,
-            falloff: float | None = 0,
-            inner_angle: float | None = 0,
-            outer_angle: float | None = 0
+            falloff: float | None = None,
+            inner_angle: float | None = None,
+            outer_angle: float | None = None
         ):
             super().__init__(sdf_version)
             self.falloff = falloff
@@ -297,12 +331,6 @@ class Light(BaseModel):
             self.outer_angle = outer_angle
 
         def to_version(self, target_version: str) -> "Light.Spot":
-            if self.falloff is not None and cmp_version(target_version, "1.2") >= 0:
-                raise ValueError(f"'falloff' is not supported in SDF version {target_version} (removed in 1.2)")
-            if self.inner_angle is not None and cmp_version(target_version, "1.2") >= 0:
-                raise ValueError(f"'inner_angle' is not supported in SDF version {target_version} (removed in 1.2)")
-            if self.outer_angle is not None and cmp_version(target_version, "1.2") >= 0:
-                raise ValueError(f"'outer_angle' is not supported in SDF version {target_version} (removed in 1.2)")
             kwargs: dict = {"sdf_version": target_version, "falloff": self.falloff, "inner_angle": self.inner_angle, "outer_angle": self.outer_angle}
             return self.__class__(**kwargs)
 
@@ -313,22 +341,58 @@ class Light(BaseModel):
                 return self.to_version(str(version)).to_sdf()
             el = ET.Element("spot")
             if self.falloff is not None:
-                el.set("falloff", str(self.falloff))
+                if cmp_version(version, "1.2") >= 0:
+                    _c_tmp = ET.Element("falloff")
+                    _c_tmp.text = str(self.falloff)
+                    el.append(_c_tmp)
+                else:
+                    el.set("falloff", str(self.falloff))
             if self.inner_angle is not None:
-                el.set("inner_angle", str(self.inner_angle))
+                if cmp_version(version, "1.2") >= 0:
+                    _c_tmp = ET.Element("inner_angle")
+                    _c_tmp.text = str(self.inner_angle)
+                    el.append(_c_tmp)
+                else:
+                    el.set("inner_angle", str(self.inner_angle))
             if self.outer_angle is not None:
-                el.set("outer_angle", str(self.outer_angle))
+                if cmp_version(version, "1.2") >= 0:
+                    _c_tmp = ET.Element("outer_angle")
+                    _c_tmp.text = str(self.outer_angle)
+                    el.append(_c_tmp)
+                else:
+                    el.set("outer_angle", str(self.outer_angle))
             return el
 
         @classmethod
         def _from_sdf(cls, el: ET.Element, version: str) -> "Light.Spot | SDFError":
-            _falloff = _parse_double(el.get("falloff", 0))
+            _raw_falloff = None
+            if cmp_version(version, "1.2") >= 0:
+                _c_tmp = el.find("falloff")
+                if _c_tmp is not None: _raw_falloff = _c_tmp.text
+            else:
+                _raw_falloff = el.get("falloff")
+            if _raw_falloff is None: _raw_falloff = 0
+            _falloff = _parse_double(_raw_falloff)
             if isinstance(_falloff, SDFError):
                 return _falloff.extend("@falloff")
-            _inner_angle = _parse_double(el.get("inner_angle", 0))
+            _raw_inner_angle = None
+            if cmp_version(version, "1.2") >= 0:
+                _c_tmp = el.find("inner_angle")
+                if _c_tmp is not None: _raw_inner_angle = _c_tmp.text
+            else:
+                _raw_inner_angle = el.get("inner_angle")
+            if _raw_inner_angle is None: _raw_inner_angle = 0
+            _inner_angle = _parse_double(_raw_inner_angle)
             if isinstance(_inner_angle, SDFError):
                 return _inner_angle.extend("@inner_angle")
-            _outer_angle = _parse_double(el.get("outer_angle", 0))
+            _raw_outer_angle = None
+            if cmp_version(version, "1.2") >= 0:
+                _c_tmp = el.find("outer_angle")
+                if _c_tmp is not None: _raw_outer_angle = _c_tmp.text
+            else:
+                _raw_outer_angle = el.get("outer_angle")
+            if _raw_outer_angle is None: _raw_outer_angle = 0
+            _outer_angle = _parse_double(_raw_outer_angle)
             if isinstance(_outer_angle, SDFError):
                 return _outer_angle.extend("@outer_angle")
             return cls(sdf_version=version, falloff=_falloff, inner_angle=_inner_angle, outer_angle=_outer_angle)
@@ -337,18 +401,18 @@ class Light(BaseModel):
         self,
         sdf_version: str | None = None,
         attenuation: "Light.Attenuation" = None,
-        cast_shadows: bool | None = False,
+        cast_shadows: bool | None = None,
         diffuse: "Light.Diffuse" = None,
         direction: "Light.Direction" = None,
         frames: List["Frame"] = None,
         intensity: float | None = None,
         light_on: bool | None = None,
-        name: str | None = "__default__",
+        name: str | None = None,
         origin: "Light.Origin" = None,
         pose: "Pose" = None,
         specular: "Light.Specular" = None,
         spot: "Light.Spot" = None,
-        type: str | None = "point",
+        type: str | None = None,
         visualize: bool | None = None
     ):
         super().__init__(sdf_version)
@@ -416,8 +480,6 @@ class Light(BaseModel):
     def to_version(self, target_version: str) -> "Light":
         from ..elements.frame import Frame
         from ..elements.pose import Pose
-        if self.cast_shadows is not None and cmp_version(target_version, "1.2") >= 0:
-            raise ValueError(f"'cast_shadows' is not supported in SDF version {target_version} (removed in 1.2)")
         if self.frames is not None and cmp_version(target_version, "1.5") < 0:
             raise ValueError(f"'frames' is not supported in SDF version {target_version} (added in 1.5)")
         if self.frames is not None and cmp_version(target_version, "1.7") >= 0:
@@ -452,7 +514,12 @@ class Light(BaseModel):
                 _item_el = _child_res
             el.append(_item_el)
         if self.cast_shadows is not None:
-            el.set("cast_shadows", str(self.cast_shadows).lower())
+            if cmp_version(version, "1.2") >= 0:
+                _c_tmp = ET.Element("cast_shadows")
+                _c_tmp.text = str(self.cast_shadows).lower()
+                el.append(_c_tmp)
+            else:
+                el.set("cast_shadows", str(self.cast_shadows).lower())
         if self.diffuse is not None:
             _child_res = self.diffuse.to_sdf(version)
             if isinstance(_child_res, str):
@@ -539,7 +606,14 @@ class Light(BaseModel):
             _attenuation = _res
         else:
             _attenuation = None
-        _cast_shadows = str(el.get("cast_shadows", False)).strip().lower() == 'true'
+        _raw_cast_shadows = None
+        if cmp_version(version, "1.2") >= 0:
+            _c_tmp = el.find("cast_shadows")
+            if _c_tmp is not None: _raw_cast_shadows = _c_tmp.text
+        else:
+            _raw_cast_shadows = el.get("cast_shadows")
+        if _raw_cast_shadows is None: _raw_cast_shadows = False
+        _cast_shadows = str(_raw_cast_shadows).strip().lower() == 'true'
         if isinstance(_cast_shadows, SDFError):
             return _cast_shadows.extend("@cast_shadows")
         _c_diffuse = el.find("diffuse")

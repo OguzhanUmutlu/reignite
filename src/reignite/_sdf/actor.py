@@ -32,10 +32,10 @@ class Actor(BaseModel):
         def __init__(
             self,
             sdf_version: str | None = None,
-            filename: str | None = "__default__",
-            interpolate_x: bool | None = False,
-            name: str | None = "__default__",
-            scale: float | None = 1.0
+            filename: str | None = None,
+            interpolate_x: bool | None = None,
+            name: str | None = None,
+            scale: float | None = None
         ):
             super().__init__(sdf_version)
             self.filename = filename
@@ -44,12 +44,6 @@ class Actor(BaseModel):
             self.scale = scale
 
         def to_version(self, target_version: str) -> "Actor.Animation":
-            if self.filename is not None and cmp_version(target_version, "1.2") >= 0:
-                raise ValueError(f"'filename' is not supported in SDF version {target_version} (removed in 1.2)")
-            if self.interpolate_x is not None and cmp_version(target_version, "1.2") >= 0:
-                raise ValueError(f"'interpolate_x' is not supported in SDF version {target_version} (removed in 1.2)")
-            if self.scale is not None and cmp_version(target_version, "1.2") >= 0:
-                raise ValueError(f"'scale' is not supported in SDF version {target_version} (removed in 1.2)")
             kwargs: dict = {"sdf_version": target_version, "filename": self.filename, "interpolate_x": self.interpolate_x, "name": self.name, "scale": self.scale}
             return self.__class__(**kwargs)
 
@@ -60,27 +54,63 @@ class Actor(BaseModel):
                 return self.to_version(str(version)).to_sdf()
             el = ET.Element("animation")
             if self.filename is not None:
-                el.set("filename", self.filename)
+                if cmp_version(version, "1.2") >= 0:
+                    _c_tmp = ET.Element("filename")
+                    _c_tmp.text = self.filename
+                    el.append(_c_tmp)
+                else:
+                    el.set("filename", self.filename)
             if self.interpolate_x is not None:
-                el.set("interpolate_x", str(self.interpolate_x).lower())
+                if cmp_version(version, "1.2") >= 0:
+                    _c_tmp = ET.Element("interpolate_x")
+                    _c_tmp.text = str(self.interpolate_x).lower()
+                    el.append(_c_tmp)
+                else:
+                    el.set("interpolate_x", str(self.interpolate_x).lower())
             if self.name is not None:
                 el.set("name", self.name)
             if self.scale is not None:
-                el.set("scale", str(self.scale))
+                if cmp_version(version, "1.2") >= 0:
+                    _c_tmp = ET.Element("scale")
+                    _c_tmp.text = str(self.scale)
+                    el.append(_c_tmp)
+                else:
+                    el.set("scale", str(self.scale))
             return el
 
         @classmethod
         def _from_sdf(cls, el: ET.Element, version: str) -> "Actor.Animation | SDFError":
-            _filename = el.get("filename", "__default__")
+            _raw_filename = None
+            if cmp_version(version, "1.2") >= 0:
+                _c_tmp = el.find("filename")
+                if _c_tmp is not None: _raw_filename = _c_tmp.text
+            else:
+                _raw_filename = el.get("filename")
+            if _raw_filename is None: _raw_filename = "__default__"
+            _filename = _raw_filename
             if isinstance(_filename, SDFError):
                 return _filename.extend("@filename")
-            _interpolate_x = str(el.get("interpolate_x", False)).strip().lower() == 'true'
+            _raw_interpolate_x = None
+            if cmp_version(version, "1.2") >= 0:
+                _c_tmp = el.find("interpolate_x")
+                if _c_tmp is not None: _raw_interpolate_x = _c_tmp.text
+            else:
+                _raw_interpolate_x = el.get("interpolate_x")
+            if _raw_interpolate_x is None: _raw_interpolate_x = False
+            _interpolate_x = str(_raw_interpolate_x).strip().lower() == 'true'
             if isinstance(_interpolate_x, SDFError):
                 return _interpolate_x.extend("@interpolate_x")
             _name = el.get("name", "__default__")
             if isinstance(_name, SDFError):
                 return _name.extend("@name")
-            _scale = _parse_double(el.get("scale", 1.0))
+            _raw_scale = None
+            if cmp_version(version, "1.2") >= 0:
+                _c_tmp = el.find("scale")
+                if _c_tmp is not None: _raw_scale = _c_tmp.text
+            else:
+                _raw_scale = el.get("scale")
+            if _raw_scale is None: _raw_scale = 1.0
+            _scale = _parse_double(_raw_scale)
             if isinstance(_scale, SDFError):
                 return _scale.extend("@scale")
             return cls(sdf_version=version, filename=_filename, interpolate_x=_interpolate_x, name=_name, scale=_scale)
@@ -130,17 +160,13 @@ class Actor(BaseModel):
                     self,
                     sdf_version: str | None = None,
                     pose: _PoseT | None = None,
-                    time: float | None = 0.0
+                    time: float | None = None
                 ):
                     super().__init__(sdf_version)
                     self.pose = _pose(pose) if pose is not None else None
                     self.time = time
 
                 def to_version(self, target_version: str) -> "Actor.Script.Trajectory.Waypoint":
-                    if self.pose is not None and cmp_version(target_version, "1.2") >= 0:
-                        raise ValueError(f"'pose' is not supported in SDF version {target_version} (removed in 1.2)")
-                    if self.time is not None and cmp_version(target_version, "1.2") >= 0:
-                        raise ValueError(f"'time' is not supported in SDF version {target_version} (removed in 1.2)")
                     kwargs: dict = {"sdf_version": target_version, "pose": self.pose, "time": self.time}
                     return self.__class__(**kwargs)
 
@@ -151,17 +177,41 @@ class Actor(BaseModel):
                         return self.to_version(str(version)).to_sdf()
                     el = ET.Element("waypoint")
                     if self.pose is not None:
-                        el.set("pose", str(self.pose))
+                        if cmp_version(version, "1.2") >= 0:
+                            _c_tmp = ET.Element("pose")
+                            _c_tmp.text = str(self.pose)
+                            el.append(_c_tmp)
+                        else:
+                            el.set("pose", str(self.pose))
                     if self.time is not None:
-                        el.set("time", str(self.time))
+                        if cmp_version(version, "1.2") >= 0:
+                            _c_tmp = ET.Element("time")
+                            _c_tmp.text = str(self.time)
+                            el.append(_c_tmp)
+                        else:
+                            el.set("time", str(self.time))
                     return el
 
                 @classmethod
                 def _from_sdf(cls, el: ET.Element, version: str) -> "Actor.Script.Trajectory.Waypoint | SDFError":
-                    _pose = _parse_pose(el.get("pose", "0 0 0 0 0 0"))
+                    _raw_pose = None
+                    if cmp_version(version, "1.2") >= 0:
+                        _c_tmp = el.find("pose")
+                        if _c_tmp is not None: _raw_pose = _c_tmp.text
+                    else:
+                        _raw_pose = el.get("pose")
+                    if _raw_pose is None: _raw_pose = "0 0 0 0 0 0"
+                    _pose = _parse_pose(_raw_pose)
                     if isinstance(_pose, SDFError):
                         return _pose.extend("@pose")
-                    _time = _parse_double(el.get("time", 0.0))
+                    _raw_time = None
+                    if cmp_version(version, "1.2") >= 0:
+                        _c_tmp = el.find("time")
+                        if _c_tmp is not None: _raw_time = _c_tmp.text
+                    else:
+                        _raw_time = el.get("time")
+                    if _raw_time is None: _raw_time = 0.0
+                    _time = _parse_double(_raw_time)
                     if isinstance(_time, SDFError):
                         return _time.extend("@time")
                     return cls(sdf_version=version, pose=_pose, time=_time)
@@ -169,9 +219,9 @@ class Actor(BaseModel):
             def __init__(
                 self,
                 sdf_version: str | None = None,
-                id: int | None = 0,
-                tension: float | None = 0.0,
-                type: str | None = "__default__",
+                id: int | None = None,
+                tension: float | None = None,
+                type: str | None = None,
                 waypoints: List["Actor.Script.Trajectory.Waypoint"] = None
             ):
                 super().__init__(sdf_version)
@@ -244,9 +294,9 @@ class Actor(BaseModel):
         def __init__(
             self,
             sdf_version: str | None = None,
-            auto_start: bool | None = True,
-            delay_start: float | None = 0.0,
-            loop: bool | None = True,
+            auto_start: bool | None = None,
+            delay_start: float | None = None,
+            loop: bool | None = None,
             trajectories: List["Actor.Script.Trajectory"] = None
         ):
             super().__init__(sdf_version)
@@ -267,12 +317,6 @@ class Actor(BaseModel):
             self.trajectories.extend(items)
 
         def to_version(self, target_version: str) -> "Actor.Script":
-            if self.auto_start is not None and cmp_version(target_version, "1.2") >= 0:
-                raise ValueError(f"'auto_start' is not supported in SDF version {target_version} (removed in 1.2)")
-            if self.delay_start is not None and cmp_version(target_version, "1.2") >= 0:
-                raise ValueError(f"'delay_start' is not supported in SDF version {target_version} (removed in 1.2)")
-            if self.loop is not None and cmp_version(target_version, "1.2") >= 0:
-                raise ValueError(f"'loop' is not supported in SDF version {target_version} (removed in 1.2)")
             kwargs: dict = {"sdf_version": target_version, "auto_start": self.auto_start, "delay_start": self.delay_start, "loop": self.loop, "trajectories": [c.to_version(target_version) if hasattr(c, "to_version") else c for c in (self.trajectories or [])]}
             return self.__class__(**kwargs)
 
@@ -283,11 +327,26 @@ class Actor(BaseModel):
                 return self.to_version(str(version)).to_sdf()
             el = ET.Element("script")
             if self.auto_start is not None:
-                el.set("auto_start", str(self.auto_start).lower())
+                if cmp_version(version, "1.2") >= 0:
+                    _c_tmp = ET.Element("auto_start")
+                    _c_tmp.text = str(self.auto_start).lower()
+                    el.append(_c_tmp)
+                else:
+                    el.set("auto_start", str(self.auto_start).lower())
             if self.delay_start is not None:
-                el.set("delay_start", str(self.delay_start))
+                if cmp_version(version, "1.2") >= 0:
+                    _c_tmp = ET.Element("delay_start")
+                    _c_tmp.text = str(self.delay_start)
+                    el.append(_c_tmp)
+                else:
+                    el.set("delay_start", str(self.delay_start))
             if self.loop is not None:
-                el.set("loop", str(self.loop).lower())
+                if cmp_version(version, "1.2") >= 0:
+                    _c_tmp = ET.Element("loop")
+                    _c_tmp.text = str(self.loop).lower()
+                    el.append(_c_tmp)
+                else:
+                    el.set("loop", str(self.loop).lower())
             for item in (self.trajectories or []):
                 _child_res = item.to_sdf(version)
                 if isinstance(_child_res, str):
@@ -300,13 +359,34 @@ class Actor(BaseModel):
 
         @classmethod
         def _from_sdf(cls, el: ET.Element, version: str) -> "Actor.Script | SDFError":
-            _auto_start = str(el.get("auto_start", True)).strip().lower() == 'true'
+            _raw_auto_start = None
+            if cmp_version(version, "1.2") >= 0:
+                _c_tmp = el.find("auto_start")
+                if _c_tmp is not None: _raw_auto_start = _c_tmp.text
+            else:
+                _raw_auto_start = el.get("auto_start")
+            if _raw_auto_start is None: _raw_auto_start = True
+            _auto_start = str(_raw_auto_start).strip().lower() == 'true'
             if isinstance(_auto_start, SDFError):
                 return _auto_start.extend("@auto_start")
-            _delay_start = _parse_double(el.get("delay_start", 0.0))
+            _raw_delay_start = None
+            if cmp_version(version, "1.2") >= 0:
+                _c_tmp = el.find("delay_start")
+                if _c_tmp is not None: _raw_delay_start = _c_tmp.text
+            else:
+                _raw_delay_start = el.get("delay_start")
+            if _raw_delay_start is None: _raw_delay_start = 0.0
+            _delay_start = _parse_double(_raw_delay_start)
             if isinstance(_delay_start, SDFError):
                 return _delay_start.extend("@delay_start")
-            _loop = str(el.get("loop", True)).strip().lower() == 'true'
+            _raw_loop = None
+            if cmp_version(version, "1.2") >= 0:
+                _c_tmp = el.find("loop")
+                if _c_tmp is not None: _raw_loop = _c_tmp.text
+            else:
+                _raw_loop = el.get("loop")
+            if _raw_loop is None: _raw_loop = True
+            _loop = str(_raw_loop).strip().lower() == 'true'
             if isinstance(_loop, SDFError):
                 return _loop.extend("@loop")
             _trajectories = []
@@ -321,18 +401,14 @@ class Actor(BaseModel):
         def __init__(
             self,
             sdf_version: str | None = None,
-            filename: str | None = "__default__",
-            scale: float | None = 1.0
+            filename: str | None = None,
+            scale: float | None = None
         ):
             super().__init__(sdf_version)
             self.filename = filename
             self.scale = scale
 
         def to_version(self, target_version: str) -> "Actor.Skin":
-            if self.filename is not None and cmp_version(target_version, "1.2") >= 0:
-                raise ValueError(f"'filename' is not supported in SDF version {target_version} (removed in 1.2)")
-            if self.scale is not None and cmp_version(target_version, "1.2") >= 0:
-                raise ValueError(f"'scale' is not supported in SDF version {target_version} (removed in 1.2)")
             kwargs: dict = {"sdf_version": target_version, "filename": self.filename, "scale": self.scale}
             return self.__class__(**kwargs)
 
@@ -343,17 +419,41 @@ class Actor(BaseModel):
                 return self.to_version(str(version)).to_sdf()
             el = ET.Element("skin")
             if self.filename is not None:
-                el.set("filename", self.filename)
+                if cmp_version(version, "1.2") >= 0:
+                    _c_tmp = ET.Element("filename")
+                    _c_tmp.text = self.filename
+                    el.append(_c_tmp)
+                else:
+                    el.set("filename", self.filename)
             if self.scale is not None:
-                el.set("scale", str(self.scale))
+                if cmp_version(version, "1.2") >= 0:
+                    _c_tmp = ET.Element("scale")
+                    _c_tmp.text = str(self.scale)
+                    el.append(_c_tmp)
+                else:
+                    el.set("scale", str(self.scale))
             return el
 
         @classmethod
         def _from_sdf(cls, el: ET.Element, version: str) -> "Actor.Skin | SDFError":
-            _filename = el.get("filename", "__default__")
+            _raw_filename = None
+            if cmp_version(version, "1.2") >= 0:
+                _c_tmp = el.find("filename")
+                if _c_tmp is not None: _raw_filename = _c_tmp.text
+            else:
+                _raw_filename = el.get("filename")
+            if _raw_filename is None: _raw_filename = "__default__"
+            _filename = _raw_filename
             if isinstance(_filename, SDFError):
                 return _filename.extend("@filename")
-            _scale = _parse_double(el.get("scale", 1.0))
+            _raw_scale = None
+            if cmp_version(version, "1.2") >= 0:
+                _c_tmp = el.find("scale")
+                if _c_tmp is not None: _raw_scale = _c_tmp.text
+            else:
+                _raw_scale = el.get("scale")
+            if _raw_scale is None: _raw_scale = 1.0
+            _scale = _parse_double(_raw_scale)
             if isinstance(_scale, SDFError):
                 return _scale.extend("@scale")
             return cls(sdf_version=version, filename=_filename, scale=_scale)
@@ -365,13 +465,13 @@ class Actor(BaseModel):
         frames: List["Frame"] = None,
         joints: List["Joint"] = None,
         links: List["Link"] = None,
-        name: str | None = "__default__",
+        name: str | None = None,
         origin: "Actor.Origin" = None,
         plugins: List["Plugin"] = None,
         pose: "Pose" = None,
         script: "Actor.Script" = None,
         skin: "Actor.Skin" = None,
-        static: bool | None = False
+        static: bool | None = None
     ):
         super().__init__(sdf_version)
         self.animations = animations or []
@@ -475,8 +575,6 @@ class Actor(BaseModel):
             raise ValueError(f"'origin' is not supported in SDF version {target_version} (removed in 1.2)")
         if self.pose is not None and cmp_version(target_version, "1.2") < 0:
             raise ValueError(f"'pose' is not supported in SDF version {target_version} (added in 1.2)")
-        if self.static is not None and cmp_version(target_version, "1.5") >= 0:
-            raise ValueError(f"'static' is not supported in SDF version {target_version} (removed in 1.5)")
         kwargs: dict = {"sdf_version": target_version, "animations": [c.to_version(target_version) if hasattr(c, "to_version") else c for c in (self.animations or [])], "frames": [c.to_version(target_version) if hasattr(c, "to_version") else c for c in (self.frames or [])], "joints": [c.to_version(target_version) if hasattr(c, "to_version") else c for c in (self.joints or [])], "links": [c.to_version(target_version) if hasattr(c, "to_version") else c for c in (self.links or [])], "name": self.name, "origin": self.origin.to_version(target_version) if self.origin is not None and hasattr(self.origin, "to_version") else self.origin, "plugins": [c.to_version(target_version) if hasattr(c, "to_version") else c for c in (self.plugins or [])], "pose": self.pose.to_version(target_version) if self.pose is not None and hasattr(self.pose, "to_version") else self.pose, "script": self.script.to_version(target_version) if self.script is not None and hasattr(self.script, "to_version") else self.script, "skin": self.skin.to_version(target_version) if self.skin is not None and hasattr(self.skin, "to_version") else self.skin, "static": self.static}
         return self.__class__(**kwargs)
 
@@ -566,7 +664,12 @@ class Actor(BaseModel):
                 _item_el = _child_res
             el.append(_item_el)
         if self.static is not None:
-            el.set("static", str(self.static).lower())
+            if cmp_version(version, "1.5") >= 0:
+                _c_tmp = ET.Element("static")
+                _c_tmp.text = str(self.static).lower()
+                el.append(_c_tmp)
+            else:
+                el.set("static", str(self.static).lower())
         return el
 
     @classmethod
@@ -645,7 +748,14 @@ class Actor(BaseModel):
             _skin = _res
         else:
             _skin = None
-        _static = str(el.get("static", False)).strip().lower() == 'true'
+        _raw_static = None
+        if cmp_version(version, "1.5") >= 0:
+            _c_tmp = el.find("static")
+            if _c_tmp is not None: _raw_static = _c_tmp.text
+        else:
+            _raw_static = el.get("static")
+        if _raw_static is None: _raw_static = False
+        _static = str(_raw_static).strip().lower() == 'true'
         if isinstance(_static, SDFError):
             return _static.extend("@static")
         return cls(sdf_version=version, animations=_animations, frames=_frames, joints=_joints, links=_links, name=_name, origin=_origin, plugins=_plugins, pose=_pose, script=_script, skin=_skin, static=_static)

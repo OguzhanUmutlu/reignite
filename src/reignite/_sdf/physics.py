@@ -403,8 +403,6 @@ class Physics(BaseModel):
         def to_version(self, target_version: str) -> "Physics.Gravity":
             if self.gravity is not None and cmp_version(target_version, "1.6") >= 0:
                 raise ValueError(f"'gravity' is not supported in SDF version {target_version} (removed in 1.6)")
-            if self.xyz is not None and cmp_version(target_version, "1.2") >= 0:
-                raise ValueError(f"'xyz' is not supported in SDF version {target_version} (removed in 1.2)")
             kwargs: dict = {"sdf_version": target_version, "gravity": self.gravity, "xyz": self.xyz}
             return self.__class__(**kwargs)
 
@@ -445,10 +443,10 @@ class Physics(BaseModel):
             def __init__(
                 self,
                 sdf_version: str | None = None,
-                cfm: float | None = 0,
-                contact_max_correcting_vel: float | None = 100.0,
-                contact_surface_layer: float | None = 0.001,
-                erp: float | None = 0.2
+                cfm: float | None = None,
+                contact_max_correcting_vel: float | None = None,
+                contact_surface_layer: float | None = None,
+                erp: float | None = None
             ):
                 super().__init__(sdf_version)
                 self.cfm = cfm
@@ -457,14 +455,6 @@ class Physics(BaseModel):
                 self.erp = erp
 
             def to_version(self, target_version: str) -> "Physics.Ode.OdeConstraints":
-                if self.cfm is not None and cmp_version(target_version, "1.2") >= 0:
-                    raise ValueError(f"'cfm' is not supported in SDF version {target_version} (removed in 1.2)")
-                if self.contact_max_correcting_vel is not None and cmp_version(target_version, "1.2") >= 0:
-                    raise ValueError(f"'contact_max_correcting_vel' is not supported in SDF version {target_version} (removed in 1.2)")
-                if self.contact_surface_layer is not None and cmp_version(target_version, "1.2") >= 0:
-                    raise ValueError(f"'contact_surface_layer' is not supported in SDF version {target_version} (removed in 1.2)")
-                if self.erp is not None and cmp_version(target_version, "1.2") >= 0:
-                    raise ValueError(f"'erp' is not supported in SDF version {target_version} (removed in 1.2)")
                 kwargs: dict = {"sdf_version": target_version, "cfm": self.cfm, "contact_max_correcting_vel": self.contact_max_correcting_vel, "contact_surface_layer": self.contact_surface_layer, "erp": self.erp}
                 return self.__class__(**kwargs)
 
@@ -475,27 +465,75 @@ class Physics(BaseModel):
                     return self.to_version(str(version)).to_sdf()
                 el = ET.Element("constraints")
                 if self.cfm is not None:
-                    el.set("cfm", str(self.cfm))
+                    if cmp_version(version, "1.2") >= 0:
+                        _c_tmp = ET.Element("cfm")
+                        _c_tmp.text = str(self.cfm)
+                        el.append(_c_tmp)
+                    else:
+                        el.set("cfm", str(self.cfm))
                 if self.contact_max_correcting_vel is not None:
-                    el.set("contact_max_correcting_vel", str(self.contact_max_correcting_vel))
+                    if cmp_version(version, "1.2") >= 0:
+                        _c_tmp = ET.Element("contact_max_correcting_vel")
+                        _c_tmp.text = str(self.contact_max_correcting_vel)
+                        el.append(_c_tmp)
+                    else:
+                        el.set("contact_max_correcting_vel", str(self.contact_max_correcting_vel))
                 if self.contact_surface_layer is not None:
-                    el.set("contact_surface_layer", str(self.contact_surface_layer))
+                    if cmp_version(version, "1.2") >= 0:
+                        _c_tmp = ET.Element("contact_surface_layer")
+                        _c_tmp.text = str(self.contact_surface_layer)
+                        el.append(_c_tmp)
+                    else:
+                        el.set("contact_surface_layer", str(self.contact_surface_layer))
                 if self.erp is not None:
-                    el.set("erp", str(self.erp))
+                    if cmp_version(version, "1.2") >= 0:
+                        _c_tmp = ET.Element("erp")
+                        _c_tmp.text = str(self.erp)
+                        el.append(_c_tmp)
+                    else:
+                        el.set("erp", str(self.erp))
                 return el
 
             @classmethod
             def _from_sdf(cls, el: ET.Element, version: str) -> "Physics.Ode.OdeConstraints | SDFError":
-                _cfm = _parse_double(el.get("cfm", 0))
+                _raw_cfm = None
+                if cmp_version(version, "1.2") >= 0:
+                    _c_tmp = el.find("cfm")
+                    if _c_tmp is not None: _raw_cfm = _c_tmp.text
+                else:
+                    _raw_cfm = el.get("cfm")
+                if _raw_cfm is None: _raw_cfm = 0
+                _cfm = _parse_double(_raw_cfm)
                 if isinstance(_cfm, SDFError):
                     return _cfm.extend("@cfm")
-                _contact_max_correcting_vel = _parse_double(el.get("contact_max_correcting_vel", 100.0))
+                _raw_contact_max_correcting_vel = None
+                if cmp_version(version, "1.2") >= 0:
+                    _c_tmp = el.find("contact_max_correcting_vel")
+                    if _c_tmp is not None: _raw_contact_max_correcting_vel = _c_tmp.text
+                else:
+                    _raw_contact_max_correcting_vel = el.get("contact_max_correcting_vel")
+                if _raw_contact_max_correcting_vel is None: _raw_contact_max_correcting_vel = 100.0
+                _contact_max_correcting_vel = _parse_double(_raw_contact_max_correcting_vel)
                 if isinstance(_contact_max_correcting_vel, SDFError):
                     return _contact_max_correcting_vel.extend("@contact_max_correcting_vel")
-                _contact_surface_layer = _parse_double(el.get("contact_surface_layer", 0.001))
+                _raw_contact_surface_layer = None
+                if cmp_version(version, "1.2") >= 0:
+                    _c_tmp = el.find("contact_surface_layer")
+                    if _c_tmp is not None: _raw_contact_surface_layer = _c_tmp.text
+                else:
+                    _raw_contact_surface_layer = el.get("contact_surface_layer")
+                if _raw_contact_surface_layer is None: _raw_contact_surface_layer = 0.001
+                _contact_surface_layer = _parse_double(_raw_contact_surface_layer)
                 if isinstance(_contact_surface_layer, SDFError):
                     return _contact_surface_layer.extend("@contact_surface_layer")
-                _erp = _parse_double(el.get("erp", 0.2))
+                _raw_erp = None
+                if cmp_version(version, "1.2") >= 0:
+                    _c_tmp = el.find("erp")
+                    if _c_tmp is not None: _raw_erp = _c_tmp.text
+                else:
+                    _raw_erp = el.get("erp")
+                if _raw_erp is None: _raw_erp = 0.2
+                _erp = _parse_double(_raw_erp)
                 if isinstance(_erp, SDFError):
                     return _erp.extend("@erp")
                 return cls(sdf_version=version, cfm=_cfm, contact_max_correcting_vel=_contact_max_correcting_vel, contact_surface_layer=_contact_surface_layer, erp=_erp)
@@ -504,15 +542,15 @@ class Physics(BaseModel):
             def __init__(
                 self,
                 sdf_version: str | None = None,
-                dt: float | None = 0.001,
+                dt: float | None = None,
                 friction_model: str | None = None,
                 island_threads: int | None = None,
-                iters: int | None = 50,
+                iters: int | None = None,
                 min_step_size: float | None = None,
-                precon_iters: int | None = 0,
-                sor: float | None = 1.3,
+                precon_iters: int | None = None,
+                sor: float | None = None,
                 thread_position_correction: bool | None = None,
-                type: str | None = "quick",
+                type: str | None = None,
                 use_dynamic_moi_rescaling: bool | None = None
             ):
                 super().__init__(sdf_version)
@@ -528,24 +566,14 @@ class Physics(BaseModel):
                 self.use_dynamic_moi_rescaling = use_dynamic_moi_rescaling
 
             def to_version(self, target_version: str) -> "Physics.Ode.OdeSolver":
-                if self.dt is not None and cmp_version(target_version, "1.2") >= 0:
-                    raise ValueError(f"'dt' is not supported in SDF version {target_version} (removed in 1.2)")
                 if self.friction_model is not None and cmp_version(target_version, "1.6") < 0:
                     raise ValueError(f"'friction_model' is not supported in SDF version {target_version} (added in 1.6)")
                 if self.island_threads is not None and cmp_version(target_version, "1.6") < 0:
                     raise ValueError(f"'island_threads' is not supported in SDF version {target_version} (added in 1.6)")
-                if self.iters is not None and cmp_version(target_version, "1.2") >= 0:
-                    raise ValueError(f"'iters' is not supported in SDF version {target_version} (removed in 1.2)")
                 if self.min_step_size is not None and cmp_version(target_version, "1.4") < 0:
                     raise ValueError(f"'min_step_size' is not supported in SDF version {target_version} (added in 1.4)")
-                if self.precon_iters is not None and cmp_version(target_version, "1.2") >= 0:
-                    raise ValueError(f"'precon_iters' is not supported in SDF version {target_version} (removed in 1.2)")
-                if self.sor is not None and cmp_version(target_version, "1.2") >= 0:
-                    raise ValueError(f"'sor' is not supported in SDF version {target_version} (removed in 1.2)")
                 if self.thread_position_correction is not None and cmp_version(target_version, "1.6") < 0:
                     raise ValueError(f"'thread_position_correction' is not supported in SDF version {target_version} (added in 1.6)")
-                if self.type is not None and cmp_version(target_version, "1.2") >= 0:
-                    raise ValueError(f"'type' is not supported in SDF version {target_version} (removed in 1.2)")
                 if self.use_dynamic_moi_rescaling is not None and cmp_version(target_version, "1.4") < 0:
                     raise ValueError(f"'use_dynamic_moi_rescaling' is not supported in SDF version {target_version} (added in 1.4)")
                 kwargs: dict = {"sdf_version": target_version, "dt": self.dt, "friction_model": self.friction_model, "island_threads": self.island_threads, "iters": self.iters, "min_step_size": self.min_step_size, "precon_iters": self.precon_iters, "sor": self.sor, "thread_position_correction": self.thread_position_correction, "type": self.type, "use_dynamic_moi_rescaling": self.use_dynamic_moi_rescaling}
@@ -558,7 +586,12 @@ class Physics(BaseModel):
                     return self.to_version(str(version)).to_sdf()
                 el = ET.Element("solver")
                 if self.dt is not None:
-                    el.set("dt", str(self.dt))
+                    if cmp_version(version, "1.2") >= 0:
+                        _c_tmp = ET.Element("dt")
+                        _c_tmp.text = str(self.dt)
+                        el.append(_c_tmp)
+                    else:
+                        el.set("dt", str(self.dt))
                 if self.friction_model is not None:
                     _c_tmp = ET.Element("friction_model")
                     _c_tmp.text = self.friction_model
@@ -568,21 +601,41 @@ class Physics(BaseModel):
                     _c_tmp.text = str(self.island_threads)
                     el.append(_c_tmp)
                 if self.iters is not None:
-                    el.set("iters", str(self.iters))
+                    if cmp_version(version, "1.2") >= 0:
+                        _c_tmp = ET.Element("iters")
+                        _c_tmp.text = str(self.iters)
+                        el.append(_c_tmp)
+                    else:
+                        el.set("iters", str(self.iters))
                 if self.min_step_size is not None:
                     _c_tmp = ET.Element("min_step_size")
                     _c_tmp.text = str(self.min_step_size)
                     el.append(_c_tmp)
                 if self.precon_iters is not None:
-                    el.set("precon_iters", str(self.precon_iters))
+                    if cmp_version(version, "1.2") >= 0:
+                        _c_tmp = ET.Element("precon_iters")
+                        _c_tmp.text = str(self.precon_iters)
+                        el.append(_c_tmp)
+                    else:
+                        el.set("precon_iters", str(self.precon_iters))
                 if self.sor is not None:
-                    el.set("sor", str(self.sor))
+                    if cmp_version(version, "1.2") >= 0:
+                        _c_tmp = ET.Element("sor")
+                        _c_tmp.text = str(self.sor)
+                        el.append(_c_tmp)
+                    else:
+                        el.set("sor", str(self.sor))
                 if self.thread_position_correction is not None:
                     _c_tmp = ET.Element("thread_position_correction")
                     _c_tmp.text = str(self.thread_position_correction).lower()
                     el.append(_c_tmp)
                 if self.type is not None:
-                    el.set("type", self.type)
+                    if cmp_version(version, "1.2") >= 0:
+                        _c_tmp = ET.Element("type")
+                        _c_tmp.text = self.type
+                        el.append(_c_tmp)
+                    else:
+                        el.set("type", self.type)
                 if self.use_dynamic_moi_rescaling is not None:
                     _c_tmp = ET.Element("use_dynamic_moi_rescaling")
                     _c_tmp.text = str(self.use_dynamic_moi_rescaling).lower()
@@ -591,7 +644,14 @@ class Physics(BaseModel):
 
             @classmethod
             def _from_sdf(cls, el: ET.Element, version: str) -> "Physics.Ode.OdeSolver | SDFError":
-                _dt = _parse_double(el.get("dt", 0.001))
+                _raw_dt = None
+                if cmp_version(version, "1.2") >= 0:
+                    _c_tmp = el.find("dt")
+                    if _c_tmp is not None: _raw_dt = _c_tmp.text
+                else:
+                    _raw_dt = el.get("dt")
+                if _raw_dt is None: _raw_dt = 0.001
+                _dt = _parse_double(_raw_dt)
                 if isinstance(_dt, SDFError):
                     return _dt.extend("@dt")
                 _c_tmp = el.find("friction_model")
@@ -616,7 +676,14 @@ class Physics(BaseModel):
                     _island_threads = None
                 if _island_threads is not None and cmp_version(version, "1.6") < 0:
                     return SDFError(f"'island_threads' is not supported in SDF version {version} (added in 1.6)")
-                _iters = _parse_int32(el.get("iters", 50))
+                _raw_iters = None
+                if cmp_version(version, "1.2") >= 0:
+                    _c_tmp = el.find("iters")
+                    if _c_tmp is not None: _raw_iters = _c_tmp.text
+                else:
+                    _raw_iters = el.get("iters")
+                if _raw_iters is None: _raw_iters = 50
+                _iters = _parse_int32(_raw_iters)
                 if isinstance(_iters, SDFError):
                     return _iters.extend("@iters")
                 _c_tmp = el.find("min_step_size")
@@ -630,10 +697,24 @@ class Physics(BaseModel):
                     _min_step_size = None
                 if _min_step_size is not None and cmp_version(version, "1.4") < 0:
                     return SDFError(f"'min_step_size' is not supported in SDF version {version} (added in 1.4)")
-                _precon_iters = _parse_int32(el.get("precon_iters", 0))
+                _raw_precon_iters = None
+                if cmp_version(version, "1.2") >= 0:
+                    _c_tmp = el.find("precon_iters")
+                    if _c_tmp is not None: _raw_precon_iters = _c_tmp.text
+                else:
+                    _raw_precon_iters = el.get("precon_iters")
+                if _raw_precon_iters is None: _raw_precon_iters = 0
+                _precon_iters = _parse_int32(_raw_precon_iters)
                 if isinstance(_precon_iters, SDFError):
                     return _precon_iters.extend("@precon_iters")
-                _sor = _parse_double(el.get("sor", 1.3))
+                _raw_sor = None
+                if cmp_version(version, "1.2") >= 0:
+                    _c_tmp = el.find("sor")
+                    if _c_tmp is not None: _raw_sor = _c_tmp.text
+                else:
+                    _raw_sor = el.get("sor")
+                if _raw_sor is None: _raw_sor = 1.3
+                _sor = _parse_double(_raw_sor)
                 if isinstance(_sor, SDFError):
                     return _sor.extend("@sor")
                 _c_tmp = el.find("thread_position_correction")
@@ -647,7 +728,14 @@ class Physics(BaseModel):
                     _thread_position_correction = None
                 if _thread_position_correction is not None and cmp_version(version, "1.6") < 0:
                     return SDFError(f"'thread_position_correction' is not supported in SDF version {version} (added in 1.6)")
-                _type = el.get("type", "quick")
+                _raw_type = None
+                if cmp_version(version, "1.2") >= 0:
+                    _c_tmp = el.find("type")
+                    if _c_tmp is not None: _raw_type = _c_tmp.text
+                else:
+                    _raw_type = el.get("type")
+                if _raw_type is None: _raw_type = "quick"
+                _type = _raw_type
                 if isinstance(_type, SDFError):
                     return _type.extend("@type")
                 _c_tmp = el.find("use_dynamic_moi_rescaling")
@@ -987,18 +1075,18 @@ class Physics(BaseModel):
         sdf_version: str | None = None,
         bullet: "Physics.Bullet" = None,
         dart: "Physics.Dart" = None,
-        default: bool | None = False,
+        default: bool | None = None,
         gravity: "Physics.Gravity" = None,
         magnetic_field: _Vector3T | None = None,
         max_contacts: int | None = None,
         max_step_size: float | None = None,
-        name: str | None = "default_physics",
+        name: str | None = None,
         ode: "Physics.Ode" = None,
         real_time_factor: float | None = None,
         real_time_update_rate: float | None = None,
         simbody: "Physics.Simbody" = None,
-        type: str | None = "ode",
-        update_rate: float | None = 0
+        type: str | None = None,
+        update_rate: float | None = None
     ):
         super().__init__(sdf_version)
         self.bullet = bullet
@@ -1062,8 +1150,6 @@ class Physics(BaseModel):
             raise ValueError(f"'real_time_update_rate' is not supported in SDF version {target_version} (added in 1.4)")
         if self.simbody is not None and cmp_version(target_version, "1.4") < 0:
             raise ValueError(f"'simbody' is not supported in SDF version {target_version} (added in 1.4)")
-        if self.update_rate is not None and cmp_version(target_version, "1.2") >= 0:
-            raise ValueError(f"'update_rate' is not supported in SDF version {target_version} (removed in 1.2)")
         kwargs: dict = {"sdf_version": target_version, "bullet": self.bullet.to_version(target_version) if self.bullet is not None and hasattr(self.bullet, "to_version") else self.bullet, "dart": self.dart.to_version(target_version) if self.dart is not None and hasattr(self.dart, "to_version") else self.dart, "default": self.default, "gravity": self.gravity.to_version(target_version) if self.gravity is not None and hasattr(self.gravity, "to_version") else self.gravity, "magnetic_field": self.magnetic_field, "max_contacts": self.max_contacts, "max_step_size": self.max_step_size, "name": self.name, "ode": self.ode.to_version(target_version) if self.ode is not None and hasattr(self.ode, "to_version") else self.ode, "real_time_factor": self.real_time_factor, "real_time_update_rate": self.real_time_update_rate, "simbody": self.simbody.to_version(target_version) if self.simbody is not None and hasattr(self.simbody, "to_version") else self.simbody, "type": self.type, "update_rate": self.update_rate}
         new_obj = self.__class__(**kwargs)
         apply_migrations(new_obj, target_version)
@@ -1142,7 +1228,12 @@ class Physics(BaseModel):
         if self.type is not None:
             el.set("type", self.type)
         if self.update_rate is not None:
-            el.set("update_rate", str(self.update_rate))
+            if cmp_version(version, "1.2") >= 0:
+                _c_tmp = ET.Element("update_rate")
+                _c_tmp.text = str(self.update_rate)
+                el.append(_c_tmp)
+            else:
+                el.set("update_rate", str(self.update_rate))
         return el
 
     @classmethod
@@ -1259,7 +1350,14 @@ class Physics(BaseModel):
         _type = el.get("type", "ode")
         if isinstance(_type, SDFError):
             return _type.extend("@type")
-        _update_rate = _parse_double(el.get("update_rate", 0))
+        _raw_update_rate = None
+        if cmp_version(version, "1.2") >= 0:
+            _c_tmp = el.find("update_rate")
+            if _c_tmp is not None: _raw_update_rate = _c_tmp.text
+        else:
+            _raw_update_rate = el.get("update_rate")
+        if _raw_update_rate is None: _raw_update_rate = 0
+        _update_rate = _parse_double(_raw_update_rate)
         if isinstance(_update_rate, SDFError):
             return _update_rate.extend("@update_rate")
         return cls(sdf_version=version, bullet=_bullet, dart=_dart, default=_default, gravity=_gravity, magnetic_field=_magnetic_field, max_contacts=_max_contacts, max_step_size=_max_step_size, name=_name, ode=_ode, real_time_factor=_real_time_factor, real_time_update_rate=_real_time_update_rate, simbody=_simbody, type=_type, update_rate=_update_rate)

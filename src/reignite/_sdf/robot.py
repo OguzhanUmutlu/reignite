@@ -31,7 +31,7 @@ class Robot(BaseModel):
         grippers: List["Gripper"] = None,
         joints: List["Joint"] = None,
         links: List["Link"] = None,
-        name: str | None = "__default__",
+        name: str | None = None,
         plugins: List["Plugin"] = None,
         pose: _PoseT | None = None
     ):

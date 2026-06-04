@@ -189,17 +189,17 @@ class Link(BaseModel):
         damping: "Link.Damping" = None,
         enable_wind: bool | None = None,
         frames: List["Frame"] = None,
-        gravity: bool | None = True,
+        gravity: bool | None = None,
         inertial: "Inertial" = None,
-        kinematic: bool | None = False,
+        kinematic: bool | None = None,
         lights: List["Light"] = None,
         must_be_base_link: bool | None = None,
-        name: str | None = "__default__",
+        name: str | None = None,
         origin: "Link.Origin" = None,
         particle_emitters: List["ParticleEmitter"] = None,
         pose: "Pose" = None,
         projector: "Projector" = None,
-        self_collide: bool | None = False,
+        self_collide: bool | None = None,
         sensor: "Sensor" = None,
         velocity_decay: "Link.VelocityDecay" = None,
         visuals: List["Visual"] = None
@@ -369,18 +369,12 @@ class Link(BaseModel):
             raise ValueError(f"'audio_sources' is not supported in SDF version {target_version} (added in 1.4)")
         if self.batteries is not None and cmp_version(target_version, "1.5") < 0:
             raise ValueError(f"'batteries' is not supported in SDF version {target_version} (added in 1.5)")
-        if self.damping is not None and cmp_version(target_version, "1.2") >= 0:
-            raise ValueError(f"'damping' is not supported in SDF version {target_version} (removed in 1.2)")
         if self.enable_wind is not None and cmp_version(target_version, "1.6") < 0:
             raise ValueError(f"'enable_wind' is not supported in SDF version {target_version} (added in 1.6)")
         if self.frames is not None and cmp_version(target_version, "1.5") < 0:
             raise ValueError(f"'frames' is not supported in SDF version {target_version} (added in 1.5)")
         if self.frames is not None and cmp_version(target_version, "1.7") >= 0:
             raise ValueError(f"'frames' is not supported in SDF version {target_version} (removed in 1.7)")
-        if self.gravity is not None and cmp_version(target_version, "1.2") >= 0:
-            raise ValueError(f"'gravity' is not supported in SDF version {target_version} (removed in 1.2)")
-        if self.kinematic is not None and cmp_version(target_version, "1.2") >= 0:
-            raise ValueError(f"'kinematic' is not supported in SDF version {target_version} (removed in 1.2)")
         if self.lights is not None and cmp_version(target_version, "1.6") < 0:
             raise ValueError(f"'lights' is not supported in SDF version {target_version} (added in 1.6)")
         if self.must_be_base_link is not None and cmp_version(target_version, "1.4") < 0:
@@ -391,8 +385,6 @@ class Link(BaseModel):
             raise ValueError(f"'particle_emitters' is not supported in SDF version {target_version} (added in 1.6)")
         if self.pose is not None and cmp_version(target_version, "1.2") < 0:
             raise ValueError(f"'pose' is not supported in SDF version {target_version} (added in 1.2)")
-        if self.self_collide is not None and cmp_version(target_version, "1.2") >= 0:
-            raise ValueError(f"'self_collide' is not supported in SDF version {target_version} (removed in 1.2)")
         if self.velocity_decay is not None and cmp_version(target_version, "1.2") < 0:
             raise ValueError(f"'velocity_decay' is not supported in SDF version {target_version} (added in 1.2)")
         kwargs: dict = {"sdf_version": target_version, "audio_sinks": [c.to_version(target_version) if hasattr(c, "to_version") else c for c in (self.audio_sinks or [])], "audio_sources": [c.to_version(target_version) if hasattr(c, "to_version") else c for c in (self.audio_sources or [])], "batteries": [c.to_version(target_version) if hasattr(c, "to_version") else c for c in (self.batteries or [])], "collisions": [c.to_version(target_version) if hasattr(c, "to_version") else c for c in (self.collisions or [])], "damping": self.damping.to_version(target_version) if self.damping is not None and hasattr(self.damping, "to_version") else self.damping, "enable_wind": self.enable_wind, "frames": [c.to_version(target_version) if hasattr(c, "to_version") else c for c in (self.frames or [])], "gravity": self.gravity, "inertial": self.inertial.to_version(target_version) if self.inertial is not None and hasattr(self.inertial, "to_version") else self.inertial, "kinematic": self.kinematic, "lights": [c.to_version(target_version) if hasattr(c, "to_version") else c for c in (self.lights or [])], "must_be_base_link": self.must_be_base_link, "name": self.name, "origin": self.origin.to_version(target_version) if self.origin is not None and hasattr(self.origin, "to_version") else self.origin, "particle_emitters": [c.to_version(target_version) if hasattr(c, "to_version") else c for c in (self.particle_emitters or [])], "pose": self.pose.to_version(target_version) if self.pose is not None and hasattr(self.pose, "to_version") else self.pose, "projector": self.projector.to_version(target_version) if self.projector is not None and hasattr(self.projector, "to_version") else self.projector, "self_collide": self.self_collide, "sensor": self.sensor.to_version(target_version) if self.sensor is not None and hasattr(self.sensor, "to_version") else self.sensor, "velocity_decay": self.velocity_decay.to_version(target_version) if self.velocity_decay is not None and hasattr(self.velocity_decay, "to_version") else self.velocity_decay, "visuals": [c.to_version(target_version) if hasattr(c, "to_version") else c for c in (self.visuals or [])]}
@@ -473,7 +465,12 @@ class Link(BaseModel):
                 _item_el = _child_res
             el.append(_item_el)
         if self.gravity is not None:
-            el.set("gravity", str(self.gravity).lower())
+            if cmp_version(version, "1.2") >= 0:
+                _c_tmp = ET.Element("gravity")
+                _c_tmp.text = str(self.gravity).lower()
+                el.append(_c_tmp)
+            else:
+                el.set("gravity", str(self.gravity).lower())
         if self.inertial is not None:
             _child_res = self.inertial.to_sdf(version)
             if isinstance(_child_res, str):
@@ -483,7 +480,12 @@ class Link(BaseModel):
                 _item_el = _child_res
             el.append(_item_el)
         if self.kinematic is not None:
-            el.set("kinematic", str(self.kinematic).lower())
+            if cmp_version(version, "1.2") >= 0:
+                _c_tmp = ET.Element("kinematic")
+                _c_tmp.text = str(self.kinematic).lower()
+                el.append(_c_tmp)
+            else:
+                el.set("kinematic", str(self.kinematic).lower())
         for item in (self.lights or []):
             _child_res = item.to_sdf(version)
             if isinstance(_child_res, str):
@@ -531,7 +533,12 @@ class Link(BaseModel):
                 _item_el = _child_res
             el.append(_item_el)
         if self.self_collide is not None:
-            el.set("self_collide", str(self.self_collide).lower())
+            if cmp_version(version, "1.2") >= 0:
+                _c_tmp = ET.Element("self_collide")
+                _c_tmp.text = str(self.self_collide).lower()
+                el.append(_c_tmp)
+            else:
+                el.set("self_collide", str(self.self_collide).lower())
         if self.sensor is not None:
             _child_res = self.sensor.to_sdf(version)
             if isinstance(_child_res, str):
@@ -633,7 +640,14 @@ class Link(BaseModel):
             _frames.append(_res)
         if _frames and cmp_version(version, "1.5") < 0:
             return SDFError(f"'frames' is not supported in SDF version {version} (added in 1.5)")
-        _gravity = str(el.get("gravity", True)).strip().lower() == 'true'
+        _raw_gravity = None
+        if cmp_version(version, "1.2") >= 0:
+            _c_tmp = el.find("gravity")
+            if _c_tmp is not None: _raw_gravity = _c_tmp.text
+        else:
+            _raw_gravity = el.get("gravity")
+        if _raw_gravity is None: _raw_gravity = True
+        _gravity = str(_raw_gravity).strip().lower() == 'true'
         if isinstance(_gravity, SDFError):
             return _gravity.extend("@gravity")
         _c_inertial = el.find("inertial")
@@ -644,7 +658,14 @@ class Link(BaseModel):
             _inertial = _res
         else:
             _inertial = None
-        _kinematic = str(el.get("kinematic", False)).strip().lower() == 'true'
+        _raw_kinematic = None
+        if cmp_version(version, "1.2") >= 0:
+            _c_tmp = el.find("kinematic")
+            if _c_tmp is not None: _raw_kinematic = _c_tmp.text
+        else:
+            _raw_kinematic = el.get("kinematic")
+        if _raw_kinematic is None: _raw_kinematic = False
+        _kinematic = str(_raw_kinematic).strip().lower() == 'true'
         if isinstance(_kinematic, SDFError):
             return _kinematic.extend("@kinematic")
         _lights = []
@@ -703,7 +724,14 @@ class Link(BaseModel):
             _projector = _res
         else:
             _projector = None
-        _self_collide = str(el.get("self_collide", False)).strip().lower() == 'true'
+        _raw_self_collide = None
+        if cmp_version(version, "1.2") >= 0:
+            _c_tmp = el.find("self_collide")
+            if _c_tmp is not None: _raw_self_collide = _c_tmp.text
+        else:
+            _raw_self_collide = el.get("self_collide")
+        if _raw_self_collide is None: _raw_self_collide = False
+        _self_collide = str(_raw_self_collide).strip().lower() == 'true'
         if isinstance(_self_collide, SDFError):
             return _self_collide.extend("@self_collide")
         _c_sensor = el.find("sensor")

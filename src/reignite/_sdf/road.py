@@ -28,7 +28,7 @@ class Road(BaseModel):
         self,
         sdf_version: str | None = None,
         material: "Material" = None,
-        name: str | None = "__default__",
+        name: str | None = None,
         points: List[_Vector3T] | None = None,
         width: float | None = None
     ):

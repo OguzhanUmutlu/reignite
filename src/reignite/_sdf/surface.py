@@ -22,18 +22,14 @@ class Surface(BaseModel):
         def __init__(
             self,
             sdf_version: str | None = None,
-            restitution_coefficient: float | None = 0,
-            threshold: float | None = 100000
+            restitution_coefficient: float | None = None,
+            threshold: float | None = None
         ):
             super().__init__(sdf_version)
             self.restitution_coefficient = restitution_coefficient
             self.threshold = threshold
 
         def to_version(self, target_version: str) -> "Surface.Bounce":
-            if self.restitution_coefficient is not None and cmp_version(target_version, "1.2") >= 0:
-                raise ValueError(f"'restitution_coefficient' is not supported in SDF version {target_version} (removed in 1.2)")
-            if self.threshold is not None and cmp_version(target_version, "1.2") >= 0:
-                raise ValueError(f"'threshold' is not supported in SDF version {target_version} (removed in 1.2)")
             kwargs: dict = {"sdf_version": target_version, "restitution_coefficient": self.restitution_coefficient, "threshold": self.threshold}
             return self.__class__(**kwargs)
 
@@ -44,17 +40,41 @@ class Surface(BaseModel):
                 return self.to_version(str(version)).to_sdf()
             el = ET.Element("bounce")
             if self.restitution_coefficient is not None:
-                el.set("restitution_coefficient", str(self.restitution_coefficient))
+                if cmp_version(version, "1.2") >= 0:
+                    _c_tmp = ET.Element("restitution_coefficient")
+                    _c_tmp.text = str(self.restitution_coefficient)
+                    el.append(_c_tmp)
+                else:
+                    el.set("restitution_coefficient", str(self.restitution_coefficient))
             if self.threshold is not None:
-                el.set("threshold", str(self.threshold))
+                if cmp_version(version, "1.2") >= 0:
+                    _c_tmp = ET.Element("threshold")
+                    _c_tmp.text = str(self.threshold)
+                    el.append(_c_tmp)
+                else:
+                    el.set("threshold", str(self.threshold))
             return el
 
         @classmethod
         def _from_sdf(cls, el: ET.Element, version: str) -> "Surface.Bounce | SDFError":
-            _restitution_coefficient = _parse_double(el.get("restitution_coefficient", 0))
+            _raw_restitution_coefficient = None
+            if cmp_version(version, "1.2") >= 0:
+                _c_tmp = el.find("restitution_coefficient")
+                if _c_tmp is not None: _raw_restitution_coefficient = _c_tmp.text
+            else:
+                _raw_restitution_coefficient = el.get("restitution_coefficient")
+            if _raw_restitution_coefficient is None: _raw_restitution_coefficient = 0
+            _restitution_coefficient = _parse_double(_raw_restitution_coefficient)
             if isinstance(_restitution_coefficient, SDFError):
                 return _restitution_coefficient.extend("@restitution_coefficient")
-            _threshold = _parse_double(el.get("threshold", 100000))
+            _raw_threshold = None
+            if cmp_version(version, "1.2") >= 0:
+                _c_tmp = el.find("threshold")
+                if _c_tmp is not None: _raw_threshold = _c_tmp.text
+            else:
+                _raw_threshold = el.get("threshold")
+            if _raw_threshold is None: _raw_threshold = 100000
+            _threshold = _parse_double(_raw_threshold)
             if isinstance(_threshold, SDFError):
                 return _threshold.extend("@threshold")
             return cls(sdf_version=version, restitution_coefficient=_restitution_coefficient, threshold=_threshold)
@@ -177,12 +197,12 @@ class Surface(BaseModel):
             def __init__(
                 self,
                 sdf_version: str | None = None,
-                kd: float | None = 1.0,
-                kp: float | None = 1000000000000.0,
-                max_vel: float | None = 0.01,
-                min_depth: float | None = 0,
-                soft_cfm: float | None = 0,
-                soft_erp: float | None = 0.2
+                kd: float | None = None,
+                kp: float | None = None,
+                max_vel: float | None = None,
+                min_depth: float | None = None,
+                soft_cfm: float | None = None,
+                soft_erp: float | None = None
             ):
                 super().__init__(sdf_version)
                 self.kd = kd
@@ -193,18 +213,6 @@ class Surface(BaseModel):
                 self.soft_erp = soft_erp
 
             def to_version(self, target_version: str) -> "Surface.Contact.Ode":
-                if self.kd is not None and cmp_version(target_version, "1.2") >= 0:
-                    raise ValueError(f"'kd' is not supported in SDF version {target_version} (removed in 1.2)")
-                if self.kp is not None and cmp_version(target_version, "1.2") >= 0:
-                    raise ValueError(f"'kp' is not supported in SDF version {target_version} (removed in 1.2)")
-                if self.max_vel is not None and cmp_version(target_version, "1.2") >= 0:
-                    raise ValueError(f"'max_vel' is not supported in SDF version {target_version} (removed in 1.2)")
-                if self.min_depth is not None and cmp_version(target_version, "1.2") >= 0:
-                    raise ValueError(f"'min_depth' is not supported in SDF version {target_version} (removed in 1.2)")
-                if self.soft_cfm is not None and cmp_version(target_version, "1.2") >= 0:
-                    raise ValueError(f"'soft_cfm' is not supported in SDF version {target_version} (removed in 1.2)")
-                if self.soft_erp is not None and cmp_version(target_version, "1.2") >= 0:
-                    raise ValueError(f"'soft_erp' is not supported in SDF version {target_version} (removed in 1.2)")
                 kwargs: dict = {"sdf_version": target_version, "kd": self.kd, "kp": self.kp, "max_vel": self.max_vel, "min_depth": self.min_depth, "soft_cfm": self.soft_cfm, "soft_erp": self.soft_erp}
                 return self.__class__(**kwargs)
 
@@ -215,37 +223,109 @@ class Surface(BaseModel):
                     return self.to_version(str(version)).to_sdf()
                 el = ET.Element("ode")
                 if self.kd is not None:
-                    el.set("kd", str(self.kd))
+                    if cmp_version(version, "1.2") >= 0:
+                        _c_tmp = ET.Element("kd")
+                        _c_tmp.text = str(self.kd)
+                        el.append(_c_tmp)
+                    else:
+                        el.set("kd", str(self.kd))
                 if self.kp is not None:
-                    el.set("kp", str(self.kp))
+                    if cmp_version(version, "1.2") >= 0:
+                        _c_tmp = ET.Element("kp")
+                        _c_tmp.text = str(self.kp)
+                        el.append(_c_tmp)
+                    else:
+                        el.set("kp", str(self.kp))
                 if self.max_vel is not None:
-                    el.set("max_vel", str(self.max_vel))
+                    if cmp_version(version, "1.2") >= 0:
+                        _c_tmp = ET.Element("max_vel")
+                        _c_tmp.text = str(self.max_vel)
+                        el.append(_c_tmp)
+                    else:
+                        el.set("max_vel", str(self.max_vel))
                 if self.min_depth is not None:
-                    el.set("min_depth", str(self.min_depth))
+                    if cmp_version(version, "1.2") >= 0:
+                        _c_tmp = ET.Element("min_depth")
+                        _c_tmp.text = str(self.min_depth)
+                        el.append(_c_tmp)
+                    else:
+                        el.set("min_depth", str(self.min_depth))
                 if self.soft_cfm is not None:
-                    el.set("soft_cfm", str(self.soft_cfm))
+                    if cmp_version(version, "1.2") >= 0:
+                        _c_tmp = ET.Element("soft_cfm")
+                        _c_tmp.text = str(self.soft_cfm)
+                        el.append(_c_tmp)
+                    else:
+                        el.set("soft_cfm", str(self.soft_cfm))
                 if self.soft_erp is not None:
-                    el.set("soft_erp", str(self.soft_erp))
+                    if cmp_version(version, "1.2") >= 0:
+                        _c_tmp = ET.Element("soft_erp")
+                        _c_tmp.text = str(self.soft_erp)
+                        el.append(_c_tmp)
+                    else:
+                        el.set("soft_erp", str(self.soft_erp))
                 return el
 
             @classmethod
             def _from_sdf(cls, el: ET.Element, version: str) -> "Surface.Contact.Ode | SDFError":
-                _kd = _parse_double(el.get("kd", 1.0))
+                _raw_kd = None
+                if cmp_version(version, "1.2") >= 0:
+                    _c_tmp = el.find("kd")
+                    if _c_tmp is not None: _raw_kd = _c_tmp.text
+                else:
+                    _raw_kd = el.get("kd")
+                if _raw_kd is None: _raw_kd = 1.0
+                _kd = _parse_double(_raw_kd)
                 if isinstance(_kd, SDFError):
                     return _kd.extend("@kd")
-                _kp = _parse_double(el.get("kp", 1000000000000.0))
+                _raw_kp = None
+                if cmp_version(version, "1.2") >= 0:
+                    _c_tmp = el.find("kp")
+                    if _c_tmp is not None: _raw_kp = _c_tmp.text
+                else:
+                    _raw_kp = el.get("kp")
+                if _raw_kp is None: _raw_kp = 1000000000000.0
+                _kp = _parse_double(_raw_kp)
                 if isinstance(_kp, SDFError):
                     return _kp.extend("@kp")
-                _max_vel = _parse_double(el.get("max_vel", 0.01))
+                _raw_max_vel = None
+                if cmp_version(version, "1.2") >= 0:
+                    _c_tmp = el.find("max_vel")
+                    if _c_tmp is not None: _raw_max_vel = _c_tmp.text
+                else:
+                    _raw_max_vel = el.get("max_vel")
+                if _raw_max_vel is None: _raw_max_vel = 0.01
+                _max_vel = _parse_double(_raw_max_vel)
                 if isinstance(_max_vel, SDFError):
                     return _max_vel.extend("@max_vel")
-                _min_depth = _parse_double(el.get("min_depth", 0))
+                _raw_min_depth = None
+                if cmp_version(version, "1.2") >= 0:
+                    _c_tmp = el.find("min_depth")
+                    if _c_tmp is not None: _raw_min_depth = _c_tmp.text
+                else:
+                    _raw_min_depth = el.get("min_depth")
+                if _raw_min_depth is None: _raw_min_depth = 0
+                _min_depth = _parse_double(_raw_min_depth)
                 if isinstance(_min_depth, SDFError):
                     return _min_depth.extend("@min_depth")
-                _soft_cfm = _parse_double(el.get("soft_cfm", 0))
+                _raw_soft_cfm = None
+                if cmp_version(version, "1.2") >= 0:
+                    _c_tmp = el.find("soft_cfm")
+                    if _c_tmp is not None: _raw_soft_cfm = _c_tmp.text
+                else:
+                    _raw_soft_cfm = el.get("soft_cfm")
+                if _raw_soft_cfm is None: _raw_soft_cfm = 0
+                _soft_cfm = _parse_double(_raw_soft_cfm)
                 if isinstance(_soft_cfm, SDFError):
                     return _soft_cfm.extend("@soft_cfm")
-                _soft_erp = _parse_double(el.get("soft_erp", 0.2))
+                _raw_soft_erp = None
+                if cmp_version(version, "1.2") >= 0:
+                    _c_tmp = el.find("soft_erp")
+                    if _c_tmp is not None: _raw_soft_erp = _c_tmp.text
+                else:
+                    _raw_soft_erp = el.get("soft_erp")
+                if _raw_soft_erp is None: _raw_soft_erp = 0.2
+                _soft_erp = _parse_double(_raw_soft_erp)
                 if isinstance(_soft_erp, SDFError):
                     return _soft_erp.extend("@soft_erp")
                 return cls(sdf_version=version, kd=_kd, kp=_kp, max_vel=_max_vel, min_depth=_min_depth, soft_cfm=_soft_cfm, soft_erp=_soft_erp)
@@ -525,10 +605,10 @@ class Surface(BaseModel):
                 self,
                 sdf_version: str | None = None,
                 fdir1: _Vector3T | None = None,
-                mu: float | None = -1,
-                mu2: float | None = -1,
-                slip1: float | None = 0.0,
-                slip2: float | None = 0.0
+                mu: float | None = None,
+                mu2: float | None = None,
+                slip1: float | None = None,
+                slip2: float | None = None
             ):
                 super().__init__(sdf_version)
                 self.fdir1 = _vector3(fdir1) if fdir1 is not None else None
@@ -538,16 +618,6 @@ class Surface(BaseModel):
                 self.slip2 = slip2
 
             def to_version(self, target_version: str) -> "Surface.Friction.FrictionOde":
-                if self.fdir1 is not None and cmp_version(target_version, "1.2") >= 0:
-                    raise ValueError(f"'fdir1' is not supported in SDF version {target_version} (removed in 1.2)")
-                if self.mu is not None and cmp_version(target_version, "1.2") >= 0:
-                    raise ValueError(f"'mu' is not supported in SDF version {target_version} (removed in 1.2)")
-                if self.mu2 is not None and cmp_version(target_version, "1.2") >= 0:
-                    raise ValueError(f"'mu2' is not supported in SDF version {target_version} (removed in 1.2)")
-                if self.slip1 is not None and cmp_version(target_version, "1.2") >= 0:
-                    raise ValueError(f"'slip1' is not supported in SDF version {target_version} (removed in 1.2)")
-                if self.slip2 is not None and cmp_version(target_version, "1.2") >= 0:
-                    raise ValueError(f"'slip2' is not supported in SDF version {target_version} (removed in 1.2)")
                 kwargs: dict = {"sdf_version": target_version, "fdir1": self.fdir1, "mu": self.mu, "mu2": self.mu2, "slip1": self.slip1, "slip2": self.slip2}
                 return self.__class__(**kwargs)
 
@@ -558,32 +628,92 @@ class Surface(BaseModel):
                     return self.to_version(str(version)).to_sdf()
                 el = ET.Element("ode")
                 if self.fdir1 is not None:
-                    el.set("fdir1", str(self.fdir1))
+                    if cmp_version(version, "1.2") >= 0:
+                        _c_tmp = ET.Element("fdir1")
+                        _c_tmp.text = str(self.fdir1)
+                        el.append(_c_tmp)
+                    else:
+                        el.set("fdir1", str(self.fdir1))
                 if self.mu is not None:
-                    el.set("mu", str(self.mu))
+                    if cmp_version(version, "1.2") >= 0:
+                        _c_tmp = ET.Element("mu")
+                        _c_tmp.text = str(self.mu)
+                        el.append(_c_tmp)
+                    else:
+                        el.set("mu", str(self.mu))
                 if self.mu2 is not None:
-                    el.set("mu2", str(self.mu2))
+                    if cmp_version(version, "1.2") >= 0:
+                        _c_tmp = ET.Element("mu2")
+                        _c_tmp.text = str(self.mu2)
+                        el.append(_c_tmp)
+                    else:
+                        el.set("mu2", str(self.mu2))
                 if self.slip1 is not None:
-                    el.set("slip1", str(self.slip1))
+                    if cmp_version(version, "1.2") >= 0:
+                        _c_tmp = ET.Element("slip1")
+                        _c_tmp.text = str(self.slip1)
+                        el.append(_c_tmp)
+                    else:
+                        el.set("slip1", str(self.slip1))
                 if self.slip2 is not None:
-                    el.set("slip2", str(self.slip2))
+                    if cmp_version(version, "1.2") >= 0:
+                        _c_tmp = ET.Element("slip2")
+                        _c_tmp.text = str(self.slip2)
+                        el.append(_c_tmp)
+                    else:
+                        el.set("slip2", str(self.slip2))
                 return el
 
             @classmethod
             def _from_sdf(cls, el: ET.Element, version: str) -> "Surface.Friction.FrictionOde | SDFError":
-                _fdir1 = _parse_vector3(el.get("fdir1", "0 0 0"))
+                _raw_fdir1 = None
+                if cmp_version(version, "1.2") >= 0:
+                    _c_tmp = el.find("fdir1")
+                    if _c_tmp is not None: _raw_fdir1 = _c_tmp.text
+                else:
+                    _raw_fdir1 = el.get("fdir1")
+                if _raw_fdir1 is None: _raw_fdir1 = "0 0 0"
+                _fdir1 = _parse_vector3(_raw_fdir1)
                 if isinstance(_fdir1, SDFError):
                     return _fdir1.extend("@fdir1")
-                _mu = _parse_double(el.get("mu", -1))
+                _raw_mu = None
+                if cmp_version(version, "1.2") >= 0:
+                    _c_tmp = el.find("mu")
+                    if _c_tmp is not None: _raw_mu = _c_tmp.text
+                else:
+                    _raw_mu = el.get("mu")
+                if _raw_mu is None: _raw_mu = -1
+                _mu = _parse_double(_raw_mu)
                 if isinstance(_mu, SDFError):
                     return _mu.extend("@mu")
-                _mu2 = _parse_double(el.get("mu2", -1))
+                _raw_mu2 = None
+                if cmp_version(version, "1.2") >= 0:
+                    _c_tmp = el.find("mu2")
+                    if _c_tmp is not None: _raw_mu2 = _c_tmp.text
+                else:
+                    _raw_mu2 = el.get("mu2")
+                if _raw_mu2 is None: _raw_mu2 = -1
+                _mu2 = _parse_double(_raw_mu2)
                 if isinstance(_mu2, SDFError):
                     return _mu2.extend("@mu2")
-                _slip1 = _parse_double(el.get("slip1", 0.0))
+                _raw_slip1 = None
+                if cmp_version(version, "1.2") >= 0:
+                    _c_tmp = el.find("slip1")
+                    if _c_tmp is not None: _raw_slip1 = _c_tmp.text
+                else:
+                    _raw_slip1 = el.get("slip1")
+                if _raw_slip1 is None: _raw_slip1 = 0.0
+                _slip1 = _parse_double(_raw_slip1)
                 if isinstance(_slip1, SDFError):
                     return _slip1.extend("@slip1")
-                _slip2 = _parse_double(el.get("slip2", 0.0))
+                _raw_slip2 = None
+                if cmp_version(version, "1.2") >= 0:
+                    _c_tmp = el.find("slip2")
+                    if _c_tmp is not None: _raw_slip2 = _c_tmp.text
+                else:
+                    _raw_slip2 = el.get("slip2")
+                if _raw_slip2 is None: _raw_slip2 = 0.0
+                _slip2 = _parse_double(_raw_slip2)
                 if isinstance(_slip2, SDFError):
                     return _slip2.extend("@slip2")
                 return cls(sdf_version=version, fdir1=_fdir1, mu=_mu, mu2=_mu2, slip1=_slip1, slip2=_slip2)

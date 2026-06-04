@@ -17,9 +17,9 @@ class Gripper(BaseModel):
         def __init__(
             self,
             sdf_version: str | None = None,
-            attach_steps: int | None = 20,
-            detach_steps: int | None = 40,
-            min_contact_count: int | None = 2
+            attach_steps: int | None = None,
+            detach_steps: int | None = None,
+            min_contact_count: int | None = None
         ):
             super().__init__(sdf_version)
             self.attach_steps = attach_steps
@@ -27,12 +27,6 @@ class Gripper(BaseModel):
             self.min_contact_count = min_contact_count
 
         def to_version(self, target_version: str) -> "Gripper.GraspCheck":
-            if self.attach_steps is not None and cmp_version(target_version, "1.2") >= 0:
-                raise ValueError(f"'attach_steps' is not supported in SDF version {target_version} (removed in 1.2)")
-            if self.detach_steps is not None and cmp_version(target_version, "1.2") >= 0:
-                raise ValueError(f"'detach_steps' is not supported in SDF version {target_version} (removed in 1.2)")
-            if self.min_contact_count is not None and cmp_version(target_version, "1.2") >= 0:
-                raise ValueError(f"'min_contact_count' is not supported in SDF version {target_version} (removed in 1.2)")
             kwargs: dict = {"sdf_version": target_version, "attach_steps": self.attach_steps, "detach_steps": self.detach_steps, "min_contact_count": self.min_contact_count}
             return self.__class__(**kwargs)
 
@@ -43,22 +37,58 @@ class Gripper(BaseModel):
                 return self.to_version(str(version)).to_sdf()
             el = ET.Element("grasp_check")
             if self.attach_steps is not None:
-                el.set("attach_steps", str(self.attach_steps))
+                if cmp_version(version, "1.2") >= 0:
+                    _c_tmp = ET.Element("attach_steps")
+                    _c_tmp.text = str(self.attach_steps)
+                    el.append(_c_tmp)
+                else:
+                    el.set("attach_steps", str(self.attach_steps))
             if self.detach_steps is not None:
-                el.set("detach_steps", str(self.detach_steps))
+                if cmp_version(version, "1.2") >= 0:
+                    _c_tmp = ET.Element("detach_steps")
+                    _c_tmp.text = str(self.detach_steps)
+                    el.append(_c_tmp)
+                else:
+                    el.set("detach_steps", str(self.detach_steps))
             if self.min_contact_count is not None:
-                el.set("min_contact_count", str(self.min_contact_count))
+                if cmp_version(version, "1.2") >= 0:
+                    _c_tmp = ET.Element("min_contact_count")
+                    _c_tmp.text = str(self.min_contact_count)
+                    el.append(_c_tmp)
+                else:
+                    el.set("min_contact_count", str(self.min_contact_count))
             return el
 
         @classmethod
         def _from_sdf(cls, el: ET.Element, version: str) -> "Gripper.GraspCheck | SDFError":
-            _attach_steps = _parse_int32(el.get("attach_steps", 20))
+            _raw_attach_steps = None
+            if cmp_version(version, "1.2") >= 0:
+                _c_tmp = el.find("attach_steps")
+                if _c_tmp is not None: _raw_attach_steps = _c_tmp.text
+            else:
+                _raw_attach_steps = el.get("attach_steps")
+            if _raw_attach_steps is None: _raw_attach_steps = 20
+            _attach_steps = _parse_int32(_raw_attach_steps)
             if isinstance(_attach_steps, SDFError):
                 return _attach_steps.extend("@attach_steps")
-            _detach_steps = _parse_int32(el.get("detach_steps", 40))
+            _raw_detach_steps = None
+            if cmp_version(version, "1.2") >= 0:
+                _c_tmp = el.find("detach_steps")
+                if _c_tmp is not None: _raw_detach_steps = _c_tmp.text
+            else:
+                _raw_detach_steps = el.get("detach_steps")
+            if _raw_detach_steps is None: _raw_detach_steps = 40
+            _detach_steps = _parse_int32(_raw_detach_steps)
             if isinstance(_detach_steps, SDFError):
                 return _detach_steps.extend("@detach_steps")
-            _min_contact_count = _parse_uint32(el.get("min_contact_count", 2))
+            _raw_min_contact_count = None
+            if cmp_version(version, "1.2") >= 0:
+                _c_tmp = el.find("min_contact_count")
+                if _c_tmp is not None: _raw_min_contact_count = _c_tmp.text
+            else:
+                _raw_min_contact_count = el.get("min_contact_count")
+            if _raw_min_contact_count is None: _raw_min_contact_count = 2
+            _min_contact_count = _parse_uint32(_raw_min_contact_count)
             if isinstance(_min_contact_count, SDFError):
                 return _min_contact_count.extend("@min_contact_count")
             return cls(sdf_version=version, attach_steps=_attach_steps, detach_steps=_detach_steps, min_contact_count=_min_contact_count)
@@ -68,7 +98,7 @@ class Gripper(BaseModel):
         sdf_version: str | None = None,
         grasp_check: "Gripper.GraspCheck" = None,
         gripper_links: List[str] | None = None,
-        name: str | None = "__default__",
+        name: str | None = None,
         palm_link: str | None = None
     ):
         super().__init__(sdf_version)

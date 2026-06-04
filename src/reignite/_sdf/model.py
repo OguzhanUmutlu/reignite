@@ -33,10 +33,10 @@ class Model(BaseModel):
         def __init__(
             self,
             sdf_version: str | None = None,
-            merge: bool | None = False,
+            merge: bool | None = None,
             model_states: List["ModelState"] = None,
-            name: str | None = "",
-            placement_frame: str | None = "",
+            name: str | None = None,
+            placement_frame: str | None = None,
             plugins: List["Plugin"] = None,
             pose: "Pose" = None,
             static: bool | None = None,
@@ -166,7 +166,7 @@ class Model(BaseModel):
                 return SDFError(f"'model_states' is not supported in SDF version {version} (added in 1.12)")
             _c_tmp = el.find("name")
             if _c_tmp is not None:
-                _text = _c_tmp.text if _c_tmp.text is not None else ""
+                _text = _c_tmp.text if _c_tmp.text is not None else None
                 _val = _text
                 if isinstance(_val, SDFError):
                     return _val.extend("name")
@@ -175,7 +175,7 @@ class Model(BaseModel):
                 _name = None
             _c_tmp = el.find("placement_frame")
             if _c_tmp is not None:
-                _text = _c_tmp.text if _c_tmp.text is not None else ""
+                _text = _c_tmp.text if _c_tmp.text is not None else None
                 _val = _text
                 if isinstance(_val, SDFError):
                     return _val.extend("placement_frame")
@@ -260,7 +260,7 @@ class Model(BaseModel):
         self,
         sdf_version: str | None = None,
         allow_auto_disable: bool | None = None,
-        canonical_link: str | None = "",
+        canonical_link: str | None = None,
         enable_wind: bool | None = None,
         frames: List["Frame"] = None,
         grippers: List["Gripper"] = None,
@@ -269,13 +269,13 @@ class Model(BaseModel):
         links: List["Link"] = None,
         model_states: List["ModelState"] = None,
         models: List["Model"] = None,
-        name: str | None = "__default__",
+        name: str | None = None,
         origin: "Model.Origin" = None,
-        placement_frame: str | None = "",
+        placement_frame: str | None = None,
         plugins: List["Plugin"] = None,
         pose: "Pose" = None,
         self_collide: bool | None = None,
-        static: bool | None = False
+        static: bool | None = None
     ):
         super().__init__(sdf_version)
         self.allow_auto_disable = allow_auto_disable
@@ -424,8 +424,6 @@ class Model(BaseModel):
             raise ValueError(f"'pose' is not supported in SDF version {target_version} (added in 1.2)")
         if self.self_collide is not None and cmp_version(target_version, "1.5") < 0:
             raise ValueError(f"'self_collide' is not supported in SDF version {target_version} (added in 1.5)")
-        if self.static is not None and cmp_version(target_version, "1.2") >= 0:
-            raise ValueError(f"'static' is not supported in SDF version {target_version} (removed in 1.2)")
         kwargs: dict = {"sdf_version": target_version, "allow_auto_disable": self.allow_auto_disable, "canonical_link": self.canonical_link, "enable_wind": self.enable_wind, "frames": [c.to_version(target_version) if hasattr(c, "to_version") else c for c in (self.frames or [])], "grippers": [c.to_version(target_version) if hasattr(c, "to_version") else c for c in (self.grippers or [])], "includes": [c.to_version(target_version) if hasattr(c, "to_version") else c for c in (self.includes or [])], "joints": [c.to_version(target_version) if hasattr(c, "to_version") else c for c in (self.joints or [])], "links": [c.to_version(target_version) if hasattr(c, "to_version") else c for c in (self.links or [])], "model_states": [c.to_version(target_version) if hasattr(c, "to_version") else c for c in (self.model_states or [])], "models": [c.to_version(target_version) if hasattr(c, "to_version") else c for c in (self.models or [])], "name": self.name, "origin": self.origin.to_version(target_version) if self.origin is not None and hasattr(self.origin, "to_version") else self.origin, "placement_frame": self.placement_frame, "plugins": [c.to_version(target_version) if hasattr(c, "to_version") else c for c in (self.plugins or [])], "pose": self.pose.to_version(target_version) if self.pose is not None and hasattr(self.pose, "to_version") else self.pose, "self_collide": self.self_collide, "static": self.static}
         return self.__class__(**kwargs)
 
@@ -541,7 +539,12 @@ class Model(BaseModel):
             _c_tmp.text = str(self.self_collide).lower()
             el.append(_c_tmp)
         if self.static is not None:
-            el.set("static", str(self.static).lower())
+            if cmp_version(version, "1.2") >= 0:
+                _c_tmp = ET.Element("static")
+                _c_tmp.text = str(self.static).lower()
+                el.append(_c_tmp)
+            else:
+                el.set("static", str(self.static).lower())
         return el
 
     @classmethod
@@ -564,11 +567,11 @@ class Model(BaseModel):
             _allow_auto_disable = None
         if _allow_auto_disable is not None and cmp_version(version, "1.2") < 0:
             return SDFError(f"'allow_auto_disable' is not supported in SDF version {version} (added in 1.2)")
-        _canonical_link = el.get("canonical_link", "")
+        _canonical_link = el.get("canonical_link", None)
         if isinstance(_canonical_link, SDFError):
             return _canonical_link.extend("@canonical_link")
         if _canonical_link is not None and cmp_version(version, "1.7") < 0:
-            if _canonical_link != "":
+            if _canonical_link != None:
                 return SDFError(f"'canonical_link' is not supported in SDF version {version} (added in 1.7)")
         _c_tmp = el.find("enable_wind")
         if _c_tmp is not None:
@@ -642,11 +645,11 @@ class Model(BaseModel):
             _origin = _res
         else:
             _origin = None
-        _placement_frame = el.get("placement_frame", "")
+        _placement_frame = el.get("placement_frame", None)
         if isinstance(_placement_frame, SDFError):
             return _placement_frame.extend("@placement_frame")
         if _placement_frame is not None and cmp_version(version, "1.8") < 0:
-            if _placement_frame != "":
+            if _placement_frame != None:
                 return SDFError(f"'placement_frame' is not supported in SDF version {version} (added in 1.8)")
         _plugins = []
         for c in el.findall("plugin"):
@@ -675,7 +678,14 @@ class Model(BaseModel):
             _self_collide = None
         if _self_collide is not None and cmp_version(version, "1.5") < 0:
             return SDFError(f"'self_collide' is not supported in SDF version {version} (added in 1.5)")
-        _static = str(el.get("static", False)).strip().lower() == 'true'
+        _raw_static = None
+        if cmp_version(version, "1.2") >= 0:
+            _c_tmp = el.find("static")
+            if _c_tmp is not None: _raw_static = _c_tmp.text
+        else:
+            _raw_static = el.get("static")
+        if _raw_static is None: _raw_static = False
+        _static = str(_raw_static).strip().lower() == 'true'
         if isinstance(_static, SDFError):
             return _static.extend("@static")
         return cls(sdf_version=version, allow_auto_disable=_allow_auto_disable, canonical_link=_canonical_link, enable_wind=_enable_wind, frames=_frames, grippers=_grippers, includes=_includes, joints=_joints, links=_links, model_states=_model_states, models=_models, name=_name, origin=_origin, placement_frame=_placement_frame, plugins=_plugins, pose=_pose, self_collide=_self_collide, static=_static)

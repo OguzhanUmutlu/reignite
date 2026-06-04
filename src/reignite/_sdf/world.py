@@ -77,10 +77,10 @@ class World(BaseModel):
         def __init__(
             self,
             sdf_version: str | None = None,
-            merge: bool | None = False,
+            merge: bool | None = None,
             model_states: List["ModelState"] = None,
-            name: str | None = "",
-            placement_frame: str | None = "",
+            name: str | None = None,
+            placement_frame: str | None = None,
             plugins: List["Plugin"] = None,
             pose: "Pose" = None,
             static: bool | None = None,
@@ -218,7 +218,7 @@ class World(BaseModel):
                 return SDFError(f"'model_states' is not supported in SDF version {version} (added in 1.12)")
             _c_tmp = el.find("name")
             if _c_tmp is not None:
-                _text = _c_tmp.text if _c_tmp.text is not None else ""
+                _text = _c_tmp.text if _c_tmp.text is not None else None
                 _val = _text
                 if isinstance(_val, SDFError):
                     return _val.extend("name")
@@ -229,7 +229,7 @@ class World(BaseModel):
                 return SDFError(f"'name' is not supported in SDF version {version} (added in 1.5)")
             _c_tmp = el.find("placement_frame")
             if _c_tmp is not None:
-                _text = _c_tmp.text if _c_tmp.text is not None else ""
+                _text = _c_tmp.text if _c_tmp.text is not None else None
                 _val = _text
                 if isinstance(_val, SDFError):
                     return _val.extend("placement_frame")
@@ -328,7 +328,7 @@ class World(BaseModel):
         lights: List["Light"] = None,
         magnetic_field: _Vector3T | None = None,
         models: List["Model"] = None,
-        name: str | None = "__default__",
+        name: str | None = None,
         physics: "Physics" = None,
         plugins: List["Plugin"] = None,
         populations: List["Population"] = None,

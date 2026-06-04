@@ -87,19 +87,19 @@ class Sensor(BaseModel):
         air_pressure: "AirPressure" = None,
         air_speed: "AirSpeed" = None,
         altimeter: "Altimeter" = None,
-        always_on: bool | None = False,
+        always_on: bool | None = None,
         camera: "Camera" = None,
         contact: "Contact" = None,
         enable_metrics: bool | None = None,
         force_torque: "ForceTorque" = None,
-        frame_id: str | None = "",
+        frame_id: str | None = None,
         frames: List["Frame"] = None,
         gps: "Gps" = None,
         imu: "Imu" = None,
         lidar: "Lidar" = None,
         logical_camera: "LogicalCamera" = None,
         magnetometer: "Magnetometer" = None,
-        name: str | None = "__default__",
+        name: str | None = None,
         navsat: "Navsat" = None,
         origin: "Sensor.Origin" = None,
         plugins: List["Plugin"] = None,
@@ -110,9 +110,9 @@ class Sensor(BaseModel):
         sonar: "Sonar" = None,
         topic: str | None = None,
         transceiver: "Transceiver" = None,
-        type: str | None = "__default__",
-        update_rate: float | None = 0,
-        visualize: bool | None = False
+        type: str | None = None,
+        update_rate: float | None = None,
+        visualize: bool | None = None
     ):
         super().__init__(sdf_version)
         self.air_pressure = air_pressure
@@ -289,8 +289,6 @@ class Sensor(BaseModel):
             raise ValueError(f"'air_speed' is not supported in SDF version {target_version} (added in 1.10)")
         if self.altimeter is not None and cmp_version(target_version, "1.5") < 0:
             raise ValueError(f"'altimeter' is not supported in SDF version {target_version} (added in 1.5)")
-        if self.always_on is not None and cmp_version(target_version, "1.2") >= 0:
-            raise ValueError(f"'always_on' is not supported in SDF version {target_version} (removed in 1.2)")
         if self.enable_metrics is not None and cmp_version(target_version, "1.7") < 0:
             raise ValueError(f"'enable_metrics' is not supported in SDF version {target_version} (added in 1.7)")
         if self.force_torque is not None and cmp_version(target_version, "1.4") < 0:
@@ -321,10 +319,6 @@ class Sensor(BaseModel):
             raise ValueError(f"'sonar' is not supported in SDF version {target_version} (added in 1.4)")
         if self.transceiver is not None and cmp_version(target_version, "1.4") < 0:
             raise ValueError(f"'transceiver' is not supported in SDF version {target_version} (added in 1.4)")
-        if self.update_rate is not None and cmp_version(target_version, "1.2") >= 0:
-            raise ValueError(f"'update_rate' is not supported in SDF version {target_version} (removed in 1.2)")
-        if self.visualize is not None and cmp_version(target_version, "1.2") >= 0:
-            raise ValueError(f"'visualize' is not supported in SDF version {target_version} (removed in 1.2)")
         kwargs: dict = {"sdf_version": target_version, "air_pressure": self.air_pressure.to_version(target_version) if self.air_pressure is not None and hasattr(self.air_pressure, "to_version") else self.air_pressure, "air_speed": self.air_speed.to_version(target_version) if self.air_speed is not None and hasattr(self.air_speed, "to_version") else self.air_speed, "altimeter": self.altimeter.to_version(target_version) if self.altimeter is not None and hasattr(self.altimeter, "to_version") else self.altimeter, "always_on": self.always_on, "camera": self.camera.to_version(target_version) if self.camera is not None and hasattr(self.camera, "to_version") else self.camera, "contact": self.contact.to_version(target_version) if self.contact is not None and hasattr(self.contact, "to_version") else self.contact, "enable_metrics": self.enable_metrics, "force_torque": self.force_torque.to_version(target_version) if self.force_torque is not None and hasattr(self.force_torque, "to_version") else self.force_torque, "frame_id": self.frame_id, "frames": [c.to_version(target_version) if hasattr(c, "to_version") else c for c in (self.frames or [])], "gps": self.gps.to_version(target_version) if self.gps is not None and hasattr(self.gps, "to_version") else self.gps, "imu": self.imu.to_version(target_version) if self.imu is not None and hasattr(self.imu, "to_version") else self.imu, "lidar": self.lidar.to_version(target_version) if self.lidar is not None and hasattr(self.lidar, "to_version") else self.lidar, "logical_camera": self.logical_camera.to_version(target_version) if self.logical_camera is not None and hasattr(self.logical_camera, "to_version") else self.logical_camera, "magnetometer": self.magnetometer.to_version(target_version) if self.magnetometer is not None and hasattr(self.magnetometer, "to_version") else self.magnetometer, "name": self.name, "navsat": self.navsat.to_version(target_version) if self.navsat is not None and hasattr(self.navsat, "to_version") else self.navsat, "origin": self.origin.to_version(target_version) if self.origin is not None and hasattr(self.origin, "to_version") else self.origin, "plugins": [c.to_version(target_version) if hasattr(c, "to_version") else c for c in (self.plugins or [])], "pose": self.pose.to_version(target_version) if self.pose is not None and hasattr(self.pose, "to_version") else self.pose, "ray": self.ray.to_version(target_version) if self.ray is not None and hasattr(self.ray, "to_version") else self.ray, "rfid": self.rfid.to_version(target_version) if self.rfid is not None and hasattr(self.rfid, "to_version") else self.rfid, "rfidtag": self.rfidtag.to_version(target_version) if self.rfidtag is not None and hasattr(self.rfidtag, "to_version") else self.rfidtag, "sonar": self.sonar.to_version(target_version) if self.sonar is not None and hasattr(self.sonar, "to_version") else self.sonar, "topic": self.topic, "transceiver": self.transceiver.to_version(target_version) if self.transceiver is not None and hasattr(self.transceiver, "to_version") else self.transceiver, "type": self.type, "update_rate": self.update_rate, "visualize": self.visualize}
         return self.__class__(**kwargs)
 
@@ -379,7 +373,12 @@ class Sensor(BaseModel):
                 _item_el = _child_res
             el.append(_item_el)
         if self.always_on is not None:
-            el.set("always_on", str(self.always_on).lower())
+            if cmp_version(version, "1.2") >= 0:
+                _c_tmp = ET.Element("always_on")
+                _c_tmp.text = str(self.always_on).lower()
+                el.append(_c_tmp)
+            else:
+                el.set("always_on", str(self.always_on).lower())
         if self.camera is not None:
             _child_res = self.camera.to_sdf(version)
             if isinstance(_child_res, str):
@@ -541,9 +540,19 @@ class Sensor(BaseModel):
         if self.type is not None:
             el.set("type", self.type)
         if self.update_rate is not None:
-            el.set("update_rate", str(self.update_rate))
+            if cmp_version(version, "1.2") >= 0:
+                _c_tmp = ET.Element("update_rate")
+                _c_tmp.text = str(self.update_rate)
+                el.append(_c_tmp)
+            else:
+                el.set("update_rate", str(self.update_rate))
         if self.visualize is not None:
-            el.set("visualize", str(self.visualize).lower())
+            if cmp_version(version, "1.2") >= 0:
+                _c_tmp = ET.Element("visualize")
+                _c_tmp.text = str(self.visualize).lower()
+                el.append(_c_tmp)
+            else:
+                el.set("visualize", str(self.visualize).lower())
         return el
 
     @classmethod
@@ -598,7 +607,14 @@ class Sensor(BaseModel):
             _altimeter = None
         if _altimeter is not None and cmp_version(version, "1.5") < 0:
             return SDFError(f"'altimeter' is not supported in SDF version {version} (added in 1.5)")
-        _always_on = str(el.get("always_on", False)).strip().lower() == 'true'
+        _raw_always_on = None
+        if cmp_version(version, "1.2") >= 0:
+            _c_tmp = el.find("always_on")
+            if _c_tmp is not None: _raw_always_on = _c_tmp.text
+        else:
+            _raw_always_on = el.get("always_on")
+        if _raw_always_on is None: _raw_always_on = False
+        _always_on = str(_raw_always_on).strip().lower() == 'true'
         if isinstance(_always_on, SDFError):
             return _always_on.extend("@always_on")
         _c_camera = el.find("camera")
@@ -640,7 +656,7 @@ class Sensor(BaseModel):
             return SDFError(f"'force_torque' is not supported in SDF version {version} (added in 1.4)")
         _c_tmp = el.find("frame_id")
         if _c_tmp is not None:
-            _text = _c_tmp.text if _c_tmp.text is not None else ""
+            _text = _c_tmp.text if _c_tmp.text is not None else None
             _val = _text
             if isinstance(_val, SDFError):
                 return _val.extend("frame_id")
@@ -800,10 +816,24 @@ class Sensor(BaseModel):
         _type = el.get("type", "__default__")
         if isinstance(_type, SDFError):
             return _type.extend("@type")
-        _update_rate = _parse_double(el.get("update_rate", 0))
+        _raw_update_rate = None
+        if cmp_version(version, "1.2") >= 0:
+            _c_tmp = el.find("update_rate")
+            if _c_tmp is not None: _raw_update_rate = _c_tmp.text
+        else:
+            _raw_update_rate = el.get("update_rate")
+        if _raw_update_rate is None: _raw_update_rate = 0
+        _update_rate = _parse_double(_raw_update_rate)
         if isinstance(_update_rate, SDFError):
             return _update_rate.extend("@update_rate")
-        _visualize = str(el.get("visualize", False)).strip().lower() == 'true'
+        _raw_visualize = None
+        if cmp_version(version, "1.2") >= 0:
+            _c_tmp = el.find("visualize")
+            if _c_tmp is not None: _raw_visualize = _c_tmp.text
+        else:
+            _raw_visualize = el.get("visualize")
+        if _raw_visualize is None: _raw_visualize = False
+        _visualize = str(_raw_visualize).strip().lower() == 'true'
         if isinstance(_visualize, SDFError):
             return _visualize.extend("@visualize")
         return cls(sdf_version=version, air_pressure=_air_pressure, air_speed=_air_speed, altimeter=_altimeter, always_on=_always_on, camera=_camera, contact=_contact, enable_metrics=_enable_metrics, force_torque=_force_torque, frame_id=_frame_id, frames=_frames, gps=_gps, imu=_imu, lidar=_lidar, logical_camera=_logical_camera, magnetometer=_magnetometer, name=_name, navsat=_navsat, origin=_origin, plugins=_plugins, pose=_pose, ray=_ray, rfid=_rfid, rfidtag=_rfidtag, sonar=_sonar, topic=_topic, transceiver=_transceiver, type=_type, update_rate=_update_rate, visualize=_visualize)

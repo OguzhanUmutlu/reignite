@@ -13,7 +13,7 @@ class Battery(BaseModel):
     def __init__(
         self,
         sdf_version: str | None = None,
-        name: str | None = "__default__",
+        name: str | None = None,
         voltage: float | None = None
     ):
         super().__init__(sdf_version)

@@ -33,7 +33,7 @@ class ModelState(BaseModel):
                 self,
                 sdf_version: str | None = None,
                 angle: float | None = None,
-                axis: int | None = 0
+                axis: int | None = None
             ):
                 super().__init__(sdf_version)
                 self.angle = angle
@@ -70,7 +70,7 @@ class ModelState(BaseModel):
             self,
             sdf_version: str | None = None,
             angles: List["ModelState.Joint.Angle"] = None,
-            name: str | None = "__default__"
+            name: str | None = None
         ):
             super().__init__(sdf_version)
             self.angles = angles or []
@@ -132,7 +132,7 @@ class ModelState(BaseModel):
         links: List["LinkState"] = None,
         model_states: List["ModelState"] = None,
         models: List["ModelState"] = None,
-        name: str | None = "__default__",
+        name: str | None = None,
         pose: "Pose" = None,
         scale: _Vector3T | None = None
     ):

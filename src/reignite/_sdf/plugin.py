@@ -12,8 +12,8 @@ class Plugin(BaseModel):
     def __init__(
         self,
         sdf_version: str | None = None,
-        filename: str | None = "__default__",
-        name: str | None = "__default__"
+        filename: str | None = None,
+        name: str | None = None
     ):
         super().__init__(sdf_version)
         self.filename = filename

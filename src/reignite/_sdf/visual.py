@@ -103,17 +103,17 @@ class Visual(BaseModel):
     def __init__(
         self,
         sdf_version: str | None = None,
-        cast_shadows: bool | None = True,
+        cast_shadows: bool | None = None,
         frames: List["Frame"] = None,
         geometry: "Geometry" = None,
-        laser_retro: float | None = 0.0,
+        laser_retro: float | None = None,
         material: "Material" = None,
         meta: "Visual.Meta" = None,
-        name: str | None = "__default__",
+        name: str | None = None,
         origin: "Visual.Origin" = None,
         plugins: List["Plugin"] = None,
         pose: "Pose" = None,
-        transparency: float | None = 0.0,
+        transparency: float | None = None,
         visibility_flags: int | None = None
     ):
         super().__init__(sdf_version)
@@ -183,14 +183,10 @@ class Visual(BaseModel):
         from ..elements.material import Material
         from ..elements.plugin import Plugin
         from ..elements.pose import Pose
-        if self.cast_shadows is not None and cmp_version(target_version, "1.2") >= 0:
-            raise ValueError(f"'cast_shadows' is not supported in SDF version {target_version} (removed in 1.2)")
         if self.frames is not None and cmp_version(target_version, "1.5") < 0:
             raise ValueError(f"'frames' is not supported in SDF version {target_version} (added in 1.5)")
         if self.frames is not None and cmp_version(target_version, "1.7") >= 0:
             raise ValueError(f"'frames' is not supported in SDF version {target_version} (removed in 1.7)")
-        if self.laser_retro is not None and cmp_version(target_version, "1.2") >= 0:
-            raise ValueError(f"'laser_retro' is not supported in SDF version {target_version} (removed in 1.2)")
         if self.meta is not None and cmp_version(target_version, "1.5") < 0:
             raise ValueError(f"'meta' is not supported in SDF version {target_version} (added in 1.5)")
         if self.origin is not None and cmp_version(target_version, "1.2") >= 0:
@@ -199,8 +195,6 @@ class Visual(BaseModel):
             raise ValueError(f"'plugins' is not supported in SDF version {target_version} (added in 1.3)")
         if self.pose is not None and cmp_version(target_version, "1.2") < 0:
             raise ValueError(f"'pose' is not supported in SDF version {target_version} (added in 1.2)")
-        if self.transparency is not None and cmp_version(target_version, "1.2") >= 0:
-            raise ValueError(f"'transparency' is not supported in SDF version {target_version} (removed in 1.2)")
         if self.visibility_flags is not None and cmp_version(target_version, "1.7") < 0:
             raise ValueError(f"'visibility_flags' is not supported in SDF version {target_version} (added in 1.7)")
         kwargs: dict = {"sdf_version": target_version, "cast_shadows": self.cast_shadows, "frames": [c.to_version(target_version) if hasattr(c, "to_version") else c for c in (self.frames or [])], "geometry": self.geometry.to_version(target_version) if self.geometry is not None and hasattr(self.geometry, "to_version") else self.geometry, "laser_retro": self.laser_retro, "material": self.material.to_version(target_version) if self.material is not None and hasattr(self.material, "to_version") else self.material, "meta": self.meta.to_version(target_version) if self.meta is not None and hasattr(self.meta, "to_version") else self.meta, "name": self.name, "origin": self.origin.to_version(target_version) if self.origin is not None and hasattr(self.origin, "to_version") else self.origin, "plugins": [c.to_version(target_version) if hasattr(c, "to_version") else c for c in (self.plugins or [])], "pose": self.pose.to_version(target_version) if self.pose is not None and hasattr(self.pose, "to_version") else self.pose, "transparency": self.transparency, "visibility_flags": self.visibility_flags}
@@ -218,7 +212,12 @@ class Visual(BaseModel):
             return self.to_version(str(version)).to_sdf()
         el = ET.Element("visual")
         if self.cast_shadows is not None:
-            el.set("cast_shadows", str(self.cast_shadows).lower())
+            if cmp_version(version, "1.2") >= 0:
+                _c_tmp = ET.Element("cast_shadows")
+                _c_tmp.text = str(self.cast_shadows).lower()
+                el.append(_c_tmp)
+            else:
+                el.set("cast_shadows", str(self.cast_shadows).lower())
         for item in (self.frames or []):
             _child_res = item.to_sdf(version)
             if isinstance(_child_res, str):
@@ -236,7 +235,12 @@ class Visual(BaseModel):
                 _item_el = _child_res
             el.append(_item_el)
         if self.laser_retro is not None:
-            el.set("laser_retro", str(self.laser_retro))
+            if cmp_version(version, "1.2") >= 0:
+                _c_tmp = ET.Element("laser_retro")
+                _c_tmp.text = str(self.laser_retro)
+                el.append(_c_tmp)
+            else:
+                el.set("laser_retro", str(self.laser_retro))
         if self.material is not None:
             _child_res = self.material.to_sdf(version)
             if isinstance(_child_res, str):
@@ -280,7 +284,12 @@ class Visual(BaseModel):
                 _item_el = _child_res
             el.append(_item_el)
         if self.transparency is not None:
-            el.set("transparency", str(self.transparency))
+            if cmp_version(version, "1.2") >= 0:
+                _c_tmp = ET.Element("transparency")
+                _c_tmp.text = str(self.transparency)
+                el.append(_c_tmp)
+            else:
+                el.set("transparency", str(self.transparency))
         if self.visibility_flags is not None:
             _c_tmp = ET.Element("visibility_flags")
             _c_tmp.text = str(self.visibility_flags)
@@ -294,7 +303,14 @@ class Visual(BaseModel):
         from ..elements.material import Material
         from ..elements.plugin import Plugin
         from ..elements.pose import Pose
-        _cast_shadows = str(el.get("cast_shadows", True)).strip().lower() == 'true'
+        _raw_cast_shadows = None
+        if cmp_version(version, "1.2") >= 0:
+            _c_tmp = el.find("cast_shadows")
+            if _c_tmp is not None: _raw_cast_shadows = _c_tmp.text
+        else:
+            _raw_cast_shadows = el.get("cast_shadows")
+        if _raw_cast_shadows is None: _raw_cast_shadows = True
+        _cast_shadows = str(_raw_cast_shadows).strip().lower() == 'true'
         if isinstance(_cast_shadows, SDFError):
             return _cast_shadows.extend("@cast_shadows")
         _frames = []
@@ -313,7 +329,14 @@ class Visual(BaseModel):
             _geometry = _res
         else:
             _geometry = None
-        _laser_retro = _parse_double(el.get("laser_retro", 0.0))
+        _raw_laser_retro = None
+        if cmp_version(version, "1.2") >= 0:
+            _c_tmp = el.find("laser_retro")
+            if _c_tmp is not None: _raw_laser_retro = _c_tmp.text
+        else:
+            _raw_laser_retro = el.get("laser_retro")
+        if _raw_laser_retro is None: _raw_laser_retro = 0.0
+        _laser_retro = _parse_double(_raw_laser_retro)
         if isinstance(_laser_retro, SDFError):
             return _laser_retro.extend("@laser_retro")
         _c_material = el.find("material")
@@ -363,7 +386,14 @@ class Visual(BaseModel):
             _pose = None
         if _pose is not None and cmp_version(version, "1.2") < 0:
             return SDFError(f"'pose' is not supported in SDF version {version} (added in 1.2)")
-        _transparency = _parse_double(el.get("transparency", 0.0))
+        _raw_transparency = None
+        if cmp_version(version, "1.2") >= 0:
+            _c_tmp = el.find("transparency")
+            if _c_tmp is not None: _raw_transparency = _c_tmp.text
+        else:
+            _raw_transparency = el.get("transparency")
+        if _raw_transparency is None: _raw_transparency = 0.0
+        _transparency = _parse_double(_raw_transparency)
         if isinstance(_transparency, SDFError):
             return _transparency.extend("@transparency")
         _c_tmp = el.find("visibility_flags")

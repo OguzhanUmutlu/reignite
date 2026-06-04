@@ -33,7 +33,7 @@ class ParticleEmitter(BaseModel):
         self,
         sdf_version: str | None = None,
         color_end: _ColorT | None = None,
-        color_range_image: str | None = "",
+        color_range_image: str | None = None,
         color_start: _ColorT | None = None,
         duration: float | None = None,
         emitting: bool | None = None,
@@ -41,15 +41,15 @@ class ParticleEmitter(BaseModel):
         material: "Material" = None,
         max_velocity: float | None = None,
         min_velocity: float | None = None,
-        name: str | None = "__default__",
+        name: str | None = None,
         particle_scatter_ratio: float | None = None,
         particle_size: _Vector3T | None = None,
         pose: "Pose" = None,
         rate: float | None = None,
         scale_rate: float | None = None,
         size: _Vector3T | None = None,
-        topic: str | None = "",
-        type: str | None = "point"
+        topic: str | None = None,
+        type: str | None = None
     ):
         super().__init__(sdf_version)
         self.color_end = _color(color_end) if color_end is not None else None
@@ -188,7 +188,7 @@ class ParticleEmitter(BaseModel):
             _color_end = None
         _c_tmp = el.find("color_range_image")
         if _c_tmp is not None:
-            _text = _c_tmp.text if _c_tmp.text is not None else ""
+            _text = _c_tmp.text if _c_tmp.text is not None else None
             _val = _text
             if isinstance(_val, SDFError):
                 return _val.extend("color_range_image")
@@ -315,7 +315,7 @@ class ParticleEmitter(BaseModel):
             _size = None
         _c_tmp = el.find("topic")
         if _c_tmp is not None:
-            _text = _c_tmp.text if _c_tmp.text is not None else ""
+            _text = _c_tmp.text if _c_tmp.text is not None else None
             _val = _text
             if isinstance(_val, SDFError):
                 return _val.extend("topic")

@@ -10,7 +10,7 @@ from ..utils.errors import SDFError
 # noinspection PyUnusedImports
 class CollisionEngine(BaseModel):
     class Bullet(BaseModel):
-        def __init__(self, sdf_version: str | None = None, type: str | None = "__default__"):
+        def __init__(self, sdf_version: str | None = None, type: str | None = None):
             super().__init__(sdf_version)
             self.type = type
 
@@ -36,7 +36,7 @@ class CollisionEngine(BaseModel):
             return cls(sdf_version=version, type=_type)
 
     class Ode(BaseModel):
-        def __init__(self, sdf_version: str | None = None, type: str | None = "__default__"):
+        def __init__(self, sdf_version: str | None = None, type: str | None = None):
             super().__init__(sdf_version)
             self.type = type
 

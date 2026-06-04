@@ -220,7 +220,7 @@ class Gui(BaseModel):
             self,
             sdf_version: str | None = None,
             frames: List["Frame"] = None,
-            name: str | None = "user_camera",
+            name: str | None = None,
             origin: "Gui.Camera.Origin" = None,
             pose: "Pose" = None,
             projection_type: str | None = None,
@@ -397,7 +397,7 @@ class Gui(BaseModel):
         self,
         sdf_version: str | None = None,
         camera: "Gui.Camera" = None,
-        fullscreen: bool | None = False,
+        fullscreen: bool | None = None,
         plugins: List["Plugin"] = None
     ):
         super().__init__(sdf_version)

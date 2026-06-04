@@ -128,7 +128,7 @@ class Mesh(BaseModel):
         self,
         sdf_version: str | None = None,
         convex_decomposition: "Mesh.ConvexDecomposition" = None,
-        optimization: str | None = "",
+        optimization: str | None = None,
         scale: _Vector3T | None = None,
         submesh: "Mesh.Submesh" = None,
         uri: str | None = None
@@ -204,11 +204,11 @@ class Mesh(BaseModel):
             _convex_decomposition = None
         if _convex_decomposition is not None and cmp_version(version, "1.11") < 0:
             return SDFError(f"'convex_decomposition' is not supported in SDF version {version} (added in 1.11)")
-        _optimization = el.get("optimization", "")
+        _optimization = el.get("optimization", None)
         if isinstance(_optimization, SDFError):
             return _optimization.extend("@optimization")
         if _optimization is not None and cmp_version(version, "1.11") < 0:
-            if _optimization != "":
+            if _optimization != None:
                 return SDFError(f"'optimization' is not supported in SDF version {version} (added in 1.11)")
         _c_tmp = el.find("scale")
         if _c_tmp is not None:

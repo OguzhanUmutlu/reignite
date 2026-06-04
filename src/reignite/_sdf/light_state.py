@@ -21,7 +21,7 @@ class LightState(BaseModel):
         self,
         sdf_version: str | None = None,
         frames: List["Frame"] = None,
-        name: str | None = "__default__",
+        name: str | None = None,
         pose: "Pose" = None
     ):
         super().__init__(sdf_version)

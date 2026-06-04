@@ -120,7 +120,7 @@ class Population(BaseModel):
         frames: List["Frame"] = None,
         model_count: int | None = None,
         models: List["Model"] = None,
-        name: str | None = "__default__",
+        name: str | None = None,
         pose: "Pose" = None
     ):
         super().__init__(sdf_version)

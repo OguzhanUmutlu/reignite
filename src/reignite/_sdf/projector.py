@@ -25,7 +25,7 @@ class Projector(BaseModel):
         far_clip: float | None = None,
         fov: float | None = None,
         frames: List["Frame"] = None,
-        name: str | None = "__default__",
+        name: str | None = None,
         near_clip: float | None = None,
         plugins: List["Plugin"] = None,
         pose: "Pose" = None,
