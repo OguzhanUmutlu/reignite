@@ -64,12 +64,8 @@ class GzGui(BaseModel):
             anchors_el = ET.Element("anchors", target=self.anchor)
             for anchor in self.anchors or []:
                 line_el = ET.Element("line")
-                own_el = ET.Element("own")
-                own_el.text = anchor.own
-                line_el.append(own_el)
-                target_el = ET.Element("target")
-                target_el.text = anchor.target
-                line_el.append(target_el)
+                line_el.set("own", anchor.own)
+                line_el.set("target", anchor.target)
                 anchors_el.append(line_el)
             el.append(anchors_el)
         return el
