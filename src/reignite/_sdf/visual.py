@@ -227,8 +227,6 @@ class Visual(BaseModel):
             else:
                 _item_el = _child_res
             el.append(_item_el)
-        if self.geometry is None:
-            self.geometry = Geometry(sdf_version=version)
         if self.geometry is not None:
             _child_res = self.geometry.to_sdf(version)
             if isinstance(_child_res, str):
@@ -314,10 +312,7 @@ class Visual(BaseModel):
                 return _res.extend("geometry")
             _geometry = _res
         else:
-            _res = Geometry._from_sdf(ET.Element("geometry"), version)
-            if isinstance(_res, SDFError):
-                return _res.extend("geometry")
-            _geometry = _res
+            _geometry = None
         _laser_retro = _parse_double(el.get("laser_retro", 0.0))
         if isinstance(_laser_retro, SDFError):
             return _laser_retro.extend("@laser_retro")

@@ -573,9 +573,6 @@ class World(BaseModel):
             else:
                 _item_el = _child_res
             el.append(_item_el)
-        if cmp_version(version, "1.6") >= 0:
-            if self.atmosphere is None:
-                self.atmosphere = Atmosphere(sdf_version=version)
         if self.atmosphere is not None:
             _child_res = self.atmosphere.to_sdf(version)
             if isinstance(_child_res, str):
@@ -650,8 +647,6 @@ class World(BaseModel):
             el.append(_item_el)
         if self.name is not None:
             el.set("name", self.name)
-        if self.physics is None:
-            self.physics = Physics(sdf_version=version)
         if self.physics is not None:
             _child_res = self.physics.to_sdf(version)
             if isinstance(_child_res, str):
@@ -684,8 +679,6 @@ class World(BaseModel):
             else:
                 _item_el = _child_res
             el.append(_item_el)
-        if self.scene is None:
-            self.scene = Scene(sdf_version=version)
         if self.scene is not None:
             _child_res = self.scene.to_sdf(version)
             if isinstance(_child_res, str):
@@ -749,10 +742,7 @@ class World(BaseModel):
                 return _res.extend("atmosphere")
             _atmosphere = _res
         else:
-            _res = Atmosphere._from_sdf(ET.Element("atmosphere"), version)
-            if isinstance(_res, SDFError):
-                return _res.extend("atmosphere")
-            _atmosphere = _res
+            _atmosphere = None
         if _atmosphere is not None and cmp_version(version, "1.6") < 0:
             return SDFError(f"'atmosphere' is not supported in SDF version {version} (added in 1.6)")
         _c_audio = el.find("audio")
@@ -839,10 +829,7 @@ class World(BaseModel):
                 return _res.extend("physics")
             _physics = _res
         else:
-            _res = Physics._from_sdf(ET.Element("physics"), version)
-            if isinstance(_res, SDFError):
-                return _res.extend("physics")
-            _physics = _res
+            _physics = None
         _plugins = []
         for c in el.findall("plugin"):
             _res = Plugin._from_sdf(c, version)
@@ -870,10 +857,7 @@ class World(BaseModel):
                 return _res.extend("scene")
             _scene = _res
         else:
-            _res = Scene._from_sdf(ET.Element("scene"), version)
-            if isinstance(_res, SDFError):
-                return _res.extend("scene")
-            _scene = _res
+            _scene = None
         _c_spherical_coordinates = el.find("spherical_coordinates")
         if _c_spherical_coordinates is not None:
             _res = SphericalCoordinates._from_sdf(_c_spherical_coordinates, version)
