@@ -42,9 +42,10 @@ class BaseModel:
         return result
 
     @staticmethod
-    def _find_help(s, search: str, rest: str):
-        if s.name == search:
-            return s.find_element(rest)
+    def _find_help(k, search: str, rest: str):
+        for s in k:
+            if s.name == search:
+                return s.find_element(rest)
         return None
 
     @staticmethod
