@@ -33,25 +33,43 @@ class GzGui(BaseModel):
     def to_sdf(self, _=None) -> ET.Element:
         el = ET.Element("gz-gui")
         if self.title is not None:
-            el.append(ET.Element("title", text=self.title))
+            title_el = ET.Element("title")
+            title_el.text = self.title
+            el.append(title_el)
         if self.show_title_bar is not None:
-            el.append(ET.Element("property", text=str(self.show_title_bar).lower(), key="showTitleBar", type="bool"))
+            prop_el = ET.Element("property", key="showTitleBar", type="bool")
+            prop_el.text = str(self.show_title_bar).lower()
+            el.append(prop_el)
         if self.resizable is not None:
-            el.append(ET.Element("property", text=str(self.resizable).lower(), key="resizable", type="bool"))
+            prop_el = ET.Element("property", key="resizable", type="bool")
+            prop_el.text = str(self.resizable).lower()
+            el.append(prop_el)
         if self.width is not None:
-            el.append(ET.Element("property", text=str(self.width), key="width", type="double"))
+            prop_el = ET.Element("property", key="width", type="double")
+            prop_el.text = str(self.width)
+            el.append(prop_el)
         if self.height is not None:
-            el.append(ET.Element("property", text=str(self.height), key="height", type="double"))
+            prop_el = ET.Element("property", key="height", type="double")
+            prop_el.text = str(self.height)
+            el.append(prop_el)
         if self.z is not None:
-            el.append(ET.Element("property", text=str(self.z), key="z", type="double"))
+            prop_el = ET.Element("property", key="z", type="double")
+            prop_el.text = str(self.z)
+            el.append(prop_el)
         if self.state is not None:
-            el.append(ET.Element("property", text=self.state, key="state", type="string"))
+            prop_el = ET.Element("property", key="state", type="string")
+            prop_el.text = self.state
+            el.append(prop_el)
         if self.anchor is not None:
             anchors_el = ET.Element("anchors", target=self.anchor)
             for anchor in self.anchors or []:
                 line_el = ET.Element("line")
-                line_el.append(ET.Element("own", text=anchor.own))
-                line_el.append(ET.Element("target", text=anchor.target))
+                own_el = ET.Element("own")
+                own_el.text = anchor.own
+                line_el.append(own_el)
+                target_el = ET.Element("target")
+                target_el.text = anchor.target
+                line_el.append(target_el)
                 anchors_el.append(line_el)
             el.append(anchors_el)
         return el
@@ -89,6 +107,6 @@ class GzGui(BaseModel):
                 own = line.find("own")
                 target = line.find("target")
                 if own is not None and target is not None:
-                    anchors.append((own.text, target.text))
+                    anchors.append(cls.Anchor(own.text, target.text))
         return cls(title=title, show_title_bar=show_title_bar, resizable=resizable, width=width, height=height, z=z,
                    state=state, anchor=anchor, anchors=anchors)
