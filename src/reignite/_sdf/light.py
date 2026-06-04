@@ -110,8 +110,6 @@ class Light(BaseModel):
             self.rgba = _color("1 1 1 1") if rgba is None else _color(rgba)
 
         def to_version(self, target_version: str) -> "Light.Diffuse":
-            if self.diffuse is not None and cmp_version(target_version, "1.5") >= 0:
-                raise ValueError(f"'diffuse' is not supported in SDF version {target_version} (removed in 1.5)")
             if self.rgba is not None and cmp_version(target_version, "1.2") >= 0:
                 raise ValueError(f"'rgba' is not supported in SDF version {target_version} (removed in 1.2)")
             kwargs: dict = {"sdf_version": target_version, "diffuse": self.diffuse, "rgba": self.rgba}
@@ -161,8 +159,6 @@ class Light(BaseModel):
             self.xyz = _vector3("0 0 -1") if xyz is None else _vector3(xyz)
 
         def to_version(self, target_version: str) -> "Light.Direction":
-            if self.direction is not None and cmp_version(target_version, "1.5") >= 0:
-                raise ValueError(f"'direction' is not supported in SDF version {target_version} (removed in 1.5)")
             if self.xyz is not None and cmp_version(target_version, "1.2") >= 0:
                 raise ValueError(f"'xyz' is not supported in SDF version {target_version} (removed in 1.2)")
             kwargs: dict = {"sdf_version": target_version, "direction": self.direction, "xyz": self.xyz}
@@ -252,8 +248,6 @@ class Light(BaseModel):
         def to_version(self, target_version: str) -> "Light.Specular":
             if self.rgba is not None and cmp_version(target_version, "1.2") >= 0:
                 raise ValueError(f"'rgba' is not supported in SDF version {target_version} (removed in 1.2)")
-            if self.specular is not None and cmp_version(target_version, "1.5") >= 0:
-                raise ValueError(f"'specular' is not supported in SDF version {target_version} (removed in 1.5)")
             kwargs: dict = {"sdf_version": target_version, "rgba": self.rgba, "specular": self.specular}
             return self.__class__(**kwargs)
 
@@ -422,34 +416,22 @@ class Light(BaseModel):
     def to_version(self, target_version: str) -> "Light":
         from ..elements.frame import Frame
         from ..elements.pose import Pose
-        if self.attenuation is not None and cmp_version(target_version, "1.5") >= 0:
-            raise ValueError(f"'attenuation' is not supported in SDF version {target_version} (removed in 1.5)")
         if self.cast_shadows is not None and cmp_version(target_version, "1.2") >= 0:
             raise ValueError(f"'cast_shadows' is not supported in SDF version {target_version} (removed in 1.2)")
-        if self.diffuse is not None and cmp_version(target_version, "1.5") >= 0:
-            raise ValueError(f"'diffuse' is not supported in SDF version {target_version} (removed in 1.5)")
-        if self.direction is not None and cmp_version(target_version, "1.5") >= 0:
-            raise ValueError(f"'direction' is not supported in SDF version {target_version} (removed in 1.5)")
         if self.frames is not None and cmp_version(target_version, "1.5") < 0:
             raise ValueError(f"'frames' is not supported in SDF version {target_version} (added in 1.5)")
         if self.frames is not None and cmp_version(target_version, "1.7") >= 0:
             raise ValueError(f"'frames' is not supported in SDF version {target_version} (removed in 1.7)")
-        if self.intensity is not None and cmp_version(target_version, "1.12") < 0:
-            raise ValueError(f"'intensity' is not supported in SDF version {target_version} (added in 1.12)")
-        if self.light_on is not None and cmp_version(target_version, "1.12") < 0:
-            raise ValueError(f"'light_on' is not supported in SDF version {target_version} (added in 1.12)")
+        if self.intensity is not None and cmp_version(target_version, "1.8") < 0:
+            raise ValueError(f"'intensity' is not supported in SDF version {target_version} (added in 1.8)")
+        if self.light_on is not None and cmp_version(target_version, "1.8") < 0:
+            raise ValueError(f"'light_on' is not supported in SDF version {target_version} (added in 1.8)")
         if self.origin is not None and cmp_version(target_version, "1.2") >= 0:
             raise ValueError(f"'origin' is not supported in SDF version {target_version} (removed in 1.2)")
         if self.pose is not None and cmp_version(target_version, "1.2") < 0:
             raise ValueError(f"'pose' is not supported in SDF version {target_version} (added in 1.2)")
-        if self.specular is not None and cmp_version(target_version, "1.5") >= 0:
-            raise ValueError(f"'specular' is not supported in SDF version {target_version} (removed in 1.5)")
-        if self.spot is not None and cmp_version(target_version, "1.5") >= 0:
-            raise ValueError(f"'spot' is not supported in SDF version {target_version} (removed in 1.5)")
-        if self.type is not None and cmp_version(target_version, "1.5") >= 0:
-            raise ValueError(f"'type' is not supported in SDF version {target_version} (removed in 1.5)")
-        if self.visualize is not None and cmp_version(target_version, "1.12") < 0:
-            raise ValueError(f"'visualize' is not supported in SDF version {target_version} (added in 1.12)")
+        if self.visualize is not None and cmp_version(target_version, "1.8") < 0:
+            raise ValueError(f"'visualize' is not supported in SDF version {target_version} (added in 1.8)")
         kwargs: dict = {"sdf_version": target_version, "attenuation": self.attenuation.to_version(target_version) if self.attenuation is not None and hasattr(self.attenuation, "to_version") else self.attenuation, "cast_shadows": self.cast_shadows, "diffuse": self.diffuse.to_version(target_version) if self.diffuse is not None and hasattr(self.diffuse, "to_version") else self.diffuse, "direction": self.direction.to_version(target_version) if self.direction is not None and hasattr(self.direction, "to_version") else self.direction, "frames": [c.to_version(target_version) if hasattr(c, "to_version") else c for c in (self.frames or [])], "intensity": self.intensity, "light_on": self.light_on, "name": self.name, "origin": self.origin.to_version(target_version) if self.origin is not None and hasattr(self.origin, "to_version") else self.origin, "pose": self.pose.to_version(target_version) if self.pose is not None and hasattr(self.pose, "to_version") else self.pose, "specular": self.specular.to_version(target_version) if self.specular is not None and hasattr(self.specular, "to_version") else self.specular, "spot": self.spot.to_version(target_version) if self.spot is not None and hasattr(self.spot, "to_version") else self.spot, "type": self.type, "visualize": self.visualize}
         return self.__class__(**kwargs)
 
@@ -593,8 +575,8 @@ class Light(BaseModel):
             _intensity = _val
         else:
             _intensity = None
-        if _intensity is not None and cmp_version(version, "1.12") < 0:
-            return SDFError(f"'intensity' is not supported in SDF version {version} (added in 1.12)")
+        if _intensity is not None and cmp_version(version, "1.8") < 0:
+            return SDFError(f"'intensity' is not supported in SDF version {version} (added in 1.8)")
         _c_tmp = el.find("light_on")
         if _c_tmp is not None:
             _text = _c_tmp.text if _c_tmp.text is not None else True
@@ -604,8 +586,8 @@ class Light(BaseModel):
             _light_on = _val
         else:
             _light_on = None
-        if _light_on is not None and cmp_version(version, "1.12") < 0:
-            return SDFError(f"'light_on' is not supported in SDF version {version} (added in 1.12)")
+        if _light_on is not None and cmp_version(version, "1.8") < 0:
+            return SDFError(f"'light_on' is not supported in SDF version {version} (added in 1.8)")
         _name = el.get("name", "__default__")
         if isinstance(_name, SDFError):
             return _name.extend("@name")
@@ -655,6 +637,6 @@ class Light(BaseModel):
             _visualize = _val
         else:
             _visualize = None
-        if _visualize is not None and cmp_version(version, "1.12") < 0:
-            return SDFError(f"'visualize' is not supported in SDF version {version} (added in 1.12)")
+        if _visualize is not None and cmp_version(version, "1.8") < 0:
+            return SDFError(f"'visualize' is not supported in SDF version {version} (added in 1.8)")
         return cls(sdf_version=version, attenuation=_attenuation, cast_shadows=_cast_shadows, diffuse=_diffuse, direction=_direction, frames=_frames, intensity=_intensity, light_on=_light_on, name=_name, origin=_origin, pose=_pose, specular=_specular, spot=_spot, type=_type, visualize=_visualize)

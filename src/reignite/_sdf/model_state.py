@@ -3,16 +3,19 @@ from __future__ import annotations
 
 from xml.etree import ElementTree as ET
 
+from ..utils.utils import _parse_double, _parse_uint32
 import typing
 from typing import List
 
 from ..utils.model import BaseModel
 from ..utils.errors import SDFError
 from ..utils.vector3 import _Vector3T, _vector3
+from ..utils.version import cmp_version
 
 if typing.TYPE_CHECKING:
     from ..elements.frame import Frame
     from ..elements.joint_state import JointState
+    from ..elements.link import Link
     from ..elements.link_state import LinkState
     from ..elements.pose import Pose
 
@@ -25,13 +28,111 @@ def _parse_vector3(raw: str) -> _Vector3T | SDFError:
 
 # noinspection PyUnusedImports
 class ModelState(BaseModel):
+    class Joint(BaseModel):
+        class Angle(BaseModel):
+            def __init__(
+                self,
+                sdf_version: str | None = None,
+                angle: float | None = 0,
+                axis: int | None = 0
+            ):
+                super().__init__(sdf_version)
+                self.angle = angle if angle is not None else 0
+                self.axis = axis if axis is not None else 0
+
+            def to_version(self, target_version: str) -> "ModelState.Joint.Angle":
+                kwargs: dict = {"sdf_version": target_version, "angle": self.angle, "axis": self.axis}
+                return self.__class__(**kwargs)
+
+            def to_sdf(self, version: str | None = None) -> ET.Element:
+                if self.sdfversion is None and version is not None:
+                    self.sdfversion = version
+                elif version is not None and version != self.sdfversion:
+                    return self.to_version(str(version)).to_sdf()
+                el = ET.Element("angle")
+                if self.angle is not None:
+                    el.text = str(self.angle)
+                if self.axis is not None:
+                    el.set("axis", str(self.axis))
+                return el
+
+            @classmethod
+            def _from_sdf(cls, el: ET.Element, version: str) -> "ModelState.Joint.Angle | SDFError":
+                _text = el.text or 0
+                _angle = _parse_double(_text)
+                if isinstance(_angle, SDFError):
+                    return _angle
+                _axis = _parse_uint32(el.get("axis", 0))
+                if isinstance(_axis, SDFError):
+                    return _axis.extend("@axis")
+                return cls(sdf_version=version, angle=_angle, axis=_axis)
+
+        def __init__(
+            self,
+            sdf_version: str | None = None,
+            angles: List["ModelState.Joint.Angle"] = None,
+            name: str | None = "__default__"
+        ):
+            super().__init__(sdf_version)
+            self.angles = angles or []
+            self.name = name if name is not None else "__default__"
+            for _i, _c in enumerate(self.angles):
+                if not hasattr(_c, 'to_version'): continue
+                if getattr(_c, 'sdfversion', None) is None:
+                    _c.sdfversion = self.sdfversion
+                elif getattr(_c, 'sdfversion', None) != self.sdfversion and self.sdfversion is not None:
+                    self.angles[_i] = _c.to_version(self.sdfversion)
+
+        def add_angle(self, *items: "ModelState.Joint.Angle"):
+            if self.angles is None:
+                self.angles = []
+            self.angles.extend(items)
+
+        def to_version(self, target_version: str) -> "ModelState.Joint":
+            kwargs: dict = {"sdf_version": target_version, "angles": [c.to_version(target_version) if hasattr(c, "to_version") else c for c in (self.angles or [])], "name": self.name}
+            return self.__class__(**kwargs)
+
+        def to_sdf(self, version: str | None = None) -> ET.Element:
+            if self.sdfversion is None and version is not None:
+                self.sdfversion = version
+            elif version is not None and version != self.sdfversion:
+                return self.to_version(str(version)).to_sdf()
+            el = ET.Element("joint")
+            for item in (self.angles or []):
+                _child_res = item.to_sdf(version)
+                if isinstance(_child_res, str):
+                    _item_el = ET.Element('angle')
+                    _item_el.text = _child_res
+                else:
+                    _item_el = _child_res
+                el.append(_item_el)
+            if self.name is not None:
+                el.set("name", self.name)
+            return el
+
+        @classmethod
+        def _from_sdf(cls, el: ET.Element, version: str) -> "ModelState.Joint | SDFError":
+            _angles = []
+            for c in el.findall("angle"):
+                _res = cls.Angle._from_sdf(c, version)
+                if isinstance(_res, SDFError):
+                    return _res.extend("angle")
+                _angles.append(_res)
+            _name = el.get("name", "__default__")
+            if isinstance(_name, SDFError):
+                return _name.extend("@name")
+            return cls(sdf_version=version, angles=_angles, name=_name)
+
     def __init__(
         self,
         sdf_version: str | None = None,
         frames: List["Frame"] = None,
         joint_states: List["JointState"] = None,
+        joints: List["ModelState.Joint"] = None,
         link_states: List["LinkState"] = None,
+        links: List["Link"] = None,
         model_states: List["ModelState"] = None,
+        models: List["ModelState"] = None,
         name: str | None = "__default__",
         pose: "Pose" = None,
         scale: _Vector3T | None = None
@@ -39,8 +140,11 @@ class ModelState(BaseModel):
         super().__init__(sdf_version)
         self.frames = frames or []
         self.joint_states = joint_states or []
+        self.joints = joints or []
         self.link_states = link_states or []
+        self.links = links or []
         self.model_states = model_states or []
+        self.models = models or []
         self.name = name if name is not None else "__default__"
         self.pose = pose
         self.scale = _vector3("1 1 1") if scale is None else _vector3(scale)
@@ -56,18 +160,36 @@ class ModelState(BaseModel):
                 _c.sdfversion = self.sdfversion
             elif getattr(_c, 'sdfversion', None) != self.sdfversion and self.sdfversion is not None:
                 self.joint_states[_i] = _c.to_version(self.sdfversion)
+        for _i, _c in enumerate(self.joints):
+            if not hasattr(_c, 'to_version'): continue
+            if getattr(_c, 'sdfversion', None) is None:
+                _c.sdfversion = self.sdfversion
+            elif getattr(_c, 'sdfversion', None) != self.sdfversion and self.sdfversion is not None:
+                self.joints[_i] = _c.to_version(self.sdfversion)
         for _i, _c in enumerate(self.link_states):
             if not hasattr(_c, 'to_version'): continue
             if getattr(_c, 'sdfversion', None) is None:
                 _c.sdfversion = self.sdfversion
             elif getattr(_c, 'sdfversion', None) != self.sdfversion and self.sdfversion is not None:
                 self.link_states[_i] = _c.to_version(self.sdfversion)
+        for _i, _c in enumerate(self.links):
+            if not hasattr(_c, 'to_version'): continue
+            if getattr(_c, 'sdfversion', None) is None:
+                _c.sdfversion = self.sdfversion
+            elif getattr(_c, 'sdfversion', None) != self.sdfversion and self.sdfversion is not None:
+                self.links[_i] = _c.to_version(self.sdfversion)
         for _i, _c in enumerate(self.model_states):
             if not hasattr(_c, 'to_version'): continue
             if getattr(_c, 'sdfversion', None) is None:
                 _c.sdfversion = self.sdfversion
             elif getattr(_c, 'sdfversion', None) != self.sdfversion and self.sdfversion is not None:
                 self.model_states[_i] = _c.to_version(self.sdfversion)
+        for _i, _c in enumerate(self.models):
+            if not hasattr(_c, 'to_version'): continue
+            if getattr(_c, 'sdfversion', None) is None:
+                _c.sdfversion = self.sdfversion
+            elif getattr(_c, 'sdfversion', None) != self.sdfversion and self.sdfversion is not None:
+                self.models[_i] = _c.to_version(self.sdfversion)
         if self.pose is not None and hasattr(self.pose, 'to_version'):
             if getattr(self.pose, 'sdfversion', None) is None:
                 self.pose.sdfversion = self.sdfversion
@@ -84,28 +206,59 @@ class ModelState(BaseModel):
             self.joint_states = []
         self.joint_states.extend(items)
 
+    def add_joint(self, *items: "ModelState.Joint"):
+        if self.joints is None:
+            self.joints = []
+        self.joints.extend(items)
+
     def add_link_state(self, *items: "LinkState"):
         if self.link_states is None:
             self.link_states = []
         self.link_states.extend(items)
+
+    def add_link(self, *items: "Link"):
+        if self.links is None:
+            self.links = []
+        self.links.extend(items)
 
     def add_model_state(self, *items: "ModelState"):
         if self.model_states is None:
             self.model_states = []
         self.model_states.extend(items)
 
+    def add_model(self, *items: "ModelState"):
+        if self.models is None:
+            self.models = []
+        self.models.extend(items)
+
     def to_version(self, target_version: str) -> "ModelState":
         from ..elements.frame import Frame
         from ..elements.joint_state import JointState
         from ..elements.link_state import LinkState
+        from ..elements.link import Link
         from ..elements.pose import Pose
-        kwargs: dict = {"sdf_version": target_version, "frames": [c.to_version(target_version) if hasattr(c, "to_version") else c for c in (self.frames or [])], "joint_states": [c.to_version(target_version) if hasattr(c, "to_version") else c for c in (self.joint_states or [])], "link_states": [c.to_version(target_version) if hasattr(c, "to_version") else c for c in (self.link_states or [])], "model_states": [c.to_version(target_version) if hasattr(c, "to_version") else c for c in (self.model_states or [])], "name": self.name, "pose": self.pose.to_version(target_version) if self.pose is not None and hasattr(self.pose, "to_version") else self.pose, "scale": self.scale}
+        if self.joint_states is not None and cmp_version(target_version, "1.12") < 0:
+            raise ValueError(f"'joint_states' is not supported in SDF version {target_version} (added in 1.12)")
+        if self.joints is not None and cmp_version(target_version, "1.12") >= 0:
+            raise ValueError(f"'joints' is not supported in SDF version {target_version} (removed in 1.12)")
+        if self.link_states is not None and cmp_version(target_version, "1.12") < 0:
+            raise ValueError(f"'link_states' is not supported in SDF version {target_version} (added in 1.12)")
+        if self.links is not None and cmp_version(target_version, "1.12") >= 0:
+            raise ValueError(f"'links' is not supported in SDF version {target_version} (removed in 1.12)")
+        if self.model_states is not None and cmp_version(target_version, "1.12") < 0:
+            raise ValueError(f"'model_states' is not supported in SDF version {target_version} (added in 1.12)")
+        if self.models is not None and cmp_version(target_version, "1.12") >= 0:
+            raise ValueError(f"'models' is not supported in SDF version {target_version} (removed in 1.12)")
+        if self.scale is not None and cmp_version(target_version, "1.6") < 0:
+            raise ValueError(f"'scale' is not supported in SDF version {target_version} (added in 1.6)")
+        kwargs: dict = {"sdf_version": target_version, "frames": [c.to_version(target_version) if hasattr(c, "to_version") else c for c in (self.frames or [])], "joint_states": [c.to_version(target_version) if hasattr(c, "to_version") else c for c in (self.joint_states or [])], "joints": [c.to_version(target_version) if hasattr(c, "to_version") else c for c in (self.joints or [])], "link_states": [c.to_version(target_version) if hasattr(c, "to_version") else c for c in (self.link_states or [])], "links": [c.to_version(target_version) if hasattr(c, "to_version") else c for c in (self.links or [])], "model_states": [c.to_version(target_version) if hasattr(c, "to_version") else c for c in (self.model_states or [])], "models": [c.to_version(target_version) if hasattr(c, "to_version") else c for c in (self.models or [])], "name": self.name, "pose": self.pose.to_version(target_version) if self.pose is not None and hasattr(self.pose, "to_version") else self.pose, "scale": self.scale}
         return self.__class__(**kwargs)
 
     def to_sdf(self, version: str | None = None) -> ET.Element:
         from ..elements.frame import Frame
         from ..elements.joint_state import JointState
         from ..elements.link_state import LinkState
+        from ..elements.link import Link
         from ..elements.pose import Pose
         if self.sdfversion is None and version is not None:
             self.sdfversion = version
@@ -128,6 +281,14 @@ class ModelState(BaseModel):
             else:
                 _item_el = _child_res
             el.append(_item_el)
+        for item in (self.joints or []):
+            _child_res = item.to_sdf(version)
+            if isinstance(_child_res, str):
+                _item_el = ET.Element('joint')
+                _item_el.text = _child_res
+            else:
+                _item_el = _child_res
+            el.append(_item_el)
         for item in (self.link_states or []):
             _child_res = item.to_sdf(version)
             if isinstance(_child_res, str):
@@ -136,10 +297,26 @@ class ModelState(BaseModel):
             else:
                 _item_el = _child_res
             el.append(_item_el)
+        for item in (self.links or []):
+            _child_res = item.to_sdf(version)
+            if isinstance(_child_res, str):
+                _item_el = ET.Element('link')
+                _item_el.text = _child_res
+            else:
+                _item_el = _child_res
+            el.append(_item_el)
         for item in (self.model_states or []):
             _child_res = item.to_sdf(version)
             if isinstance(_child_res, str):
                 _item_el = ET.Element('model_state')
+                _item_el.text = _child_res
+            else:
+                _item_el = _child_res
+            el.append(_item_el)
+        for item in (self.models or []):
+            _child_res = item.to_sdf(version)
+            if isinstance(_child_res, str):
+                _item_el = ET.Element('model')
                 _item_el.text = _child_res
             else:
                 _item_el = _child_res
@@ -165,6 +342,7 @@ class ModelState(BaseModel):
         from ..elements.frame import Frame
         from ..elements.joint_state import JointState
         from ..elements.link_state import LinkState
+        from ..elements.link import Link
         from ..elements.pose import Pose
         _frames = []
         for c in el.findall("frame"):
@@ -178,18 +356,42 @@ class ModelState(BaseModel):
             if isinstance(_res, SDFError):
                 return _res.extend("joint_state")
             _joint_states.append(_res)
+        if _joint_states and cmp_version(version, "1.12") < 0:
+            return SDFError(f"'joint_states' is not supported in SDF version {version} (added in 1.12)")
+        _joints = []
+        for c in el.findall("joint"):
+            _res = cls.Joint._from_sdf(c, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("joint")
+            _joints.append(_res)
         _link_states = []
         for c in el.findall("link_state"):
             _res = LinkState._from_sdf(c, version)
             if isinstance(_res, SDFError):
                 return _res.extend("link_state")
             _link_states.append(_res)
+        if _link_states and cmp_version(version, "1.12") < 0:
+            return SDFError(f"'link_states' is not supported in SDF version {version} (added in 1.12)")
+        _links = []
+        for c in el.findall("link"):
+            _res = Link._from_sdf(c, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("link")
+            _links.append(_res)
         _model_states = []
         for c in el.findall("model_state"):
             _res = ModelState._from_sdf(c, version)
             if isinstance(_res, SDFError):
                 return _res.extend("model_state")
             _model_states.append(_res)
+        if _model_states and cmp_version(version, "1.12") < 0:
+            return SDFError(f"'model_states' is not supported in SDF version {version} (added in 1.12)")
+        _models = []
+        for c in el.findall("model"):
+            _res = ModelState._from_sdf(c, version)
+            if isinstance(_res, SDFError):
+                return _res.extend("model")
+            _models.append(_res)
         _name = el.get("name", "__default__")
         if isinstance(_name, SDFError):
             return _name.extend("@name")
@@ -210,4 +412,6 @@ class ModelState(BaseModel):
             _scale = _val
         else:
             _scale = None
-        return cls(sdf_version=version, frames=_frames, joint_states=_joint_states, link_states=_link_states, model_states=_model_states, name=_name, pose=_pose, scale=_scale)
+        if _scale is not None and cmp_version(version, "1.6") < 0:
+            return SDFError(f"'scale' is not supported in SDF version {version} (added in 1.6)")
+        return cls(sdf_version=version, frames=_frames, joint_states=_joint_states, joints=_joints, link_states=_link_states, links=_links, model_states=_model_states, models=_models, name=_name, pose=_pose, scale=_scale)

@@ -194,6 +194,7 @@ def parse_element(el: ET.Element, version_files: dict[str, str]) -> dict:
                 child_schema.update(parsed)
             except ET.ParseError:
                 pass
+        child_schema["_include_filename"] = fname.replace(".sdf", "")
 
         out[child_name] = child_schema
 
@@ -268,6 +269,19 @@ def _effective_required(base_required: str, required_history: dict[str, str]) ->
     return required_history[latest_v]
 
 
+def _fixup_include_refs(node: dict, schema_keys: set[str]):
+    """Walk the schema and fix _ref for includes whose root element name
+    doesn't match a schema key but whose source filename does."""
+    for k, v in node.items():
+        if k.startswith("_") or not isinstance(v, dict):
+            continue
+        inc_fname = v.get("_include_filename")
+        if inc_fname and v.get("_is_include") and "_ref" not in v:
+            if k not in schema_keys and inc_fname in schema_keys:
+                v["_ref"] = inc_fname
+        _fixup_include_refs(v, schema_keys)
+
+
 def parse_all_versions() -> dict:
     versions = available_versions()
     base_schema: dict = {}
@@ -283,6 +297,8 @@ def parse_all_versions() -> dict:
                 continue
             if root.tag == "element":
                 name = root.get("name", fname.replace(".sdf", ""))
+                if name in schema:
+                    name = fname.replace(".sdf", "")
                 schema[name] = parse_element(root, files)
             else:
                 for child in root.findall("element"):
@@ -290,6 +306,7 @@ def parse_all_versions() -> dict:
                     if name:
                         schema[name] = parse_element(child, files)
         union_schema(base_schema, schema, version if version != BASE_VERSION else None)
+    _fixup_include_refs(base_schema, set(base_schema.keys()))
     return base_schema
 
 

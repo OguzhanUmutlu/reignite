@@ -9,7 +9,6 @@ from typing import List
 from ..utils.model import BaseModel
 from ..utils.errors import SDFError
 from ..utils.pose import _PoseT, _pose
-from ..utils.vector3 import _Vector3T, _vector3
 from ..utils.version import cmp_version
 
 if typing.TYPE_CHECKING:
@@ -24,12 +23,6 @@ if typing.TYPE_CHECKING:
 def _parse_pose(raw: str) -> _PoseT | SDFError:
     try:
         return _pose(raw)
-    except ValueError as e:
-        return SDFError(str(e))
-
-def _parse_vector3(raw: str) -> _Vector3T | SDFError:
-    try:
-        return _vector3(raw)
     except ValueError as e:
         return SDFError(str(e))
 
@@ -90,12 +83,12 @@ class Model(BaseModel):
             from ..elements.model_state import ModelState
             from ..elements.plugin import Plugin
             from ..elements.pose import Pose
-            if self.merge is not None and cmp_version(target_version, "1.12") < 0:
-                raise ValueError(f"'merge' is not supported in SDF version {target_version} (added in 1.12)")
+            if self.merge is not None and cmp_version(target_version, "1.9") < 0:
+                raise ValueError(f"'merge' is not supported in SDF version {target_version} (added in 1.9)")
             if self.model_states is not None and cmp_version(target_version, "1.12") < 0:
                 raise ValueError(f"'model_states' is not supported in SDF version {target_version} (added in 1.12)")
-            if self.placement_frame is not None and cmp_version(target_version, "1.12") < 0:
-                raise ValueError(f"'placement_frame' is not supported in SDF version {target_version} (added in 1.12)")
+            if self.placement_frame is not None and cmp_version(target_version, "1.8") < 0:
+                raise ValueError(f"'placement_frame' is not supported in SDF version {target_version} (added in 1.8)")
             kwargs: dict = {"sdf_version": target_version, "merge": self.merge, "model_states": [c.to_version(target_version) if hasattr(c, "to_version") else c for c in (self.model_states or [])], "name": self.name, "placement_frame": self.placement_frame, "plugins": [c.to_version(target_version) if hasattr(c, "to_version") else c for c in (self.plugins or [])], "pose": self.pose.to_version(target_version) if self.pose is not None and hasattr(self.pose, "to_version") else self.pose, "static": self.static, "uri": self.uri}
             return self.__class__(**kwargs)
 
@@ -160,9 +153,9 @@ class Model(BaseModel):
             _merge = str(el.get("merge", False)).strip().lower() == 'true'
             if isinstance(_merge, SDFError):
                 return _merge.extend("@merge")
-            if _merge is not None and cmp_version(version, "1.12") < 0:
+            if _merge is not None and cmp_version(version, "1.9") < 0:
                 if _merge != False:
-                    return SDFError(f"'merge' is not supported in SDF version {version} (added in 1.12)")
+                    return SDFError(f"'merge' is not supported in SDF version {version} (added in 1.9)")
             _model_states = []
             for c in el.findall("model_state"):
                 _res = ModelState._from_sdf(c, version)
@@ -189,8 +182,8 @@ class Model(BaseModel):
                 _placement_frame = _val
             else:
                 _placement_frame = None
-            if _placement_frame is not None and cmp_version(version, "1.12") < 0:
-                return SDFError(f"'placement_frame' is not supported in SDF version {version} (added in 1.12)")
+            if _placement_frame is not None and cmp_version(version, "1.8") < 0:
+                return SDFError(f"'placement_frame' is not supported in SDF version {version} (added in 1.8)")
             _plugins = []
             for c in el.findall("plugin"):
                 _res = Plugin._from_sdf(c, version)
@@ -275,13 +268,12 @@ class Model(BaseModel):
         joints: List["Joint"] = None,
         links: List["Link"] = None,
         model_states: List["ModelState"] = None,
-        models: List["ModelState"] = None,
+        models: List["Model"] = None,
         name: str | None = "__default__",
         origin: "Model.Origin" = None,
         placement_frame: str | None = "",
         plugins: List["Plugin"] = None,
         pose: "Pose" = None,
-        scale: _Vector3T | None = None,
         self_collide: bool | None = False,
         static: bool | None = False
     ):
@@ -301,7 +293,6 @@ class Model(BaseModel):
         self.placement_frame = placement_frame if placement_frame is not None else ""
         self.plugins = plugins or []
         self.pose = pose
-        self.scale = _vector3("1 1 1") if scale is None else _vector3(scale)
         self.self_collide = self_collide if self_collide is not None else False
         self.static = static if static is not None else False
         for _i, _c in enumerate(self.frames):
@@ -393,7 +384,7 @@ class Model(BaseModel):
             self.model_states = []
         self.model_states.extend(items)
 
-    def add_model(self, *items: "ModelState"):
+    def add_model(self, *items: "Model"):
         if self.models is None:
             self.models = []
         self.models.extend(items)
@@ -413,47 +404,29 @@ class Model(BaseModel):
         from ..elements.pose import Pose
         if self.allow_auto_disable is not None and cmp_version(target_version, "1.2") < 0:
             raise ValueError(f"'allow_auto_disable' is not supported in SDF version {target_version} (added in 1.2)")
-        if self.allow_auto_disable is not None and cmp_version(target_version, "1.5") >= 0:
-            raise ValueError(f"'allow_auto_disable' is not supported in SDF version {target_version} (removed in 1.5)")
         if self.canonical_link is not None and cmp_version(target_version, "1.7") < 0:
             raise ValueError(f"'canonical_link' is not supported in SDF version {target_version} (added in 1.7)")
-        if self.canonical_link is not None and cmp_version(target_version, "1.8") >= 0:
-            raise ValueError(f"'canonical_link' is not supported in SDF version {target_version} (removed in 1.8)")
-        if self.enable_wind is not None and cmp_version(target_version, "1.7") < 0:
-            raise ValueError(f"'enable_wind' is not supported in SDF version {target_version} (added in 1.7)")
-        if self.enable_wind is not None and cmp_version(target_version, "1.8") >= 0:
-            raise ValueError(f"'enable_wind' is not supported in SDF version {target_version} (removed in 1.8)")
+        if self.enable_wind is not None and cmp_version(target_version, "1.6") < 0:
+            raise ValueError(f"'enable_wind' is not supported in SDF version {target_version} (added in 1.6)")
         if self.frames is not None and cmp_version(target_version, "1.5") < 0:
             raise ValueError(f"'frames' is not supported in SDF version {target_version} (added in 1.5)")
-        if self.grippers is not None and cmp_version(target_version, "1.5") >= 0:
-            raise ValueError(f"'grippers' is not supported in SDF version {target_version} (removed in 1.5)")
-        if self.includes is not None and cmp_version(target_version, "1.7") < 0:
-            raise ValueError(f"'includes' is not supported in SDF version {target_version} (added in 1.7)")
-        if self.includes is not None and cmp_version(target_version, "1.8") >= 0:
-            raise ValueError(f"'includes' is not supported in SDF version {target_version} (removed in 1.8)")
+        if self.includes is not None and cmp_version(target_version, "1.5") < 0:
+            raise ValueError(f"'includes' is not supported in SDF version {target_version} (added in 1.5)")
         if self.model_states is not None and cmp_version(target_version, "1.12") < 0:
             raise ValueError(f"'model_states' is not supported in SDF version {target_version} (added in 1.12)")
         if self.models is not None and cmp_version(target_version, "1.5") < 0:
             raise ValueError(f"'models' is not supported in SDF version {target_version} (added in 1.5)")
         if self.origin is not None and cmp_version(target_version, "1.2") >= 0:
             raise ValueError(f"'origin' is not supported in SDF version {target_version} (removed in 1.2)")
-        if self.placement_frame is not None and cmp_version(target_version, "1.12") < 0:
-            raise ValueError(f"'placement_frame' is not supported in SDF version {target_version} (added in 1.12)")
-        if self.plugins is not None and cmp_version(target_version, "1.5") >= 0:
-            raise ValueError(f"'plugins' is not supported in SDF version {target_version} (removed in 1.5)")
+        if self.placement_frame is not None and cmp_version(target_version, "1.8") < 0:
+            raise ValueError(f"'placement_frame' is not supported in SDF version {target_version} (added in 1.8)")
         if self.pose is not None and cmp_version(target_version, "1.2") < 0:
             raise ValueError(f"'pose' is not supported in SDF version {target_version} (added in 1.2)")
-        if self.scale is not None and cmp_version(target_version, "1.6") < 0:
-            raise ValueError(f"'scale' is not supported in SDF version {target_version} (added in 1.6)")
-        if self.scale is not None and cmp_version(target_version, "1.7") >= 0:
-            raise ValueError(f"'scale' is not supported in SDF version {target_version} (removed in 1.7)")
-        if self.self_collide is not None and cmp_version(target_version, "1.7") < 0:
-            raise ValueError(f"'self_collide' is not supported in SDF version {target_version} (added in 1.7)")
-        if self.self_collide is not None and cmp_version(target_version, "1.8") >= 0:
-            raise ValueError(f"'self_collide' is not supported in SDF version {target_version} (removed in 1.8)")
+        if self.self_collide is not None and cmp_version(target_version, "1.5") < 0:
+            raise ValueError(f"'self_collide' is not supported in SDF version {target_version} (added in 1.5)")
         if self.static is not None and cmp_version(target_version, "1.2") >= 0:
             raise ValueError(f"'static' is not supported in SDF version {target_version} (removed in 1.2)")
-        kwargs: dict = {"sdf_version": target_version, "allow_auto_disable": self.allow_auto_disable, "canonical_link": self.canonical_link, "enable_wind": self.enable_wind, "frames": [c.to_version(target_version) if hasattr(c, "to_version") else c for c in (self.frames or [])], "grippers": [c.to_version(target_version) if hasattr(c, "to_version") else c for c in (self.grippers or [])], "includes": [c.to_version(target_version) if hasattr(c, "to_version") else c for c in (self.includes or [])], "joints": [c.to_version(target_version) if hasattr(c, "to_version") else c for c in (self.joints or [])], "links": [c.to_version(target_version) if hasattr(c, "to_version") else c for c in (self.links or [])], "model_states": [c.to_version(target_version) if hasattr(c, "to_version") else c for c in (self.model_states or [])], "models": [c.to_version(target_version) if hasattr(c, "to_version") else c for c in (self.models or [])], "name": self.name, "origin": self.origin.to_version(target_version) if self.origin is not None and hasattr(self.origin, "to_version") else self.origin, "placement_frame": self.placement_frame, "plugins": [c.to_version(target_version) if hasattr(c, "to_version") else c for c in (self.plugins or [])], "pose": self.pose.to_version(target_version) if self.pose is not None and hasattr(self.pose, "to_version") else self.pose, "scale": self.scale, "self_collide": self.self_collide, "static": self.static}
+        kwargs: dict = {"sdf_version": target_version, "allow_auto_disable": self.allow_auto_disable, "canonical_link": self.canonical_link, "enable_wind": self.enable_wind, "frames": [c.to_version(target_version) if hasattr(c, "to_version") else c for c in (self.frames or [])], "grippers": [c.to_version(target_version) if hasattr(c, "to_version") else c for c in (self.grippers or [])], "includes": [c.to_version(target_version) if hasattr(c, "to_version") else c for c in (self.includes or [])], "joints": [c.to_version(target_version) if hasattr(c, "to_version") else c for c in (self.joints or [])], "links": [c.to_version(target_version) if hasattr(c, "to_version") else c for c in (self.links or [])], "model_states": [c.to_version(target_version) if hasattr(c, "to_version") else c for c in (self.model_states or [])], "models": [c.to_version(target_version) if hasattr(c, "to_version") else c for c in (self.models or [])], "name": self.name, "origin": self.origin.to_version(target_version) if self.origin is not None and hasattr(self.origin, "to_version") else self.origin, "placement_frame": self.placement_frame, "plugins": [c.to_version(target_version) if hasattr(c, "to_version") else c for c in (self.plugins or [])], "pose": self.pose.to_version(target_version) if self.pose is not None and hasattr(self.pose, "to_version") else self.pose, "self_collide": self.self_collide, "static": self.static}
         return self.__class__(**kwargs)
 
     def to_sdf(self, version: str | None = None) -> ET.Element:
@@ -563,10 +536,6 @@ class Model(BaseModel):
             else:
                 _item_el = _child_res
             el.append(_item_el)
-        if self.scale is not None:
-            _c_tmp = ET.Element("scale")
-            _c_tmp.text = str(self.scale)
-            el.append(_c_tmp)
         if self.self_collide is not None:
             _c_tmp = ET.Element("self_collide")
             _c_tmp.text = str(self.self_collide).lower()
@@ -610,8 +579,8 @@ class Model(BaseModel):
             _enable_wind = _val
         else:
             _enable_wind = None
-        if _enable_wind is not None and cmp_version(version, "1.7") < 0:
-            return SDFError(f"'enable_wind' is not supported in SDF version {version} (added in 1.7)")
+        if _enable_wind is not None and cmp_version(version, "1.6") < 0:
+            return SDFError(f"'enable_wind' is not supported in SDF version {version} (added in 1.6)")
         _frames = []
         for c in el.findall("frame"):
             _res = Frame._from_sdf(c, version)
@@ -632,8 +601,8 @@ class Model(BaseModel):
             if isinstance(_res, SDFError):
                 return _res.extend("include")
             _includes.append(_res)
-        if _includes and cmp_version(version, "1.7") < 0:
-            return SDFError(f"'includes' is not supported in SDF version {version} (added in 1.7)")
+        if _includes and cmp_version(version, "1.5") < 0:
+            return SDFError(f"'includes' is not supported in SDF version {version} (added in 1.5)")
         _joints = []
         for c in el.findall("joint"):
             _res = Joint._from_sdf(c, version)
@@ -656,7 +625,7 @@ class Model(BaseModel):
             return SDFError(f"'model_states' is not supported in SDF version {version} (added in 1.12)")
         _models = []
         for c in el.findall("model"):
-            _res = ModelState._from_sdf(c, version)
+            _res = Model._from_sdf(c, version)
             if isinstance(_res, SDFError):
                 return _res.extend("model")
             _models.append(_res)
@@ -676,9 +645,9 @@ class Model(BaseModel):
         _placement_frame = el.get("placement_frame", "")
         if isinstance(_placement_frame, SDFError):
             return _placement_frame.extend("@placement_frame")
-        if _placement_frame is not None and cmp_version(version, "1.12") < 0:
+        if _placement_frame is not None and cmp_version(version, "1.8") < 0:
             if _placement_frame != "":
-                return SDFError(f"'placement_frame' is not supported in SDF version {version} (added in 1.12)")
+                return SDFError(f"'placement_frame' is not supported in SDF version {version} (added in 1.8)")
         _plugins = []
         for c in el.findall("plugin"):
             _res = Plugin._from_sdf(c, version)
@@ -695,17 +664,6 @@ class Model(BaseModel):
             _pose = None
         if _pose is not None and cmp_version(version, "1.2") < 0:
             return SDFError(f"'pose' is not supported in SDF version {version} (added in 1.2)")
-        _c_tmp = el.find("scale")
-        if _c_tmp is not None:
-            _text = _c_tmp.text if _c_tmp.text is not None else "1 1 1"
-            _val = _parse_vector3(_text)
-            if isinstance(_val, SDFError):
-                return _val.extend("scale")
-            _scale = _val
-        else:
-            _scale = None
-        if _scale is not None and cmp_version(version, "1.6") < 0:
-            return SDFError(f"'scale' is not supported in SDF version {version} (added in 1.6)")
         _c_tmp = el.find("self_collide")
         if _c_tmp is not None:
             _text = _c_tmp.text if _c_tmp.text is not None else False
@@ -715,9 +673,9 @@ class Model(BaseModel):
             _self_collide = _val
         else:
             _self_collide = None
-        if _self_collide is not None and cmp_version(version, "1.7") < 0:
-            return SDFError(f"'self_collide' is not supported in SDF version {version} (added in 1.7)")
+        if _self_collide is not None and cmp_version(version, "1.5") < 0:
+            return SDFError(f"'self_collide' is not supported in SDF version {version} (added in 1.5)")
         _static = str(el.get("static", False)).strip().lower() == 'true'
         if isinstance(_static, SDFError):
             return _static.extend("@static")
-        return cls(sdf_version=version, allow_auto_disable=_allow_auto_disable, canonical_link=_canonical_link, enable_wind=_enable_wind, frames=_frames, grippers=_grippers, includes=_includes, joints=_joints, links=_links, model_states=_model_states, models=_models, name=_name, origin=_origin, placement_frame=_placement_frame, plugins=_plugins, pose=_pose, scale=_scale, self_collide=_self_collide, static=_static)
+        return cls(sdf_version=version, allow_auto_disable=_allow_auto_disable, canonical_link=_canonical_link, enable_wind=_enable_wind, frames=_frames, grippers=_grippers, includes=_includes, joints=_joints, links=_links, model_states=_model_states, models=_models, name=_name, origin=_origin, placement_frame=_placement_frame, plugins=_plugins, pose=_pose, self_collide=_self_collide, static=_static)

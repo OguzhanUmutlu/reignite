@@ -38,6 +38,7 @@ from .MecanumDrive import MecanumDrivePlugin
 from .ModelPhotoShoot import ModelPhotoShootPlugin
 from .MulticopterMotorModel import MulticopterMotorModelPlugin
 from .MulticopterVelocityControl import MulticopterVelocityControlPlugin
+from .NavSat import NavSatPlugin
 from .OdometryPublisher import OdometryPublisherPlugin
 from .OpticalTactile import OpticalTactilePlugin
 from .PerformerDetector import PerformerDetectorPlugin
