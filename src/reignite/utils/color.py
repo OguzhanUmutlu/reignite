@@ -2,6 +2,8 @@ from __future__ import annotations
 
 from typing import Sequence, Union
 
+from .colors import css_colors
+
 _ColorT = Union[Sequence[float], str, "Color"]
 
 
@@ -10,6 +12,7 @@ def _color(value: _ColorT) -> Color:
         return value
     if isinstance(value, str):
         value = value.strip()
+        value = css_colors.get(value, value)
         if value.startswith("#"):
             return Color(value)
         parts = value.split()
