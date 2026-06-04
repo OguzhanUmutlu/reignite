@@ -70,6 +70,13 @@ class LiftDragPlugin(Plugin):
         control_joint_rad_to_cl_el = el.find('control_joint_rad_to_cl')
         control_joint_name_el = el.find('control_joint_name')
 
+        def _parse_tuple(el_node):
+            if el_node is None or not el_node.text: return None
+            parts = el_node.text.split()
+            if len(parts) == 3:
+                return (float(parts[0]), float(parts[1]), float(parts[2]))
+            return None
+
         return cls(
             link_name=link_name_el.text if link_name_el is not None and link_name_el.text is not None else None,
             cla=float(cla_el.text) if cla_el is not None and cla_el.text is not None else None,
@@ -80,14 +87,14 @@ class LiftDragPlugin(Plugin):
             cda_stall=float(cda_stall_el.text) if cda_stall_el is not None and cda_stall_el.text is not None else None,
             cma_stall=float(cma_stall_el.text) if cma_stall_el is not None and cma_stall_el.text is not None else None,
             air_density=float(air_density_el.text) if air_density_el is not None and air_density_el.text is not None else None,
-            radial_symmetry=radial_symmetry_el.text.lower() == 'true' if radial_symmetry_el is not None and radial_symmetry_el.text is not None else None,
-            reversible=reversible_el.text.lower() == 'true' if reversible_el is not None and reversible_el.text is not None else None,
+            radial_symmetry=radial_symmetry_el.text.lower() in ("true", "1", "yes", "t") if radial_symmetry_el is not None and radial_symmetry_el.text is not None else None,
+            reversible=reversible_el.text.lower() in ("true", "1", "yes", "t") if reversible_el is not None and reversible_el.text is not None else None,
             area=float(area_el.text) if area_el is not None and area_el.text is not None else None,
             a0=float(a0_el.text) if a0_el is not None and a0_el.text is not None else None,
-            cp=float(cp_el.text) if cp_el is not None and cp_el.text is not None else None,
+            cp=_parse_tuple(cp_el),
             cm_delta=float(cm_delta_el.text) if cm_delta_el is not None and cm_delta_el.text is not None else None,
-            forward=float(forward_el.text) if forward_el is not None and forward_el.text is not None else None,
-            upward=float(upward_el.text) if upward_el is not None and upward_el.text is not None else None,
+            forward=_parse_tuple(forward_el),
+            upward=_parse_tuple(upward_el),
             control_joint_rad_to_cl=float(control_joint_rad_to_cl_el.text) if control_joint_rad_to_cl_el is not None and control_joint_rad_to_cl_el.text is not None else None,
             control_joint_name=control_joint_name_el.text if control_joint_name_el is not None and control_joint_name_el.text is not None else None,
         )
@@ -100,6 +107,8 @@ class LiftDragPlugin(Plugin):
                 child = ET.Element(k)
                 if isinstance(v, bool):
                     child.text = "true" if v else "false"
+                elif isinstance(v, tuple):
+                    child.text = " ".join(map(str, v))
                 else:
                     child.text = str(v)
                 el.append(child)
@@ -151,6 +160,13 @@ class LiftDragPlugin(Plugin):
         control_joint_rad_to_cl_el = el.find('control_joint_rad_to_cl')
         control_joint_name_el = el.find('control_joint_name')
 
+        def _parse_tuple(el_node):
+            if el_node is None or not el_node.text: return None
+            parts = el_node.text.split()
+            if len(parts) == 3:
+                return (float(parts[0]), float(parts[1]), float(parts[2]))
+            return None
+
         return cls(
             link_name=link_name_el.text if link_name_el is not None and link_name_el.text is not None else None,
             cla=float(cla_el.text) if cla_el is not None and cla_el.text is not None else None,
@@ -161,14 +177,14 @@ class LiftDragPlugin(Plugin):
             cda_stall=float(cda_stall_el.text) if cda_stall_el is not None and cda_stall_el.text is not None else None,
             cma_stall=float(cma_stall_el.text) if cma_stall_el is not None and cma_stall_el.text is not None else None,
             air_density=float(air_density_el.text) if air_density_el is not None and air_density_el.text is not None else None,
-            radial_symmetry=radial_symmetry_el.text.lower() == 'true' if radial_symmetry_el is not None and radial_symmetry_el.text is not None else None,
-            reversible=reversible_el.text.lower() == 'true' if reversible_el is not None and reversible_el.text is not None else None,
+            radial_symmetry=radial_symmetry_el.text.lower() in ("true", "1", "yes", "t") if radial_symmetry_el is not None and radial_symmetry_el.text is not None else None,
+            reversible=reversible_el.text.lower() in ("true", "1", "yes", "t") if reversible_el is not None and reversible_el.text is not None else None,
             area=float(area_el.text) if area_el is not None and area_el.text is not None else None,
             a0=float(a0_el.text) if a0_el is not None and a0_el.text is not None else None,
-            cp=float(cp_el.text) if cp_el is not None and cp_el.text is not None else None,
+            cp=_parse_tuple(cp_el),
             cm_delta=float(cm_delta_el.text) if cm_delta_el is not None and cm_delta_el.text is not None else None,
-            forward=float(forward_el.text) if forward_el is not None and forward_el.text is not None else None,
-            upward=float(upward_el.text) if upward_el is not None and upward_el.text is not None else None,
+            forward=_parse_tuple(forward_el),
+            upward=_parse_tuple(upward_el),
             control_joint_rad_to_cl=float(control_joint_rad_to_cl_el.text) if control_joint_rad_to_cl_el is not None and control_joint_rad_to_cl_el.text is not None else None,
             control_joint_name=control_joint_name_el.text if control_joint_name_el is not None and control_joint_name_el.text is not None else None,
         )
@@ -181,6 +197,8 @@ class LiftDragPlugin(Plugin):
                 child = ET.Element(k)
                 if isinstance(v, bool):
                     child.text = "true" if v else "false"
+                elif isinstance(v, tuple):
+                    child.text = " ".join(map(str, v))
                 else:
                     child.text = str(v)
                 el.append(child)
