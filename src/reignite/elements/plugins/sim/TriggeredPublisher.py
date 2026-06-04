@@ -36,7 +36,7 @@ class TriggeredPublisherPlugin(Plugin):
             super().__init__("input", matches or [], type=type, topic=topic)
 
     class Output(TextElement):
-        def __init__(self, type: str, topic: str, msg_content: str):
+        def __init__(self, type: str, topic: str, msg_content: str = ""):
             msg_type = _messages.get(type.lower(), type)
             super().__init__("output", msg_content, type=msg_type, topic=topic)
 
