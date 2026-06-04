@@ -1,18 +1,18 @@
 from __future__ import annotations
 
-from .heightmap import Heightmap
 from .box import Box
 from .capsule import Capsule
 from .cone import Cone
 from .cylinder import Cylinder
 from .ellipsoid import Ellipsoid
+from .heightmap import Heightmap
 from .mesh import Mesh
 from .plane import Plane
 from .polyline import Polyline
 from .sphere import Sphere
 from .._sdf.geometry import Geometry
 from ..utils import Vector3, Vector2d
-from ..utils.vector2d import _vector2d
+from ..utils.vector2d import _vector2d, _Vector2dT
 from ..utils.vector3 import _vector3, _Vector3T
 
 
@@ -55,8 +55,7 @@ class MeshGeometry(Geometry):
 
 
 class PlaneGeometry(Geometry):
-    def __init__(self, size: Vector2d | tuple[float, float],
-                 normal: Vector3 | tuple[float, float, float] = Vector3(0, 0, 1)):
+    def __init__(self, size: _Vector2dT, normal: _Vector3T = Vector3(0, 0, 1)):
         super().__init__(plane=Plane(normal=_vector3(normal), size=_vector2d(size)))
 
 
