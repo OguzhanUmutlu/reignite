@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from reignite.elements.plugin import Plugin, ParentElement, TextElement
 
 
