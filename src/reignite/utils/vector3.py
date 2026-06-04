@@ -5,8 +5,7 @@ from typing import Union
 _Vector3T = Union[float, tuple[float, float, float], "Vector3"]
 
 
-def _vector3(v: float | tuple[float, float, float] | Vector3 | str, y: float = None,
-             z: float = None) -> Vector3:
+def _vector3(v: _Vector3T, y: float = None, z: float = None) -> Vector3:
     if isinstance(v, Vector3):
         return v
     if isinstance(v, str):

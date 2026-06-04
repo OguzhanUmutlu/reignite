@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from . import Heightmap
 from .box import Box
 from .capsule import Capsule
 from .cone import Cone
@@ -12,7 +13,7 @@ from .sphere import Sphere
 from .._sdf.geometry import Geometry
 from ..utils import Vector3, Vector2d
 from ..utils.vector2d import _vector2d
-from ..utils.vector3 import _vector3
+from ..utils.vector3 import _vector3, _Vector3T
 
 
 class BoxGeometry(Geometry):
@@ -67,3 +68,13 @@ class PolylineGeometry(Geometry):
 class SphereGeometry(Geometry):
     def __init__(self, radius: float):
         super().__init__(sphere=Sphere(radius=radius))
+
+
+class HeightmapGeometry(Geometry):
+    def __init__(self, uri: str, blends: list["Heightmap.Blend"] | None = None, pos: _Vector3T | None = None,
+                 sampling: int | None = None, size: _Vector3T | None = None,
+                 textures: list["Heightmap.Texture"] | None = None, use_terrain_paging: bool | None = None):
+        super().__init__(
+            heightmap=Heightmap(blends=blends, pos=_vector3(pos) if pos is not None else None, sampling=sampling,
+                                size=_vector3(size) if size is not None else size, textures=textures, uri=uri,
+                                use_terrain_paging=use_terrain_paging))
