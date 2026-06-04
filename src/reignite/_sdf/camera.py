@@ -44,7 +44,9 @@ class Camera(BaseModel):
             if self.sdfversion is None and version is not None:
                 self.sdfversion = version
             elif version is not None and version != self.sdfversion:
-                return self.to_version(str(version)).to_sdf()
+                return self.to_version(str(version)).to_sdf(version)
+            if version is None:
+                version = self.sdfversion or "1.12"
             el = ET.Element("clip")
             if self.far is not None:
                 if cmp_version(version, "1.2") >= 0:
@@ -110,7 +112,9 @@ class Camera(BaseModel):
                 if self.sdfversion is None and version is not None:
                     self.sdfversion = version
                 elif version is not None and version != self.sdfversion:
-                    return self.to_version(str(version)).to_sdf()
+                    return self.to_version(str(version)).to_sdf(version)
+                if version is None:
+                    version = self.sdfversion or "1.12"
                 el = ET.Element("clip")
                 if self.far is not None:
                     _c_tmp = ET.Element("far")
@@ -169,7 +173,9 @@ class Camera(BaseModel):
             if self.sdfversion is None and version is not None:
                 self.sdfversion = version
             elif version is not None and version != self.sdfversion:
-                return self.to_version(str(version)).to_sdf()
+                return self.to_version(str(version)).to_sdf(version)
+            if version is None:
+                version = self.sdfversion or "1.12"
             el = ET.Element("depth_camera")
             if self.clip is not None:
                 _child_res = self.clip.to_sdf(version)
@@ -241,7 +247,9 @@ class Camera(BaseModel):
             if self.sdfversion is None and version is not None:
                 self.sdfversion = version
             elif version is not None and version != self.sdfversion:
-                return self.to_version(str(version)).to_sdf()
+                return self.to_version(str(version)).to_sdf(version)
+            if version is None:
+                version = self.sdfversion or "1.12"
             el = ET.Element("distortion")
             if self.center is not None:
                 _c_tmp = ET.Element("center")
@@ -346,7 +354,9 @@ class Camera(BaseModel):
             if self.sdfversion is None and version is not None:
                 self.sdfversion = version
             elif version is not None and version != self.sdfversion:
-                return self.to_version(str(version)).to_sdf()
+                return self.to_version(str(version)).to_sdf(version)
+            if version is None:
+                version = self.sdfversion or "1.12"
             el = ET.Element("horizontal_fov")
             if self.angle is not None:
                 if cmp_version(version, "1.2") >= 0:
@@ -404,7 +414,9 @@ class Camera(BaseModel):
             if self.sdfversion is None and version is not None:
                 self.sdfversion = version
             elif version is not None and version != self.sdfversion:
-                return self.to_version(str(version)).to_sdf()
+                return self.to_version(str(version)).to_sdf(version)
+            if version is None:
+                version = self.sdfversion or "1.12"
             el = ET.Element("image")
             if self.anti_aliasing is not None:
                 _c_tmp = ET.Element("anti_aliasing")
@@ -510,7 +522,9 @@ class Camera(BaseModel):
                 if self.sdfversion is None and version is not None:
                     self.sdfversion = version
                 elif version is not None and version != self.sdfversion:
-                    return self.to_version(str(version)).to_sdf()
+                    return self.to_version(str(version)).to_sdf(version)
+                if version is None:
+                    version = self.sdfversion or "1.12"
                 el = ET.Element("custom_function")
                 if self.c1 is not None:
                     _c_tmp = ET.Element("c1")
@@ -608,7 +622,9 @@ class Camera(BaseModel):
                 if self.sdfversion is None and version is not None:
                     self.sdfversion = version
                 elif version is not None and version != self.sdfversion:
-                    return self.to_version(str(version)).to_sdf()
+                    return self.to_version(str(version)).to_sdf(version)
+                if version is None:
+                    version = self.sdfversion or "1.12"
                 el = ET.Element("intrinsics")
                 if self.cx is not None:
                     _c_tmp = ET.Element("cx")
@@ -708,7 +724,9 @@ class Camera(BaseModel):
                 if self.sdfversion is None and version is not None:
                     self.sdfversion = version
                 elif version is not None and version != self.sdfversion:
-                    return self.to_version(str(version)).to_sdf()
+                    return self.to_version(str(version)).to_sdf(version)
+                if version is None:
+                    version = self.sdfversion or "1.12"
                 el = ET.Element("projection")
                 if self.p_cx is not None:
                     _c_tmp = ET.Element("p_cx")
@@ -841,7 +859,9 @@ class Camera(BaseModel):
             if self.sdfversion is None and version is not None:
                 self.sdfversion = version
             elif version is not None and version != self.sdfversion:
-                return self.to_version(str(version)).to_sdf()
+                return self.to_version(str(version)).to_sdf(version)
+            if version is None:
+                version = self.sdfversion or "1.12"
             el = ET.Element("lens")
             if self.custom_function is not None:
                 _child_res = self.custom_function.to_sdf(version)
@@ -974,7 +994,9 @@ class Camera(BaseModel):
             if self.sdfversion is None and version is not None:
                 self.sdfversion = version
             elif version is not None and version != self.sdfversion:
-                return self.to_version(str(version)).to_sdf()
+                return self.to_version(str(version)).to_sdf(version)
+            if version is None:
+                version = self.sdfversion or "1.12"
             el = ET.Element("noise")
             if self.mean is not None:
                 _c_tmp = ET.Element("mean")
@@ -1042,7 +1064,9 @@ class Camera(BaseModel):
             if self.sdfversion is None and version is not None:
                 self.sdfversion = version
             elif version is not None and version != self.sdfversion:
-                return self.to_version(str(version)).to_sdf()
+                return self.to_version(str(version)).to_sdf(version)
+            if version is None:
+                version = self.sdfversion or "1.12"
             el = ET.Element("save")
             if self.enabled is not None:
                 el.set("enabled", str(self.enabled).lower())
@@ -1206,7 +1230,9 @@ class Camera(BaseModel):
         if self.sdfversion is None and version is not None:
             self.sdfversion = version
         elif version is not None and version != self.sdfversion:
-            return self.to_version(str(version)).to_sdf()
+            return self.to_version(str(version)).to_sdf(version)
+        if version is None:
+            version = self.sdfversion or "1.12"
         el = ET.Element("camera")
         if self.box_type is not None:
             _c_tmp = ET.Element("box_type")

@@ -45,7 +45,9 @@ class Physics(BaseModel):
                 if self.sdfversion is None and version is not None:
                     self.sdfversion = version
                 elif version is not None and version != self.sdfversion:
-                    return self.to_version(str(version)).to_sdf()
+                    return self.to_version(str(version)).to_sdf(version)
+                if version is None:
+                    version = self.sdfversion or "1.12"
                 el = ET.Element("constraints")
                 if self.cfm is not None:
                     _c_tmp = ET.Element("cfm")
@@ -141,7 +143,9 @@ class Physics(BaseModel):
                 if self.sdfversion is None and version is not None:
                     self.sdfversion = version
                 elif version is not None and version != self.sdfversion:
-                    return self.to_version(str(version)).to_sdf()
+                    return self.to_version(str(version)).to_sdf(version)
+                if version is None:
+                    version = self.sdfversion or "1.12"
                 el = ET.Element("solver")
                 if self.iters is not None:
                     _c_tmp = ET.Element("iters")
@@ -237,7 +241,9 @@ class Physics(BaseModel):
             if self.sdfversion is None and version is not None:
                 self.sdfversion = version
             elif version is not None and version != self.sdfversion:
-                return self.to_version(str(version)).to_sdf()
+                return self.to_version(str(version)).to_sdf(version)
+            if version is None:
+                version = self.sdfversion or "1.12"
             el = ET.Element("bullet")
             if self.constraints is not None:
                 _child_res = self.constraints.to_sdf(version)
@@ -308,7 +314,9 @@ class Physics(BaseModel):
                 if self.sdfversion is None and version is not None:
                     self.sdfversion = version
                 elif version is not None and version != self.sdfversion:
-                    return self.to_version(str(version)).to_sdf()
+                    return self.to_version(str(version)).to_sdf(version)
+                if version is None:
+                    version = self.sdfversion or "1.12"
                 el = ET.Element("solver")
                 if self.solver_type is not None:
                     _c_tmp = ET.Element("solver_type")
@@ -352,7 +360,9 @@ class Physics(BaseModel):
             if self.sdfversion is None and version is not None:
                 self.sdfversion = version
             elif version is not None and version != self.sdfversion:
-                return self.to_version(str(version)).to_sdf()
+                return self.to_version(str(version)).to_sdf(version)
+            if version is None:
+                version = self.sdfversion or "1.12"
             el = ET.Element("dart")
             if self.collision_detector is not None:
                 _c_tmp = ET.Element("collision_detector")
@@ -410,7 +420,9 @@ class Physics(BaseModel):
             if self.sdfversion is None and version is not None:
                 self.sdfversion = version
             elif version is not None and version != self.sdfversion:
-                return self.to_version(str(version)).to_sdf()
+                return self.to_version(str(version)).to_sdf(version)
+            if version is None:
+                version = self.sdfversion or "1.12"
             el = ET.Element("gravity")
             if self.gravity is not None:
                 el.text = str(self.gravity)
@@ -467,7 +479,9 @@ class Physics(BaseModel):
                 if self.sdfversion is None and version is not None:
                     self.sdfversion = version
                 elif version is not None and version != self.sdfversion:
-                    return self.to_version(str(version)).to_sdf()
+                    return self.to_version(str(version)).to_sdf(version)
+                if version is None:
+                    version = self.sdfversion or "1.12"
                 el = ET.Element("constraints")
                 if self.cfm is not None:
                     if cmp_version(version, "1.2") >= 0:
@@ -596,7 +610,9 @@ class Physics(BaseModel):
                 if self.sdfversion is None and version is not None:
                     self.sdfversion = version
                 elif version is not None and version != self.sdfversion:
-                    return self.to_version(str(version)).to_sdf()
+                    return self.to_version(str(version)).to_sdf(version)
+                if version is None:
+                    version = self.sdfversion or "1.12"
                 el = ET.Element("solver")
                 if self.dt is not None:
                     if cmp_version(version, "1.2") >= 0:
@@ -802,7 +818,9 @@ class Physics(BaseModel):
             if self.sdfversion is None and version is not None:
                 self.sdfversion = version
             elif version is not None and version != self.sdfversion:
-                return self.to_version(str(version)).to_sdf()
+                return self.to_version(str(version)).to_sdf(version)
+            if version is None:
+                version = self.sdfversion or "1.12"
             el = ET.Element("ode")
             if self.constraints is not None:
                 _child_res = self.constraints.to_sdf(version)
@@ -876,7 +894,9 @@ class Physics(BaseModel):
                 if self.sdfversion is None and version is not None:
                     self.sdfversion = version
                 elif version is not None and version != self.sdfversion:
-                    return self.to_version(str(version)).to_sdf()
+                    return self.to_version(str(version)).to_sdf(version)
+                if version is None:
+                    version = self.sdfversion or "1.12"
                 el = ET.Element("contact")
                 if self.dissipation is not None:
                     _c_tmp = ET.Element("dissipation")
@@ -1028,7 +1048,9 @@ class Physics(BaseModel):
             if self.sdfversion is None and version is not None:
                 self.sdfversion = version
             elif version is not None and version != self.sdfversion:
-                return self.to_version(str(version)).to_sdf()
+                return self.to_version(str(version)).to_sdf(version)
+            if version is None:
+                version = self.sdfversion or "1.12"
             el = ET.Element("simbody")
             if self.accuracy is not None:
                 _c_tmp = ET.Element("accuracy")
@@ -1182,7 +1204,9 @@ class Physics(BaseModel):
         if self.sdfversion is None and version is not None:
             self.sdfversion = version
         elif version is not None and version != self.sdfversion:
-            return self.to_version(str(version)).to_sdf()
+            return self.to_version(str(version)).to_sdf(version)
+        if version is None:
+            version = self.sdfversion or "1.12"
         el = ET.Element("physics")
         if self.bullet is not None:
             _child_res = self.bullet.to_sdf(version)

@@ -33,7 +33,9 @@ class Altimeter(BaseModel):
             if self.sdfversion is None and version is not None:
                 self.sdfversion = version
             elif version is not None and version != self.sdfversion:
-                return self.to_version(str(version)).to_sdf()
+                return self.to_version(str(version)).to_sdf(version)
+            if version is None:
+                version = self.sdfversion or "1.12"
             el = ET.Element("vertical_position")
             if self.noise is not None:
                 _child_res = self.noise.to_sdf(version)
@@ -78,7 +80,9 @@ class Altimeter(BaseModel):
             if self.sdfversion is None and version is not None:
                 self.sdfversion = version
             elif version is not None and version != self.sdfversion:
-                return self.to_version(str(version)).to_sdf()
+                return self.to_version(str(version)).to_sdf(version)
+            if version is None:
+                version = self.sdfversion or "1.12"
             el = ET.Element("vertical_velocity")
             if self.noise is not None:
                 _child_res = self.noise.to_sdf(version)
@@ -131,7 +135,9 @@ class Altimeter(BaseModel):
         if self.sdfversion is None and version is not None:
             self.sdfversion = version
         elif version is not None and version != self.sdfversion:
-            return self.to_version(str(version)).to_sdf()
+            return self.to_version(str(version)).to_sdf(version)
+        if version is None:
+            version = self.sdfversion or "1.12"
         el = ET.Element("altimeter")
         if self.vertical_position is not None:
             _child_res = self.vertical_position.to_sdf(version)

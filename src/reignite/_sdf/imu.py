@@ -44,7 +44,9 @@ class Imu(BaseModel):
                 if self.sdfversion is None and version is not None:
                     self.sdfversion = version
                 elif version is not None and version != self.sdfversion:
-                    return self.to_version(str(version)).to_sdf()
+                    return self.to_version(str(version)).to_sdf(version)
+                if version is None:
+                    version = self.sdfversion or "1.12"
                 el = ET.Element("x")
                 if self.noise is not None:
                     _child_res = self.noise.to_sdf(version)
@@ -89,7 +91,9 @@ class Imu(BaseModel):
                 if self.sdfversion is None and version is not None:
                     self.sdfversion = version
                 elif version is not None and version != self.sdfversion:
-                    return self.to_version(str(version)).to_sdf()
+                    return self.to_version(str(version)).to_sdf(version)
+                if version is None:
+                    version = self.sdfversion or "1.12"
                 el = ET.Element("y")
                 if self.noise is not None:
                     _child_res = self.noise.to_sdf(version)
@@ -134,7 +138,9 @@ class Imu(BaseModel):
                 if self.sdfversion is None and version is not None:
                     self.sdfversion = version
                 elif version is not None and version != self.sdfversion:
-                    return self.to_version(str(version)).to_sdf()
+                    return self.to_version(str(version)).to_sdf(version)
+                if version is None:
+                    version = self.sdfversion or "1.12"
                 el = ET.Element("z")
                 if self.noise is not None:
                     _child_res = self.noise.to_sdf(version)
@@ -194,7 +200,9 @@ class Imu(BaseModel):
             if self.sdfversion is None and version is not None:
                 self.sdfversion = version
             elif version is not None and version != self.sdfversion:
-                return self.to_version(str(version)).to_sdf()
+                return self.to_version(str(version)).to_sdf(version)
+            if version is None:
+                version = self.sdfversion or "1.12"
             el = ET.Element("angular_velocity")
             if self.x is not None:
                 _child_res = self.x.to_sdf(version)
@@ -280,7 +288,9 @@ class Imu(BaseModel):
             if self.sdfversion is None and version is not None:
                 self.sdfversion = version
             elif version is not None and version != self.sdfversion:
-                return self.to_version(str(version)).to_sdf()
+                return self.to_version(str(version)).to_sdf(version)
+            if version is None:
+                version = self.sdfversion or "1.12"
             el = ET.Element("linear_acceleration")
             if self.x is not None:
                 _child_res = self.x.to_sdf(version)
@@ -360,7 +370,9 @@ class Imu(BaseModel):
                 if self.sdfversion is None and version is not None:
                     self.sdfversion = version
                 elif version is not None and version != self.sdfversion:
-                    return self.to_version(str(version)).to_sdf()
+                    return self.to_version(str(version)).to_sdf(version)
+                if version is None:
+                    version = self.sdfversion or "1.12"
                 el = ET.Element("accel")
                 if self.bias_mean is not None:
                     _c_tmp = ET.Element("bias_mean")
@@ -443,7 +455,9 @@ class Imu(BaseModel):
                 if self.sdfversion is None and version is not None:
                     self.sdfversion = version
                 elif version is not None and version != self.sdfversion:
-                    return self.to_version(str(version)).to_sdf()
+                    return self.to_version(str(version)).to_sdf(version)
+                if version is None:
+                    version = self.sdfversion or "1.12"
                 el = ET.Element("rate")
                 if self.bias_mean is not None:
                     _c_tmp = ET.Element("bias_mean")
@@ -533,7 +547,9 @@ class Imu(BaseModel):
             if self.sdfversion is None and version is not None:
                 self.sdfversion = version
             elif version is not None and version != self.sdfversion:
-                return self.to_version(str(version)).to_sdf()
+                return self.to_version(str(version)).to_sdf(version)
+            if version is None:
+                version = self.sdfversion or "1.12"
             el = ET.Element("noise")
             if self.accel is not None:
                 _child_res = self.accel.to_sdf(version)
@@ -606,7 +622,9 @@ class Imu(BaseModel):
                 if self.sdfversion is None and version is not None:
                     self.sdfversion = version
                 elif version is not None and version != self.sdfversion:
-                    return self.to_version(str(version)).to_sdf()
+                    return self.to_version(str(version)).to_sdf(version)
+                if version is None:
+                    version = self.sdfversion or "1.12"
                 el = ET.Element("custom_rpy")
                 if self.custom_rpy is not None:
                     el.text = str(self.custom_rpy)
@@ -651,7 +669,9 @@ class Imu(BaseModel):
                 if self.sdfversion is None and version is not None:
                     self.sdfversion = version
                 elif version is not None and version != self.sdfversion:
-                    return self.to_version(str(version)).to_sdf()
+                    return self.to_version(str(version)).to_sdf(version)
+                if version is None:
+                    version = self.sdfversion or "1.12"
                 el = ET.Element("grav_dir_x")
                 if self.grav_dir_x is not None:
                     el.text = str(self.grav_dir_x)
@@ -707,7 +727,9 @@ class Imu(BaseModel):
             if self.sdfversion is None and version is not None:
                 self.sdfversion = version
             elif version is not None and version != self.sdfversion:
-                return self.to_version(str(version)).to_sdf()
+                return self.to_version(str(version)).to_sdf(version)
+            if version is None:
+                version = self.sdfversion or "1.12"
             el = ET.Element("orientation_reference_frame")
             if self.custom_rpy is not None:
                 _child_res = self.custom_rpy.to_sdf(version)
@@ -826,7 +848,9 @@ class Imu(BaseModel):
         if self.sdfversion is None and version is not None:
             self.sdfversion = version
         elif version is not None and version != self.sdfversion:
-            return self.to_version(str(version)).to_sdf()
+            return self.to_version(str(version)).to_sdf(version)
+        if version is None:
+            version = self.sdfversion or "1.12"
         el = ET.Element("imu")
         if self.angular_velocity is not None:
             _child_res = self.angular_velocity.to_sdf(version)

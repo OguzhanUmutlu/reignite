@@ -32,7 +32,9 @@ class Lidar(BaseModel):
             if self.sdfversion is None and version is not None:
                 self.sdfversion = version
             elif version is not None and version != self.sdfversion:
-                return self.to_version(str(version)).to_sdf()
+                return self.to_version(str(version)).to_sdf(version)
+            if version is None:
+                version = self.sdfversion or "1.12"
             el = ET.Element("noise")
             if self.mean is not None:
                 _c_tmp = ET.Element("mean")
@@ -100,7 +102,9 @@ class Lidar(BaseModel):
             if self.sdfversion is None and version is not None:
                 self.sdfversion = version
             elif version is not None and version != self.sdfversion:
-                return self.to_version(str(version)).to_sdf()
+                return self.to_version(str(version)).to_sdf(version)
+            if version is None:
+                version = self.sdfversion or "1.12"
             el = ET.Element("range")
             if self.max is not None:
                 _c_tmp = ET.Element("max")
@@ -171,7 +175,9 @@ class Lidar(BaseModel):
                 if self.sdfversion is None and version is not None:
                     self.sdfversion = version
                 elif version is not None and version != self.sdfversion:
-                    return self.to_version(str(version)).to_sdf()
+                    return self.to_version(str(version)).to_sdf(version)
+                if version is None:
+                    version = self.sdfversion or "1.12"
                 el = ET.Element("horizontal")
                 if self.max_angle is not None:
                     _c_tmp = ET.Element("max_angle")
@@ -254,7 +260,9 @@ class Lidar(BaseModel):
                 if self.sdfversion is None and version is not None:
                     self.sdfversion = version
                 elif version is not None and version != self.sdfversion:
-                    return self.to_version(str(version)).to_sdf()
+                    return self.to_version(str(version)).to_sdf(version)
+                if version is None:
+                    version = self.sdfversion or "1.12"
                 el = ET.Element("vertical")
                 if self.max_angle is not None:
                     _c_tmp = ET.Element("max_angle")
@@ -342,7 +350,9 @@ class Lidar(BaseModel):
             if self.sdfversion is None and version is not None:
                 self.sdfversion = version
             elif version is not None and version != self.sdfversion:
-                return self.to_version(str(version)).to_sdf()
+                return self.to_version(str(version)).to_sdf(version)
+            if version is None:
+                version = self.sdfversion or "1.12"
             el = ET.Element("scan")
             if self.horizontal is not None:
                 _child_res = self.horizontal.to_sdf(version)
@@ -421,7 +431,9 @@ class Lidar(BaseModel):
         if self.sdfversion is None and version is not None:
             self.sdfversion = version
         elif version is not None and version != self.sdfversion:
-            return self.to_version(str(version)).to_sdf()
+            return self.to_version(str(version)).to_sdf(version)
+        if version is None:
+            version = self.sdfversion or "1.12"
         el = ET.Element("lidar")
         if self.noise is not None:
             _child_res = self.noise.to_sdf(version)

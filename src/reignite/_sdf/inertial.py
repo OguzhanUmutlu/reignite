@@ -82,7 +82,9 @@ class Inertial(BaseModel):
             if self.sdfversion is None and version is not None:
                 self.sdfversion = version
             elif version is not None and version != self.sdfversion:
-                return self.to_version(str(version)).to_sdf()
+                return self.to_version(str(version)).to_sdf(version)
+            if version is None:
+                version = self.sdfversion or "1.12"
             el = ET.Element("fluid_added_mass")
             if self.pp is not None:
                 _c_tmp = ET.Element("pp")
@@ -390,7 +392,9 @@ class Inertial(BaseModel):
             if self.sdfversion is None and version is not None:
                 self.sdfversion = version
             elif version is not None and version != self.sdfversion:
-                return self.to_version(str(version)).to_sdf()
+                return self.to_version(str(version)).to_sdf(version)
+            if version is None:
+                version = self.sdfversion or "1.12"
             el = ET.Element("inertia")
             if self.ixx is not None:
                 if cmp_version(version, "1.2") >= 0:
@@ -525,7 +529,9 @@ class Inertial(BaseModel):
             if self.sdfversion is None and version is not None:
                 self.sdfversion = version
             elif version is not None and version != self.sdfversion:
-                return self.to_version(str(version)).to_sdf()
+                return self.to_version(str(version)).to_sdf(version)
+            if version is None:
+                version = self.sdfversion or "1.12"
             el = ET.Element("origin")
             if self.pose is not None:
                 if cmp_version(version, "1.2") >= 0:
@@ -633,7 +639,9 @@ class Inertial(BaseModel):
         if self.sdfversion is None and version is not None:
             self.sdfversion = version
         elif version is not None and version != self.sdfversion:
-            return self.to_version(str(version)).to_sdf()
+            return self.to_version(str(version)).to_sdf(version)
+        if version is None:
+            version = self.sdfversion or "1.12"
         el = ET.Element("inertial")
         if self.auto is not None:
             el.set("auto", str(self.auto).lower())

@@ -63,7 +63,9 @@ class Joint(BaseModel):
                 if self.sdfversion is None and version is not None:
                     self.sdfversion = version
                 elif version is not None and version != self.sdfversion:
-                    return self.to_version(str(version)).to_sdf()
+                    return self.to_version(str(version)).to_sdf(version)
+                if version is None:
+                    version = self.sdfversion or "1.12"
                 el = ET.Element("dynamics")
                 if self.damping is not None:
                     if cmp_version(version, "1.2") >= 0:
@@ -170,7 +172,9 @@ class Joint(BaseModel):
                 if self.sdfversion is None and version is not None:
                     self.sdfversion = version
                 elif version is not None and version != self.sdfversion:
-                    return self.to_version(str(version)).to_sdf()
+                    return self.to_version(str(version)).to_sdf(version)
+                if version is None:
+                    version = self.sdfversion or "1.12"
                 el = ET.Element("limit")
                 if self.dissipation is not None:
                     _c_tmp = ET.Element("dissipation")
@@ -307,7 +311,9 @@ class Joint(BaseModel):
                 if self.sdfversion is None and version is not None:
                     self.sdfversion = version
                 elif version is not None and version != self.sdfversion:
-                    return self.to_version(str(version)).to_sdf()
+                    return self.to_version(str(version)).to_sdf(version)
+                if version is None:
+                    version = self.sdfversion or "1.12"
                 el = ET.Element("xyz")
                 if self.expressed_in is not None:
                     el.set("expressed_in", self.expressed_in)
@@ -396,7 +402,9 @@ class Joint(BaseModel):
             if self.sdfversion is None and version is not None:
                 self.sdfversion = version
             elif version is not None and version != self.sdfversion:
-                return self.to_version(str(version)).to_sdf()
+                return self.to_version(str(version)).to_sdf(version)
+            if version is None:
+                version = self.sdfversion or "1.12"
             el = ET.Element("axis")
             if self.dynamics is not None:
                 _child_res = self.dynamics.to_sdf(version)
@@ -536,7 +544,9 @@ class Joint(BaseModel):
                 if self.sdfversion is None and version is not None:
                     self.sdfversion = version
                 elif version is not None and version != self.sdfversion:
-                    return self.to_version(str(version)).to_sdf()
+                    return self.to_version(str(version)).to_sdf(version)
+                if version is None:
+                    version = self.sdfversion or "1.12"
                 el = ET.Element("limit")
                 if self.dissipation is not None:
                     _c_tmp = ET.Element("dissipation")
@@ -707,7 +717,9 @@ class Joint(BaseModel):
             if self.sdfversion is None and version is not None:
                 self.sdfversion = version
             elif version is not None and version != self.sdfversion:
-                return self.to_version(str(version)).to_sdf()
+                return self.to_version(str(version)).to_sdf(version)
+            if version is None:
+                version = self.sdfversion or "1.12"
             el = ET.Element("axis2")
             if self.dynamics is not None:
                 _child_res = self.dynamics.to_sdf(version)
@@ -834,7 +846,9 @@ class Joint(BaseModel):
             if self.sdfversion is None and version is not None:
                 self.sdfversion = version
             elif version is not None and version != self.sdfversion:
-                return self.to_version(str(version)).to_sdf()
+                return self.to_version(str(version)).to_sdf(version)
+            if version is None:
+                version = self.sdfversion or "1.12"
             el = ET.Element("child")
             if self.child is not None:
                 el.text = self.child
@@ -880,7 +894,9 @@ class Joint(BaseModel):
             if self.sdfversion is None and version is not None:
                 self.sdfversion = version
             elif version is not None and version != self.sdfversion:
-                return self.to_version(str(version)).to_sdf()
+                return self.to_version(str(version)).to_sdf(version)
+            if version is None:
+                version = self.sdfversion or "1.12"
             el = ET.Element("origin")
             if self.pose is not None:
                 if cmp_version(version, "1.2") >= 0:
@@ -926,7 +942,9 @@ class Joint(BaseModel):
             if self.sdfversion is None and version is not None:
                 self.sdfversion = version
             elif version is not None and version != self.sdfversion:
-                return self.to_version(str(version)).to_sdf()
+                return self.to_version(str(version)).to_sdf(version)
+            if version is None:
+                version = self.sdfversion or "1.12"
             el = ET.Element("parent")
             if self.link is not None:
                 if cmp_version(version, "1.2") >= 0:
@@ -980,7 +998,9 @@ class Joint(BaseModel):
                     if self.sdfversion is None and version is not None:
                         self.sdfversion = version
                     elif version is not None and version != self.sdfversion:
-                        return self.to_version(str(version)).to_sdf()
+                        return self.to_version(str(version)).to_sdf(version)
+                    if version is None:
+                        version = self.sdfversion or "1.12"
                     el = ET.Element("limit")
                     if self.cfm is not None:
                         if cmp_version(version, "1.2") >= 0:
@@ -1045,7 +1065,9 @@ class Joint(BaseModel):
                     if self.sdfversion is None and version is not None:
                         self.sdfversion = version
                     elif version is not None and version != self.sdfversion:
-                        return self.to_version(str(version)).to_sdf()
+                        return self.to_version(str(version)).to_sdf(version)
+                    if version is None:
+                        version = self.sdfversion or "1.12"
                     el = ET.Element("suspension")
                     if self.cfm is not None:
                         if cmp_version(version, "1.2") >= 0:
@@ -1147,7 +1169,9 @@ class Joint(BaseModel):
                 if self.sdfversion is None and version is not None:
                     self.sdfversion = version
                 elif version is not None and version != self.sdfversion:
-                    return self.to_version(str(version)).to_sdf()
+                    return self.to_version(str(version)).to_sdf(version)
+                if version is None:
+                    version = self.sdfversion or "1.12"
                 el = ET.Element("ode")
                 if self.bounce is not None:
                     _c_tmp = ET.Element("bounce")
@@ -1325,7 +1349,9 @@ class Joint(BaseModel):
                 if self.sdfversion is None and version is not None:
                     self.sdfversion = version
                 elif version is not None and version != self.sdfversion:
-                    return self.to_version(str(version)).to_sdf()
+                    return self.to_version(str(version)).to_sdf(version)
+                if version is None:
+                    version = self.sdfversion or "1.12"
                 el = ET.Element("simbody")
                 if self.must_be_loop_joint is not None:
                     _c_tmp = ET.Element("must_be_loop_joint")
@@ -1384,7 +1410,9 @@ class Joint(BaseModel):
             if self.sdfversion is None and version is not None:
                 self.sdfversion = version
             elif version is not None and version != self.sdfversion:
-                return self.to_version(str(version)).to_sdf()
+                return self.to_version(str(version)).to_sdf(version)
+            if version is None:
+                version = self.sdfversion or "1.12"
             el = ET.Element("physics")
             if self.ode is not None:
                 _child_res = self.ode.to_sdf(version)
@@ -1558,7 +1586,9 @@ class Joint(BaseModel):
         if self.sdfversion is None and version is not None:
             self.sdfversion = version
         elif version is not None and version != self.sdfversion:
-            return self.to_version(str(version)).to_sdf()
+            return self.to_version(str(version)).to_sdf(version)
+        if version is None:
+            version = self.sdfversion or "1.12"
         el = ET.Element("joint")
         if self.axis is not None:
             _child_res = self.axis.to_sdf(version)

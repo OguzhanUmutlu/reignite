@@ -34,7 +34,9 @@ class Gps(BaseModel):
                 if self.sdfversion is None and version is not None:
                     self.sdfversion = version
                 elif version is not None and version != self.sdfversion:
-                    return self.to_version(str(version)).to_sdf()
+                    return self.to_version(str(version)).to_sdf(version)
+                if version is None:
+                    version = self.sdfversion or "1.12"
                 el = ET.Element("horizontal")
                 if self.noise is not None:
                     _child_res = self.noise.to_sdf(version)
@@ -79,7 +81,9 @@ class Gps(BaseModel):
                 if self.sdfversion is None and version is not None:
                     self.sdfversion = version
                 elif version is not None and version != self.sdfversion:
-                    return self.to_version(str(version)).to_sdf()
+                    return self.to_version(str(version)).to_sdf(version)
+                if version is None:
+                    version = self.sdfversion or "1.12"
                 el = ET.Element("vertical")
                 if self.noise is not None:
                     _child_res = self.noise.to_sdf(version)
@@ -132,7 +136,9 @@ class Gps(BaseModel):
             if self.sdfversion is None and version is not None:
                 self.sdfversion = version
             elif version is not None and version != self.sdfversion:
-                return self.to_version(str(version)).to_sdf()
+                return self.to_version(str(version)).to_sdf(version)
+            if version is None:
+                version = self.sdfversion or "1.12"
             el = ET.Element("position_sensing")
             if self.horizontal is not None:
                 _child_res = self.horizontal.to_sdf(version)
@@ -201,7 +207,9 @@ class Gps(BaseModel):
             if self.sdfversion is None and version is not None:
                 self.sdfversion = version
             elif version is not None and version != self.sdfversion:
-                return self.to_version(str(version)).to_sdf()
+                return self.to_version(str(version)).to_sdf(version)
+            if version is None:
+                version = self.sdfversion or "1.12"
             el = ET.Element("velocity_sensing")
             if self.horizontal is not None:
                 _child_res = self.horizontal.to_sdf(version)
@@ -269,7 +277,9 @@ class Gps(BaseModel):
         if self.sdfversion is None and version is not None:
             self.sdfversion = version
         elif version is not None and version != self.sdfversion:
-            return self.to_version(str(version)).to_sdf()
+            return self.to_version(str(version)).to_sdf(version)
+        if version is None:
+            version = self.sdfversion or "1.12"
         el = ET.Element("gps")
         if self.position_sensing is not None:
             _child_res = self.position_sensing.to_sdf(version)

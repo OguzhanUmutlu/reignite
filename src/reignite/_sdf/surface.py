@@ -37,7 +37,9 @@ class Surface(BaseModel):
             if self.sdfversion is None and version is not None:
                 self.sdfversion = version
             elif version is not None and version != self.sdfversion:
-                return self.to_version(str(version)).to_sdf()
+                return self.to_version(str(version)).to_sdf(version)
+            if version is None:
+                version = self.sdfversion or "1.12"
             el = ET.Element("bounce")
             if self.restitution_coefficient is not None:
                 if cmp_version(version, "1.2") >= 0:
@@ -111,7 +113,9 @@ class Surface(BaseModel):
                 if self.sdfversion is None and version is not None:
                     self.sdfversion = version
                 elif version is not None and version != self.sdfversion:
-                    return self.to_version(str(version)).to_sdf()
+                    return self.to_version(str(version)).to_sdf(version)
+                if version is None:
+                    version = self.sdfversion or "1.12"
                 el = ET.Element("bullet")
                 if self.kd is not None:
                     _c_tmp = ET.Element("kd")
@@ -224,7 +228,9 @@ class Surface(BaseModel):
                 if self.sdfversion is None and version is not None:
                     self.sdfversion = version
                 elif version is not None and version != self.sdfversion:
-                    return self.to_version(str(version)).to_sdf()
+                    return self.to_version(str(version)).to_sdf(version)
+                if version is None:
+                    version = self.sdfversion or "1.12"
                 el = ET.Element("ode")
                 if self.kd is not None:
                     if cmp_version(version, "1.2") >= 0:
@@ -400,7 +406,9 @@ class Surface(BaseModel):
             if self.sdfversion is None and version is not None:
                 self.sdfversion = version
             elif version is not None and version != self.sdfversion:
-                return self.to_version(str(version)).to_sdf()
+                return self.to_version(str(version)).to_sdf(version)
+            if version is None:
+                version = self.sdfversion or "1.12"
             el = ET.Element("contact")
             if self.bullet is not None:
                 _child_res = self.bullet.to_sdf(version)
@@ -556,7 +564,9 @@ class Surface(BaseModel):
                 if self.sdfversion is None and version is not None:
                     self.sdfversion = version
                 elif version is not None and version != self.sdfversion:
-                    return self.to_version(str(version)).to_sdf()
+                    return self.to_version(str(version)).to_sdf(version)
+                if version is None:
+                    version = self.sdfversion or "1.12"
                 el = ET.Element("bullet")
                 if self.fdir1 is not None:
                     _c_tmp = ET.Element("fdir1")
@@ -641,7 +651,9 @@ class Surface(BaseModel):
                 if self.sdfversion is None and version is not None:
                     self.sdfversion = version
                 elif version is not None and version != self.sdfversion:
-                    return self.to_version(str(version)).to_sdf()
+                    return self.to_version(str(version)).to_sdf(version)
+                if version is None:
+                    version = self.sdfversion or "1.12"
                 el = ET.Element("ode")
                 if self.fdir1 is not None:
                     if cmp_version(version, "1.2") >= 0:
@@ -758,7 +770,9 @@ class Surface(BaseModel):
                     if self.sdfversion is None and version is not None:
                         self.sdfversion = version
                     elif version is not None and version != self.sdfversion:
-                        return self.to_version(str(version)).to_sdf()
+                        return self.to_version(str(version)).to_sdf(version)
+                    if version is None:
+                        version = self.sdfversion or "1.12"
                     el = ET.Element("ode")
                     if self.slip is not None:
                         _c_tmp = ET.Element("slip")
@@ -808,7 +822,9 @@ class Surface(BaseModel):
                 if self.sdfversion is None and version is not None:
                     self.sdfversion = version
                 elif version is not None and version != self.sdfversion:
-                    return self.to_version(str(version)).to_sdf()
+                    return self.to_version(str(version)).to_sdf(version)
+                if version is None:
+                    version = self.sdfversion or "1.12"
                 el = ET.Element("torsional")
                 if self.coefficient is not None:
                     _c_tmp = ET.Element("coefficient")
@@ -923,7 +939,9 @@ class Surface(BaseModel):
             if self.sdfversion is None and version is not None:
                 self.sdfversion = version
             elif version is not None and version != self.sdfversion:
-                return self.to_version(str(version)).to_sdf()
+                return self.to_version(str(version)).to_sdf(version)
+            if version is None:
+                version = self.sdfversion or "1.12"
             el = ET.Element("friction")
             if self.bullet is not None:
                 _child_res = self.bullet.to_sdf(version)
@@ -1007,7 +1025,9 @@ class Surface(BaseModel):
                 if self.sdfversion is None and version is not None:
                     self.sdfversion = version
                 elif version is not None and version != self.sdfversion:
-                    return self.to_version(str(version)).to_sdf()
+                    return self.to_version(str(version)).to_sdf(version)
+                if version is None:
+                    version = self.sdfversion or "1.12"
                 el = ET.Element("dart")
                 if self.bone_attachment is not None:
                     _c_tmp = ET.Element("bone_attachment")
@@ -1084,7 +1104,9 @@ class Surface(BaseModel):
             if self.sdfversion is None and version is not None:
                 self.sdfversion = version
             elif version is not None and version != self.sdfversion:
-                return self.to_version(str(version)).to_sdf()
+                return self.to_version(str(version)).to_sdf(version)
+            if version is None:
+                version = self.sdfversion or "1.12"
             el = ET.Element("soft_contact")
             if self.dart is not None:
                 _child_res = self.dart.to_sdf(version)
@@ -1152,7 +1174,9 @@ class Surface(BaseModel):
         if self.sdfversion is None and version is not None:
             self.sdfversion = version
         elif version is not None and version != self.sdfversion:
-            return self.to_version(str(version)).to_sdf()
+            return self.to_version(str(version)).to_sdf(version)
+        if version is None:
+            version = self.sdfversion or "1.12"
         el = ET.Element("surface")
         if self.bounce is not None:
             _child_res = self.bounce.to_sdf(version)

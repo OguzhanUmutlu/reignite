@@ -34,7 +34,9 @@ class Gripper(BaseModel):
             if self.sdfversion is None and version is not None:
                 self.sdfversion = version
             elif version is not None and version != self.sdfversion:
-                return self.to_version(str(version)).to_sdf()
+                return self.to_version(str(version)).to_sdf(version)
+            if version is None:
+                version = self.sdfversion or "1.12"
             el = ET.Element("grasp_check")
             if self.attach_steps is not None:
                 if cmp_version(version, "1.2") >= 0:
@@ -131,7 +133,9 @@ class Gripper(BaseModel):
         if self.sdfversion is None and version is not None:
             self.sdfversion = version
         elif version is not None and version != self.sdfversion:
-            return self.to_version(str(version)).to_sdf()
+            return self.to_version(str(version)).to_sdf(version)
+        if version is None:
+            version = self.sdfversion or "1.12"
         el = ET.Element("gripper")
         if self.grasp_check is not None:
             _child_res = self.grasp_check.to_sdf(version)

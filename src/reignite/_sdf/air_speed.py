@@ -33,7 +33,9 @@ class AirSpeed(BaseModel):
             if self.sdfversion is None and version is not None:
                 self.sdfversion = version
             elif version is not None and version != self.sdfversion:
-                return self.to_version(str(version)).to_sdf()
+                return self.to_version(str(version)).to_sdf(version)
+            if version is None:
+                version = self.sdfversion or "1.12"
             el = ET.Element("pressure")
             if self.noise is not None:
                 _child_res = self.noise.to_sdf(version)
@@ -75,7 +77,9 @@ class AirSpeed(BaseModel):
         if self.sdfversion is None and version is not None:
             self.sdfversion = version
         elif version is not None and version != self.sdfversion:
-            return self.to_version(str(version)).to_sdf()
+            return self.to_version(str(version)).to_sdf(version)
+        if version is None:
+            version = self.sdfversion or "1.12"
         el = ET.Element("air_speed")
         if self.pressure is not None:
             _child_res = self.pressure.to_sdf(version)

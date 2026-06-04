@@ -37,7 +37,9 @@ class Mesh(BaseModel):
             if self.sdfversion is None and version is not None:
                 self.sdfversion = version
             elif version is not None and version != self.sdfversion:
-                return self.to_version(str(version)).to_sdf()
+                return self.to_version(str(version)).to_sdf(version)
+            if version is None:
+                version = self.sdfversion or "1.12"
             el = ET.Element("convex_decomposition")
             if self.max_convex_hulls is not None:
                 _c_tmp = ET.Element("max_convex_hulls")
@@ -90,7 +92,9 @@ class Mesh(BaseModel):
             if self.sdfversion is None and version is not None:
                 self.sdfversion = version
             elif version is not None and version != self.sdfversion:
-                return self.to_version(str(version)).to_sdf()
+                return self.to_version(str(version)).to_sdf(version)
+            if version is None:
+                version = self.sdfversion or "1.12"
             el = ET.Element("submesh")
             if self.center is not None:
                 _c_tmp = ET.Element("center")
@@ -162,7 +166,9 @@ class Mesh(BaseModel):
         if self.sdfversion is None and version is not None:
             self.sdfversion = version
         elif version is not None and version != self.sdfversion:
-            return self.to_version(str(version)).to_sdf()
+            return self.to_version(str(version)).to_sdf(version)
+        if version is None:
+            version = self.sdfversion or "1.12"
         el = ET.Element("mesh")
         if self.convex_decomposition is not None:
             _child_res = self.convex_decomposition.to_sdf(version)

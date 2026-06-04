@@ -996,7 +996,9 @@ def _render_class(spec: dict, file_external_imports: set[str], indent: int = 0,
     block.append("        if self.sdfversion is None and version is not None:")
     block.append("            self.sdfversion = version")
     block.append("        elif version is not None and version != self.sdfversion:")
-    block.append("            return self.to_version(str(version)).to_sdf()")
+    block.append("            return self.to_version(str(version)).to_sdf(version)")
+    block.append('        if version is None:')
+    block.append('            version = self.sdfversion or "1.12"')
     block.append(f'        el = ET.Element("{name}")')
     for p in params:
         val_ref = f"self.{p.py_name}"

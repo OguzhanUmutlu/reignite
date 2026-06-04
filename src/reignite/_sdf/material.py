@@ -43,7 +43,9 @@ class Material(BaseModel):
                     if self.sdfversion is None and version is not None:
                         self.sdfversion = version
                     elif version is not None and version != self.sdfversion:
-                        return self.to_version(str(version)).to_sdf()
+                        return self.to_version(str(version)).to_sdf(version)
+                    if version is None:
+                        version = self.sdfversion or "1.12"
                     el = ET.Element("light_map")
                     if self.light_map is not None:
                         el.text = self.light_map
@@ -91,7 +93,9 @@ class Material(BaseModel):
                     if self.sdfversion is None and version is not None:
                         self.sdfversion = version
                     elif version is not None and version != self.sdfversion:
-                        return self.to_version(str(version)).to_sdf()
+                        return self.to_version(str(version)).to_sdf(version)
+                    if version is None:
+                        version = self.sdfversion or "1.12"
                     el = ET.Element("normal_map")
                     if self.normal_map is not None:
                         el.text = self.normal_map
@@ -163,7 +167,9 @@ class Material(BaseModel):
                 if self.sdfversion is None and version is not None:
                     self.sdfversion = version
                 elif version is not None and version != self.sdfversion:
-                    return self.to_version(str(version)).to_sdf()
+                    return self.to_version(str(version)).to_sdf(version)
+                if version is None:
+                    version = self.sdfversion or "1.12"
                 el = ET.Element("metal")
                 if self.albedo_map is not None:
                     _c_tmp = ET.Element("albedo_map")
@@ -354,7 +360,9 @@ class Material(BaseModel):
                 if self.sdfversion is None and version is not None:
                     self.sdfversion = version
                 elif version is not None and version != self.sdfversion:
-                    return self.to_version(str(version)).to_sdf()
+                    return self.to_version(str(version)).to_sdf(version)
+                if version is None:
+                    version = self.sdfversion or "1.12"
                 el = ET.Element("specular")
                 if self.albedo_map is not None:
                     _c_tmp = ET.Element("albedo_map")
@@ -515,7 +523,9 @@ class Material(BaseModel):
             if self.sdfversion is None and version is not None:
                 self.sdfversion = version
             elif version is not None and version != self.sdfversion:
-                return self.to_version(str(version)).to_sdf()
+                return self.to_version(str(version)).to_sdf(version)
+            if version is None:
+                version = self.sdfversion or "1.12"
             el = ET.Element("pbr")
             if self.metal is not None:
                 _child_res = self.metal.to_sdf(version)
@@ -579,7 +589,9 @@ class Material(BaseModel):
             if self.sdfversion is None and version is not None:
                 self.sdfversion = version
             elif version is not None and version != self.sdfversion:
-                return self.to_version(str(version)).to_sdf()
+                return self.to_version(str(version)).to_sdf(version)
+            if version is None:
+                version = self.sdfversion or "1.12"
             el = ET.Element("script")
             if self.name is not None:
                 _c_tmp = ET.Element("name")
@@ -630,7 +642,9 @@ class Material(BaseModel):
             if self.sdfversion is None and version is not None:
                 self.sdfversion = version
             elif version is not None and version != self.sdfversion:
-                return self.to_version(str(version)).to_sdf()
+                return self.to_version(str(version)).to_sdf(version)
+            if version is None:
+                version = self.sdfversion or "1.12"
             el = ET.Element("shader")
             if self.normal_map is not None:
                 _c_tmp = ET.Element("normal_map")
@@ -719,7 +733,9 @@ class Material(BaseModel):
         if self.sdfversion is None and version is not None:
             self.sdfversion = version
         elif version is not None and version != self.sdfversion:
-            return self.to_version(str(version)).to_sdf()
+            return self.to_version(str(version)).to_sdf(version)
+        if version is None:
+            version = self.sdfversion or "1.12"
         el = ET.Element("material")
         if self.ambient is not None:
             _c_tmp = ET.Element("ambient")

@@ -51,7 +51,9 @@ class Actor(BaseModel):
             if self.sdfversion is None and version is not None:
                 self.sdfversion = version
             elif version is not None and version != self.sdfversion:
-                return self.to_version(str(version)).to_sdf()
+                return self.to_version(str(version)).to_sdf(version)
+            if version is None:
+                version = self.sdfversion or "1.12"
             el = ET.Element("animation")
             if self.filename is not None:
                 if cmp_version(version, "1.2") >= 0:
@@ -138,7 +140,9 @@ class Actor(BaseModel):
             if self.sdfversion is None and version is not None:
                 self.sdfversion = version
             elif version is not None and version != self.sdfversion:
-                return self.to_version(str(version)).to_sdf()
+                return self.to_version(str(version)).to_sdf(version)
+            if version is None:
+                version = self.sdfversion or "1.12"
             el = ET.Element("origin")
             if self.pose is not None:
                 if cmp_version(version, "1.2") >= 0:
@@ -186,7 +190,9 @@ class Actor(BaseModel):
                     if self.sdfversion is None and version is not None:
                         self.sdfversion = version
                     elif version is not None and version != self.sdfversion:
-                        return self.to_version(str(version)).to_sdf()
+                        return self.to_version(str(version)).to_sdf(version)
+                    if version is None:
+                        version = self.sdfversion or "1.12"
                     el = ET.Element("waypoint")
                     if self.pose is not None:
                         if cmp_version(version, "1.2") >= 0:
@@ -267,7 +273,9 @@ class Actor(BaseModel):
                 if self.sdfversion is None and version is not None:
                     self.sdfversion = version
                 elif version is not None and version != self.sdfversion:
-                    return self.to_version(str(version)).to_sdf()
+                    return self.to_version(str(version)).to_sdf(version)
+                if version is None:
+                    version = self.sdfversion or "1.12"
                 el = ET.Element("trajectory")
                 if self.id is not None:
                     el.set("id", str(self.id))
@@ -352,7 +360,9 @@ class Actor(BaseModel):
             if self.sdfversion is None and version is not None:
                 self.sdfversion = version
             elif version is not None and version != self.sdfversion:
-                return self.to_version(str(version)).to_sdf()
+                return self.to_version(str(version)).to_sdf(version)
+            if version is None:
+                version = self.sdfversion or "1.12"
             el = ET.Element("script")
             if self.auto_start is not None:
                 if cmp_version(version, "1.2") >= 0:
@@ -450,7 +460,9 @@ class Actor(BaseModel):
             if self.sdfversion is None and version is not None:
                 self.sdfversion = version
             elif version is not None and version != self.sdfversion:
-                return self.to_version(str(version)).to_sdf()
+                return self.to_version(str(version)).to_sdf(version)
+            if version is None:
+                version = self.sdfversion or "1.12"
             el = ET.Element("skin")
             if self.filename is not None:
                 if cmp_version(version, "1.2") >= 0:
@@ -625,7 +637,9 @@ class Actor(BaseModel):
         if self.sdfversion is None and version is not None:
             self.sdfversion = version
         elif version is not None and version != self.sdfversion:
-            return self.to_version(str(version)).to_sdf()
+            return self.to_version(str(version)).to_sdf(version)
+        if version is None:
+            version = self.sdfversion or "1.12"
         el = ET.Element("actor")
         for item in (self.animations or []):
             _child_res = item.to_sdf(version)

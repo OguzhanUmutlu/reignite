@@ -39,7 +39,9 @@ class Heightmap(BaseModel):
             if self.sdfversion is None and version is not None:
                 self.sdfversion = version
             elif version is not None and version != self.sdfversion:
-                return self.to_version(str(version)).to_sdf()
+                return self.to_version(str(version)).to_sdf(version)
+            if version is None:
+                version = self.sdfversion or "1.12"
             el = ET.Element("blend")
             if self.fade_dist is not None:
                 _c_tmp = ET.Element("fade_dist")
@@ -94,7 +96,9 @@ class Heightmap(BaseModel):
             if self.sdfversion is None and version is not None:
                 self.sdfversion = version
             elif version is not None and version != self.sdfversion:
-                return self.to_version(str(version)).to_sdf()
+                return self.to_version(str(version)).to_sdf(version)
+            if version is None:
+                version = self.sdfversion or "1.12"
             el = ET.Element("texture")
             if self.diffuse is not None:
                 _c_tmp = ET.Element("diffuse")
@@ -193,7 +197,9 @@ class Heightmap(BaseModel):
         if self.sdfversion is None and version is not None:
             self.sdfversion = version
         elif version is not None and version != self.sdfversion:
-            return self.to_version(str(version)).to_sdf()
+            return self.to_version(str(version)).to_sdf(version)
+        if version is None:
+            version = self.sdfversion or "1.12"
         el = ET.Element("heightmap")
         for item in (self.blends or []):
             _child_res = item.to_sdf(version)
