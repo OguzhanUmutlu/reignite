@@ -15,7 +15,9 @@ class EntityTreePlugin(Plugin):
             filename="EntityTree",
             name=name,
         )
-        self.gz_gui = GzGui(**gui_kwargs)
+        gui_params = {'state': 'docked'}
+        gui_params.update(gui_kwargs)
+        self.gz_gui = GzGui(**gui_params)
 
     @classmethod
     def _from_sdf(cls, el: ET.Element, version: str):

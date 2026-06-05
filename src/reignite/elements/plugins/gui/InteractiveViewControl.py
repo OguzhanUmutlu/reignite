@@ -15,7 +15,9 @@ class InteractiveViewControlPlugin(Plugin):
             filename="InteractiveViewControl",
             name=name,
         )
-        self.gz_gui = GzGui(**gui_kwargs)
+        gui_params = {'resizable': False, 'width': 5.0, 'height': 5.0, 'state': 'floating', 'show_title_bar': False}
+        gui_params.update(gui_kwargs)
+        self.gz_gui = GzGui(**gui_params)
 
     @classmethod
     def _from_sdf(cls, el: ET.Element, version: str):

@@ -15,7 +15,9 @@ class EntityContextMenuPlugin(Plugin):
             filename="EntityContextMenuPlugin",
             name=name,
         )
-        self.gz_gui = GzGui(**gui_kwargs)
+        gui_params = {'state': 'floating', 'width': 5.0, 'height': 5.0, 'show_title_bar': False}
+        gui_params.update(gui_kwargs)
+        self.gz_gui = GzGui(**gui_params)
 
     @classmethod
     def _from_sdf(cls, el: ET.Element, version: str):
