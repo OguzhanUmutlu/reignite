@@ -55,15 +55,20 @@ def _pose(value: Pose | Sequence[float] | str) -> Pose:
     return Pose(*value[:6])
 
 
+GAZEBO_FRAMES = ("ENU", "FLU")
+ARDUPILOT_FRAMES = ("NED", "FRD")
+
+
 class Pose:
     origin: "Pose" = None
+    default_frames = ("ENU", "FLU")
 
     def __init__(self,
                  x: float | Pose | None = None, y: float | None = None, z: float | None = None,
                  yaw: float = 0.0, pitch: float = 0.0, roll: float = 0.0,
                  lat: float | None = None, lon: float | None = None,
                  rel_alt: float | None = None, alt: float | None = None,
-                 inertial_frame: str = "ENU", body_frame: str = "FRD"):
+                 inertial_frame: str | None = None, body_frame: str | None = None):
         self.yaw = yaw or 0.0
         self.pitch = pitch or 0.0
         self.roll = roll or 0.0
@@ -319,6 +324,27 @@ class Pose:
 
     def __copy__(self):
         return Pose(self)
+
+    @classmethod
+    def set_default_frames(cls, inertial_frame: str, body_frame: str):
+        if inertial_frame not in _SUPPORTED_INERTIAL_FRAMES:
+            raise ValueError(
+                f"Unsupported inertial frame {inertial_frame!r}. "
+                f"Supported: {_SUPPORTED_INERTIAL_FRAMES}"
+            )
+        if body_frame not in _SUPPORTED_BODY_FRAMES:
+            raise ValueError(
+                f"Unsupported body frame {body_frame!r}. "
+                f"Supported: {_SUPPORTED_BODY_FRAMES}"
+            )
+        cls.default_frames = (inertial_frame, body_frame)
+
+    @staticmethod
+    def pose_with_frames(inertial_frame: str, body_frame: str):
+        class _PoseWithFrames(Pose):
+            default_frames = (inertial_frame, body_frame)
+
+        return _PoseWithFrames
 
 
 Pose.origin = Pose(lat=0.0, lon=0.0, alt=584.0)
