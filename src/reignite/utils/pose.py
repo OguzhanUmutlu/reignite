@@ -72,8 +72,8 @@ class Pose:
         self.yaw = yaw or 0.0
         self.pitch = pitch or 0.0
         self.roll = roll or 0.0
-        self._inertial_frame = inertial_frame
-        self._body_frame = body_frame
+        self._inertial_frame = inertial_frame or self.__class__.default_frames[0]
+        self._body_frame = body_frame or self.__class__.default_frames[1]
 
         if isinstance(x, Pose):
             self.set(x)
