@@ -2,7 +2,7 @@ from xml.etree import ElementTree as ET
 from .GzGui import GzGui
 from ...plugin import Plugin
 
-@Plugin.register("WorldControl", "Camera")
+@Plugin.register("ImageDisplay", "ImageDisplay")
 class ImageDisplayPlugin(Plugin):
     def __init__(
             self,
