@@ -347,4 +347,8 @@ class Pose:
         return _PoseWithFrames
 
 
+class PoseAP(Pose):
+    default_frames = ARDUPILOT_FRAMES
+
+
 Pose.origin = Pose(lat=0.0, lon=0.0, alt=584.0)
