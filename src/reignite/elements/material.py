@@ -8,6 +8,16 @@ class SimpleMaterial(Material):
         super().__init__(
             ambient=color,
             diffuse=color,
+            double_sided=color.a != 255
+        )
+
+
+class EmissiveMaterial(Material):
+    def __init__(self, color: _ColorT):
+        color = _color(color)
+        super().__init__(
+            ambient=color,
+            diffuse=color,
             emissive=color,
             specular=Color(127, 127, 127),
             double_sided=color.a != 255
