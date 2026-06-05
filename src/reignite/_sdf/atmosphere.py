@@ -26,7 +26,7 @@ class Atmosphere(BaseModel):
 
     def to_version(self, target_version: str) -> "Atmosphere":
         kwargs: dict = {"sdf_version": target_version, "pressure": self.pressure, "temperature": self.temperature, "temperature_gradient": self.temperature_gradient, "type": self.type}
-        return self.__class__(**kwargs)
+        return Atmosphere(**kwargs)
 
     def to_sdf(self, version: str | None = None) -> ET.Element:
         if self.sdfversion is None and version is not None:

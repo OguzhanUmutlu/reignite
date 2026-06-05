@@ -14,7 +14,7 @@ class Rfid(BaseModel):
 
     def to_version(self, target_version: str) -> "Rfid":
         kwargs: dict = {"sdf_version": target_version}
-        return self.__class__(**kwargs)
+        return Rfid(**kwargs)
 
     def to_sdf(self, version: str | None = None) -> ET.Element:
         if self.sdfversion is None and version is not None:

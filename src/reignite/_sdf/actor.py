@@ -45,7 +45,7 @@ class Actor(BaseModel):
 
         def to_version(self, target_version: str) -> "Actor.Animation":
             kwargs: dict = {"sdf_version": target_version, "filename": self.filename, "interpolate_x": self.interpolate_x, "name": self.name, "scale": self.scale}
-            return self.__class__(**kwargs)
+            return Actor.Animation(**kwargs)
 
         def to_sdf(self, version: str | None = None) -> ET.Element:
             if self.sdfversion is None and version is not None:
@@ -134,7 +134,7 @@ class Actor(BaseModel):
 
         def to_version(self, target_version: str) -> "Actor.Origin":
             kwargs: dict = {"sdf_version": target_version, "pose": self.pose}
-            return self.__class__(**kwargs)
+            return Actor.Origin(**kwargs)
 
         def to_sdf(self, version: str | None = None) -> ET.Element:
             if self.sdfversion is None and version is not None:
@@ -184,7 +184,7 @@ class Actor(BaseModel):
 
                 def to_version(self, target_version: str) -> "Actor.Script.Trajectory.Waypoint":
                     kwargs: dict = {"sdf_version": target_version, "pose": self.pose, "time": self.time}
-                    return self.__class__(**kwargs)
+                    return Actor.Script.Trajectory.Waypoint(**kwargs)
 
                 def to_sdf(self, version: str | None = None) -> ET.Element:
                     if self.sdfversion is None and version is not None:
@@ -267,7 +267,7 @@ class Actor(BaseModel):
                 if self.tension is not None and cmp_version(target_version, "1.6") < 0:
                     raise ValueError(f"'tension' is not supported in SDF version {target_version} (added in 1.6)")
                 kwargs: dict = {"sdf_version": target_version, "id": self.id, "tension": self.tension, "type": self.type, "waypoints": [c.to_version(target_version) if hasattr(c, "to_version") else c for c in (self.waypoints or [])]}
-                return self.__class__(**kwargs)
+                return Actor.Script.Trajectory(**kwargs)
 
             def to_sdf(self, version: str | None = None) -> ET.Element:
                 if self.sdfversion is None and version is not None:
@@ -354,7 +354,7 @@ class Actor(BaseModel):
 
         def to_version(self, target_version: str) -> "Actor.Script":
             kwargs: dict = {"sdf_version": target_version, "auto_start": self.auto_start, "delay_start": self.delay_start, "loop": self.loop, "trajectories": [c.to_version(target_version) if hasattr(c, "to_version") else c for c in (self.trajectories or [])]}
-            return self.__class__(**kwargs)
+            return Actor.Script(**kwargs)
 
         def to_sdf(self, version: str | None = None) -> ET.Element:
             if self.sdfversion is None and version is not None:
@@ -454,7 +454,7 @@ class Actor(BaseModel):
 
         def to_version(self, target_version: str) -> "Actor.Skin":
             kwargs: dict = {"sdf_version": target_version, "filename": self.filename, "scale": self.scale}
-            return self.__class__(**kwargs)
+            return Actor.Skin(**kwargs)
 
         def to_sdf(self, version: str | None = None) -> ET.Element:
             if self.sdfversion is None and version is not None:
@@ -626,7 +626,7 @@ class Actor(BaseModel):
         if self.pose is not None and cmp_version(target_version, "1.2") < 0:
             raise ValueError(f"'pose' is not supported in SDF version {target_version} (added in 1.2)")
         kwargs: dict = {"sdf_version": target_version, "animations": [c.to_version(target_version) if hasattr(c, "to_version") else c for c in (self.animations or [])], "frames": [c.to_version(target_version) if hasattr(c, "to_version") else c for c in (self.frames or [])], "joints": [c.to_version(target_version) if hasattr(c, "to_version") else c for c in (self.joints or [])], "links": [c.to_version(target_version) if hasattr(c, "to_version") else c for c in (self.links or [])], "name": self.name, "origin": self.origin.to_version(target_version) if self.origin is not None and hasattr(self.origin, "to_version") else self.origin, "plugins": [c.to_version(target_version) if hasattr(c, "to_version") else c for c in (self.plugins or [])], "pose": self.pose.to_version(target_version) if self.pose is not None and hasattr(self.pose, "to_version") else self.pose, "script": self.script.to_version(target_version) if self.script is not None and hasattr(self.script, "to_version") else self.script, "skin": self.skin.to_version(target_version) if self.skin is not None and hasattr(self.skin, "to_version") else self.skin, "static": self.static}
-        return self.__class__(**kwargs)
+        return Actor(**kwargs)
 
     def to_sdf(self, version: str | None = None) -> ET.Element:
         from ..elements.frame import Frame

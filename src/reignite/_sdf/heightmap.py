@@ -33,7 +33,7 @@ class Heightmap(BaseModel):
 
         def to_version(self, target_version: str) -> "Heightmap.Blend":
             kwargs: dict = {"sdf_version": target_version, "fade_dist": self.fade_dist, "min_height": self.min_height}
-            return self.__class__(**kwargs)
+            return Heightmap.Blend(**kwargs)
 
         def to_sdf(self, version: str | None = None) -> ET.Element:
             if self.sdfversion is None and version is not None:
@@ -90,7 +90,7 @@ class Heightmap(BaseModel):
 
         def to_version(self, target_version: str) -> "Heightmap.Texture":
             kwargs: dict = {"sdf_version": target_version, "diffuse": self.diffuse, "normal": self.normal, "size": self.size}
-            return self.__class__(**kwargs)
+            return Heightmap.Texture(**kwargs)
 
         def to_sdf(self, version: str | None = None) -> ET.Element:
             if self.sdfversion is None and version is not None:
@@ -191,7 +191,7 @@ class Heightmap(BaseModel):
         if self.sampling is not None and cmp_version(target_version, "1.6") < 0:
             raise ValueError(f"'sampling' is not supported in SDF version {target_version} (added in 1.6)")
         kwargs: dict = {"sdf_version": target_version, "blends": [c.to_version(target_version) if hasattr(c, "to_version") else c for c in (self.blends or [])], "pos": self.pos, "sampling": self.sampling, "size": self.size, "textures": [c.to_version(target_version) if hasattr(c, "to_version") else c for c in (self.textures or [])], "uri": self.uri, "use_terrain_paging": self.use_terrain_paging}
-        return self.__class__(**kwargs)
+        return Heightmap(**kwargs)
 
     def to_sdf(self, version: str | None = None) -> ET.Element:
         if self.sdfversion is None and version is not None:

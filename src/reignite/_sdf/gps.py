@@ -27,7 +27,7 @@ class Gps(BaseModel):
             def to_version(self, target_version: str) -> "Gps.PositionSensing.Horizontal":
                 from ..elements.noise import Noise
                 kwargs: dict = {"sdf_version": target_version, "noise": self.noise.to_version(target_version) if self.noise is not None and hasattr(self.noise, "to_version") else self.noise}
-                return self.__class__(**kwargs)
+                return Gps.PositionSensing.Horizontal(**kwargs)
 
             def to_sdf(self, version: str | None = None) -> ET.Element:
                 from ..elements.noise import Noise
@@ -74,7 +74,7 @@ class Gps(BaseModel):
             def to_version(self, target_version: str) -> "Gps.PositionSensing.Vertical":
                 from ..elements.noise import Noise
                 kwargs: dict = {"sdf_version": target_version, "noise": self.noise.to_version(target_version) if self.noise is not None and hasattr(self.noise, "to_version") else self.noise}
-                return self.__class__(**kwargs)
+                return Gps.PositionSensing.Vertical(**kwargs)
 
             def to_sdf(self, version: str | None = None) -> ET.Element:
                 from ..elements.noise import Noise
@@ -130,7 +130,7 @@ class Gps(BaseModel):
 
         def to_version(self, target_version: str) -> "Gps.PositionSensing":
             kwargs: dict = {"sdf_version": target_version, "horizontal": self.horizontal.to_version(target_version) if self.horizontal is not None and hasattr(self.horizontal, "to_version") else self.horizontal, "vertical": self.vertical.to_version(target_version) if self.vertical is not None and hasattr(self.vertical, "to_version") else self.vertical}
-            return self.__class__(**kwargs)
+            return Gps.PositionSensing(**kwargs)
 
         def to_sdf(self, version: str | None = None) -> ET.Element:
             if self.sdfversion is None and version is not None:
@@ -201,7 +201,7 @@ class Gps(BaseModel):
 
         def to_version(self, target_version: str) -> "Gps.VelocitySensing":
             kwargs: dict = {"sdf_version": target_version, "horizontal": self.horizontal.to_version(target_version) if self.horizontal is not None and hasattr(self.horizontal, "to_version") else self.horizontal, "vertical": self.vertical.to_version(target_version) if self.vertical is not None and hasattr(self.vertical, "to_version") else self.vertical}
-            return self.__class__(**kwargs)
+            return Gps.VelocitySensing(**kwargs)
 
         def to_sdf(self, version: str | None = None) -> ET.Element:
             if self.sdfversion is None and version is not None:
@@ -271,7 +271,7 @@ class Gps(BaseModel):
 
     def to_version(self, target_version: str) -> "Gps":
         kwargs: dict = {"sdf_version": target_version, "position_sensing": self.position_sensing.to_version(target_version) if self.position_sensing is not None and hasattr(self.position_sensing, "to_version") else self.position_sensing, "velocity_sensing": self.velocity_sensing.to_version(target_version) if self.velocity_sensing is not None and hasattr(self.velocity_sensing, "to_version") else self.velocity_sensing}
-        return self.__class__(**kwargs)
+        return Gps(**kwargs)
 
     def to_sdf(self, version: str | None = None) -> ET.Element:
         if self.sdfversion is None and version is not None:

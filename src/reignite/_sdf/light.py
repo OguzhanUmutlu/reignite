@@ -56,7 +56,7 @@ class Light(BaseModel):
 
         def to_version(self, target_version: str) -> "Light.Attenuation":
             kwargs: dict = {"sdf_version": target_version, "constant": self.constant, "linear": self.linear, "quadratic": self.quadratic, "range": self.range}
-            return self.__class__(**kwargs)
+            return Light.Attenuation(**kwargs)
 
         def to_sdf(self, version: str | None = None) -> ET.Element:
             if self.sdfversion is None and version is not None:
@@ -161,7 +161,7 @@ class Light(BaseModel):
 
         def to_version(self, target_version: str) -> "Light.Diffuse":
             kwargs: dict = {"sdf_version": target_version, "diffuse": self.diffuse, "rgba": self.rgba}
-            return self.__class__(**kwargs)
+            return Light.Diffuse(**kwargs)
 
         def to_sdf(self, version: str | None = None) -> ET.Element:
             if self.sdfversion is None and version is not None:
@@ -215,7 +215,7 @@ class Light(BaseModel):
 
         def to_version(self, target_version: str) -> "Light.Direction":
             kwargs: dict = {"sdf_version": target_version, "direction": self.direction, "xyz": self.xyz}
-            return self.__class__(**kwargs)
+            return Light.Direction(**kwargs)
 
         def to_sdf(self, version: str | None = None) -> ET.Element:
             if self.sdfversion is None and version is not None:
@@ -263,7 +263,7 @@ class Light(BaseModel):
 
         def to_version(self, target_version: str) -> "Light.Origin":
             kwargs: dict = {"sdf_version": target_version, "pose": self.pose}
-            return self.__class__(**kwargs)
+            return Light.Origin(**kwargs)
 
         def to_sdf(self, version: str | None = None) -> ET.Element:
             if self.sdfversion is None and version is not None:
@@ -311,7 +311,7 @@ class Light(BaseModel):
 
         def to_version(self, target_version: str) -> "Light.Specular":
             kwargs: dict = {"sdf_version": target_version, "rgba": self.rgba, "specular": self.specular}
-            return self.__class__(**kwargs)
+            return Light.Specular(**kwargs)
 
         def to_sdf(self, version: str | None = None) -> ET.Element:
             if self.sdfversion is None and version is not None:
@@ -367,7 +367,7 @@ class Light(BaseModel):
 
         def to_version(self, target_version: str) -> "Light.Spot":
             kwargs: dict = {"sdf_version": target_version, "falloff": self.falloff, "inner_angle": self.inner_angle, "outer_angle": self.outer_angle}
-            return self.__class__(**kwargs)
+            return Light.Spot(**kwargs)
 
         def to_sdf(self, version: str | None = None) -> ET.Element:
             if self.sdfversion is None and version is not None:
@@ -538,7 +538,7 @@ class Light(BaseModel):
         if self.visualize is not None and cmp_version(target_version, "1.8") < 0:
             raise ValueError(f"'visualize' is not supported in SDF version {target_version} (added in 1.8)")
         kwargs: dict = {"sdf_version": target_version, "attenuation": self.attenuation.to_version(target_version) if self.attenuation is not None and hasattr(self.attenuation, "to_version") else self.attenuation, "cast_shadows": self.cast_shadows, "diffuse": self.diffuse.to_version(target_version) if self.diffuse is not None and hasattr(self.diffuse, "to_version") else self.diffuse, "direction": self.direction.to_version(target_version) if self.direction is not None and hasattr(self.direction, "to_version") else self.direction, "frames": [c.to_version(target_version) if hasattr(c, "to_version") else c for c in (self.frames or [])], "intensity": self.intensity, "light_on": self.light_on, "name": self.name, "origin": self.origin.to_version(target_version) if self.origin is not None and hasattr(self.origin, "to_version") else self.origin, "pose": self.pose.to_version(target_version) if self.pose is not None and hasattr(self.pose, "to_version") else self.pose, "specular": self.specular.to_version(target_version) if self.specular is not None and hasattr(self.specular, "to_version") else self.specular, "spot": self.spot.to_version(target_version) if self.spot is not None and hasattr(self.spot, "to_version") else self.spot, "type": self.type, "visualize": self.visualize}
-        return self.__class__(**kwargs)
+        return Light(**kwargs)
 
     def to_sdf(self, version: str | None = None) -> ET.Element:
         from ..elements.frame import Frame

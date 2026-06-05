@@ -16,7 +16,7 @@ class Sphere(BaseModel):
 
     def to_version(self, target_version: str) -> "Sphere":
         kwargs: dict = {"sdf_version": target_version, "radius": self.radius}
-        return self.__class__(**kwargs)
+        return Sphere(**kwargs)
 
     def to_sdf(self, version: str | None = None) -> ET.Element:
         if self.sdfversion is None and version is not None:

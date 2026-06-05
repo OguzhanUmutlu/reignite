@@ -16,7 +16,7 @@ class CollisionEngine(BaseModel):
 
         def to_version(self, target_version: str) -> "CollisionEngine.Bullet":
             kwargs: dict = {"sdf_version": target_version, "type": self.type}
-            return self.__class__(**kwargs)
+            return CollisionEngine.Bullet(**kwargs)
 
         def to_sdf(self, version: str | None = None) -> ET.Element:
             if self.sdfversion is None and version is not None:
@@ -48,7 +48,7 @@ class CollisionEngine(BaseModel):
 
         def to_version(self, target_version: str) -> "CollisionEngine.Ode":
             kwargs: dict = {"sdf_version": target_version, "type": self.type}
-            return self.__class__(**kwargs)
+            return CollisionEngine.Ode(**kwargs)
 
         def to_sdf(self, version: str | None = None) -> ET.Element:
             if self.sdfversion is None and version is not None:
@@ -95,7 +95,7 @@ class CollisionEngine(BaseModel):
 
     def to_version(self, target_version: str) -> "CollisionEngine":
         kwargs: dict = {"sdf_version": target_version, "bullet": self.bullet.to_version(target_version) if self.bullet is not None and hasattr(self.bullet, "to_version") else self.bullet, "ode": self.ode.to_version(target_version) if self.ode is not None and hasattr(self.ode, "to_version") else self.ode}
-        return self.__class__(**kwargs)
+        return CollisionEngine(**kwargs)
 
     def to_sdf(self, version: str | None = None) -> ET.Element:
         if self.sdfversion is None and version is not None:

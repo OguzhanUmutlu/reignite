@@ -48,7 +48,7 @@ class Pose(BaseModel):
         if self.rotation_format is not None and cmp_version(target_version, "1.9") < 0:
             raise ValueError(f"'rotation_format' is not supported in SDF version {target_version} (added in 1.9)")
         kwargs: dict = {"sdf_version": target_version, "degrees": self.degrees, "frame": self.frame, "pose": self.pose, "relative_to": self.relative_to, "rotation_format": self.rotation_format}
-        new_obj = self.__class__(**kwargs)
+        new_obj = Pose(**kwargs)
         apply_migrations(new_obj, target_version)
         return new_obj
 

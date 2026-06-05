@@ -26,7 +26,7 @@ class Altimeter(BaseModel):
         def to_version(self, target_version: str) -> "Altimeter.VerticalPosition":
             from ..elements.noise import Noise
             kwargs: dict = {"sdf_version": target_version, "noise": self.noise.to_version(target_version) if self.noise is not None and hasattr(self.noise, "to_version") else self.noise}
-            return self.__class__(**kwargs)
+            return Altimeter.VerticalPosition(**kwargs)
 
         def to_sdf(self, version: str | None = None) -> ET.Element:
             from ..elements.noise import Noise
@@ -73,7 +73,7 @@ class Altimeter(BaseModel):
         def to_version(self, target_version: str) -> "Altimeter.VerticalVelocity":
             from ..elements.noise import Noise
             kwargs: dict = {"sdf_version": target_version, "noise": self.noise.to_version(target_version) if self.noise is not None and hasattr(self.noise, "to_version") else self.noise}
-            return self.__class__(**kwargs)
+            return Altimeter.VerticalVelocity(**kwargs)
 
         def to_sdf(self, version: str | None = None) -> ET.Element:
             from ..elements.noise import Noise
@@ -129,7 +129,7 @@ class Altimeter(BaseModel):
 
     def to_version(self, target_version: str) -> "Altimeter":
         kwargs: dict = {"sdf_version": target_version, "vertical_position": self.vertical_position.to_version(target_version) if self.vertical_position is not None and hasattr(self.vertical_position, "to_version") else self.vertical_position, "vertical_velocity": self.vertical_velocity.to_version(target_version) if self.vertical_velocity is not None and hasattr(self.vertical_velocity, "to_version") else self.vertical_velocity}
-        return self.__class__(**kwargs)
+        return Altimeter(**kwargs)
 
     def to_sdf(self, version: str | None = None) -> ET.Element:
         if self.sdfversion is None and version is not None:

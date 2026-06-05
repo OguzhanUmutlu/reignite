@@ -22,7 +22,7 @@ class Battery(BaseModel):
 
     def to_version(self, target_version: str) -> "Battery":
         kwargs: dict = {"sdf_version": target_version, "name": self.name, "voltage": self.voltage}
-        return self.__class__(**kwargs)
+        return Battery(**kwargs)
 
     def to_sdf(self, version: str | None = None) -> ET.Element:
         if self.sdfversion is None and version is not None:

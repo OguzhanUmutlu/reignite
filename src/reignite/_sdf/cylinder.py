@@ -22,7 +22,7 @@ class Cylinder(BaseModel):
 
     def to_version(self, target_version: str) -> "Cylinder":
         kwargs: dict = {"sdf_version": target_version, "length": self.length, "radius": self.radius}
-        return self.__class__(**kwargs)
+        return Cylinder(**kwargs)
 
     def to_sdf(self, version: str | None = None) -> ET.Element:
         if self.sdfversion is None and version is not None:

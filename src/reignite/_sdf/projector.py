@@ -81,7 +81,7 @@ class Projector(BaseModel):
         if self.visibility_flags is not None and cmp_version(target_version, "1.7") < 0:
             raise ValueError(f"'visibility_flags' is not supported in SDF version {target_version} (added in 1.7)")
         kwargs: dict = {"sdf_version": target_version, "far_clip": self.far_clip, "fov": self.fov, "frames": [c.to_version(target_version) if hasattr(c, "to_version") else c for c in (self.frames or [])], "name": self.name, "near_clip": self.near_clip, "plugins": [c.to_version(target_version) if hasattr(c, "to_version") else c for c in (self.plugins or [])], "pose": self.pose.to_version(target_version) if self.pose is not None and hasattr(self.pose, "to_version") else self.pose, "texture": self.texture, "visibility_flags": self.visibility_flags}
-        return self.__class__(**kwargs)
+        return Projector(**kwargs)
 
     def to_sdf(self, version: str | None = None) -> ET.Element:
         from ..elements.frame import Frame

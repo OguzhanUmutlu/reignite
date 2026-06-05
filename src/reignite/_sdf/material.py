@@ -37,7 +37,7 @@ class Material(BaseModel):
                     if self.light_map is not None and cmp_version(target_version, "1.7") < 0:
                         raise ValueError(f"'light_map' is not supported in SDF version {target_version} (added in 1.7)")
                     kwargs: dict = {"sdf_version": target_version, "light_map": self.light_map, "uv_set": self.uv_set}
-                    return self.__class__(**kwargs)
+                    return Material.Pbr.Metal.LightMap(**kwargs)
 
                 def to_sdf(self, version: str | None = None) -> ET.Element:
                     if self.sdfversion is None and version is not None:
@@ -87,7 +87,7 @@ class Material(BaseModel):
 
                 def to_version(self, target_version: str) -> "Material.Pbr.Metal.NormalMap":
                     kwargs: dict = {"sdf_version": target_version, "normal_map": self.normal_map, "type": self.type}
-                    return self.__class__(**kwargs)
+                    return Material.Pbr.Metal.NormalMap(**kwargs)
 
                 def to_sdf(self, version: str | None = None) -> ET.Element:
                     if self.sdfversion is None and version is not None:
@@ -161,7 +161,7 @@ class Material(BaseModel):
                 if self.light_map is not None and cmp_version(target_version, "1.7") < 0:
                     raise ValueError(f"'light_map' is not supported in SDF version {target_version} (added in 1.7)")
                 kwargs: dict = {"sdf_version": target_version, "albedo_map": self.albedo_map, "ambient_occlusion_map": self.ambient_occlusion_map, "emissive_map": self.emissive_map, "environment_map": self.environment_map, "light_map": self.light_map.to_version(target_version) if self.light_map is not None and hasattr(self.light_map, "to_version") else self.light_map, "metalness": self.metalness, "metalness_map": self.metalness_map, "normal_map": self.normal_map.to_version(target_version) if self.normal_map is not None and hasattr(self.normal_map, "to_version") else self.normal_map, "roughness": self.roughness, "roughness_map": self.roughness_map}
-                return self.__class__(**kwargs)
+                return Material.Pbr.Metal(**kwargs)
 
             def to_sdf(self, version: str | None = None) -> ET.Element:
                 if self.sdfversion is None and version is not None:
@@ -354,7 +354,7 @@ class Material(BaseModel):
                 if self.light_map is not None and cmp_version(target_version, "1.7") < 0:
                     raise ValueError(f"'light_map' is not supported in SDF version {target_version} (added in 1.7)")
                 kwargs: dict = {"sdf_version": target_version, "albedo_map": self.albedo_map, "ambient_occlusion_map": self.ambient_occlusion_map, "emissive_map": self.emissive_map, "environment_map": self.environment_map, "glossiness": self.glossiness, "glossiness_map": self.glossiness_map, "light_map": self.light_map.to_version(target_version) if self.light_map is not None and hasattr(self.light_map, "to_version") else self.light_map, "normal_map": self.normal_map.to_version(target_version) if self.normal_map is not None and hasattr(self.normal_map, "to_version") else self.normal_map, "specular_map": self.specular_map}
-                return self.__class__(**kwargs)
+                return Material.Pbr.Specular(**kwargs)
 
             def to_sdf(self, version: str | None = None) -> ET.Element:
                 if self.sdfversion is None and version is not None:
@@ -517,7 +517,7 @@ class Material(BaseModel):
 
         def to_version(self, target_version: str) -> "Material.Pbr":
             kwargs: dict = {"sdf_version": target_version, "metal": self.metal.to_version(target_version) if self.metal is not None and hasattr(self.metal, "to_version") else self.metal, "specular": self.specular.to_version(target_version) if self.specular is not None and hasattr(self.specular, "to_version") else self.specular}
-            return self.__class__(**kwargs)
+            return Material.Pbr(**kwargs)
 
         def to_sdf(self, version: str | None = None) -> ET.Element:
             if self.sdfversion is None and version is not None:
@@ -583,7 +583,7 @@ class Material(BaseModel):
 
         def to_version(self, target_version: str) -> "Material.Script":
             kwargs: dict = {"sdf_version": target_version, "name": self.name, "uris": self.uris}
-            return self.__class__(**kwargs)
+            return Material.Script(**kwargs)
 
         def to_sdf(self, version: str | None = None) -> ET.Element:
             if self.sdfversion is None and version is not None:
@@ -636,7 +636,7 @@ class Material(BaseModel):
 
         def to_version(self, target_version: str) -> "Material.Shader":
             kwargs: dict = {"sdf_version": target_version, "normal_map": self.normal_map, "type": self.type}
-            return self.__class__(**kwargs)
+            return Material.Shader(**kwargs)
 
         def to_sdf(self, version: str | None = None) -> ET.Element:
             if self.sdfversion is None and version is not None:
@@ -727,7 +727,7 @@ class Material(BaseModel):
         if self.shininess is not None and cmp_version(target_version, "1.7") < 0:
             raise ValueError(f"'shininess' is not supported in SDF version {target_version} (added in 1.7)")
         kwargs: dict = {"sdf_version": target_version, "ambient": self.ambient, "diffuse": self.diffuse, "double_sided": self.double_sided, "emissive": self.emissive, "lighting": self.lighting, "pbr": self.pbr.to_version(target_version) if self.pbr is not None and hasattr(self.pbr, "to_version") else self.pbr, "render_order": self.render_order, "script": self.script.to_version(target_version) if self.script is not None and hasattr(self.script, "to_version") else self.script, "shader": self.shader.to_version(target_version) if self.shader is not None and hasattr(self.shader, "to_version") else self.shader, "shininess": self.shininess, "specular": self.specular}
-        return self.__class__(**kwargs)
+        return Material(**kwargs)
 
     def to_sdf(self, version: str | None = None) -> ET.Element:
         if self.sdfversion is None and version is not None:

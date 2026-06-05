@@ -46,7 +46,7 @@ class LinkState(BaseModel):
             if self.angular_acceleration is not None and cmp_version(target_version, "1.12") < 0:
                 raise ValueError(f"'angular_acceleration' is not supported in SDF version {target_version} (added in 1.12)")
             kwargs: dict = {"sdf_version": target_version, "angular_acceleration": self.angular_acceleration, "degrees": self.degrees}
-            return self.__class__(**kwargs)
+            return LinkState.AngularAcceleration(**kwargs)
 
         def to_sdf(self, version: str | None = None) -> ET.Element:
             if self.sdfversion is None and version is not None:
@@ -98,7 +98,7 @@ class LinkState(BaseModel):
             if self.angular_velocity is not None and cmp_version(target_version, "1.12") < 0:
                 raise ValueError(f"'angular_velocity' is not supported in SDF version {target_version} (added in 1.12)")
             kwargs: dict = {"sdf_version": target_version, "angular_velocity": self.angular_velocity, "degrees": self.degrees}
-            return self.__class__(**kwargs)
+            return LinkState.AngularVelocity(**kwargs)
 
         def to_sdf(self, version: str | None = None) -> ET.Element:
             if self.sdfversion is None and version is not None:
@@ -142,7 +142,7 @@ class LinkState(BaseModel):
 
         def to_version(self, target_version: str) -> "LinkState.Collision":
             kwargs: dict = {"sdf_version": target_version, "name": self.name}
-            return self.__class__(**kwargs)
+            return LinkState.Collision(**kwargs)
 
         def to_sdf(self, version: str | None = None) -> ET.Element:
             if self.sdfversion is None and version is not None:
@@ -174,7 +174,7 @@ class LinkState(BaseModel):
 
         def to_version(self, target_version: str) -> "LinkState.CollisionState":
             kwargs: dict = {"sdf_version": target_version, "name": self.name}
-            return self.__class__(**kwargs)
+            return LinkState.CollisionState(**kwargs)
 
         def to_sdf(self, version: str | None = None) -> ET.Element:
             if self.sdfversion is None and version is not None:
@@ -303,7 +303,7 @@ class LinkState(BaseModel):
         if self.torque is not None and cmp_version(target_version, "1.12") < 0:
             raise ValueError(f"'torque' is not supported in SDF version {target_version} (added in 1.12)")
         kwargs: dict = {"sdf_version": target_version, "acceleration": self.acceleration, "angular_acceleration": self.angular_acceleration.to_version(target_version) if self.angular_acceleration is not None and hasattr(self.angular_acceleration, "to_version") else self.angular_acceleration, "angular_velocity": self.angular_velocity.to_version(target_version) if self.angular_velocity is not None and hasattr(self.angular_velocity, "to_version") else self.angular_velocity, "collision_states": [c.to_version(target_version) if hasattr(c, "to_version") else c for c in (self.collision_states or [])], "collisions": [c.to_version(target_version) if hasattr(c, "to_version") else c for c in (self.collisions or [])], "force": self.force, "frames": [c.to_version(target_version) if hasattr(c, "to_version") else c for c in (self.frames or [])], "linear_acceleration": self.linear_acceleration, "linear_velocity": self.linear_velocity, "name": self.name, "pose": self.pose.to_version(target_version) if self.pose is not None and hasattr(self.pose, "to_version") else self.pose, "torque": self.torque, "velocity": self.velocity, "wrench": self.wrench}
-        return self.__class__(**kwargs)
+        return LinkState(**kwargs)
 
     def to_sdf(self, version: str | None = None) -> ET.Element:
         from ..elements.frame import Frame

@@ -57,7 +57,7 @@ class Joint(BaseModel):
                 if self.spring_stiffness is not None and cmp_version(target_version, "1.5") < 0:
                     raise ValueError(f"'spring_stiffness' is not supported in SDF version {target_version} (added in 1.5)")
                 kwargs: dict = {"sdf_version": target_version, "damping": self.damping, "friction": self.friction, "spring_reference": self.spring_reference, "spring_stiffness": self.spring_stiffness}
-                return self.__class__(**kwargs)
+                return Joint.Axis.Dynamics(**kwargs)
 
             def to_sdf(self, version: str | None = None) -> ET.Element:
                 if self.sdfversion is None and version is not None:
@@ -166,7 +166,7 @@ class Joint(BaseModel):
                 if self.stiffness is not None and cmp_version(target_version, "1.4") < 0:
                     raise ValueError(f"'stiffness' is not supported in SDF version {target_version} (added in 1.4)")
                 kwargs: dict = {"sdf_version": target_version, "dissipation": self.dissipation, "effort": self.effort, "lower": self.lower, "stiffness": self.stiffness, "upper": self.upper, "velocity": self.velocity}
-                return self.__class__(**kwargs)
+                return Joint.Axis.Limit(**kwargs)
 
             def to_sdf(self, version: str | None = None) -> ET.Element:
                 if self.sdfversion is None and version is not None:
@@ -305,7 +305,7 @@ class Joint(BaseModel):
                 if self.xyz is not None and cmp_version(target_version, "1.2") < 0:
                     raise ValueError(f"'xyz' is not supported in SDF version {target_version} (added in 1.2)")
                 kwargs: dict = {"sdf_version": target_version, "expressed_in": self.expressed_in, "xyz": self.xyz}
-                return self.__class__(**kwargs)
+                return Joint.Axis.Xyz(**kwargs)
 
             def to_sdf(self, version: str | None = None) -> ET.Element:
                 if self.sdfversion is None and version is not None:
@@ -393,7 +393,7 @@ class Joint(BaseModel):
             if self.use_parent_model_frame is not None and cmp_version(target_version, "1.7") >= 0:
                 raise ValueError(f"'use_parent_model_frame' is not supported in SDF version {target_version} (removed in 1.7)")
             kwargs: dict = {"sdf_version": target_version, "dynamics": self.dynamics.to_version(target_version) if self.dynamics is not None and hasattr(self.dynamics, "to_version") else self.dynamics, "initial_position": self.initial_position, "limit": self.limit.to_version(target_version) if self.limit is not None and hasattr(self.limit, "to_version") else self.limit, "mimic": self.mimic.to_version(target_version) if self.mimic is not None and hasattr(self.mimic, "to_version") else self.mimic, "use_parent_model_frame": self.use_parent_model_frame, "xyz": self.xyz}
-            new_obj = self.__class__(**kwargs)
+            new_obj = Joint.Axis(**kwargs)
             apply_migrations(new_obj, target_version)
             return new_obj
 
@@ -538,7 +538,7 @@ class Joint(BaseModel):
                 if self.stiffness is not None and cmp_version(target_version, "1.4") < 0:
                     raise ValueError(f"'stiffness' is not supported in SDF version {target_version} (added in 1.4)")
                 kwargs: dict = {"sdf_version": target_version, "dissipation": self.dissipation, "effort": self.effort, "lower": self.lower, "stiffness": self.stiffness, "upper": self.upper, "velocity": self.velocity}
-                return self.__class__(**kwargs)
+                return Joint.Axis2.Axis2Limit(**kwargs)
 
             def to_sdf(self, version: str | None = None) -> ET.Element:
                 if self.sdfversion is None and version is not None:
@@ -708,7 +708,7 @@ class Joint(BaseModel):
             if self.use_parent_model_frame is not None and cmp_version(target_version, "1.7") >= 0:
                 raise ValueError(f"'use_parent_model_frame' is not supported in SDF version {target_version} (removed in 1.7)")
             kwargs: dict = {"sdf_version": target_version, "dynamics": self.dynamics.to_version(target_version) if self.dynamics is not None and hasattr(self.dynamics, "to_version") else self.dynamics, "initial_position": self.initial_position, "limit": self.limit.to_version(target_version) if self.limit is not None and hasattr(self.limit, "to_version") else self.limit, "mimic": self.mimic.to_version(target_version) if self.mimic is not None and hasattr(self.mimic, "to_version") else self.mimic, "use_parent_model_frame": self.use_parent_model_frame, "xyz": self.xyz}
-            new_obj = self.__class__(**kwargs)
+            new_obj = Joint.Axis2(**kwargs)
             apply_migrations(new_obj, target_version)
             return new_obj
 
@@ -840,7 +840,7 @@ class Joint(BaseModel):
 
         def to_version(self, target_version: str) -> "Joint.Child":
             kwargs: dict = {"sdf_version": target_version, "child": self.child, "link": self.link}
-            return self.__class__(**kwargs)
+            return Joint.Child(**kwargs)
 
         def to_sdf(self, version: str | None = None) -> ET.Element:
             if self.sdfversion is None and version is not None:
@@ -888,7 +888,7 @@ class Joint(BaseModel):
 
         def to_version(self, target_version: str) -> "Joint.Origin":
             kwargs: dict = {"sdf_version": target_version, "pose": self.pose}
-            return self.__class__(**kwargs)
+            return Joint.Origin(**kwargs)
 
         def to_sdf(self, version: str | None = None) -> ET.Element:
             if self.sdfversion is None and version is not None:
@@ -936,7 +936,7 @@ class Joint(BaseModel):
 
         def to_version(self, target_version: str) -> "Joint.Parent":
             kwargs: dict = {"sdf_version": target_version, "link": self.link, "parent": self.parent}
-            return self.__class__(**kwargs)
+            return Joint.Parent(**kwargs)
 
         def to_sdf(self, version: str | None = None) -> ET.Element:
             if self.sdfversion is None and version is not None:
@@ -992,7 +992,7 @@ class Joint(BaseModel):
 
                 def to_version(self, target_version: str) -> "Joint.Physics.Ode.OdeLimit":
                     kwargs: dict = {"sdf_version": target_version, "cfm": self.cfm, "erp": self.erp}
-                    return self.__class__(**kwargs)
+                    return Joint.Physics.Ode.OdeLimit(**kwargs)
 
                 def to_sdf(self, version: str | None = None) -> ET.Element:
                     if self.sdfversion is None and version is not None:
@@ -1059,7 +1059,7 @@ class Joint(BaseModel):
 
                 def to_version(self, target_version: str) -> "Joint.Physics.Ode.Suspension":
                     kwargs: dict = {"sdf_version": target_version, "cfm": self.cfm, "erp": self.erp}
-                    return self.__class__(**kwargs)
+                    return Joint.Physics.Ode.Suspension(**kwargs)
 
                 def to_sdf(self, version: str | None = None) -> ET.Element:
                     if self.sdfversion is None and version is not None:
@@ -1163,7 +1163,7 @@ class Joint(BaseModel):
                 if self.provide_feedback is not None and cmp_version(target_version, "1.7") >= 0:
                     raise ValueError(f"'provide_feedback' is not supported in SDF version {target_version} (removed in 1.7)")
                 kwargs: dict = {"sdf_version": target_version, "bounce": self.bounce, "cfm": self.cfm, "cfm_damping": self.cfm_damping, "erp": self.erp, "fudge_factor": self.fudge_factor, "implicit_spring_damper": self.implicit_spring_damper, "limit": self.limit.to_version(target_version) if self.limit is not None and hasattr(self.limit, "to_version") else self.limit, "max_force": self.max_force, "provide_feedback": self.provide_feedback, "suspension": self.suspension.to_version(target_version) if self.suspension is not None and hasattr(self.suspension, "to_version") else self.suspension, "velocity": self.velocity}
-                return self.__class__(**kwargs)
+                return Joint.Physics.Ode(**kwargs)
 
             def to_sdf(self, version: str | None = None) -> ET.Element:
                 if self.sdfversion is None and version is not None:
@@ -1343,7 +1343,7 @@ class Joint(BaseModel):
 
             def to_version(self, target_version: str) -> "Joint.Physics.Simbody":
                 kwargs: dict = {"sdf_version": target_version, "must_be_loop_joint": self.must_be_loop_joint}
-                return self.__class__(**kwargs)
+                return Joint.Physics.Simbody(**kwargs)
 
             def to_sdf(self, version: str | None = None) -> ET.Element:
                 if self.sdfversion is None and version is not None:
@@ -1402,7 +1402,7 @@ class Joint(BaseModel):
             if self.simbody is not None and cmp_version(target_version, "1.4") < 0:
                 raise ValueError(f"'simbody' is not supported in SDF version {target_version} (added in 1.4)")
             kwargs: dict = {"sdf_version": target_version, "ode": self.ode.to_version(target_version) if self.ode is not None and hasattr(self.ode, "to_version") else self.ode, "provide_feedback": self.provide_feedback, "simbody": self.simbody.to_version(target_version) if self.simbody is not None and hasattr(self.simbody, "to_version") else self.simbody}
-            new_obj = self.__class__(**kwargs)
+            new_obj = Joint.Physics(**kwargs)
             apply_migrations(new_obj, target_version)
             return new_obj
 
@@ -1577,7 +1577,7 @@ class Joint(BaseModel):
         if self.sensor is not None and cmp_version(target_version, "1.4") < 0:
             raise ValueError(f"'sensor' is not supported in SDF version {target_version} (added in 1.4)")
         kwargs: dict = {"sdf_version": target_version, "axis": self.axis.to_version(target_version) if self.axis is not None and hasattr(self.axis, "to_version") else self.axis, "axis2": self.axis2.to_version(target_version) if self.axis2 is not None and hasattr(self.axis2, "to_version") else self.axis2, "child": self.child.to_version(target_version) if self.child is not None and hasattr(self.child, "to_version") else self.child, "frames": [c.to_version(target_version) if hasattr(c, "to_version") else c for c in (self.frames or [])], "gearbox_ratio": self.gearbox_ratio, "gearbox_reference_body": self.gearbox_reference_body, "name": self.name, "origin": self.origin.to_version(target_version) if self.origin is not None and hasattr(self.origin, "to_version") else self.origin, "parent": self.parent.to_version(target_version) if self.parent is not None and hasattr(self.parent, "to_version") else self.parent, "physics": self.physics.to_version(target_version) if self.physics is not None and hasattr(self.physics, "to_version") else self.physics, "pose": self.pose.to_version(target_version) if self.pose is not None and hasattr(self.pose, "to_version") else self.pose, "screw_thread_pitch": self.screw_thread_pitch, "sensor": self.sensor.to_version(target_version) if self.sensor is not None and hasattr(self.sensor, "to_version") else self.sensor, "thread_pitch": self.thread_pitch, "type": self.type}
-        return self.__class__(**kwargs)
+        return Joint(**kwargs)
 
     def to_sdf(self, version: str | None = None) -> ET.Element:
         from ..elements.frame import Frame

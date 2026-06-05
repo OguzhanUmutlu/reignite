@@ -26,7 +26,7 @@ class Magnetometer(BaseModel):
         def to_version(self, target_version: str) -> "Magnetometer.X":
             from ..elements.noise import Noise
             kwargs: dict = {"sdf_version": target_version, "noise": self.noise.to_version(target_version) if self.noise is not None and hasattr(self.noise, "to_version") else self.noise}
-            return self.__class__(**kwargs)
+            return Magnetometer.X(**kwargs)
 
         def to_sdf(self, version: str | None = None) -> ET.Element:
             from ..elements.noise import Noise
@@ -73,7 +73,7 @@ class Magnetometer(BaseModel):
         def to_version(self, target_version: str) -> "Magnetometer.Y":
             from ..elements.noise import Noise
             kwargs: dict = {"sdf_version": target_version, "noise": self.noise.to_version(target_version) if self.noise is not None and hasattr(self.noise, "to_version") else self.noise}
-            return self.__class__(**kwargs)
+            return Magnetometer.Y(**kwargs)
 
         def to_sdf(self, version: str | None = None) -> ET.Element:
             from ..elements.noise import Noise
@@ -120,7 +120,7 @@ class Magnetometer(BaseModel):
         def to_version(self, target_version: str) -> "Magnetometer.Z":
             from ..elements.noise import Noise
             kwargs: dict = {"sdf_version": target_version, "noise": self.noise.to_version(target_version) if self.noise is not None and hasattr(self.noise, "to_version") else self.noise}
-            return self.__class__(**kwargs)
+            return Magnetometer.Z(**kwargs)
 
         def to_sdf(self, version: str | None = None) -> ET.Element:
             from ..elements.noise import Noise
@@ -183,7 +183,7 @@ class Magnetometer(BaseModel):
 
     def to_version(self, target_version: str) -> "Magnetometer":
         kwargs: dict = {"sdf_version": target_version, "x": self.x.to_version(target_version) if self.x is not None and hasattr(self.x, "to_version") else self.x, "y": self.y.to_version(target_version) if self.y is not None and hasattr(self.y, "to_version") else self.y, "z": self.z.to_version(target_version) if self.z is not None and hasattr(self.z, "to_version") else self.z}
-        return self.__class__(**kwargs)
+        return Magnetometer(**kwargs)
 
     def to_sdf(self, version: str | None = None) -> ET.Element:
         if self.sdfversion is None and version is not None:

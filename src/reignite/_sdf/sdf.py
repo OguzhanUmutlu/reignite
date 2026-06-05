@@ -84,7 +84,7 @@ class Sdf(BaseModel):
         from ..elements.model import Model
         from ..elements.world import World
         kwargs: dict = {"sdf_version": target_version, "actors": [c.to_version(target_version) if hasattr(c, "to_version") else c for c in (self.actors or [])], "lights": [c.to_version(target_version) if hasattr(c, "to_version") else c for c in (self.lights or [])], "models": [c.to_version(target_version) if hasattr(c, "to_version") else c for c in (self.models or [])], "version": self.version, "worlds": [c.to_version(target_version) if hasattr(c, "to_version") else c for c in (self.worlds or [])]}
-        return self.__class__(**kwargs)
+        return Sdf(**kwargs)
 
     def to_sdf(self, version: str | None = None) -> ET.Element:
         from ..elements.actor import Actor

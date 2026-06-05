@@ -90,7 +90,7 @@ class Model(BaseModel):
             if self.placement_frame is not None and cmp_version(target_version, "1.8") < 0:
                 raise ValueError(f"'placement_frame' is not supported in SDF version {target_version} (added in 1.8)")
             kwargs: dict = {"sdf_version": target_version, "merge": self.merge, "model_states": [c.to_version(target_version) if hasattr(c, "to_version") else c for c in (self.model_states or [])], "name": self.name, "placement_frame": self.placement_frame, "plugins": [c.to_version(target_version) if hasattr(c, "to_version") else c for c in (self.plugins or [])], "pose": self.pose.to_version(target_version) if self.pose is not None and hasattr(self.pose, "to_version") else self.pose, "static": self.static, "uri": self.uri}
-            return self.__class__(**kwargs)
+            return Model.Include(**kwargs)
 
         def to_sdf(self, version: str | None = None) -> ET.Element:
             from ..elements.model_state import ModelState
@@ -231,7 +231,7 @@ class Model(BaseModel):
 
         def to_version(self, target_version: str) -> "Model.Origin":
             kwargs: dict = {"sdf_version": target_version, "pose": self.pose}
-            return self.__class__(**kwargs)
+            return Model.Origin(**kwargs)
 
         def to_sdf(self, version: str | None = None) -> ET.Element:
             if self.sdfversion is None and version is not None:
@@ -435,7 +435,7 @@ class Model(BaseModel):
         if self.self_collide is not None and cmp_version(target_version, "1.5") < 0:
             raise ValueError(f"'self_collide' is not supported in SDF version {target_version} (added in 1.5)")
         kwargs: dict = {"sdf_version": target_version, "allow_auto_disable": self.allow_auto_disable, "canonical_link": self.canonical_link, "enable_wind": self.enable_wind, "frames": [c.to_version(target_version) if hasattr(c, "to_version") else c for c in (self.frames or [])], "grippers": [c.to_version(target_version) if hasattr(c, "to_version") else c for c in (self.grippers or [])], "includes": [c.to_version(target_version) if hasattr(c, "to_version") else c for c in (self.includes or [])], "joints": [c.to_version(target_version) if hasattr(c, "to_version") else c for c in (self.joints or [])], "links": [c.to_version(target_version) if hasattr(c, "to_version") else c for c in (self.links or [])], "model_states": [c.to_version(target_version) if hasattr(c, "to_version") else c for c in (self.model_states or [])], "models": [c.to_version(target_version) if hasattr(c, "to_version") else c for c in (self.models or [])], "name": self.name, "origin": self.origin.to_version(target_version) if self.origin is not None and hasattr(self.origin, "to_version") else self.origin, "placement_frame": self.placement_frame, "plugins": [c.to_version(target_version) if hasattr(c, "to_version") else c for c in (self.plugins or [])], "pose": self.pose.to_version(target_version) if self.pose is not None and hasattr(self.pose, "to_version") else self.pose, "self_collide": self.self_collide, "static": self.static}
-        return self.__class__(**kwargs)
+        return Model(**kwargs)
 
     def to_sdf(self, version: str | None = None) -> ET.Element:
         from ..elements.frame import Frame

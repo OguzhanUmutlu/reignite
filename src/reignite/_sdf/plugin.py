@@ -21,7 +21,7 @@ class Plugin(BaseModel):
 
     def to_version(self, target_version: str) -> "Plugin":
         kwargs: dict = {"sdf_version": target_version, "filename": self.filename, "name": self.name}
-        return self.__class__(**kwargs)
+        return Plugin(**kwargs)
 
     def to_sdf(self, version: str | None = None) -> ET.Element:
         if self.sdfversion is None and version is not None:

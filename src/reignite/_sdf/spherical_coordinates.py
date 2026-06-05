@@ -41,7 +41,7 @@ class SphericalCoordinates(BaseModel):
         if self.world_frame_orientation is not None and cmp_version(target_version, "1.6") < 0:
             raise ValueError(f"'world_frame_orientation' is not supported in SDF version {target_version} (added in 1.6)")
         kwargs: dict = {"sdf_version": target_version, "elevation": self.elevation, "heading_deg": self.heading_deg, "latitude_deg": self.latitude_deg, "longitude_deg": self.longitude_deg, "surface_axis_equatorial": self.surface_axis_equatorial, "surface_axis_polar": self.surface_axis_polar, "surface_model": self.surface_model, "world_frame_orientation": self.world_frame_orientation}
-        return self.__class__(**kwargs)
+        return SphericalCoordinates(**kwargs)
 
     def to_sdf(self, version: str | None = None) -> ET.Element:
         if self.sdfversion is None and version is not None:

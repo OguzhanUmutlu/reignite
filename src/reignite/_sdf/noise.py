@@ -39,7 +39,7 @@ class Noise(BaseModel):
         if self.dynamic_bias_stddev is not None and cmp_version(target_version, "1.6") < 0:
             raise ValueError(f"'dynamic_bias_stddev' is not supported in SDF version {target_version} (added in 1.6)")
         kwargs: dict = {"sdf_version": target_version, "bias_mean": self.bias_mean, "bias_stddev": self.bias_stddev, "dynamic_bias_correlation_time": self.dynamic_bias_correlation_time, "dynamic_bias_stddev": self.dynamic_bias_stddev, "mean": self.mean, "precision": self.precision, "stddev": self.stddev, "type": self.type}
-        return self.__class__(**kwargs)
+        return Noise(**kwargs)
 
     def to_sdf(self, version: str | None = None) -> ET.Element:
         if self.sdfversion is None and version is not None:

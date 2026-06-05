@@ -37,7 +37,7 @@ class Imu(BaseModel):
             def to_version(self, target_version: str) -> "Imu.AngularVelocity.X":
                 from ..elements.noise import Noise
                 kwargs: dict = {"sdf_version": target_version, "noise": self.noise.to_version(target_version) if self.noise is not None and hasattr(self.noise, "to_version") else self.noise}
-                return self.__class__(**kwargs)
+                return Imu.AngularVelocity.X(**kwargs)
 
             def to_sdf(self, version: str | None = None) -> ET.Element:
                 from ..elements.noise import Noise
@@ -84,7 +84,7 @@ class Imu(BaseModel):
             def to_version(self, target_version: str) -> "Imu.AngularVelocity.Y":
                 from ..elements.noise import Noise
                 kwargs: dict = {"sdf_version": target_version, "noise": self.noise.to_version(target_version) if self.noise is not None and hasattr(self.noise, "to_version") else self.noise}
-                return self.__class__(**kwargs)
+                return Imu.AngularVelocity.Y(**kwargs)
 
             def to_sdf(self, version: str | None = None) -> ET.Element:
                 from ..elements.noise import Noise
@@ -131,7 +131,7 @@ class Imu(BaseModel):
             def to_version(self, target_version: str) -> "Imu.AngularVelocity.Z":
                 from ..elements.noise import Noise
                 kwargs: dict = {"sdf_version": target_version, "noise": self.noise.to_version(target_version) if self.noise is not None and hasattr(self.noise, "to_version") else self.noise}
-                return self.__class__(**kwargs)
+                return Imu.AngularVelocity.Z(**kwargs)
 
             def to_sdf(self, version: str | None = None) -> ET.Element:
                 from ..elements.noise import Noise
@@ -194,7 +194,7 @@ class Imu(BaseModel):
 
         def to_version(self, target_version: str) -> "Imu.AngularVelocity":
             kwargs: dict = {"sdf_version": target_version, "x": self.x.to_version(target_version) if self.x is not None and hasattr(self.x, "to_version") else self.x, "y": self.y.to_version(target_version) if self.y is not None and hasattr(self.y, "to_version") else self.y, "z": self.z.to_version(target_version) if self.z is not None and hasattr(self.z, "to_version") else self.z}
-            return self.__class__(**kwargs)
+            return Imu.AngularVelocity(**kwargs)
 
         def to_sdf(self, version: str | None = None) -> ET.Element:
             if self.sdfversion is None and version is not None:
@@ -282,7 +282,7 @@ class Imu(BaseModel):
 
         def to_version(self, target_version: str) -> "Imu.LinearAcceleration":
             kwargs: dict = {"sdf_version": target_version, "x": self.x.to_version(target_version) if self.x is not None and hasattr(self.x, "to_version") else self.x, "y": self.y.to_version(target_version) if self.y is not None and hasattr(self.y, "to_version") else self.y, "z": self.z.to_version(target_version) if self.z is not None and hasattr(self.z, "to_version") else self.z}
-            return self.__class__(**kwargs)
+            return Imu.LinearAcceleration(**kwargs)
 
         def to_sdf(self, version: str | None = None) -> ET.Element:
             if self.sdfversion is None and version is not None:
@@ -364,7 +364,7 @@ class Imu(BaseModel):
 
             def to_version(self, target_version: str) -> "Imu.Noise.Accel":
                 kwargs: dict = {"sdf_version": target_version, "bias_mean": self.bias_mean, "bias_stddev": self.bias_stddev, "mean": self.mean, "stddev": self.stddev}
-                return self.__class__(**kwargs)
+                return Imu.Noise.Accel(**kwargs)
 
             def to_sdf(self, version: str | None = None) -> ET.Element:
                 if self.sdfversion is None and version is not None:
@@ -449,7 +449,7 @@ class Imu(BaseModel):
 
             def to_version(self, target_version: str) -> "Imu.Noise.Rate":
                 kwargs: dict = {"sdf_version": target_version, "bias_mean": self.bias_mean, "bias_stddev": self.bias_stddev, "mean": self.mean, "stddev": self.stddev}
-                return self.__class__(**kwargs)
+                return Imu.Noise.Rate(**kwargs)
 
             def to_sdf(self, version: str | None = None) -> ET.Element:
                 if self.sdfversion is None and version is not None:
@@ -541,7 +541,7 @@ class Imu(BaseModel):
 
         def to_version(self, target_version: str) -> "Imu.Noise":
             kwargs: dict = {"sdf_version": target_version, "accel": self.accel.to_version(target_version) if self.accel is not None and hasattr(self.accel, "to_version") else self.accel, "rate": self.rate.to_version(target_version) if self.rate is not None and hasattr(self.rate, "to_version") else self.rate, "type": self.type}
-            return self.__class__(**kwargs)
+            return Imu.Noise(**kwargs)
 
         def to_sdf(self, version: str | None = None) -> ET.Element:
             if self.sdfversion is None and version is not None:
@@ -616,7 +616,7 @@ class Imu(BaseModel):
 
             def to_version(self, target_version: str) -> "Imu.OrientationReferenceFrame.CustomRpy":
                 kwargs: dict = {"sdf_version": target_version, "custom_rpy": self.custom_rpy, "parent_frame": self.parent_frame}
-                return self.__class__(**kwargs)
+                return Imu.OrientationReferenceFrame.CustomRpy(**kwargs)
 
             def to_sdf(self, version: str | None = None) -> ET.Element:
                 if self.sdfversion is None and version is not None:
@@ -663,7 +663,7 @@ class Imu(BaseModel):
 
             def to_version(self, target_version: str) -> "Imu.OrientationReferenceFrame.GravDirX":
                 kwargs: dict = {"sdf_version": target_version, "grav_dir_x": self.grav_dir_x, "parent_frame": self.parent_frame}
-                return self.__class__(**kwargs)
+                return Imu.OrientationReferenceFrame.GravDirX(**kwargs)
 
             def to_sdf(self, version: str | None = None) -> ET.Element:
                 if self.sdfversion is None and version is not None:
@@ -721,7 +721,7 @@ class Imu(BaseModel):
 
         def to_version(self, target_version: str) -> "Imu.OrientationReferenceFrame":
             kwargs: dict = {"sdf_version": target_version, "custom_rpy": self.custom_rpy.to_version(target_version) if self.custom_rpy is not None and hasattr(self.custom_rpy, "to_version") else self.custom_rpy, "grav_dir_x": self.grav_dir_x.to_version(target_version) if self.grav_dir_x is not None and hasattr(self.grav_dir_x, "to_version") else self.grav_dir_x, "localization": self.localization}
-            return self.__class__(**kwargs)
+            return Imu.OrientationReferenceFrame(**kwargs)
 
         def to_sdf(self, version: str | None = None) -> ET.Element:
             if self.sdfversion is None and version is not None:
@@ -839,7 +839,7 @@ class Imu(BaseModel):
         if self.topic is not None and cmp_version(target_version, "1.7") >= 0:
             raise ValueError(f"'topic' is not supported in SDF version {target_version} (removed in 1.7)")
         kwargs: dict = {"sdf_version": target_version, "angular_velocity": self.angular_velocity.to_version(target_version) if self.angular_velocity is not None and hasattr(self.angular_velocity, "to_version") else self.angular_velocity, "enable_orientation": self.enable_orientation, "linear_acceleration": self.linear_acceleration.to_version(target_version) if self.linear_acceleration is not None and hasattr(self.linear_acceleration, "to_version") else self.linear_acceleration, "noise": self.noise.to_version(target_version) if self.noise is not None and hasattr(self.noise, "to_version") else self.noise, "orientation_reference_frame": self.orientation_reference_frame.to_version(target_version) if self.orientation_reference_frame is not None and hasattr(self.orientation_reference_frame, "to_version") else self.orientation_reference_frame, "topic": self.topic}
-        new_obj = self.__class__(**kwargs)
+        new_obj = Imu(**kwargs)
         apply_migrations(new_obj, target_version)
         return new_obj
 

@@ -53,7 +53,7 @@ class Road(BaseModel):
         if self.material is not None and cmp_version(target_version, "1.5") < 0:
             raise ValueError(f"'material' is not supported in SDF version {target_version} (added in 1.5)")
         kwargs: dict = {"sdf_version": target_version, "material": self.material.to_version(target_version) if self.material is not None and hasattr(self.material, "to_version") else self.material, "name": self.name, "points": self.points, "width": self.width}
-        return self.__class__(**kwargs)
+        return Road(**kwargs)
 
     def to_sdf(self, version: str | None = None) -> ET.Element:
         from ..elements.material import Material

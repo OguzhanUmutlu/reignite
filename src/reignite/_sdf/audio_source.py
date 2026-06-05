@@ -30,7 +30,7 @@ class AudioSource(BaseModel):
 
         def to_version(self, target_version: str) -> "AudioSource.Contact":
             kwargs: dict = {"sdf_version": target_version, "collisions": self.collisions}
-            return self.__class__(**kwargs)
+            return AudioSource.Contact(**kwargs)
 
         def to_sdf(self, version: str | None = None) -> ET.Element:
             if self.sdfversion is None and version is not None:
@@ -106,7 +106,7 @@ class AudioSource(BaseModel):
         if self.frames and cmp_version(target_version, "1.7") >= 0:
             raise ValueError(f"'frames' is not supported in SDF version {target_version} (removed in 1.7)")
         kwargs: dict = {"sdf_version": target_version, "contact": self.contact.to_version(target_version) if self.contact is not None and hasattr(self.contact, "to_version") else self.contact, "frames": [c.to_version(target_version) if hasattr(c, "to_version") else c for c in (self.frames or [])], "gain": self.gain, "loop": self.loop, "pitch": self.pitch, "pose": self.pose.to_version(target_version) if self.pose is not None and hasattr(self.pose, "to_version") else self.pose, "uri": self.uri}
-        return self.__class__(**kwargs)
+        return AudioSource(**kwargs)
 
     def to_sdf(self, version: str | None = None) -> ET.Element:
         from ..elements.frame import Frame

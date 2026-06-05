@@ -36,7 +36,7 @@ class Frame(BaseModel):
         if self.attached_to is not None and cmp_version(target_version, "1.7") < 0:
             raise ValueError(f"'attached_to' is not supported in SDF version {target_version} (added in 1.7)")
         kwargs: dict = {"sdf_version": target_version, "attached_to": self.attached_to, "name": self.name, "pose": self.pose.to_version(target_version) if self.pose is not None and hasattr(self.pose, "to_version") else self.pose}
-        return self.__class__(**kwargs)
+        return Frame(**kwargs)
 
     def to_sdf(self, version: str | None = None) -> ET.Element:
         from ..elements.pose import Pose

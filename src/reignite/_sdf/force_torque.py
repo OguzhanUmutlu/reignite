@@ -28,7 +28,7 @@ class ForceTorque(BaseModel):
             def to_version(self, target_version: str) -> "ForceTorque.Force.X":
                 from ..elements.noise import Noise
                 kwargs: dict = {"sdf_version": target_version, "noise": self.noise.to_version(target_version) if self.noise is not None and hasattr(self.noise, "to_version") else self.noise}
-                return self.__class__(**kwargs)
+                return ForceTorque.Force.X(**kwargs)
 
             def to_sdf(self, version: str | None = None) -> ET.Element:
                 from ..elements.noise import Noise
@@ -75,7 +75,7 @@ class ForceTorque(BaseModel):
             def to_version(self, target_version: str) -> "ForceTorque.Force.Y":
                 from ..elements.noise import Noise
                 kwargs: dict = {"sdf_version": target_version, "noise": self.noise.to_version(target_version) if self.noise is not None and hasattr(self.noise, "to_version") else self.noise}
-                return self.__class__(**kwargs)
+                return ForceTorque.Force.Y(**kwargs)
 
             def to_sdf(self, version: str | None = None) -> ET.Element:
                 from ..elements.noise import Noise
@@ -122,7 +122,7 @@ class ForceTorque(BaseModel):
             def to_version(self, target_version: str) -> "ForceTorque.Force.Z":
                 from ..elements.noise import Noise
                 kwargs: dict = {"sdf_version": target_version, "noise": self.noise.to_version(target_version) if self.noise is not None and hasattr(self.noise, "to_version") else self.noise}
-                return self.__class__(**kwargs)
+                return ForceTorque.Force.Z(**kwargs)
 
             def to_sdf(self, version: str | None = None) -> ET.Element:
                 from ..elements.noise import Noise
@@ -185,7 +185,7 @@ class ForceTorque(BaseModel):
 
         def to_version(self, target_version: str) -> "ForceTorque.Force":
             kwargs: dict = {"sdf_version": target_version, "x": self.x.to_version(target_version) if self.x is not None and hasattr(self.x, "to_version") else self.x, "y": self.y.to_version(target_version) if self.y is not None and hasattr(self.y, "to_version") else self.y, "z": self.z.to_version(target_version) if self.z is not None and hasattr(self.z, "to_version") else self.z}
-            return self.__class__(**kwargs)
+            return ForceTorque.Force(**kwargs)
 
         def to_sdf(self, version: str | None = None) -> ET.Element:
             if self.sdfversion is None and version is not None:
@@ -273,7 +273,7 @@ class ForceTorque(BaseModel):
 
         def to_version(self, target_version: str) -> "ForceTorque.Torque":
             kwargs: dict = {"sdf_version": target_version, "x": self.x.to_version(target_version) if self.x is not None and hasattr(self.x, "to_version") else self.x, "y": self.y.to_version(target_version) if self.y is not None and hasattr(self.y, "to_version") else self.y, "z": self.z.to_version(target_version) if self.z is not None and hasattr(self.z, "to_version") else self.z}
-            return self.__class__(**kwargs)
+            return ForceTorque.Torque(**kwargs)
 
         def to_sdf(self, version: str | None = None) -> ET.Element:
             if self.sdfversion is None and version is not None:
@@ -369,7 +369,7 @@ class ForceTorque(BaseModel):
         if self.torque is not None and cmp_version(target_version, "1.7") < 0:
             raise ValueError(f"'torque' is not supported in SDF version {target_version} (added in 1.7)")
         kwargs: dict = {"sdf_version": target_version, "force": self.force.to_version(target_version) if self.force is not None and hasattr(self.force, "to_version") else self.force, "frame": self.frame, "measure_direction": self.measure_direction, "torque": self.torque.to_version(target_version) if self.torque is not None and hasattr(self.torque, "to_version") else self.torque}
-        return self.__class__(**kwargs)
+        return ForceTorque(**kwargs)
 
     def to_sdf(self, version: str | None = None) -> ET.Element:
         if self.sdfversion is None and version is not None:

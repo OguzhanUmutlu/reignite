@@ -28,7 +28,7 @@ class Gripper(BaseModel):
 
         def to_version(self, target_version: str) -> "Gripper.GraspCheck":
             kwargs: dict = {"sdf_version": target_version, "attach_steps": self.attach_steps, "detach_steps": self.detach_steps, "min_contact_count": self.min_contact_count}
-            return self.__class__(**kwargs)
+            return Gripper.GraspCheck(**kwargs)
 
         def to_sdf(self, version: str | None = None) -> ET.Element:
             if self.sdfversion is None and version is not None:
@@ -127,7 +127,7 @@ class Gripper(BaseModel):
 
     def to_version(self, target_version: str) -> "Gripper":
         kwargs: dict = {"sdf_version": target_version, "grasp_check": self.grasp_check.to_version(target_version) if self.grasp_check is not None and hasattr(self.grasp_check, "to_version") else self.grasp_check, "gripper_links": self.gripper_links, "name": self.name, "palm_link": self.palm_link}
-        return self.__class__(**kwargs)
+        return Gripper(**kwargs)
 
     def to_sdf(self, version: str | None = None) -> ET.Element:
         if self.sdfversion is None and version is not None:

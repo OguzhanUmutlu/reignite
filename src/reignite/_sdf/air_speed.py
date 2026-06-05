@@ -26,7 +26,7 @@ class AirSpeed(BaseModel):
         def to_version(self, target_version: str) -> "AirSpeed.Pressure":
             from ..elements.noise import Noise
             kwargs: dict = {"sdf_version": target_version, "noise": self.noise.to_version(target_version) if self.noise is not None and hasattr(self.noise, "to_version") else self.noise}
-            return self.__class__(**kwargs)
+            return AirSpeed.Pressure(**kwargs)
 
         def to_sdf(self, version: str | None = None) -> ET.Element:
             from ..elements.noise import Noise
@@ -71,7 +71,7 @@ class AirSpeed(BaseModel):
 
     def to_version(self, target_version: str) -> "AirSpeed":
         kwargs: dict = {"sdf_version": target_version, "pressure": self.pressure.to_version(target_version) if self.pressure is not None and hasattr(self.pressure, "to_version") else self.pressure}
-        return self.__class__(**kwargs)
+        return AirSpeed(**kwargs)
 
     def to_sdf(self, version: str | None = None) -> ET.Element:
         if self.sdfversion is None and version is not None:

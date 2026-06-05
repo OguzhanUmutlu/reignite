@@ -29,7 +29,7 @@ class Sonar(BaseModel):
         if self.geometry is not None and cmp_version(target_version, "1.6") < 0:
             raise ValueError(f"'geometry' is not supported in SDF version {target_version} (added in 1.6)")
         kwargs: dict = {"sdf_version": target_version, "geometry": self.geometry, "max": self.max, "min": self.min, "radius": self.radius}
-        return self.__class__(**kwargs)
+        return Sonar(**kwargs)
 
     def to_sdf(self, version: str | None = None) -> ET.Element:
         if self.sdfversion is None and version is not None:

@@ -41,7 +41,7 @@ class ModelState(BaseModel):
 
             def to_version(self, target_version: str) -> "ModelState.Joint.Angle":
                 kwargs: dict = {"sdf_version": target_version, "angle": self.angle, "axis": self.axis}
-                return self.__class__(**kwargs)
+                return ModelState.Joint.Angle(**kwargs)
 
             def to_sdf(self, version: str | None = None) -> ET.Element:
                 if self.sdfversion is None and version is not None:
@@ -98,7 +98,7 @@ class ModelState(BaseModel):
 
         def to_version(self, target_version: str) -> "ModelState.Joint":
             kwargs: dict = {"sdf_version": target_version, "angles": [c.to_version(target_version) if hasattr(c, "to_version") else c for c in (self.angles or [])], "name": self.name}
-            return self.__class__(**kwargs)
+            return ModelState.Joint(**kwargs)
 
         def to_sdf(self, version: str | None = None) -> ET.Element:
             if self.sdfversion is None and version is not None:
@@ -265,7 +265,7 @@ class ModelState(BaseModel):
         if self.scale is not None and cmp_version(target_version, "1.6") < 0:
             raise ValueError(f"'scale' is not supported in SDF version {target_version} (added in 1.6)")
         kwargs: dict = {"sdf_version": target_version, "frames": [c.to_version(target_version) if hasattr(c, "to_version") else c for c in (self.frames or [])], "joint_states": [c.to_version(target_version) if hasattr(c, "to_version") else c for c in (self.joint_states or [])], "joints": [c.to_version(target_version) if hasattr(c, "to_version") else c for c in (self.joints or [])], "link_states": [c.to_version(target_version) if hasattr(c, "to_version") else c for c in (self.link_states or [])], "links": [c.to_version(target_version) if hasattr(c, "to_version") else c for c in (self.links or [])], "model_states": [c.to_version(target_version) if hasattr(c, "to_version") else c for c in (self.model_states or [])], "models": [c.to_version(target_version) if hasattr(c, "to_version") else c for c in (self.models or [])], "name": self.name, "pose": self.pose.to_version(target_version) if self.pose is not None and hasattr(self.pose, "to_version") else self.pose, "scale": self.scale}
-        return self.__class__(**kwargs)
+        return ModelState(**kwargs)
 
     def to_sdf(self, version: str | None = None) -> ET.Element:
         from ..elements.frame import Frame

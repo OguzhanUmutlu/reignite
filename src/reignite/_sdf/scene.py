@@ -31,7 +31,7 @@ class Scene(BaseModel):
 
         def to_version(self, target_version: str) -> "Scene.Ambient":
             kwargs: dict = {"sdf_version": target_version, "ambient": self.ambient, "rgba": self.rgba}
-            return self.__class__(**kwargs)
+            return Scene.Ambient(**kwargs)
 
         def to_sdf(self, version: str | None = None) -> ET.Element:
             if self.sdfversion is None and version is not None:
@@ -80,7 +80,7 @@ class Scene(BaseModel):
 
             def to_version(self, target_version: str) -> "Scene.Background.Sky":
                 kwargs: dict = {"sdf_version": target_version, "material": self.material}
-                return self.__class__(**kwargs)
+                return Scene.Background.Sky(**kwargs)
 
             def to_sdf(self, version: str | None = None) -> ET.Element:
                 if self.sdfversion is None and version is not None:
@@ -124,7 +124,7 @@ class Scene(BaseModel):
             if self.sky is not None and cmp_version(target_version, "1.2") >= 0:
                 raise ValueError(f"'sky' is not supported in SDF version {target_version} (removed in 1.2)")
             kwargs: dict = {"sdf_version": target_version, "rgba": self.rgba, "sky": self.sky.to_version(target_version) if self.sky is not None and hasattr(self.sky, "to_version") else self.sky}
-            return self.__class__(**kwargs)
+            return Scene.Background(**kwargs)
 
         def to_sdf(self, version: str | None = None) -> ET.Element:
             if self.sdfversion is None and version is not None:
@@ -195,7 +195,7 @@ class Scene(BaseModel):
             if self.color is not None and cmp_version(target_version, "1.2") < 0:
                 raise ValueError(f"'color' is not supported in SDF version {target_version} (added in 1.2)")
             kwargs: dict = {"sdf_version": target_version, "color": self.color, "density": self.density, "end": self.end, "rgba": self.rgba, "start": self.start, "type": self.type}
-            return self.__class__(**kwargs)
+            return Scene.Fog(**kwargs)
 
         def to_sdf(self, version: str | None = None) -> ET.Element:
             if self.sdfversion is None and version is not None:
@@ -334,7 +334,7 @@ class Scene(BaseModel):
 
         def to_version(self, target_version: str) -> "Scene.Grid":
             kwargs: dict = {"sdf_version": target_version, "enabled": self.enabled, "grid": self.grid}
-            return self.__class__(**kwargs)
+            return Scene.Grid(**kwargs)
 
         def to_sdf(self, version: str | None = None) -> ET.Element:
             if self.sdfversion is None and version is not None:
@@ -395,7 +395,7 @@ class Scene(BaseModel):
 
             def to_version(self, target_version: str) -> "Scene.SceneSky.Clouds":
                 kwargs: dict = {"sdf_version": target_version, "ambient": self.ambient, "direction": self.direction, "humidity": self.humidity, "mean_size": self.mean_size, "speed": self.speed}
-                return self.__class__(**kwargs)
+                return Scene.SceneSky.Clouds(**kwargs)
 
             def to_sdf(self, version: str | None = None) -> ET.Element:
                 if self.sdfversion is None and version is not None:
@@ -501,7 +501,7 @@ class Scene(BaseModel):
             if self.cubemap_uri is not None and cmp_version(target_version, "1.9") < 0:
                 raise ValueError(f"'cubemap_uri' is not supported in SDF version {target_version} (added in 1.9)")
             kwargs: dict = {"sdf_version": target_version, "clouds": self.clouds.to_version(target_version) if self.clouds is not None and hasattr(self.clouds, "to_version") else self.clouds, "cubemap_uri": self.cubemap_uri, "sunrise": self.sunrise, "sunset": self.sunset, "time": self.time}
-            return self.__class__(**kwargs)
+            return Scene.SceneSky(**kwargs)
 
         def to_sdf(self, version: str | None = None) -> ET.Element:
             if self.sdfversion is None and version is not None:
@@ -600,7 +600,7 @@ class Scene(BaseModel):
 
         def to_version(self, target_version: str) -> "Scene.Shadows":
             kwargs: dict = {"sdf_version": target_version, "enabled": self.enabled, "shadows": self.shadows}
-            return self.__class__(**kwargs)
+            return Scene.Shadows(**kwargs)
 
         def to_sdf(self, version: str | None = None) -> ET.Element:
             if self.sdfversion is None and version is not None:
@@ -697,7 +697,7 @@ class Scene(BaseModel):
         if self.sky is not None and cmp_version(target_version, "1.2") < 0:
             raise ValueError(f"'sky' is not supported in SDF version {target_version} (added in 1.2)")
         kwargs: dict = {"sdf_version": target_version, "ambient": self.ambient.to_version(target_version) if self.ambient is not None and hasattr(self.ambient, "to_version") else self.ambient, "background": self.background.to_version(target_version) if self.background is not None and hasattr(self.background, "to_version") else self.background, "fog": self.fog.to_version(target_version) if self.fog is not None and hasattr(self.fog, "to_version") else self.fog, "grid": self.grid.to_version(target_version) if self.grid is not None and hasattr(self.grid, "to_version") else self.grid, "origin_visual": self.origin_visual, "shadows": self.shadows.to_version(target_version) if self.shadows is not None and hasattr(self.shadows, "to_version") else self.shadows, "sky": self.sky.to_version(target_version) if self.sky is not None and hasattr(self.sky, "to_version") else self.sky}
-        return self.__class__(**kwargs)
+        return Scene(**kwargs)
 
     def to_sdf(self, version: str | None = None) -> ET.Element:
         if self.sdfversion is None and version is not None:

@@ -23,7 +23,7 @@ class JointState(BaseModel):
 
         def to_version(self, target_version: str) -> "JointState.Angle":
             kwargs: dict = {"sdf_version": target_version, "angle": self.angle, "axis": self.axis}
-            return self.__class__(**kwargs)
+            return JointState.Angle(**kwargs)
 
         def to_sdf(self, version: str | None = None) -> ET.Element:
             if self.sdfversion is None and version is not None:
@@ -71,7 +71,7 @@ class JointState(BaseModel):
 
             def to_version(self, target_version: str) -> "JointState.Axis2State.Acceleration":
                 kwargs: dict = {"sdf_version": target_version, "acceleration": self.acceleration, "degrees": self.degrees}
-                return self.__class__(**kwargs)
+                return JointState.Axis2State.Acceleration(**kwargs)
 
             def to_sdf(self, version: str | None = None) -> ET.Element:
                 if self.sdfversion is None and version is not None:
@@ -118,7 +118,7 @@ class JointState(BaseModel):
 
             def to_version(self, target_version: str) -> "JointState.Axis2State.Position":
                 kwargs: dict = {"sdf_version": target_version, "degrees": self.degrees, "position": self.position}
-                return self.__class__(**kwargs)
+                return JointState.Axis2State.Position(**kwargs)
 
             def to_sdf(self, version: str | None = None) -> ET.Element:
                 if self.sdfversion is None and version is not None:
@@ -165,7 +165,7 @@ class JointState(BaseModel):
 
             def to_version(self, target_version: str) -> "JointState.Axis2State.Velocity":
                 kwargs: dict = {"sdf_version": target_version, "degrees": self.degrees, "velocity": self.velocity}
-                return self.__class__(**kwargs)
+                return JointState.Axis2State.Velocity(**kwargs)
 
             def to_sdf(self, version: str | None = None) -> ET.Element:
                 if self.sdfversion is None and version is not None:
@@ -230,7 +230,7 @@ class JointState(BaseModel):
 
         def to_version(self, target_version: str) -> "JointState.Axis2State":
             kwargs: dict = {"sdf_version": target_version, "acceleration": self.acceleration.to_version(target_version) if self.acceleration is not None and hasattr(self.acceleration, "to_version") else self.acceleration, "effort": self.effort, "position": self.position.to_version(target_version) if self.position is not None and hasattr(self.position, "to_version") else self.position, "velocity": self.velocity.to_version(target_version) if self.velocity is not None and hasattr(self.velocity, "to_version") else self.velocity}
-            return self.__class__(**kwargs)
+            return JointState.Axis2State(**kwargs)
 
         def to_sdf(self, version: str | None = None) -> ET.Element:
             if self.sdfversion is None and version is not None:
@@ -339,7 +339,7 @@ class JointState(BaseModel):
 
         def to_version(self, target_version: str) -> "JointState.AxisState":
             kwargs: dict = {"sdf_version": target_version, "acceleration": self.acceleration.to_version(target_version) if self.acceleration is not None and hasattr(self.acceleration, "to_version") else self.acceleration, "effort": self.effort, "position": self.position.to_version(target_version) if self.position is not None and hasattr(self.position, "to_version") else self.position, "velocity": self.velocity.to_version(target_version) if self.velocity is not None and hasattr(self.velocity, "to_version") else self.velocity}
-            return self.__class__(**kwargs)
+            return JointState.AxisState(**kwargs)
 
         def to_sdf(self, version: str | None = None) -> ET.Element:
             if self.sdfversion is None and version is not None:
@@ -447,7 +447,7 @@ class JointState(BaseModel):
 
     def to_version(self, target_version: str) -> "JointState":
         kwargs: dict = {"sdf_version": target_version, "angle": self.angle.to_version(target_version) if self.angle is not None and hasattr(self.angle, "to_version") else self.angle, "axis2_state": self.axis2_state.to_version(target_version) if self.axis2_state is not None and hasattr(self.axis2_state, "to_version") else self.axis2_state, "axis_state": self.axis_state.to_version(target_version) if self.axis_state is not None and hasattr(self.axis_state, "to_version") else self.axis_state, "name": self.name}
-        return self.__class__(**kwargs)
+        return JointState(**kwargs)
 
     def to_sdf(self, version: str | None = None) -> ET.Element:
         if self.sdfversion is None and version is not None:

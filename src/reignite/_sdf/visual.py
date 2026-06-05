@@ -35,7 +35,7 @@ class Visual(BaseModel):
 
         def to_version(self, target_version: str) -> "Visual.Meta":
             kwargs: dict = {"sdf_version": target_version, "layer": self.layer}
-            return self.__class__(**kwargs)
+            return Visual.Meta(**kwargs)
 
         def to_sdf(self, version: str | None = None) -> ET.Element:
             if self.sdfversion is None and version is not None:
@@ -71,7 +71,7 @@ class Visual(BaseModel):
 
         def to_version(self, target_version: str) -> "Visual.Origin":
             kwargs: dict = {"sdf_version": target_version, "pose": self.pose}
-            return self.__class__(**kwargs)
+            return Visual.Origin(**kwargs)
 
         def to_sdf(self, version: str | None = None) -> ET.Element:
             if self.sdfversion is None and version is not None:
@@ -204,7 +204,7 @@ class Visual(BaseModel):
         if self.visibility_flags is not None and cmp_version(target_version, "1.7") < 0:
             raise ValueError(f"'visibility_flags' is not supported in SDF version {target_version} (added in 1.7)")
         kwargs: dict = {"sdf_version": target_version, "cast_shadows": self.cast_shadows, "frames": [c.to_version(target_version) if hasattr(c, "to_version") else c for c in (self.frames or [])], "geometry": self.geometry.to_version(target_version) if self.geometry is not None and hasattr(self.geometry, "to_version") else self.geometry, "laser_retro": self.laser_retro, "material": self.material.to_version(target_version) if self.material is not None and hasattr(self.material, "to_version") else self.material, "meta": self.meta.to_version(target_version) if self.meta is not None and hasattr(self.meta, "to_version") else self.meta, "name": self.name, "origin": self.origin.to_version(target_version) if self.origin is not None and hasattr(self.origin, "to_version") else self.origin, "plugins": [c.to_version(target_version) if hasattr(c, "to_version") else c for c in (self.plugins or [])], "pose": self.pose.to_version(target_version) if self.pose is not None and hasattr(self.pose, "to_version") else self.pose, "transparency": self.transparency, "visibility_flags": self.visibility_flags}
-        return self.__class__(**kwargs)
+        return Visual(**kwargs)
 
     def to_sdf(self, version: str | None = None) -> ET.Element:
         from ..elements.frame import Frame

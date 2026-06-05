@@ -34,7 +34,7 @@ class Collision(BaseModel):
 
         def to_version(self, target_version: str) -> "Collision.Origin":
             kwargs: dict = {"sdf_version": target_version, "pose": self.pose}
-            return self.__class__(**kwargs)
+            return Collision.Origin(**kwargs)
 
         def to_sdf(self, version: str | None = None) -> ET.Element:
             if self.sdfversion is None and version is not None:
@@ -148,7 +148,7 @@ class Collision(BaseModel):
         if self.pose is not None and cmp_version(target_version, "1.2") < 0:
             raise ValueError(f"'pose' is not supported in SDF version {target_version} (added in 1.2)")
         kwargs: dict = {"sdf_version": target_version, "auto_inertia_params": self.auto_inertia_params, "density": self.density, "frames": [c.to_version(target_version) if hasattr(c, "to_version") else c for c in (self.frames or [])], "geometry": self.geometry.to_version(target_version) if self.geometry is not None and hasattr(self.geometry, "to_version") else self.geometry, "laser_retro": self.laser_retro, "mass": self.mass, "max_contacts": self.max_contacts, "name": self.name, "origin": self.origin.to_version(target_version) if self.origin is not None and hasattr(self.origin, "to_version") else self.origin, "pose": self.pose.to_version(target_version) if self.pose is not None and hasattr(self.pose, "to_version") else self.pose, "surface": self.surface.to_version(target_version) if self.surface is not None and hasattr(self.surface, "to_version") else self.surface}
-        return self.__class__(**kwargs)
+        return Collision(**kwargs)
 
     def to_sdf(self, version: str | None = None) -> ET.Element:
         from ..elements.frame import Frame

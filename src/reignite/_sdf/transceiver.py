@@ -32,7 +32,7 @@ class Transceiver(BaseModel):
 
     def to_version(self, target_version: str) -> "Transceiver":
         kwargs: dict = {"sdf_version": target_version, "essid": self.essid, "frequency": self.frequency, "gain": self.gain, "max_frequency": self.max_frequency, "min_frequency": self.min_frequency, "power": self.power, "sensitivity": self.sensitivity}
-        return self.__class__(**kwargs)
+        return Transceiver(**kwargs)
 
     def to_sdf(self, version: str | None = None) -> ET.Element:
         if self.sdfversion is None and version is not None:

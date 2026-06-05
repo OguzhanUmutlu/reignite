@@ -26,7 +26,7 @@ class LogicalCamera(BaseModel):
 
     def to_version(self, target_version: str) -> "LogicalCamera":
         kwargs: dict = {"sdf_version": target_version, "aspect_ratio": self.aspect_ratio, "far": self.far, "horizontal_fov": self.horizontal_fov, "near": self.near}
-        return self.__class__(**kwargs)
+        return LogicalCamera(**kwargs)
 
     def to_sdf(self, version: str | None = None) -> ET.Element:
         if self.sdfversion is None and version is not None:

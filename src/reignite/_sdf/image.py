@@ -28,7 +28,7 @@ class Image(BaseModel):
 
     def to_version(self, target_version: str) -> "Image":
         kwargs: dict = {"sdf_version": target_version, "granularity": self.granularity, "height": self.height, "scale": self.scale, "threshold": self.threshold, "uri": self.uri}
-        return self.__class__(**kwargs)
+        return Image(**kwargs)
 
     def to_sdf(self, version: str | None = None) -> ET.Element:
         if self.sdfversion is None and version is not None:

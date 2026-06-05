@@ -48,7 +48,7 @@ class Link(BaseModel):
 
         def to_version(self, target_version: str) -> "Link.Damping":
             kwargs: dict = {"sdf_version": target_version, "angular": self.angular, "linear": self.linear}
-            return self.__class__(**kwargs)
+            return Link.Damping(**kwargs)
 
         def to_sdf(self, version: str | None = None) -> ET.Element:
             if self.sdfversion is None and version is not None:
@@ -97,7 +97,7 @@ class Link(BaseModel):
 
         def to_version(self, target_version: str) -> "Link.Origin":
             kwargs: dict = {"sdf_version": target_version, "pose": self.pose}
-            return self.__class__(**kwargs)
+            return Link.Origin(**kwargs)
 
         def to_sdf(self, version: str | None = None) -> ET.Element:
             if self.sdfversion is None and version is not None:
@@ -145,7 +145,7 @@ class Link(BaseModel):
 
         def to_version(self, target_version: str) -> "Link.VelocityDecay":
             kwargs: dict = {"sdf_version": target_version, "angular": self.angular, "linear": self.linear}
-            return self.__class__(**kwargs)
+            return Link.VelocityDecay(**kwargs)
 
         def to_sdf(self, version: str | None = None) -> ET.Element:
             if self.sdfversion is None and version is not None:
@@ -396,7 +396,7 @@ class Link(BaseModel):
         if self.velocity_decay is not None and cmp_version(target_version, "1.2") < 0:
             raise ValueError(f"'velocity_decay' is not supported in SDF version {target_version} (added in 1.2)")
         kwargs: dict = {"sdf_version": target_version, "audio_sinks": [c.to_version(target_version) if hasattr(c, "to_version") else c for c in (self.audio_sinks or [])], "audio_sources": [c.to_version(target_version) if hasattr(c, "to_version") else c for c in (self.audio_sources or [])], "batteries": [c.to_version(target_version) if hasattr(c, "to_version") else c for c in (self.batteries or [])], "collisions": [c.to_version(target_version) if hasattr(c, "to_version") else c for c in (self.collisions or [])], "damping": self.damping.to_version(target_version) if self.damping is not None and hasattr(self.damping, "to_version") else self.damping, "enable_wind": self.enable_wind, "frames": [c.to_version(target_version) if hasattr(c, "to_version") else c for c in (self.frames or [])], "gravity": self.gravity, "inertial": self.inertial.to_version(target_version) if self.inertial is not None and hasattr(self.inertial, "to_version") else self.inertial, "kinematic": self.kinematic, "lights": [c.to_version(target_version) if hasattr(c, "to_version") else c for c in (self.lights or [])], "must_be_base_link": self.must_be_base_link, "name": self.name, "origin": self.origin.to_version(target_version) if self.origin is not None and hasattr(self.origin, "to_version") else self.origin, "particle_emitters": [c.to_version(target_version) if hasattr(c, "to_version") else c for c in (self.particle_emitters or [])], "pose": self.pose.to_version(target_version) if self.pose is not None and hasattr(self.pose, "to_version") else self.pose, "projector": self.projector.to_version(target_version) if self.projector is not None and hasattr(self.projector, "to_version") else self.projector, "self_collide": self.self_collide, "sensor": self.sensor.to_version(target_version) if self.sensor is not None and hasattr(self.sensor, "to_version") else self.sensor, "velocity_decay": self.velocity_decay.to_version(target_version) if self.velocity_decay is not None and hasattr(self.velocity_decay, "to_version") else self.velocity_decay, "visuals": [c.to_version(target_version) if hasattr(c, "to_version") else c for c in (self.visuals or [])]}
-        return self.__class__(**kwargs)
+        return Link(**kwargs)
 
     def to_sdf(self, version: str | None = None) -> ET.Element:
         from ..elements.audio_sink import AudioSink

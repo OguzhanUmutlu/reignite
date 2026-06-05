@@ -983,11 +983,11 @@ def _render_class(spec: dict, file_external_imports: set[str], indent: int = 0,
             kwargs_init += f', "{p.py_name}": self.{p.py_name}'
     block.append(kwargs_init + "}")
     if spec.get("migrations"):
-        block.append("        new_obj = self.__class__(**kwargs)")
+        block.append(f"        new_obj = {outer_prefix}{class_name}(**kwargs)")
         block.append("        apply_migrations(new_obj, target_version)")
         block.append("        return new_obj")
     else:
-        block.append("        return self.__class__(**kwargs)")
+        block.append(f"        return {outer_prefix}{class_name}(**kwargs)")
 
     block.append("")
     block.append("    def to_sdf(self, version: str | None = None) -> ET.Element:")

@@ -85,7 +85,7 @@ class ParticleEmitter(BaseModel):
         from ..elements.material import Material
         from ..elements.pose import Pose
         kwargs: dict = {"sdf_version": target_version, "color_end": self.color_end, "color_range_image": self.color_range_image, "color_start": self.color_start, "duration": self.duration, "emitting": self.emitting, "lifetime": self.lifetime, "material": self.material.to_version(target_version) if self.material is not None and hasattr(self.material, "to_version") else self.material, "max_velocity": self.max_velocity, "min_velocity": self.min_velocity, "name": self.name, "particle_scatter_ratio": self.particle_scatter_ratio, "particle_size": self.particle_size, "pose": self.pose.to_version(target_version) if self.pose is not None and hasattr(self.pose, "to_version") else self.pose, "rate": self.rate, "scale_rate": self.scale_rate, "size": self.size, "topic": self.topic, "type": self.type}
-        return self.__class__(**kwargs)
+        return ParticleEmitter(**kwargs)
 
     def to_sdf(self, version: str | None = None) -> ET.Element:
         from ..elements.material import Material

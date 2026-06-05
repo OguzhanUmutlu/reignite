@@ -28,7 +28,7 @@ class Mimic(BaseModel):
 
     def to_version(self, target_version: str) -> "Mimic":
         kwargs: dict = {"sdf_version": target_version, "axis": self.axis, "joint": self.joint, "multiplier": self.multiplier, "offset": self.offset, "reference": self.reference}
-        return self.__class__(**kwargs)
+        return Mimic(**kwargs)
 
     def to_sdf(self, version: str | None = None) -> ET.Element:
         if self.sdfversion is None and version is not None:

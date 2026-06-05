@@ -25,7 +25,7 @@ class Contact(BaseModel):
             if self.name is not None and cmp_version(target_version, "1.2") >= 0:
                 raise ValueError(f"'name' is not supported in SDF version {target_version} (removed in 1.2)")
             kwargs: dict = {"sdf_version": target_version, "collision": self.collision, "name": self.name}
-            return self.__class__(**kwargs)
+            return Contact.Collision(**kwargs)
 
         def to_sdf(self, version: str | None = None) -> ET.Element:
             if self.sdfversion is None and version is not None:
@@ -76,7 +76,7 @@ class Contact(BaseModel):
 
     def to_version(self, target_version: str) -> "Contact":
         kwargs: dict = {"sdf_version": target_version, "collision": self.collision.to_version(target_version) if self.collision is not None and hasattr(self.collision, "to_version") else self.collision, "topic": self.topic}
-        return self.__class__(**kwargs)
+        return Contact(**kwargs)
 
     def to_sdf(self, version: str | None = None) -> ET.Element:
         if self.sdfversion is None and version is not None:

@@ -36,7 +36,7 @@ class Polyline(BaseModel):
 
     def to_version(self, target_version: str) -> "Polyline":
         kwargs: dict = {"sdf_version": target_version, "height": self.height, "points": self.points}
-        return self.__class__(**kwargs)
+        return Polyline(**kwargs)
 
     def to_sdf(self, version: str | None = None) -> ET.Element:
         if self.sdfversion is None and version is not None:

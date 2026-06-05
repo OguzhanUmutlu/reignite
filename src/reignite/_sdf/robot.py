@@ -93,7 +93,7 @@ class Robot(BaseModel):
         from ..elements.link import Link
         from ..elements.plugin import Plugin
         kwargs: dict = {"sdf_version": target_version, "grippers": [c.to_version(target_version) if hasattr(c, "to_version") else c for c in (self.grippers or [])], "joints": [c.to_version(target_version) if hasattr(c, "to_version") else c for c in (self.joints or [])], "links": [c.to_version(target_version) if hasattr(c, "to_version") else c for c in (self.links or [])], "name": self.name, "plugins": [c.to_version(target_version) if hasattr(c, "to_version") else c for c in (self.plugins or [])], "pose": self.pose}
-        return self.__class__(**kwargs)
+        return Robot(**kwargs)
 
     def to_sdf(self, version: str | None = None) -> ET.Element:
         from ..elements.gripper import Gripper

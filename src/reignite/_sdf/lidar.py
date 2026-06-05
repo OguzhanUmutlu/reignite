@@ -26,7 +26,7 @@ class Lidar(BaseModel):
 
         def to_version(self, target_version: str) -> "Lidar.Noise":
             kwargs: dict = {"sdf_version": target_version, "mean": self.mean, "stddev": self.stddev, "type": self.type}
-            return self.__class__(**kwargs)
+            return Lidar.Noise(**kwargs)
 
         def to_sdf(self, version: str | None = None) -> ET.Element:
             if self.sdfversion is None and version is not None:
@@ -96,7 +96,7 @@ class Lidar(BaseModel):
 
         def to_version(self, target_version: str) -> "Lidar.Range":
             kwargs: dict = {"sdf_version": target_version, "max": self.max, "min": self.min, "resolution": self.resolution}
-            return self.__class__(**kwargs)
+            return Lidar.Range(**kwargs)
 
         def to_sdf(self, version: str | None = None) -> ET.Element:
             if self.sdfversion is None and version is not None:
@@ -169,7 +169,7 @@ class Lidar(BaseModel):
 
             def to_version(self, target_version: str) -> "Lidar.Scan.Horizontal":
                 kwargs: dict = {"sdf_version": target_version, "max_angle": self.max_angle, "min_angle": self.min_angle, "resolution": self.resolution, "samples": self.samples}
-                return self.__class__(**kwargs)
+                return Lidar.Scan.Horizontal(**kwargs)
 
             def to_sdf(self, version: str | None = None) -> ET.Element:
                 if self.sdfversion is None and version is not None:
@@ -254,7 +254,7 @@ class Lidar(BaseModel):
 
             def to_version(self, target_version: str) -> "Lidar.Scan.Vertical":
                 kwargs: dict = {"sdf_version": target_version, "max_angle": self.max_angle, "min_angle": self.min_angle, "resolution": self.resolution, "samples": self.samples}
-                return self.__class__(**kwargs)
+                return Lidar.Scan.Vertical(**kwargs)
 
             def to_sdf(self, version: str | None = None) -> ET.Element:
                 if self.sdfversion is None and version is not None:
@@ -344,7 +344,7 @@ class Lidar(BaseModel):
 
         def to_version(self, target_version: str) -> "Lidar.Scan":
             kwargs: dict = {"sdf_version": target_version, "horizontal": self.horizontal.to_version(target_version) if self.horizontal is not None and hasattr(self.horizontal, "to_version") else self.horizontal, "vertical": self.vertical.to_version(target_version) if self.vertical is not None and hasattr(self.vertical, "to_version") else self.vertical}
-            return self.__class__(**kwargs)
+            return Lidar.Scan(**kwargs)
 
         def to_sdf(self, version: str | None = None) -> ET.Element:
             if self.sdfversion is None and version is not None:
@@ -425,7 +425,7 @@ class Lidar(BaseModel):
         if self.visibility_mask is not None and cmp_version(target_version, "1.9") < 0:
             raise ValueError(f"'visibility_mask' is not supported in SDF version {target_version} (added in 1.9)")
         kwargs: dict = {"sdf_version": target_version, "noise": self.noise.to_version(target_version) if self.noise is not None and hasattr(self.noise, "to_version") else self.noise, "range": self.range.to_version(target_version) if self.range is not None and hasattr(self.range, "to_version") else self.range, "scan": self.scan.to_version(target_version) if self.scan is not None and hasattr(self.scan, "to_version") else self.scan, "visibility_mask": self.visibility_mask}
-        return self.__class__(**kwargs)
+        return Lidar(**kwargs)
 
     def to_sdf(self, version: str | None = None) -> ET.Element:
         if self.sdfversion is None and version is not None:

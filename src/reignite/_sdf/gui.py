@@ -41,7 +41,7 @@ class Gui(BaseModel):
 
             def to_version(self, target_version: str) -> "Gui.Camera.Origin":
                 kwargs: dict = {"sdf_version": target_version, "pose": self.pose}
-                return self.__class__(**kwargs)
+                return Gui.Camera.Origin(**kwargs)
 
             def to_sdf(self, version: str | None = None) -> ET.Element:
                 if self.sdfversion is None and version is not None:
@@ -107,7 +107,7 @@ class Gui(BaseModel):
                 if self.xyz is not None and cmp_version(target_version, "1.6") < 0:
                     raise ValueError(f"'xyz' is not supported in SDF version {target_version} (added in 1.6)")
                 kwargs: dict = {"sdf_version": target_version, "inherit_yaw": self.inherit_yaw, "max_dist": self.max_dist, "min_dist": self.min_dist, "name": self.name, "static": self.static, "use_model_frame": self.use_model_frame, "xyz": self.xyz}
-                return self.__class__(**kwargs)
+                return Gui.Camera.TrackVisual(**kwargs)
 
             def to_sdf(self, version: str | None = None) -> ET.Element:
                 if self.sdfversion is None and version is not None:
@@ -282,7 +282,7 @@ class Gui(BaseModel):
             if self.projection_type is not None and cmp_version(target_version, "1.5") < 0:
                 raise ValueError(f"'projection_type' is not supported in SDF version {target_version} (added in 1.5)")
             kwargs: dict = {"sdf_version": target_version, "frames": [c.to_version(target_version) if hasattr(c, "to_version") else c for c in (self.frames or [])], "name": self.name, "origin": self.origin.to_version(target_version) if self.origin is not None and hasattr(self.origin, "to_version") else self.origin, "pose": self.pose.to_version(target_version) if self.pose is not None and hasattr(self.pose, "to_version") else self.pose, "projection_type": self.projection_type, "track_visual": self.track_visual.to_version(target_version) if self.track_visual is not None and hasattr(self.track_visual, "to_version") else self.track_visual, "view_controller": self.view_controller}
-            return self.__class__(**kwargs)
+            return Gui.Camera(**kwargs)
 
         def to_sdf(self, version: str | None = None) -> ET.Element:
             from ..elements.frame import Frame
@@ -438,7 +438,7 @@ class Gui(BaseModel):
         if self.plugins and cmp_version(target_version, "1.5") < 0:
             raise ValueError(f"'plugins' is not supported in SDF version {target_version} (added in 1.5)")
         kwargs: dict = {"sdf_version": target_version, "camera": self.camera.to_version(target_version) if self.camera is not None and hasattr(self.camera, "to_version") else self.camera, "fullscreen": self.fullscreen, "plugins": [c.to_version(target_version) if hasattr(c, "to_version") else c for c in (self.plugins or [])]}
-        return self.__class__(**kwargs)
+        return Gui(**kwargs)
 
     def to_sdf(self, version: str | None = None) -> ET.Element:
         from ..elements.plugin import Plugin

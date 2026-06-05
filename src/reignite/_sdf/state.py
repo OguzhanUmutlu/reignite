@@ -34,7 +34,7 @@ class State(BaseModel):
 
         def to_version(self, target_version: str) -> "State.Deletions":
             kwargs: dict = {"sdf_version": target_version, "names": self.names}
-            return self.__class__(**kwargs)
+            return State.Deletions(**kwargs)
 
         def to_sdf(self, version: str | None = None) -> ET.Element:
             if self.sdfversion is None and version is not None:
@@ -116,7 +116,7 @@ class State(BaseModel):
             if self.lights and cmp_version(target_version, "1.6") < 0:
                 raise ValueError(f"'lights' is not supported in SDF version {target_version} (added in 1.6)")
             kwargs: dict = {"sdf_version": target_version, "joints": [c.to_version(target_version) if hasattr(c, "to_version") else c for c in (self.joints or [])], "lights": [c.to_version(target_version) if hasattr(c, "to_version") else c for c in (self.lights or [])], "models": [c.to_version(target_version) if hasattr(c, "to_version") else c for c in (self.models or [])]}
-            return self.__class__(**kwargs)
+            return State.Insertions(**kwargs)
 
         def to_sdf(self, version: str | None = None) -> ET.Element:
             from ..elements.joint import Joint
@@ -312,7 +312,7 @@ class State(BaseModel):
         if self.wall_time is not None and cmp_version(target_version, "1.3") < 0:
             raise ValueError(f"'wall_time' is not supported in SDF version {target_version} (added in 1.3)")
         kwargs: dict = {"sdf_version": target_version, "deletions": self.deletions.to_version(target_version) if self.deletions is not None and hasattr(self.deletions, "to_version") else self.deletions, "insertions": self.insertions.to_version(target_version) if self.insertions is not None and hasattr(self.insertions, "to_version") else self.insertions, "iterations": self.iterations, "joint_states": [c.to_version(target_version) if hasattr(c, "to_version") else c for c in (self.joint_states or [])], "light_states": [c.to_version(target_version) if hasattr(c, "to_version") else c for c in (self.light_states or [])], "lights": [c.to_version(target_version) if hasattr(c, "to_version") else c for c in (self.lights or [])], "model_states": [c.to_version(target_version) if hasattr(c, "to_version") else c for c in (self.model_states or [])], "models": [c.to_version(target_version) if hasattr(c, "to_version") else c for c in (self.models or [])], "real_time": self.real_time, "sim_time": self.sim_time, "time": self.time, "wall_time": self.wall_time, "world_name": self.world_name}
-        return self.__class__(**kwargs)
+        return State(**kwargs)
 
     def to_sdf(self, version: str | None = None) -> ET.Element:
         from ..elements.joint_state import JointState

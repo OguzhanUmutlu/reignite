@@ -45,7 +45,7 @@ class Population(BaseModel):
 
         def to_version(self, target_version: str) -> "Population.Distribution":
             kwargs: dict = {"sdf_version": target_version, "cols": self.cols, "rows": self.rows, "step": self.step, "type": self.type}
-            return self.__class__(**kwargs)
+            return Population.Distribution(**kwargs)
 
         def to_sdf(self, version: str | None = None) -> ET.Element:
             if self.sdfversion is None and version is not None:
@@ -186,7 +186,7 @@ class Population(BaseModel):
         if self.frames and cmp_version(target_version, "1.7") >= 0:
             raise ValueError(f"'frames' is not supported in SDF version {target_version} (removed in 1.7)")
         kwargs: dict = {"sdf_version": target_version, "box": self.box.to_version(target_version) if self.box is not None and hasattr(self.box, "to_version") else self.box, "cylinder": self.cylinder.to_version(target_version) if self.cylinder is not None and hasattr(self.cylinder, "to_version") else self.cylinder, "distribution": self.distribution.to_version(target_version) if self.distribution is not None and hasattr(self.distribution, "to_version") else self.distribution, "frames": [c.to_version(target_version) if hasattr(c, "to_version") else c for c in (self.frames or [])], "model_count": self.model_count, "models": [c.to_version(target_version) if hasattr(c, "to_version") else c for c in (self.models or [])], "name": self.name, "pose": self.pose.to_version(target_version) if self.pose is not None and hasattr(self.pose, "to_version") else self.pose}
-        return self.__class__(**kwargs)
+        return Population(**kwargs)
 
     def to_sdf(self, version: str | None = None) -> ET.Element:
         from ..elements.box import Box

@@ -31,7 +31,7 @@ class Mesh(BaseModel):
 
         def to_version(self, target_version: str) -> "Mesh.ConvexDecomposition":
             kwargs: dict = {"sdf_version": target_version, "max_convex_hulls": self.max_convex_hulls, "voxel_resolution": self.voxel_resolution}
-            return self.__class__(**kwargs)
+            return Mesh.ConvexDecomposition(**kwargs)
 
         def to_sdf(self, version: str | None = None) -> ET.Element:
             if self.sdfversion is None and version is not None:
@@ -86,7 +86,7 @@ class Mesh(BaseModel):
 
         def to_version(self, target_version: str) -> "Mesh.Submesh":
             kwargs: dict = {"sdf_version": target_version, "center": self.center, "name": self.name}
-            return self.__class__(**kwargs)
+            return Mesh.Submesh(**kwargs)
 
         def to_sdf(self, version: str | None = None) -> ET.Element:
             if self.sdfversion is None and version is not None:
@@ -160,7 +160,7 @@ class Mesh(BaseModel):
         if self.optimization is not None and cmp_version(target_version, "1.11") < 0:
             raise ValueError(f"'optimization' is not supported in SDF version {target_version} (added in 1.11)")
         kwargs: dict = {"sdf_version": target_version, "convex_decomposition": self.convex_decomposition.to_version(target_version) if self.convex_decomposition is not None and hasattr(self.convex_decomposition, "to_version") else self.convex_decomposition, "optimization": self.optimization, "scale": self.scale, "submesh": self.submesh.to_version(target_version) if self.submesh is not None and hasattr(self.submesh, "to_version") else self.submesh, "uri": self.uri}
-        return self.__class__(**kwargs)
+        return Mesh(**kwargs)
 
     def to_sdf(self, version: str | None = None) -> ET.Element:
         if self.sdfversion is None and version is not None:

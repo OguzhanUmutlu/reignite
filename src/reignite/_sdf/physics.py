@@ -39,7 +39,7 @@ class Physics(BaseModel):
 
             def to_version(self, target_version: str) -> "Physics.Bullet.Constraints":
                 kwargs: dict = {"sdf_version": target_version, "cfm": self.cfm, "contact_surface_layer": self.contact_surface_layer, "erp": self.erp, "split_impulse": self.split_impulse, "split_impulse_penetration_threshold": self.split_impulse_penetration_threshold}
-                return self.__class__(**kwargs)
+                return Physics.Bullet.Constraints(**kwargs)
 
             def to_sdf(self, version: str | None = None) -> ET.Element:
                 if self.sdfversion is None and version is not None:
@@ -137,7 +137,7 @@ class Physics(BaseModel):
 
             def to_version(self, target_version: str) -> "Physics.Bullet.Solver":
                 kwargs: dict = {"sdf_version": target_version, "iters": self.iters, "min_step_size": self.min_step_size, "sor": self.sor, "type": self.type}
-                return self.__class__(**kwargs)
+                return Physics.Bullet.Solver(**kwargs)
 
             def to_sdf(self, version: str | None = None) -> ET.Element:
                 if self.sdfversion is None and version is not None:
@@ -235,7 +235,7 @@ class Physics(BaseModel):
             if self.solver is not None and cmp_version(target_version, "1.4") < 0:
                 raise ValueError(f"'solver' is not supported in SDF version {target_version} (added in 1.4)")
             kwargs: dict = {"sdf_version": target_version, "constraints": self.constraints.to_version(target_version) if self.constraints is not None and hasattr(self.constraints, "to_version") else self.constraints, "dt": self.dt, "solver": self.solver.to_version(target_version) if self.solver is not None and hasattr(self.solver, "to_version") else self.solver}
-            return self.__class__(**kwargs)
+            return Physics.Bullet(**kwargs)
 
         def to_sdf(self, version: str | None = None) -> ET.Element:
             if self.sdfversion is None and version is not None:
@@ -308,7 +308,7 @@ class Physics(BaseModel):
 
             def to_version(self, target_version: str) -> "Physics.Dart.DartSolver":
                 kwargs: dict = {"sdf_version": target_version, "solver_type": self.solver_type}
-                return self.__class__(**kwargs)
+                return Physics.Dart.DartSolver(**kwargs)
 
             def to_sdf(self, version: str | None = None) -> ET.Element:
                 if self.sdfversion is None and version is not None:
@@ -354,7 +354,7 @@ class Physics(BaseModel):
 
         def to_version(self, target_version: str) -> "Physics.Dart":
             kwargs: dict = {"sdf_version": target_version, "collision_detector": self.collision_detector, "solver": self.solver.to_version(target_version) if self.solver is not None and hasattr(self.solver, "to_version") else self.solver}
-            return self.__class__(**kwargs)
+            return Physics.Dart(**kwargs)
 
         def to_sdf(self, version: str | None = None) -> ET.Element:
             if self.sdfversion is None and version is not None:
@@ -414,7 +414,7 @@ class Physics(BaseModel):
             if self.gravity is not None and cmp_version(target_version, "1.6") >= 0:
                 raise ValueError(f"'gravity' is not supported in SDF version {target_version} (removed in 1.6)")
             kwargs: dict = {"sdf_version": target_version, "gravity": self.gravity, "xyz": self.xyz}
-            return self.__class__(**kwargs)
+            return Physics.Gravity(**kwargs)
 
         def to_sdf(self, version: str | None = None) -> ET.Element:
             if self.sdfversion is None and version is not None:
@@ -473,7 +473,7 @@ class Physics(BaseModel):
 
             def to_version(self, target_version: str) -> "Physics.Ode.OdeConstraints":
                 kwargs: dict = {"sdf_version": target_version, "cfm": self.cfm, "contact_max_correcting_vel": self.contact_max_correcting_vel, "contact_surface_layer": self.contact_surface_layer, "erp": self.erp}
-                return self.__class__(**kwargs)
+                return Physics.Ode.OdeConstraints(**kwargs)
 
             def to_sdf(self, version: str | None = None) -> ET.Element:
                 if self.sdfversion is None and version is not None:
@@ -604,7 +604,7 @@ class Physics(BaseModel):
                 if self.use_dynamic_moi_rescaling is not None and cmp_version(target_version, "1.4") < 0:
                     raise ValueError(f"'use_dynamic_moi_rescaling' is not supported in SDF version {target_version} (added in 1.4)")
                 kwargs: dict = {"sdf_version": target_version, "dt": self.dt, "friction_model": self.friction_model, "island_threads": self.island_threads, "iters": self.iters, "min_step_size": self.min_step_size, "precon_iters": self.precon_iters, "sor": self.sor, "thread_position_correction": self.thread_position_correction, "type": self.type, "use_dynamic_moi_rescaling": self.use_dynamic_moi_rescaling}
-                return self.__class__(**kwargs)
+                return Physics.Ode.OdeSolver(**kwargs)
 
             def to_sdf(self, version: str | None = None) -> ET.Element:
                 if self.sdfversion is None and version is not None:
@@ -812,7 +812,7 @@ class Physics(BaseModel):
 
         def to_version(self, target_version: str) -> "Physics.Ode":
             kwargs: dict = {"sdf_version": target_version, "constraints": self.constraints.to_version(target_version) if self.constraints is not None and hasattr(self.constraints, "to_version") else self.constraints, "solver": self.solver.to_version(target_version) if self.solver is not None and hasattr(self.solver, "to_version") else self.solver}
-            return self.__class__(**kwargs)
+            return Physics.Ode(**kwargs)
 
         def to_sdf(self, version: str | None = None) -> ET.Element:
             if self.sdfversion is None and version is not None:
@@ -888,7 +888,7 @@ class Physics(BaseModel):
 
             def to_version(self, target_version: str) -> "Physics.Simbody.Contact":
                 kwargs: dict = {"sdf_version": target_version, "dissipation": self.dissipation, "dynamic_friction": self.dynamic_friction, "override_impact_capture_velocity": self.override_impact_capture_velocity, "override_stiction_transition_velocity": self.override_stiction_transition_velocity, "plastic_coef_restitution": self.plastic_coef_restitution, "plastic_impact_velocity": self.plastic_impact_velocity, "static_friction": self.static_friction, "stiffness": self.stiffness, "viscous_friction": self.viscous_friction}
-                return self.__class__(**kwargs)
+                return Physics.Simbody.Contact(**kwargs)
 
             def to_sdf(self, version: str | None = None) -> ET.Element:
                 if self.sdfversion is None and version is not None:
@@ -1042,7 +1042,7 @@ class Physics(BaseModel):
 
         def to_version(self, target_version: str) -> "Physics.Simbody":
             kwargs: dict = {"sdf_version": target_version, "accuracy": self.accuracy, "contact": self.contact.to_version(target_version) if self.contact is not None and hasattr(self.contact, "to_version") else self.contact, "max_transient_velocity": self.max_transient_velocity, "min_step_size": self.min_step_size}
-            return self.__class__(**kwargs)
+            return Physics.Simbody(**kwargs)
 
         def to_sdf(self, version: str | None = None) -> ET.Element:
             if self.sdfversion is None and version is not None:
@@ -1196,7 +1196,7 @@ class Physics(BaseModel):
         if self.simbody is not None and cmp_version(target_version, "1.4") < 0:
             raise ValueError(f"'simbody' is not supported in SDF version {target_version} (added in 1.4)")
         kwargs: dict = {"sdf_version": target_version, "bullet": self.bullet.to_version(target_version) if self.bullet is not None and hasattr(self.bullet, "to_version") else self.bullet, "dart": self.dart.to_version(target_version) if self.dart is not None and hasattr(self.dart, "to_version") else self.dart, "default": self.default, "gravity": self.gravity.to_version(target_version) if self.gravity is not None and hasattr(self.gravity, "to_version") else self.gravity, "magnetic_field": self.magnetic_field, "max_contacts": self.max_contacts, "max_step_size": self.max_step_size, "name": self.name, "ode": self.ode.to_version(target_version) if self.ode is not None and hasattr(self.ode, "to_version") else self.ode, "real_time_factor": self.real_time_factor, "real_time_update_rate": self.real_time_update_rate, "simbody": self.simbody.to_version(target_version) if self.simbody is not None and hasattr(self.simbody, "to_version") else self.simbody, "type": self.type, "update_rate": self.update_rate}
-        new_obj = self.__class__(**kwargs)
+        new_obj = Physics(**kwargs)
         apply_migrations(new_obj, target_version)
         return new_obj
 

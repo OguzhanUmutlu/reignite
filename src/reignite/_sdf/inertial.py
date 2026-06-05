@@ -76,7 +76,7 @@ class Inertial(BaseModel):
 
         def to_version(self, target_version: str) -> "Inertial.FluidAddedMass":
             kwargs: dict = {"sdf_version": target_version, "pp": self.pp, "pq": self.pq, "pr": self.pr, "qq": self.qq, "qr": self.qr, "rr": self.rr, "xp": self.xp, "xq": self.xq, "xr": self.xr, "xx": self.xx, "xy": self.xy, "xz": self.xz, "yp": self.yp, "yq": self.yq, "yr": self.yr, "yy": self.yy, "yz": self.yz, "zp": self.zp, "zq": self.zq, "zr": self.zr, "zz": self.zz}
-            return self.__class__(**kwargs)
+            return Inertial.FluidAddedMass(**kwargs)
 
         def to_sdf(self, version: str | None = None) -> ET.Element:
             if self.sdfversion is None and version is not None:
@@ -386,7 +386,7 @@ class Inertial(BaseModel):
 
         def to_version(self, target_version: str) -> "Inertial.Inertia":
             kwargs: dict = {"sdf_version": target_version, "ixx": self.ixx, "ixy": self.ixy, "ixz": self.ixz, "iyy": self.iyy, "iyz": self.iyz, "izz": self.izz}
-            return self.__class__(**kwargs)
+            return Inertial.Inertia(**kwargs)
 
         def to_sdf(self, version: str | None = None) -> ET.Element:
             if self.sdfversion is None and version is not None:
@@ -523,7 +523,7 @@ class Inertial(BaseModel):
 
         def to_version(self, target_version: str) -> "Inertial.Origin":
             kwargs: dict = {"sdf_version": target_version, "pose": self.pose}
-            return self.__class__(**kwargs)
+            return Inertial.Origin(**kwargs)
 
         def to_sdf(self, version: str | None = None) -> ET.Element:
             if self.sdfversion is None and version is not None:
@@ -631,7 +631,7 @@ class Inertial(BaseModel):
         if self.pose is not None and cmp_version(target_version, "1.2") < 0:
             raise ValueError(f"'pose' is not supported in SDF version {target_version} (added in 1.2)")
         kwargs: dict = {"sdf_version": target_version, "auto": self.auto, "auto_inertia_params": self.auto_inertia_params, "density": self.density, "fluid_added_mass": self.fluid_added_mass.to_version(target_version) if self.fluid_added_mass is not None and hasattr(self.fluid_added_mass, "to_version") else self.fluid_added_mass, "frames": [c.to_version(target_version) if hasattr(c, "to_version") else c for c in (self.frames or [])], "inertia": self.inertia.to_version(target_version) if self.inertia is not None and hasattr(self.inertia, "to_version") else self.inertia, "mass": self.mass, "origin": self.origin.to_version(target_version) if self.origin is not None and hasattr(self.origin, "to_version") else self.origin, "pose": self.pose.to_version(target_version) if self.pose is not None and hasattr(self.pose, "to_version") else self.pose}
-        return self.__class__(**kwargs)
+        return Inertial(**kwargs)
 
     def to_sdf(self, version: str | None = None) -> ET.Element:
         from ..elements.frame import Frame

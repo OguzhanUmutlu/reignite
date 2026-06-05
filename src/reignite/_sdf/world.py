@@ -46,7 +46,7 @@ class World(BaseModel):
 
         def to_version(self, target_version: str) -> "World.Audio":
             kwargs: dict = {"sdf_version": target_version, "device": self.device}
-            return self.__class__(**kwargs)
+            return World.Audio(**kwargs)
 
         def to_sdf(self, version: str | None = None) -> ET.Element:
             if self.sdfversion is None and version is not None:
@@ -144,7 +144,7 @@ class World(BaseModel):
             if self.static is not None and cmp_version(target_version, "1.5") < 0:
                 raise ValueError(f"'static' is not supported in SDF version {target_version} (added in 1.5)")
             kwargs: dict = {"sdf_version": target_version, "merge": self.merge, "model_states": [c.to_version(target_version) if hasattr(c, "to_version") else c for c in (self.model_states or [])], "name": self.name, "placement_frame": self.placement_frame, "plugins": [c.to_version(target_version) if hasattr(c, "to_version") else c for c in (self.plugins or [])], "pose": self.pose.to_version(target_version) if self.pose is not None and hasattr(self.pose, "to_version") else self.pose, "static": self.static, "uri": self.uri}
-            return self.__class__(**kwargs)
+            return World.Include(**kwargs)
 
         def to_sdf(self, version: str | None = None) -> ET.Element:
             from ..elements.model_state import ModelState
@@ -293,7 +293,7 @@ class World(BaseModel):
 
         def to_version(self, target_version: str) -> "World.Wind":
             kwargs: dict = {"sdf_version": target_version, "linear_velocity": self.linear_velocity}
-            return self.__class__(**kwargs)
+            return World.Wind(**kwargs)
 
         def to_sdf(self, version: str | None = None) -> ET.Element:
             if self.sdfversion is None and version is not None:
@@ -551,7 +551,7 @@ class World(BaseModel):
         if self.wind is not None and cmp_version(target_version, "1.6") < 0:
             raise ValueError(f"'wind' is not supported in SDF version {target_version} (added in 1.6)")
         kwargs: dict = {"sdf_version": target_version, "actors": [c.to_version(target_version) if hasattr(c, "to_version") else c for c in (self.actors or [])], "atmosphere": self.atmosphere.to_version(target_version) if self.atmosphere is not None and hasattr(self.atmosphere, "to_version") else self.atmosphere, "audio": self.audio.to_version(target_version) if self.audio is not None and hasattr(self.audio, "to_version") else self.audio, "frames": [c.to_version(target_version) if hasattr(c, "to_version") else c for c in (self.frames or [])], "gravity": self.gravity, "gui": self.gui.to_version(target_version) if self.gui is not None and hasattr(self.gui, "to_version") else self.gui, "includes": [c.to_version(target_version) if hasattr(c, "to_version") else c for c in (self.includes or [])], "joints": [c.to_version(target_version) if hasattr(c, "to_version") else c for c in (self.joints or [])], "lights": [c.to_version(target_version) if hasattr(c, "to_version") else c for c in (self.lights or [])], "magnetic_field": self.magnetic_field, "models": [c.to_version(target_version) if hasattr(c, "to_version") else c for c in (self.models or [])], "name": self.name, "physics": self.physics.to_version(target_version) if self.physics is not None and hasattr(self.physics, "to_version") else self.physics, "plugins": [c.to_version(target_version) if hasattr(c, "to_version") else c for c in (self.plugins or [])], "populations": [c.to_version(target_version) if hasattr(c, "to_version") else c for c in (self.populations or [])], "roads": [c.to_version(target_version) if hasattr(c, "to_version") else c for c in (self.roads or [])], "scene": self.scene.to_version(target_version) if self.scene is not None and hasattr(self.scene, "to_version") else self.scene, "spherical_coordinates": self.spherical_coordinates.to_version(target_version) if self.spherical_coordinates is not None and hasattr(self.spherical_coordinates, "to_version") else self.spherical_coordinates, "states": [c.to_version(target_version) if hasattr(c, "to_version") else c for c in (self.states or [])], "wind": self.wind.to_version(target_version) if self.wind is not None and hasattr(self.wind, "to_version") else self.wind}
-        new_obj = self.__class__(**kwargs)
+        new_obj = World(**kwargs)
         apply_migrations(new_obj, target_version)
         return new_obj
 

@@ -22,7 +22,7 @@ class Ellipsoid(BaseModel):
 
     def to_version(self, target_version: str) -> "Ellipsoid":
         kwargs: dict = {"sdf_version": target_version, "radii": self.radii}
-        return self.__class__(**kwargs)
+        return Ellipsoid(**kwargs)
 
     def to_sdf(self, version: str | None = None) -> ET.Element:
         if self.sdfversion is None and version is not None:
