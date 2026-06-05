@@ -10,6 +10,14 @@ class GzGui(BaseModel):
             self.own = own
             self.target = target
 
+    def __new__(cls, title: str | None = None, delete_later: bool | None = None,
+                 show_title_bar: bool | None = None, resizable: bool | None = None, width: float | None = None,
+                 height: float | None = None, z: float | None = None, state: str | None = None,
+                 anchor: str | None = None, anchors: list | None = None):
+        if all(v is None for v in (title, delete_later, show_title_bar, resizable, width, height, z, state, anchor, anchors)):
+            return None
+        return super().__new__(cls)
+
     def __init__(self, title: str | None = None, delete_later: bool | None = None,
                  show_title_bar: bool | None = None, resizable: bool | None = None, width: float | None = None,
                  height: float | None = None, z: float | None = None, state: str | None = None,
