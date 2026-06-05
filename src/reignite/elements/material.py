@@ -29,11 +29,11 @@ class ScriptMaterial(Material):
             self, name: str, uris: list[str] | None = None, uri=None,
             ambient: _ColorT | None = None,
             diffuse: _ColorT | None = None,
-            double_sided: bool | None = False,
+            double_sided: bool | None = None,
             emissive: _ColorT | None = None,
-            lighting: bool | None = True,
-            render_order: float | None = 0.0,
-            shininess: float | None = 0,
+            lighting: bool | None = None,
+            render_order: float | None = None,
+            shininess: float | None = None,
             specular: _ColorT | None = None
     ):
         uris = uris or []
