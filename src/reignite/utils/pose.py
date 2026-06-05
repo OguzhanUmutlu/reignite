@@ -121,6 +121,9 @@ class Pose:
             self.y: float = 0.0
             self.z: float = 0.0
             self.rel_alt: float = 0.0
+            self.yaw_deg: float = 0.0
+            self.pitch_deg: float = 0.0
+            self.roll_deg: float = 0.0
 
         self.ensure_float()
 
@@ -188,6 +191,12 @@ class Pose:
         self.roll = float(self.roll)
 
     def __getattr__(self, item):
+        if item == "yaw_deg":
+            return degrees(self.yaw)
+        if item == "pitch_deg":
+            return degrees(self.pitch)
+        if item == "roll_deg":
+            return degrees(self.roll)
         if item == "pose":
             return Pose(x=self.x, y=self.y, z=self.z, roll=self.roll, pitch=self.pitch, yaw=self.yaw,
                         inertial_frame=self._inertial_frame, body_frame=self._body_frame)
@@ -209,7 +218,13 @@ class Pose:
         return super().__getattribute__(item)
 
     def __setattr__(self, key, value):
-        if key in ("rel_alt", "z"):
+        if key == "yaw_deg":
+            self.yaw = radians(value)
+        elif key == "pitch_deg":
+            self.pitch = radians(value)
+        elif key == "roll_deg":
+            self.roll = radians(value)
+        elif key in ("rel_alt", "z"):
             self.alt = Pose.origin.alt + value
         elif key == "x":
             n, e = self._get_north_east()
