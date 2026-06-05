@@ -66,12 +66,13 @@ class Pose:
     def __init__(self,
                  x: float | Pose | None = None, y: float | None = None, z: float | None = None,
                  yaw: float = 0.0, pitch: float = 0.0, roll: float = 0.0,
+                 yaw_deg: float | None = None, pitch_deg: float | None = None, roll_deg: float | None = None,
                  lat: float | None = None, lon: float | None = None,
                  rel_alt: float | None = None, alt: float | None = None,
                  inertial_frame: str | None = None, body_frame: str | None = None):
-        self.yaw = yaw or 0.0
-        self.pitch = pitch or 0.0
-        self.roll = roll or 0.0
+        self.yaw = radians(yaw_deg) if yaw_deg is not None else yaw or 0.0
+        self.pitch = radians(pitch_deg) if pitch_deg is not None else pitch or 0.0
+        self.roll = radians(roll_deg) if roll_deg is not None else roll or 0.0
         self._inertial_frame = inertial_frame or self.__class__.default_frames[0]
         self._body_frame = body_frame or self.__class__.default_frames[1]
 
