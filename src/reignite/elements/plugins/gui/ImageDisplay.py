@@ -18,7 +18,7 @@ class ImageDisplayPlugin(Plugin):
         self.name = name
         super().__init__(
             sdf_version=None,
-            filename="WorldControl",
+            filename="ImageDisplay",
             name=name,
         )
         gui_params = {'state': 'docked'}
@@ -44,7 +44,7 @@ class ImageDisplayPlugin(Plugin):
             topic=topic_el.text if topic_el is not None and topic_el.text is not None else None,
             topic_picker=topic_picker_el.text.lower() == 'true' if topic_picker_el is not None and topic_picker_el.text is not None else None,
             show_depth_flip=show_depth_flip_el.text.lower() == 'true' if show_depth_flip_el is not None and show_depth_flip_el.text is not None else None,
-            name=name if name is not None else "Camera",
+            name=name if name is not None else "ImageDisplay",
             **gui_kwargs
         )
 
