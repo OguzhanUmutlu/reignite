@@ -20,7 +20,7 @@ def _vector3(v: _Vector3T, y: float = None, z: float = None) -> Vector3:
                 return Vector3(x, py, pz)
             except ValueError:
                 pass
-    if isinstance(v, tuple) and len(v) == 3:
+    if isinstance(v, (tuple, list)) and len(v) == 3:
         return Vector3(v[0], v[1], v[2])
     if y is not None and z is not None:
         return Vector3(float(v), float(y), float(z))

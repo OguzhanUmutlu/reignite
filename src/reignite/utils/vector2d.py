@@ -18,7 +18,7 @@ def _vector2d(x: float | tuple[float, float] | Vector2d | str, y: float = None) 
                 return Vector2d(px, py)
             except ValueError:
                 pass
-    if isinstance(x, tuple) and len(x) == 2:
+    if isinstance(x, (tuple, list)) and len(x) == 2:
         return Vector2d(x[0], x[1])
     if y is not None:
         return Vector2d(float(x), float(y))
