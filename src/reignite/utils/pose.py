@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from math import radians, cos, sin, degrees, inf, sqrt, atan2
+from math import radians, cos, sin, degrees, inf, sqrt, atan2, pi
 from typing import Sequence
 
 _PoseT = Sequence[float] | str | "Pose"
@@ -272,15 +272,15 @@ class Pose:
         ned_e = sin(d_lon) * cos(lat2)
         ned_n = cos(lat1) * sin(lat2) - sin(lat1) * cos(lat2) * cos(d_lon)
         fx, fy, _ = _ned_to_xyz(ned_n, ned_e, 0.0, self._inertial_frame)
-        return atan2(fy, fx) % (2 * 3.141592653589793)
+        return atan2(fy, fx) % (2 * pi)
 
     def inclination_to(self, other: Pose) -> float:
         horiz = self.distance_to(other)
         ned_d = self.alt - other.alt
         _, _, fz = _ned_to_xyz(0.0, 0.0, ned_d, self._inertial_frame)
         if horiz == 0.0:
-            return 1.5707963267948966 if fz > 0 else (-1.5707963267948966 if fz < 0 else 0.0)
-        return atan2(fz, horiz)
+            return -(pi / 2) if fz > 0 else ((pi / 2) if fz < 0 else 0.0)
+        return atan2(-fz, horiz)
 
     def offset(self, x: float = 0.0, y: float = 0.0, z: float = 0.0) -> Pose:
         n, e, d = _xyz_to_ned(x, y, z, self._inertial_frame)
