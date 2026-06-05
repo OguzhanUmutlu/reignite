@@ -90,8 +90,8 @@ class Pose:
     # lat and lon are in degrees
     def __init__(self,
                  x: float | Pose | None = None, y: float | None = None, z: float | None = None,
-                 yaw: float = 0.0, pitch: float = 0.0, roll: float = 0.0,
-                 yaw_deg: float | None = None, pitch_deg: float | None = None, roll_deg: float | None = None,
+                 roll: float = 0.0, pitch: float = 0.0, yaw: float = 0.0,
+                 roll_deg: float | None = None, pitch_deg: float | None = None, yaw_deg: float | None = None,
                  lat: float | None = None, lon: float | None = None,
                  rel_alt: float | None = None, alt: float | None = None,
                  inertial_frame: str | None = None, body_frame: str | None = None):

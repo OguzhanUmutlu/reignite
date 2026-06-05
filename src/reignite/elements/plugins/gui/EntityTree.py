@@ -38,16 +38,6 @@ class EntityTreePlugin(Plugin):
 
     def to_sdf(self, version: str | None = None) -> ET.Element:
         el = ET.Element("plugin", name=self.name, filename="EntityTree")
-        
-        def _add(k, v):
-            if v is not None:
-                child = ET.Element(k)
-                if isinstance(v, bool):
-                    child.text = "true" if v else "false"
-                else:
-                    child.text = str(v)
-                el.append(child)
-                
 
         if self.gz_gui is not None:
             el.append(self.gz_gui.to_sdf(version))
