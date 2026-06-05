@@ -6,9 +6,9 @@ _Vector3T = Union[float, tuple[float, float, float], "Vector3"]
 
 
 def _vector3(v: _Vector3T, y: float = None, z: float = None) -> Vector3:
-    if isinstance(v, (int, float)) and y is None:
+    if hasattr(v, "__float__") and y is None:
         y = v
-    if isinstance(v, (int, float)) and z is None:
+    if hasattr(v, "__float__") and z is None:
         z = v
     if isinstance(v, Vector3):
         return v
