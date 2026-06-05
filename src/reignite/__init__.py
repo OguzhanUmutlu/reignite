@@ -2,10 +2,13 @@ from __future__ import annotations
 
 import os
 from pathlib import Path
+from typing import TypeVar, Any
 from xml.etree import ElementTree as ET
 
 from .elements import get_element_class, ELEMENT_CLASS_MAP
 from .utils import BaseModel
+
+T = TypeVar("T")
 
 
 def _to_classname(s: str) -> str:
@@ -47,7 +50,7 @@ def _select_root_element(root: ET.Element) -> tuple[str, ET.Element]:
     return children[0].tag, children[0]
 
 
-def read_sdf_from_element(root: ET.Element):
+def read_sdf_from_element(root: ET.Element, assert_class: type[T] | None = None) -> T | Any:
     if root.tag != "sdf":
         raise ValueError(f"Expected root element to be <sdf>, got <{root.tag}>.")
     version = root.get("version")
@@ -60,15 +63,19 @@ def read_sdf_from_element(root: ET.Element):
         available = sorted(ELEMENT_CLASS_MAP.keys())
         raise ValueError(f"Element '{element_name}' not supported. Available: {available}")
 
-    return element_class.from_sdf(element, version)
+    el = element_class.from_sdf(element, version)
+    if assert_class is not None and not isinstance(el, assert_class):
+        raise ValueError(
+            f"Element is not of expected type {assert_class.__name__}: {type(el).__name__}")
+    return el
 
 
-def read_sdf(source: str | Path):
-    return read_sdf_from_element(ET.parse(resolve_path(source)).getroot())
+def read_sdf(source: str | Path, assert_class: type[T] | None = None) -> T | Any:
+    return read_sdf_from_element(ET.parse(resolve_path(source)).getroot(), assert_class)
 
 
-def read_sdf_string(xml_text: str):
-    return read_sdf_from_element(ET.fromstring(xml_text))
+def read_sdf_string(xml_text: str, assert_class: type[T] | None = None) -> T | Any:
+    return read_sdf_from_element(ET.fromstring(xml_text), assert_class)
 
 
 def sdf_to_root(el: ET.Element, version: str) -> ET.ElementTree:
