@@ -36,6 +36,30 @@ def _ned_to_xyz(n: float, e: float, d: float, frame: str) -> tuple[float, float,
     raise ValueError(f"Unsupported inertial frame: {frame!r}")
 
 
+def _xyz_to_frd(x: float, y: float, z: float, frame: str) -> tuple[float, float, float]:
+    if frame == "FRD":
+        return x, y, z
+    if frame == "FLU":
+        return y, -x, z
+    if frame == "FRU":
+        return x, y, -z
+    if frame == "FLD":
+        return y, -x, -z
+    raise ValueError(f"Unsupported body frame: {frame!r}")
+
+
+def _frd_to_xyz(f: float, r: float, d: float, frame: str) -> tuple[float, float, float]:
+    if frame == "FRD":
+        return f, r, d
+    if frame == "FLU":
+        return -r, f, d
+    if frame == "FRU":
+        return f, r, -d
+    if frame == "FLD":
+        return -r, f, -d
+    raise ValueError(f"Unsupported body frame: {frame!r}")
+
+
 def _pose(value: Pose | Sequence[float] | str) -> Pose:
     if isinstance(value, Pose):
         return value
@@ -305,6 +329,10 @@ class Pose:
         return Pose(lat=self.lat + d_lat, lon=self.lon + d_lon, alt=self.alt - d,
                     yaw=self.yaw, pitch=self.pitch, roll=self.roll,
                     inertial_frame=self._inertial_frame, body_frame=self._body_frame)
+
+    def offset_body(self, forward: float = 0.0, left: float = 0.0, up: float = 0.0) -> Pose:
+        x, y, z = _frd_to_xyz(forward, left, up, self._body_frame)
+        return self.offset(x=x, y=y, z=z)
 
     def two_point_boundary(self, b: Pose, padding=50.0):
         min_lat = min(self.lat, b.lat)
