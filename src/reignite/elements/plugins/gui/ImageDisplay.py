@@ -9,7 +9,7 @@ class ImageDisplayPlugin(Plugin):
             topic: str = None,
             topic_picker: bool = True,
             show_depth_flip: bool = True,
-            name = "Camera",
+            name = "ImageDisplay",
             **gui_kwargs
     ):
         self.topic = topic
@@ -49,7 +49,7 @@ class ImageDisplayPlugin(Plugin):
         )
 
     def to_sdf(self, version: str | None = None) -> ET.Element:
-        el = ET.Element("plugin", name=self.name, filename="WorldControl")
+        el = ET.Element("plugin", name=self.name, filename="ImageDisplay")
         
         def _add(k, v):
             if v is not None:
