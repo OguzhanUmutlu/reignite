@@ -87,6 +87,7 @@ class Pose:
     origin: "Pose" = None
     default_frames = ("ENU", "FLU")
 
+    # lat and lon are in degrees
     def __init__(self,
                  x: float | Pose | None = None, y: float | None = None, z: float | None = None,
                  yaw: float = 0.0, pitch: float = 0.0, roll: float = 0.0,
@@ -288,8 +289,7 @@ class Pose:
         self._body_frame = location._body_frame
         self.ensure_float()
 
-    def offset_bearing(self, bearing_deg: float, distance: float) -> Pose:
-        bearing = radians(bearing_deg)
+    def offset_bearing(self, bearing: float, distance: float) -> Pose:
         frame_x = distance * cos(bearing)
         frame_y = distance * sin(bearing)
         n, e, _ = _xyz_to_ned(frame_x, frame_y, 0.0, self._inertial_frame)
