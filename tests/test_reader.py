@@ -18,12 +18,13 @@ def test_read_sdf_string_model():
     assert getattr(model, "name") == "demo"
 
 
-import pytest
-
-def test_read_sdf_file_model():
+def test_read_sdf_file_model(monkeypatch):
     fixture = Path(__file__).parent / "fixtures" / "model.sdf"
-    with pytest.raises(ValueError, match="Include tags are not allowed"):
-        read_sdf(fixture)
+    monkeypatch.setenv("GZ_SIM_RESOURCE_PATH", str(fixture.parent))
+    model = read_sdf(fixture)
+    assert type(model).__name__ == "World"
+    assert getattr(model, "name") == "iris_runway"
+
 
 def test_read_sdf_file_simple():
     fixture = Path(__file__).parent / "fixtures" / "simple_world.sdf"
