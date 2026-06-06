@@ -1,4 +1,5 @@
 from xml.etree import ElementTree as ET
+
 from reignite.elements.plugin import Plugin
 
 
@@ -10,14 +11,14 @@ class NavSatPlugin(Plugin):
     @classmethod
     def _from_sdf(cls, el: ET.Element, version: str):
 
-
         return cls(
 
         )
 
     def to_sdf(self, version: str | None = None) -> ET.Element:
-        el = ET.Element("plugin", name=self.name if hasattr(self, 'name') else "gz::sim::systems::NavSat", filename="gz-sim-navsat-system")
-        
+        el = ET.Element("plugin", name=self.name if hasattr(self, 'name') else "gz::sim::systems::NavSat",
+                        filename="gz-sim-navsat-system")
+
         def _add(k, v):
             if v is not None:
                 child = ET.Element(k)
@@ -26,9 +27,7 @@ class NavSatPlugin(Plugin):
                 else:
                     child.text = str(v)
                 el.append(child)
-                
 
-            
         return el
 
     def to_version(self, target_version: str):
@@ -37,14 +36,14 @@ class NavSatPlugin(Plugin):
     @classmethod
     def _from_sdf(cls, el: ET.Element, version: str):
 
-
         return cls(
 
         )
 
     def to_sdf(self, version: str | None = None) -> ET.Element:
-        el = ET.Element("plugin", name=self.name if hasattr(self, 'name') else "gz::sim::systems::NavSat", filename="gz-sim-navsat-system")
-        
+        el = ET.Element("plugin", name=self.name if hasattr(self, 'name') else "gz::sim::systems::NavSat",
+                        filename="gz-sim-navsat-system")
+
         def _add(k, v):
             if v is not None:
                 child = ET.Element(k)
@@ -53,9 +52,7 @@ class NavSatPlugin(Plugin):
                 else:
                     child.text = str(v)
                 el.append(child)
-                
 
-            
         return el
 
     def to_version(self, target_version: str):

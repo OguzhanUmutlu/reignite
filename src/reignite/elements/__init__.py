@@ -70,7 +70,15 @@ from .transceiver import Transceiver
 from .visual import Visual
 from .world import World
 
-ELEMENT_NAMES: list[str] = ["actor", "air_pressure", "air_speed", "altimeter", "atmosphere", "audio_sink", "audio_source", "battery", "box", "camera", "capsule", "collision", "collision_engine", "cone", "contact", "cylinder", "ellipsoid", "force_torque", "frame", "gazebo", "geometry", "gps", "gripper", "gui", "heightmap", "image", "imu", "inertial", "joint", "joint_state", "lidar", "light", "light_state", "link", "link_state", "logical_camera", "magnetometer", "material", "mesh", "mimic", "model", "model_state", "navsat", "noise", "particle_emitter", "physics", "plane", "plugin", "polyline", "population", "pose", "projector", "ray", "rfid", "rfidtag", "road", "robot", "scene", "sdf", "sensor", "sonar", "sphere", "spherical_coordinates", "state", "surface", "transceiver", "visual", "world"]
+ELEMENT_NAMES: list[str] = ["actor", "air_pressure", "air_speed", "altimeter", "atmosphere", "audio_sink",
+                            "audio_source", "battery", "box", "camera", "capsule", "collision", "collision_engine",
+                            "cone", "contact", "cylinder", "ellipsoid", "force_torque", "frame", "gazebo", "geometry",
+                            "gps", "gripper", "gui", "heightmap", "image", "imu", "inertial", "joint", "joint_state",
+                            "lidar", "light", "light_state", "link", "link_state", "logical_camera", "magnetometer",
+                            "material", "mesh", "mimic", "model", "model_state", "navsat", "noise", "particle_emitter",
+                            "physics", "plane", "plugin", "polyline", "population", "pose", "projector", "ray", "rfid",
+                            "rfidtag", "road", "robot", "scene", "sdf", "sensor", "sonar", "sphere",
+                            "spherical_coordinates", "state", "surface", "transceiver", "visual", "world"]
 
 ELEMENT_CLASS_MAP: dict[str, type] = {
     "actor": Actor,
@@ -142,6 +150,7 @@ ELEMENT_CLASS_MAP: dict[str, type] = {
     "visual": Visual,
     "world": World,
 }
+
 
 def get_element_class(element: str) -> type | None:
     return ELEMENT_CLASS_MAP.get(element)

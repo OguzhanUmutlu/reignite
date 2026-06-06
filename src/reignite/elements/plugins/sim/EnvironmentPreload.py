@@ -1,4 +1,5 @@
 from xml.etree import ElementTree as ET
+
 from ...plugin import Plugin
 
 
@@ -32,7 +33,8 @@ class EnvironmentPreloadPlugin(Plugin):
         self.x = x
         self.y = y
         self.z = z
-        super().__init__(sdf_version=None, filename="gz-sim-environment-preload-system", name="gz::sim::systems::EnvironmentPreload")
+        super().__init__(sdf_version=None, filename="gz-sim-environment-preload-system",
+                         name="gz::sim::systems::EnvironmentPreload")
 
     @classmethod
     def _from_sdf(cls, el: ET.Element, version: str):
@@ -57,8 +59,9 @@ class EnvironmentPreloadPlugin(Plugin):
         )
 
     def to_sdf(self, version: str | None = None) -> ET.Element:
-        el = ET.Element("plugin", name=self.name if hasattr(self, 'name') else "gz::sim::systems::EnvironmentPreload", filename="gz-sim-environment-preload-system")
-        
+        el = ET.Element("plugin", name=self.name if hasattr(self, 'name') else "gz::sim::systems::EnvironmentPreload",
+                        filename="gz-sim-environment-preload-system")
+
         def _add(k, v):
             if v is not None:
                 child = ET.Element(k)
@@ -67,7 +70,7 @@ class EnvironmentPreloadPlugin(Plugin):
                 else:
                     child.text = str(v)
                 el.append(child)
-                
+
         _add('data', self.data)
         _add('ignore_time', self.ignore_time)
         _add('time', self.time)
@@ -76,7 +79,7 @@ class EnvironmentPreloadPlugin(Plugin):
         _add('x', self.x)
         _add('y', self.y)
         _add('z', self.z)
-            
+
         return el
 
     def to_version(self, target_version: str):
@@ -105,8 +108,9 @@ class EnvironmentPreloadPlugin(Plugin):
         )
 
     def to_sdf(self, version: str | None = None) -> ET.Element:
-        el = ET.Element("plugin", name=self.name if hasattr(self, 'name') else "gz::sim::systems::EnvironmentPreload", filename="gz-sim-environment-preload-system")
-        
+        el = ET.Element("plugin", name=self.name if hasattr(self, 'name') else "gz::sim::systems::EnvironmentPreload",
+                        filename="gz-sim-environment-preload-system")
+
         def _add(k, v):
             if v is not None:
                 child = ET.Element(k)
@@ -115,7 +119,7 @@ class EnvironmentPreloadPlugin(Plugin):
                 else:
                     child.text = str(v)
                 el.append(child)
-                
+
         _add('data', self.data)
         _add('ignore_time', self.ignore_time)
         _add('time', self.time)
@@ -124,7 +128,7 @@ class EnvironmentPreloadPlugin(Plugin):
         _add('x', self.x)
         _add('y', self.y)
         _add('z', self.z)
-            
+
         return el
 
     def to_version(self, target_version: str):

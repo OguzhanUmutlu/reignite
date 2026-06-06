@@ -1,4 +1,5 @@
 from xml.etree import ElementTree as ET
+
 from ...plugin import Plugin
 
 
@@ -33,7 +34,8 @@ class LogRecordPlugin(Plugin):
 
         return cls(
             record_resources=record_resources_el.text.lower() == 'true' if record_resources_el is not None and record_resources_el.text is not None else None,
-            record_period=float(record_period_el.text) if record_period_el is not None and record_period_el.text is not None else None,
+            record_period=float(
+                record_period_el.text) if record_period_el is not None and record_period_el.text is not None else None,
             compress=compress_el.text.lower() == 'true' if compress_el is not None and compress_el.text is not None else None,
             compress_path=compress_path_el.text if compress_path_el is not None and compress_path_el.text is not None else None,
             record_path=record_path_el.text if record_path_el is not None and record_path_el.text is not None else None,
@@ -41,8 +43,9 @@ class LogRecordPlugin(Plugin):
         )
 
     def to_sdf(self, version: str | None = None) -> ET.Element:
-        el = ET.Element("plugin", name=self.name if hasattr(self, 'name') else "gz::sim::systems::LogRecord", filename="gz-sim-log-record-system")
-        
+        el = ET.Element("plugin", name=self.name if hasattr(self, 'name') else "gz::sim::systems::LogRecord",
+                        filename="gz-sim-log-record-system")
+
         def _add(k, v):
             if v is not None:
                 child = ET.Element(k)
@@ -51,7 +54,7 @@ class LogRecordPlugin(Plugin):
                 else:
                     child.text = str(v)
                 el.append(child)
-                
+
         _add('record_resources', self.record_resources)
         _add('record_period', self.record_period)
         _add('compress', self.compress)
@@ -60,7 +63,7 @@ class LogRecordPlugin(Plugin):
         if self.record_topic is not None:
             for v in (self.record_topic if isinstance(self.record_topic, list) else [self.record_topic]):
                 _add('record_topic', v)
-            
+
         return el
 
     def to_version(self, target_version: str):
@@ -78,7 +81,8 @@ class LogRecordPlugin(Plugin):
 
         return cls(
             record_resources=record_resources_el.text.lower() == 'true' if record_resources_el is not None and record_resources_el.text is not None else None,
-            record_period=float(record_period_el.text) if record_period_el is not None and record_period_el.text is not None else None,
+            record_period=float(
+                record_period_el.text) if record_period_el is not None and record_period_el.text is not None else None,
             compress=compress_el.text.lower() == 'true' if compress_el is not None and compress_el.text is not None else None,
             compress_path=compress_path_el.text if compress_path_el is not None and compress_path_el.text is not None else None,
             record_path=record_path_el.text if record_path_el is not None and record_path_el.text is not None else None,
@@ -86,8 +90,9 @@ class LogRecordPlugin(Plugin):
         )
 
     def to_sdf(self, version: str | None = None) -> ET.Element:
-        el = ET.Element("plugin", name=self.name if hasattr(self, 'name') else "gz::sim::systems::LogRecord", filename="gz-sim-log-record-system")
-        
+        el = ET.Element("plugin", name=self.name if hasattr(self, 'name') else "gz::sim::systems::LogRecord",
+                        filename="gz-sim-log-record-system")
+
         def _add(k, v):
             if v is not None:
                 child = ET.Element(k)
@@ -96,7 +101,7 @@ class LogRecordPlugin(Plugin):
                 else:
                     child.text = str(v)
                 el.append(child)
-                
+
         _add('record_resources', self.record_resources)
         _add('record_period', self.record_period)
         _add('compress', self.compress)
@@ -105,7 +110,7 @@ class LogRecordPlugin(Plugin):
         if self.record_topic is not None:
             for v in (self.record_topic if isinstance(self.record_topic, list) else [self.record_topic]):
                 _add('record_topic', v)
-            
+
         return el
 
     def to_version(self, target_version: str):

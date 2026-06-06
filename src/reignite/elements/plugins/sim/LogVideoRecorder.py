@@ -1,4 +1,5 @@
 from xml.etree import ElementTree as ET
+
 from reignite.elements.plugin import Plugin
 from reignite.utils.model import BaseModel
 
@@ -18,21 +19,21 @@ class LogVideoRecorderPlugin(Plugin):
             max_el = el.find("max")
             min_val = None
             max_val = None
-            
+
             if min_el is not None and min_el.text:
                 parts = min_el.text.split()
                 if len(parts) == 3:
                     min_val = [float(p) for p in parts]
                 else:
                     min_val = min_el.text
-                    
+
             if max_el is not None and max_el.text:
                 parts = max_el.text.split()
                 if len(parts) == 3:
                     max_val = [float(p) for p in parts]
                 else:
                     max_val = max_el.text
-                    
+
             return cls(min=min_val, max=max_val)
 
         def to_sdf(self, version: str | None = None) -> ET.Element:
@@ -87,7 +88,8 @@ class LogVideoRecorderPlugin(Plugin):
         )
 
     def to_sdf(self, version: str | None = None) -> ET.Element:
-        el = ET.Element("plugin", name="gz::sim::systems::LogVideoRecorder", filename="gz-sim-log-video-recorder-system")
+        el = ET.Element("plugin", name="gz::sim::systems::LogVideoRecorder",
+                        filename="gz-sim-log-video-recorder-system")
         if self.entity:
             for e in self.entity:
                 child = ET.Element("entity")
@@ -96,7 +98,7 @@ class LogVideoRecorderPlugin(Plugin):
         if self.region:
             for r in self.region:
                 el.append(r.to_sdf(version))
-                
+
         def _add(k, v):
             if v is not None:
                 child = ET.Element(k)
@@ -105,7 +107,7 @@ class LogVideoRecorderPlugin(Plugin):
                 else:
                     child.text = str(v)
                 el.append(child)
-                
+
         _add("start_time", self.start_time)
         _add("end_time", self.end_time)
         _add("exit_on_finish", self.exit_on_finish)

@@ -1,4 +1,5 @@
 from xml.etree import ElementTree as ET
+
 from reignite.elements.plugin import Plugin
 
 
@@ -30,7 +31,8 @@ class PosePublisherPlugin(Plugin):
         self.static_update_frequency = static_update_frequency
         self.use_pose_vector_msg = use_pose_vector_msg
         self.topic = topic
-        super().__init__(sdf_version=None, filename="gz-sim-pose-publisher-system", name="gz::sim::systems::PosePublisher")
+        super().__init__(sdf_version=None, filename="gz-sim-pose-publisher-system",
+                         name="gz::sim::systems::PosePublisher")
 
     @classmethod
     def _from_sdf(cls, el: ET.Element, version: str):
@@ -53,16 +55,19 @@ class PosePublisherPlugin(Plugin):
             publish_visual_pose=publish_visual_pose_el.text.lower() == 'true' if publish_visual_pose_el is not None and publish_visual_pose_el.text is not None else None,
             publish_collision_pose=publish_collision_pose_el.text.lower() == 'true' if publish_collision_pose_el is not None and publish_collision_pose_el.text is not None else None,
             publish_sensor_pose=publish_sensor_pose_el.text.lower() == 'true' if publish_sensor_pose_el is not None and publish_sensor_pose_el.text is not None else None,
-            update_frequency=float(update_frequency_el.text) if update_frequency_el is not None and update_frequency_el.text is not None else None,
+            update_frequency=float(
+                update_frequency_el.text) if update_frequency_el is not None and update_frequency_el.text is not None else None,
             static_publisher=static_publisher_el.text.lower() == 'true' if static_publisher_el is not None and static_publisher_el.text is not None else None,
-            static_update_frequency=float(static_update_frequency_el.text) if static_update_frequency_el is not None and static_update_frequency_el.text is not None else None,
+            static_update_frequency=float(
+                static_update_frequency_el.text) if static_update_frequency_el is not None and static_update_frequency_el.text is not None else None,
             use_pose_vector_msg=use_pose_vector_msg_el.text.lower() == 'true' if use_pose_vector_msg_el is not None and use_pose_vector_msg_el.text is not None else None,
             topic=topic_el.text if topic_el is not None and topic_el.text is not None else None,
         )
 
     def to_sdf(self, version: str | None = None) -> ET.Element:
-        el = ET.Element("plugin", name=self.name if hasattr(self, 'name') else "gz::sim::systems::PosePublisher", filename="gz-sim-pose-publisher-system")
-        
+        el = ET.Element("plugin", name=self.name if hasattr(self, 'name') else "gz::sim::systems::PosePublisher",
+                        filename="gz-sim-pose-publisher-system")
+
         def _add(k, v):
             if v is not None:
                 child = ET.Element(k)
@@ -71,7 +76,7 @@ class PosePublisherPlugin(Plugin):
                 else:
                     child.text = str(v)
                 el.append(child)
-                
+
         _add('publish_link_pose', self.publish_link_pose)
         _add('publish_nested_model_pose', self.publish_nested_model_pose)
         _add('publish_model_pose', self.publish_model_pose)
@@ -83,7 +88,7 @@ class PosePublisherPlugin(Plugin):
         _add('static_update_frequency', self.static_update_frequency)
         _add('use_pose_vector_msg', self.use_pose_vector_msg)
         _add('topic', self.topic)
-            
+
         return el
 
     def to_version(self, target_version: str):
@@ -110,16 +115,19 @@ class PosePublisherPlugin(Plugin):
             publish_visual_pose=publish_visual_pose_el.text.lower() == 'true' if publish_visual_pose_el is not None and publish_visual_pose_el.text is not None else None,
             publish_collision_pose=publish_collision_pose_el.text.lower() == 'true' if publish_collision_pose_el is not None and publish_collision_pose_el.text is not None else None,
             publish_sensor_pose=publish_sensor_pose_el.text.lower() == 'true' if publish_sensor_pose_el is not None and publish_sensor_pose_el.text is not None else None,
-            update_frequency=float(update_frequency_el.text) if update_frequency_el is not None and update_frequency_el.text is not None else None,
+            update_frequency=float(
+                update_frequency_el.text) if update_frequency_el is not None and update_frequency_el.text is not None else None,
             static_publisher=static_publisher_el.text.lower() == 'true' if static_publisher_el is not None and static_publisher_el.text is not None else None,
-            static_update_frequency=float(static_update_frequency_el.text) if static_update_frequency_el is not None and static_update_frequency_el.text is not None else None,
+            static_update_frequency=float(
+                static_update_frequency_el.text) if static_update_frequency_el is not None and static_update_frequency_el.text is not None else None,
             use_pose_vector_msg=use_pose_vector_msg_el.text.lower() == 'true' if use_pose_vector_msg_el is not None and use_pose_vector_msg_el.text is not None else None,
             topic=topic_el.text if topic_el is not None and topic_el.text is not None else None,
         )
 
     def to_sdf(self, version: str | None = None) -> ET.Element:
-        el = ET.Element("plugin", name=self.name if hasattr(self, 'name') else "gz::sim::systems::PosePublisher", filename="gz-sim-pose-publisher-system")
-        
+        el = ET.Element("plugin", name=self.name if hasattr(self, 'name') else "gz::sim::systems::PosePublisher",
+                        filename="gz-sim-pose-publisher-system")
+
         def _add(k, v):
             if v is not None:
                 child = ET.Element(k)
@@ -128,7 +136,7 @@ class PosePublisherPlugin(Plugin):
                 else:
                     child.text = str(v)
                 el.append(child)
-                
+
         _add('publish_link_pose', self.publish_link_pose)
         _add('publish_nested_model_pose', self.publish_nested_model_pose)
         _add('publish_model_pose', self.publish_model_pose)
@@ -140,7 +148,7 @@ class PosePublisherPlugin(Plugin):
         _add('static_update_frequency', self.static_update_frequency)
         _add('use_pose_vector_msg', self.use_pose_vector_msg)
         _add('topic', self.topic)
-            
+
         return el
 
     def to_version(self, target_version: str):

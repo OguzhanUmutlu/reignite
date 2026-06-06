@@ -1,4 +1,5 @@
 from xml.etree import ElementTree as ET
+
 from reignite.elements.plugin import Plugin
 from reignite.utils.model import BaseModel
 
@@ -93,7 +94,8 @@ class PerformerDetectorPlugin(Plugin):
     ):
         self.geometry = geometry
         self.pose = pose
-        self.header_data = [header_data] if isinstance(header_data, PerformerDetectorPlugin.HeaderData) else (header_data or [])
+        self.header_data = [header_data] if isinstance(header_data, PerformerDetectorPlugin.HeaderData) else (
+                    header_data or [])
         self.topic = topic
 
         super().__init__(
@@ -125,7 +127,8 @@ class PerformerDetectorPlugin(Plugin):
         )
 
     def to_sdf(self, version: str | None = None) -> ET.Element:
-        el = ET.Element("plugin", name="gz::sim::systems::PerformerDetector", filename="gz-sim-performer-detector-system")
+        el = ET.Element("plugin", name="gz::sim::systems::PerformerDetector",
+                        filename="gz-sim-performer-detector-system")
         if self.geometry is not None:
             el.append(self.geometry.to_sdf(version))
         if self.pose is not None:

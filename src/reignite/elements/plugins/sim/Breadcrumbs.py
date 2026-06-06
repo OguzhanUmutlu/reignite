@@ -1,4 +1,5 @@
 from xml.etree import ElementTree as ET
+
 from reignite import BaseModel
 from reignite.elements.plugin import Plugin
 
@@ -145,7 +146,7 @@ class BreadcrumbsPlugin(Plugin):
 
     def to_sdf(self, version: str | None = None) -> ET.Element:
         el = ET.Element("plugin", name="gz::sim::systems::Breadcrumbs", filename="gz-sim-breadcrumbs-system")
-        
+
         def _add(k, v):
             if v is not None:
                 child = ET.Element(k)
@@ -154,7 +155,7 @@ class BreadcrumbsPlugin(Plugin):
                 else:
                     child.text = str(v)
                 el.append(child)
-                
+
         if self.breadcrumb is not None:
             el.append(self.breadcrumb.to_sdf(version))
         _add("max_deployments", self.max_deployments)
@@ -164,7 +165,7 @@ class BreadcrumbsPlugin(Plugin):
             el.append(self.performer_volume.to_sdf(version))
         _add("topic", self.topic)
         _add("topic_statistics", self.topic_statistics)
-        
+
         return el
 
     def to_version(self, target_version: str):

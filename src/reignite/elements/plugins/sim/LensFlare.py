@@ -1,4 +1,5 @@
 from xml.etree import ElementTree as ET
+
 from ...plugin import Plugin
 
 
@@ -39,12 +40,14 @@ class LensFlarePlugin(Plugin):
             light_name=light_name_el.text if light_name_el is not None and light_name_el.text is not None else None,
             scale=float(scale_el.text) if scale_el is not None and scale_el.text is not None else None,
             color=_parse_tuple(color_el),
-            occlusion_steps=int(occlusion_steps_el.text) if occlusion_steps_el is not None and occlusion_steps_el.text is not None else None,
+            occlusion_steps=int(
+                occlusion_steps_el.text) if occlusion_steps_el is not None and occlusion_steps_el.text is not None else None,
         )
 
     def to_sdf(self, version: str | None = None) -> ET.Element:
-        el = ET.Element("plugin", name=self.name if hasattr(self, 'name') else "gz::sim::systems::LensFlare", filename="gz-sim-lens-flare-system")
-        
+        el = ET.Element("plugin", name=self.name if hasattr(self, 'name') else "gz::sim::systems::LensFlare",
+                        filename="gz-sim-lens-flare-system")
+
         def _add(k, v):
             if v is not None:
                 child = ET.Element(k)
@@ -55,6 +58,6 @@ class LensFlarePlugin(Plugin):
                 else:
                     child.text = str(v)
                 el.append(child)
-                
+
         _add('camera_name', self.camera_name)
         _add('light_name', self.light_name)

@@ -1,4 +1,5 @@
 from xml.etree import ElementTree as ET
+
 from ...plugin import Plugin
 
 
@@ -24,8 +25,9 @@ class MagnetometerPlugin(Plugin):
         )
 
     def to_sdf(self, version: str | None = None) -> ET.Element:
-        el = ET.Element("plugin", name=self.name if hasattr(self, 'name') else "gz::sim::systems::Magnetometer", filename="gz-sim-magnetometer-system")
-        
+        el = ET.Element("plugin", name=self.name if hasattr(self, 'name') else "gz::sim::systems::Magnetometer",
+                        filename="gz-sim-magnetometer-system")
+
         def _add(k, v):
             if v is not None:
                 child = ET.Element(k)
@@ -34,10 +36,10 @@ class MagnetometerPlugin(Plugin):
                 else:
                     child.text = str(v)
                 el.append(child)
-                
+
         _add('use_units_gauss', self.use_units_gauss)
         _add('use_earth_frame_ned', self.use_earth_frame_ned)
-            
+
         return el
 
     def to_version(self, target_version: str):
@@ -54,8 +56,9 @@ class MagnetometerPlugin(Plugin):
         )
 
     def to_sdf(self, version: str | None = None) -> ET.Element:
-        el = ET.Element("plugin", name=self.name if hasattr(self, 'name') else "gz::sim::systems::Magnetometer", filename="gz-sim-magnetometer-system")
-        
+        el = ET.Element("plugin", name=self.name if hasattr(self, 'name') else "gz::sim::systems::Magnetometer",
+                        filename="gz-sim-magnetometer-system")
+
         def _add(k, v):
             if v is not None:
                 child = ET.Element(k)
@@ -64,10 +67,10 @@ class MagnetometerPlugin(Plugin):
                 else:
                     child.text = str(v)
                 el.append(child)
-                
+
         _add('use_units_gauss', self.use_units_gauss)
         _add('use_earth_frame_ned', self.use_earth_frame_ned)
-            
+
         return el
 
     def to_version(self, target_version: str):

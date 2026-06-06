@@ -1,4 +1,5 @@
 from xml.etree import ElementTree as ET
+
 from reignite.elements.plugin import Plugin
 
 
@@ -29,7 +30,8 @@ class OpticalTactilePlugin(Plugin):
         self.force_length = force_length
         self.namespace = namespace
         self.size = size
-        super().__init__(sdf_version=None, filename="gz-sim-optical-tactile-plugin-system", name="gz::sim::systems::OpticalTactilePlugin")
+        super().__init__(sdf_version=None, filename="gz-sim-optical-tactile-plugin-system",
+                         name="gz::sim::systems::OpticalTactilePlugin")
 
     @classmethod
     def _from_sdf(cls, el: ET.Element, version: str):
@@ -46,19 +48,23 @@ class OpticalTactilePlugin(Plugin):
 
         return cls(
             enabled=enabled_el.text.lower() == 'true' if enabled_el is not None and enabled_el.text is not None else None,
-            visualization_resolution=int(visualization_resolution_el.text) if visualization_resolution_el is not None and visualization_resolution_el.text is not None else None,
+            visualization_resolution=int(
+                visualization_resolution_el.text) if visualization_resolution_el is not None and visualization_resolution_el.text is not None else None,
             visualize_forces=visualize_forces_el.text.lower() == 'true' if visualize_forces_el is not None and visualize_forces_el.text is not None else None,
             visualize_contacts=visualize_contacts_el.text.lower() == 'true' if visualize_contacts_el is not None and visualize_contacts_el.text is not None else None,
-            extended_sensing=float(extended_sensing_el.text) if extended_sensing_el is not None and extended_sensing_el.text is not None else None,
+            extended_sensing=float(
+                extended_sensing_el.text) if extended_sensing_el is not None and extended_sensing_el.text is not None else None,
             visualize_sensor=visualize_sensor_el.text.lower() == 'true' if visualize_sensor_el is not None and visualize_sensor_el.text is not None else None,
-            force_length=float(force_length_el.text) if force_length_el is not None and force_length_el.text is not None else None,
+            force_length=float(
+                force_length_el.text) if force_length_el is not None and force_length_el.text is not None else None,
             namespace=namespace_el.text if namespace_el is not None and namespace_el.text is not None else None,
             size=size_vals,
         )
 
     def to_sdf(self, version: str | None = None) -> ET.Element:
-        el = ET.Element("plugin", name=self.name if hasattr(self, 'name') else "gz::sim::systems::OpticalTactilePlugin", filename="gz-sim-optical-tactile-plugin-system")
-        
+        el = ET.Element("plugin", name=self.name if hasattr(self, 'name') else "gz::sim::systems::OpticalTactilePlugin",
+                        filename="gz-sim-optical-tactile-plugin-system")
+
         def _add(k, v):
             if v is not None:
                 child = ET.Element(k)
@@ -67,7 +73,7 @@ class OpticalTactilePlugin(Plugin):
                 else:
                     child.text = str(v)
                 el.append(child)
-                
+
         _add('enabled', self.enabled)
         _add('visualization_resolution', self.visualization_resolution)
         _add('visualize_forces', self.visualize_forces)
@@ -79,7 +85,7 @@ class OpticalTactilePlugin(Plugin):
         if self.size is not None:
             for v in (self.size if isinstance(self.size, list) else [self.size]):
                 _add('size', v)
-            
+
         return el
 
     def to_version(self, target_version: str):
@@ -100,19 +106,23 @@ class OpticalTactilePlugin(Plugin):
 
         return cls(
             enabled=enabled_el.text.lower() == 'true' if enabled_el is not None and enabled_el.text is not None else None,
-            visualization_resolution=int(visualization_resolution_el.text) if visualization_resolution_el is not None and visualization_resolution_el.text is not None else None,
+            visualization_resolution=int(
+                visualization_resolution_el.text) if visualization_resolution_el is not None and visualization_resolution_el.text is not None else None,
             visualize_forces=visualize_forces_el.text.lower() == 'true' if visualize_forces_el is not None and visualize_forces_el.text is not None else None,
             visualize_contacts=visualize_contacts_el.text.lower() == 'true' if visualize_contacts_el is not None and visualize_contacts_el.text is not None else None,
-            extended_sensing=float(extended_sensing_el.text) if extended_sensing_el is not None and extended_sensing_el.text is not None else None,
+            extended_sensing=float(
+                extended_sensing_el.text) if extended_sensing_el is not None and extended_sensing_el.text is not None else None,
             visualize_sensor=visualize_sensor_el.text.lower() == 'true' if visualize_sensor_el is not None and visualize_sensor_el.text is not None else None,
-            force_length=float(force_length_el.text) if force_length_el is not None and force_length_el.text is not None else None,
+            force_length=float(
+                force_length_el.text) if force_length_el is not None and force_length_el.text is not None else None,
             namespace=namespace_el.text if namespace_el is not None and namespace_el.text is not None else None,
             size=size_vals,
         )
 
     def to_sdf(self, version: str | None = None) -> ET.Element:
-        el = ET.Element("plugin", name=self.name if hasattr(self, 'name') else "gz::sim::systems::OpticalTactilePlugin", filename="gz-sim-optical-tactile-plugin-system")
-        
+        el = ET.Element("plugin", name=self.name if hasattr(self, 'name') else "gz::sim::systems::OpticalTactilePlugin",
+                        filename="gz-sim-optical-tactile-plugin-system")
+
         def _add(k, v):
             if v is not None:
                 child = ET.Element(k)
@@ -121,7 +131,7 @@ class OpticalTactilePlugin(Plugin):
                 else:
                     child.text = str(v)
                 el.append(child)
-                
+
         _add('enabled', self.enabled)
         _add('visualization_resolution', self.visualization_resolution)
         _add('visualize_forces', self.visualize_forces)
@@ -133,7 +143,7 @@ class OpticalTactilePlugin(Plugin):
         if self.size is not None:
             for v in (self.size if isinstance(self.size, list) else [self.size]):
                 _add('size', v)
-            
+
         return el
 
     def to_version(self, target_version: str):

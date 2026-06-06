@@ -1,4 +1,5 @@
 from xml.etree import ElementTree as ET
+
 from reignite.elements.plugin import Plugin
 from reignite.utils.model import BaseModel
 
@@ -144,14 +145,15 @@ class TrajectoryFollowerPlugin(Plugin):
         )
 
     def to_sdf(self, version: str | None = None) -> ET.Element:
-        el = ET.Element("plugin", name="gz::sim::systems::TrajectoryFollower", filename="gz-sim-trajectory-follower-system")
+        el = ET.Element("plugin", name="gz::sim::systems::TrajectoryFollower",
+                        filename="gz-sim-trajectory-follower-system")
         if self.waypoints is not None:
             el.append(self.waypoints.to_sdf(version))
         if self.circle is not None:
             el.append(self.circle.to_sdf(version))
         if self.line is not None:
             el.append(self.line.to_sdf(version))
-            
+
         def _add(k, v):
             if v is not None:
                 child = ET.Element(k)
@@ -160,7 +162,7 @@ class TrajectoryFollowerPlugin(Plugin):
                 else:
                     child.text = str(v)
                 el.append(child)
-                
+
         _add("link_name", self.link_name)
         _add("loop", self.loop)
         _add("force", self.force)
@@ -169,7 +171,7 @@ class TrajectoryFollowerPlugin(Plugin):
         _add("bearing_tolerance", self.bearing_tolerance)
         _add("zero_vel_on_bearing_reached", self.zero_vel_on_bearing_reached)
         _add("topic", self.topic)
-        
+
         return el
 
     def to_version(self, target_version: str):

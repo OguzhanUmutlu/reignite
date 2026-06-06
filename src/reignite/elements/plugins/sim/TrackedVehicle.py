@@ -1,4 +1,5 @@
 from xml.etree import ElementTree as ET
+
 from reignite.elements.plugin import Plugin
 from reignite.utils.model import BaseModel
 
@@ -23,7 +24,7 @@ class TrackedVehiclePlugin(Plugin):
         def _from_sdf(cls, el: ET.Element, version: str):
             tag = el.tag
             side = "left" if tag == "left_track" else "right"
-            
+
             l_el = el.find("link")
             vt_el = el.find("velocity_topic")
             cort_el = el.find("center_of_rotation_topic")
@@ -77,14 +78,14 @@ class TrackedVehiclePlugin(Plugin):
         def _from_sdf(cls, el: ET.Element, version: str):
             tag = el.tag
             vtype = "linear" if tag == "linear_velocity" else "angular"
-            
+
             minv_el = el.find("min_velocity")
             maxv_el = el.find("max_velocity")
             mina_el = el.find("min_acceleration")
             maxa_el = el.find("max_acceleration")
             minj_el = el.find("min_jerk")
             maxj_el = el.find("max_jerk")
-            
+
             return cls(
                 type=vtype,
                 min_velocity=float(minv_el.text) if minv_el is not None and minv_el.text is not None else None,
@@ -97,13 +98,13 @@ class TrackedVehiclePlugin(Plugin):
 
         def to_sdf(self, version: str | None = None) -> ET.Element:
             e = ET.Element(f"{self.type}_velocity")
-            
+
             def _add(k, v):
                 if v is not None:
                     child = ET.Element(k)
                     child.text = str(v)
                     e.append(child)
-                    
+
             _add("min_velocity", self.min_velocity)
             _add("max_velocity", self.max_velocity)
             _add("min_acceleration", self.min_acceleration)
@@ -141,7 +142,8 @@ class TrackedVehiclePlugin(Plugin):
         if isinstance(right_track, str):
             self.right_track = [TrackedVehiclePlugin.Track("right", right_track)]
         else:
-            self.right_track = [right_track] if isinstance(right_track, TrackedVehiclePlugin.Track) else (right_track or [])
+            self.right_track = [right_track] if isinstance(right_track, TrackedVehiclePlugin.Track) else (
+                        right_track or [])
 
         self.linear_velocity = linear_velocity
         self.angular_velocity = angular_velocity
@@ -169,7 +171,7 @@ class TrackedVehiclePlugin(Plugin):
         rt_els = el.findall("right_track")
         lv_el = el.find("linear_velocity")
         av_el = el.find("angular_velocity")
-        
+
         bl_el = el.find("body_link")
         ts_el = el.find("tracks_separation")
         se_el = el.find("steering_efficiency")
@@ -212,7 +214,7 @@ class TrackedVehiclePlugin(Plugin):
             el.append(self.linear_velocity.to_sdf(version))
         if self.angular_velocity is not None:
             el.append(self.angular_velocity.to_sdf(version))
-            
+
         def _add(k, v):
             if v is not None:
                 child = ET.Element(k)
@@ -221,7 +223,7 @@ class TrackedVehiclePlugin(Plugin):
                 else:
                     child.text = str(v)
                 el.append(child)
-                
+
         _add("body_link", self.body_link)
         _add("tracks_separation", self.tracks_separation)
         _add("steering_efficiency", self.steering_efficiency)

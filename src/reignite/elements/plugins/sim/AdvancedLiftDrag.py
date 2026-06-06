@@ -1,12 +1,11 @@
-from xml.etree import ElementTree as ET
 import math
+from xml.etree import ElementTree as ET
 
 from reignite.elements.joint import Joint
 from reignite.elements.link import Link
-from reignite.elements.plugin import Plugin, ParentElement, TextElement
-
-
+from reignite.elements.plugin import Plugin
 from reignite.utils.model import BaseModel
+
 
 @Plugin.register("gz-sim-advanced-lift-drag-system", "gz::sim::systems::AdvancedLiftDrag")
 class AdvancedLiftDragPlugin(Plugin):
@@ -42,27 +41,29 @@ class AdvancedLiftDragPlugin(Plugin):
             Cell_ctrl_el = el.find("Cell_ctrl")
             Cem_ctrl_el = el.find("Cem_ctrl")
             Cen_ctrl_el = el.find("Cen_ctrl")
-            
+
             return cls(
                 name=name_el.text if name_el is not None else None,
-                direction=float(direction_el.text) if direction_el is not None and direction_el.text is not None else None,
+                direction=float(
+                    direction_el.text) if direction_el is not None and direction_el.text is not None else None,
                 CD_ctrl=float(CD_ctrl_el.text) if CD_ctrl_el is not None and CD_ctrl_el.text is not None else None,
                 CY_ctrl=float(CY_ctrl_el.text) if CY_ctrl_el is not None and CY_ctrl_el.text is not None else None,
                 CL_ctrl=float(CL_ctrl_el.text) if CL_ctrl_el is not None and CL_ctrl_el.text is not None else None,
-                Cell_ctrl=float(Cell_ctrl_el.text) if Cell_ctrl_el is not None and Cell_ctrl_el.text is not None else None,
+                Cell_ctrl=float(
+                    Cell_ctrl_el.text) if Cell_ctrl_el is not None and Cell_ctrl_el.text is not None else None,
                 Cem_ctrl=float(Cem_ctrl_el.text) if Cem_ctrl_el is not None and Cem_ctrl_el.text is not None else None,
                 Cen_ctrl=float(Cen_ctrl_el.text) if Cen_ctrl_el is not None and Cen_ctrl_el.text is not None else None
             )
 
         def to_sdf(self, version: str | None = None) -> ET.Element:
             e = ET.Element("control_surface")
-            
+
             def _add(k, v):
                 if v is not None:
                     child = ET.Element(k)
                     child.text = str(v)
                     e.append(child)
-                    
+
             _add("name", self.name)
             _add("direction", self.direction)
             _add("CD_ctrl", self.CD_ctrl)
@@ -218,7 +219,8 @@ class AdvancedLiftDragPlugin(Plugin):
         Cemr_el = el.find('Cemr')
         Cenr_el = el.find('Cenr')
         control_surfaces_els = el.findall('control_surface')
-        control_surfaces_vals = [cls.ControlSurface._from_sdf(c, version) for c in control_surfaces_els] if control_surfaces_els else None
+        control_surfaces_vals = [cls.ControlSurface._from_sdf(c, version) for c in
+                                 control_surfaces_els] if control_surfaces_els else None
         num_ctrl_surfaces_el = el.find('num_ctrl_surfaces')
         control_joint_rad_to_cl_el = el.find('control_joint_rad_to_cl')
 
@@ -227,7 +229,8 @@ class AdvancedLiftDragPlugin(Plugin):
             forward=forward_vals,
             upward=upward_vals,
             area=float(area_el.text) if area_el is not None and area_el.text is not None else None,
-            air_density=float(air_density_el.text) if air_density_el is not None and air_density_el.text is not None else None,
+            air_density=float(
+                air_density_el.text) if air_density_el is not None and air_density_el.text is not None else None,
             radial_symmetry=radial_symmetry_el.text.lower() == 'true' if radial_symmetry_el is not None and radial_symmetry_el.text is not None else None,
             AR=float(AR_el.text) if AR_el is not None and AR_el.text is not None else None,
             mac=float(mac_el.text) if mac_el is not None and mac_el.text is not None else None,
@@ -246,8 +249,10 @@ class AdvancedLiftDragPlugin(Plugin):
             Cellb=float(Cellb_el.text) if Cellb_el is not None and Cellb_el.text is not None else None,
             Cemb=float(Cemb_el.text) if Cemb_el is not None and Cemb_el.text is not None else None,
             Cenb=float(Cenb_el.text) if Cenb_el is not None and Cenb_el.text is not None else None,
-            alpha_stall=float(alpha_stall_el.text) if alpha_stall_el is not None and alpha_stall_el.text is not None else None,
-            Cema_stall=float(Cema_stall_el.text) if Cema_stall_el is not None and Cema_stall_el.text is not None else None,
+            alpha_stall=float(
+                alpha_stall_el.text) if alpha_stall_el is not None and alpha_stall_el.text is not None else None,
+            Cema_stall=float(
+                Cema_stall_el.text) if Cema_stall_el is not None and Cema_stall_el.text is not None else None,
             CDp=float(CDp_el.text) if CDp_el is not None and CDp_el.text is not None else None,
             CYp=float(CYp_el.text) if CYp_el is not None and CYp_el.text is not None else None,
             CLp=float(CLp_el.text) if CLp_el is not None and CLp_el.text is not None else None,
@@ -267,13 +272,16 @@ class AdvancedLiftDragPlugin(Plugin):
             Cemr=float(Cemr_el.text) if Cemr_el is not None and Cemr_el.text is not None else None,
             Cenr=float(Cenr_el.text) if Cenr_el is not None and Cenr_el.text is not None else None,
             control_surfaces=control_surfaces_vals,
-            num_ctrl_surfaces=int(num_ctrl_surfaces_el.text) if num_ctrl_surfaces_el is not None and num_ctrl_surfaces_el.text is not None else None,
-            control_joint_rad_to_cl=float(control_joint_rad_to_cl_el.text) if control_joint_rad_to_cl_el is not None and control_joint_rad_to_cl_el.text is not None else None,
+            num_ctrl_surfaces=int(
+                num_ctrl_surfaces_el.text) if num_ctrl_surfaces_el is not None and num_ctrl_surfaces_el.text is not None else None,
+            control_joint_rad_to_cl=float(
+                control_joint_rad_to_cl_el.text) if control_joint_rad_to_cl_el is not None and control_joint_rad_to_cl_el.text is not None else None,
         )
 
     def to_sdf(self, version: str | None = None) -> ET.Element:
-        el = ET.Element("plugin", name=self.name if hasattr(self, 'name') else "gz::sim::systems::AdvancedLiftDrag", filename="gz-sim-advanced-lift-drag-system")
-        
+        el = ET.Element("plugin", name=self.name if hasattr(self, 'name') else "gz::sim::systems::AdvancedLiftDrag",
+                        filename="gz-sim-advanced-lift-drag-system")
+
         def _add(k, v):
             if v is not None:
                 child = ET.Element(k)
@@ -282,7 +290,7 @@ class AdvancedLiftDragPlugin(Plugin):
                 else:
                     child.text = str(v)
                 el.append(child)
-                
+
         _add('link_name', self.link_name)
         if self.forward is not None:
             for v in (self.forward if isinstance(self.forward, list) else [self.forward]):
@@ -337,7 +345,7 @@ class AdvancedLiftDragPlugin(Plugin):
                 el.append(v.to_sdf(version))
         _add('num_ctrl_surfaces', self.num_ctrl_surfaces)
         _add('control_joint_rad_to_cl', self.control_joint_rad_to_cl)
-            
+
         return el
 
     def to_version(self, target_version: str):
@@ -395,7 +403,8 @@ class AdvancedLiftDragPlugin(Plugin):
         Cemr_el = el.find('Cemr')
         Cenr_el = el.find('Cenr')
         control_surfaces_els = el.findall('control_surfaces')
-        control_surfaces_vals = [e.text for e in control_surfaces_els if e.text is not None] if control_surfaces_els else None
+        control_surfaces_vals = [e.text for e in control_surfaces_els if
+                                 e.text is not None] if control_surfaces_els else None
         num_ctrl_surfaces_el = el.find('num_ctrl_surfaces')
         control_joint_rad_to_cl_el = el.find('control_joint_rad_to_cl')
         name = el.get('name')
@@ -412,7 +421,8 @@ class AdvancedLiftDragPlugin(Plugin):
             forward=forward_vals,
             upward=upward_vals,
             area=float(area_el.text) if area_el is not None and area_el.text is not None else None,
-            air_density=float(air_density_el.text) if air_density_el is not None and air_density_el.text is not None else None,
+            air_density=float(
+                air_density_el.text) if air_density_el is not None and air_density_el.text is not None else None,
             radial_symmetry=radial_symmetry_el.text.lower() == 'true' if radial_symmetry_el is not None and radial_symmetry_el.text is not None else None,
             AR=float(AR_el.text) if AR_el is not None and AR_el.text is not None else None,
             mac=float(mac_el.text) if mac_el is not None and mac_el.text is not None else None,
@@ -431,8 +441,10 @@ class AdvancedLiftDragPlugin(Plugin):
             Cellb=float(Cellb_el.text) if Cellb_el is not None and Cellb_el.text is not None else None,
             Cemb=float(Cemb_el.text) if Cemb_el is not None and Cemb_el.text is not None else None,
             Cenb=float(Cenb_el.text) if Cenb_el is not None and Cenb_el.text is not None else None,
-            alpha_stall=float(alpha_stall_el.text) if alpha_stall_el is not None and alpha_stall_el.text is not None else None,
-            Cema_stall=float(Cema_stall_el.text) if Cema_stall_el is not None and Cema_stall_el.text is not None else None,
+            alpha_stall=float(
+                alpha_stall_el.text) if alpha_stall_el is not None and alpha_stall_el.text is not None else None,
+            Cema_stall=float(
+                Cema_stall_el.text) if Cema_stall_el is not None and Cema_stall_el.text is not None else None,
             CDp=float(CDp_el.text) if CDp_el is not None and CDp_el.text is not None else None,
             CYp=float(CYp_el.text) if CYp_el is not None and CYp_el.text is not None else None,
             CLp=float(CLp_el.text) if CLp_el is not None and CLp_el.text is not None else None,
@@ -452,8 +464,10 @@ class AdvancedLiftDragPlugin(Plugin):
             Cemr=float(Cemr_el.text) if Cemr_el is not None and Cemr_el.text is not None else None,
             Cenr=float(Cenr_el.text) if Cenr_el is not None and Cenr_el.text is not None else None,
             control_surfaces=control_surfaces_vals,
-            num_ctrl_surfaces=int(num_ctrl_surfaces_el.text) if num_ctrl_surfaces_el is not None and num_ctrl_surfaces_el.text is not None else None,
-            control_joint_rad_to_cl=float(control_joint_rad_to_cl_el.text) if control_joint_rad_to_cl_el is not None and control_joint_rad_to_cl_el.text is not None else None,
+            num_ctrl_surfaces=int(
+                num_ctrl_surfaces_el.text) if num_ctrl_surfaces_el is not None and num_ctrl_surfaces_el.text is not None else None,
+            control_joint_rad_to_cl=float(
+                control_joint_rad_to_cl_el.text) if control_joint_rad_to_cl_el is not None and control_joint_rad_to_cl_el.text is not None else None,
             name=name if name is not None else None,
             direction=float(direction_el.text) if direction_el is not None and direction_el.text is not None else None,
             CD_ctrl=float(CD_ctrl_el.text) if CD_ctrl_el is not None and CD_ctrl_el.text is not None else None,
@@ -465,8 +479,9 @@ class AdvancedLiftDragPlugin(Plugin):
         )
 
     def to_sdf(self, version: str | None = None) -> ET.Element:
-        el = ET.Element("plugin", name=self.name if hasattr(self, 'name') else "gz::sim::systems::AdvancedLiftDrag", filename="gz-sim-advanced-lift-drag-system")
-        
+        el = ET.Element("plugin", name=self.name if hasattr(self, 'name') else "gz::sim::systems::AdvancedLiftDrag",
+                        filename="gz-sim-advanced-lift-drag-system")
+
         def _add(k, v):
             if v is not None:
                 child = ET.Element(k)
@@ -475,7 +490,7 @@ class AdvancedLiftDragPlugin(Plugin):
                 else:
                     child.text = str(v)
                 el.append(child)
-                
+
         _add('link_name', self.link_name)
         if self.forward is not None:
             for v in (self.forward if isinstance(self.forward, list) else [self.forward]):
@@ -537,7 +552,7 @@ class AdvancedLiftDragPlugin(Plugin):
         _add('Cell_ctrl', self.Cell_ctrl)
         _add('Cem_ctrl', self.Cem_ctrl)
         _add('Cen_ctrl', self.Cen_ctrl)
-            
+
         return el
 
     def to_version(self, target_version: str):

@@ -1,4 +1,5 @@
 from xml.etree import ElementTree as ET
+
 from reignite.elements.plugin import Plugin
 
 
@@ -51,7 +52,7 @@ class TouchPlugin(Plugin):
                 child = ET.Element("collision")
                 child.text = str(c)
                 el.append(child)
-                
+
         def _add(k, v):
             if v is not None:
                 child = ET.Element(k)
@@ -60,7 +61,7 @@ class TouchPlugin(Plugin):
                 else:
                     child.text = str(v)
                 el.append(child)
-                
+
         _add("target", self.target)
         _add("time", self.time)
         _add("create_contact_sensor_for_collision", self.create_contact_sensor_for_collision)

@@ -1,4 +1,5 @@
 from xml.etree import ElementTree as ET
+
 from reignite.elements.plugin import Plugin
 from reignite.utils.model import BaseModel
 
@@ -25,7 +26,7 @@ class AcousticCommsPlugin(Plugin):
             nl_el = el.find("noise_level")
             se_el = el.find("spectral_efficiency")
             sd_el = el.find("seed")
-            
+
             return cls(
                 source_power=float(sp_el.text) if sp_el is not None and sp_el.text is not None else None,
                 noise_level=float(nl_el.text) if nl_el is not None and nl_el.text is not None else None,
@@ -35,13 +36,13 @@ class AcousticCommsPlugin(Plugin):
 
         def to_sdf(self, version: str | None = None) -> ET.Element:
             e = ET.Element("propagation_model")
-            
+
             def _add(k, v):
                 if v is not None:
                     child = ET.Element(k)
                     child.text = str(v)
                     e.append(child)
-                    
+
             _add("source_power", self.source_power)
             _add("noise_level", self.noise_level)
             _add("spectral_efficiency", self.spectral_efficiency)
@@ -75,7 +76,7 @@ class AcousticCommsPlugin(Plugin):
         ss_el = el.find("speed_of_sound")
         ct_el = el.find("collision_time_per_byte")
         pm_el = el.find("propagation_model")
-        
+
         return cls(
             max_range=float(mr_el.text) if mr_el is not None and mr_el.text is not None else 1000.0,
             speed_of_sound=float(ss_el.text) if ss_el is not None and ss_el.text is not None else 343.0,
@@ -85,20 +86,20 @@ class AcousticCommsPlugin(Plugin):
 
     def to_sdf(self, version: str | None = None) -> ET.Element:
         el = ET.Element("plugin", name="gz::sim::systems::AcousticComms", filename="gz-sim-acoustic-comms-system")
-        
+
         def _add(k, v):
             if v is not None:
                 child = ET.Element(k)
                 child.text = str(v)
                 el.append(child)
-                
+
         _add("max_range", self.max_range)
         _add("speed_of_sound", self.speed_of_sound)
         _add("collision_time_per_byte", self.collision_time_per_byte)
-        
+
         if self.propagation_model is not None:
             el.append(self.propagation_model.to_sdf(version))
-            
+
         return el
 
     def to_version(self, target_version: str):

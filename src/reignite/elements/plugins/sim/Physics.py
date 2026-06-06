@@ -1,4 +1,5 @@
 from xml.etree import ElementTree as ET
+
 from reignite.elements.plugin import Plugin
 from reignite.utils.model import BaseModel
 
@@ -34,7 +35,7 @@ class PhysicsPlugin(Plugin):
     ):
         if isinstance(engine, str):
             engine = PhysicsPlugin.Engine(engine)
-            
+
         self.enforce_fixed_constraint = enforce_fixed_constraint
         self.include_entity_names = include_entity_names
         self.engine = engine
@@ -61,7 +62,7 @@ class PhysicsPlugin(Plugin):
         el = ET.Element("plugin", name="gz::sim::systems::Physics", filename="gz-sim-physics-system")
         if self.engine is not None:
             el.append(self.engine.to_sdf(version))
-            
+
         def _add(k, v):
             if v is not None:
                 child = ET.Element(k)
@@ -70,7 +71,7 @@ class PhysicsPlugin(Plugin):
                 else:
                     child.text = str(v)
                 el.append(child)
-                
+
         _add("enforce_fixed_constraint", self.enforce_fixed_constraint)
         _add("include_entity_names", self.include_entity_names)
         return el

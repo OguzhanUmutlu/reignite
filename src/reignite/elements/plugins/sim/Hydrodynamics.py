@@ -1,4 +1,5 @@
 from xml.etree import ElementTree as ET
+
 from ...plugin import Plugin
 
 
@@ -33,8 +34,9 @@ class HydrodynamicsPlugin(Plugin):
         self.lookup_current_y = lookup_current_y
         self.lookup_current_z = lookup_current_z
         self.stability_derivatives = stability_derivatives
-        
-        super().__init__(sdf_version=None, filename="gz-sim-hydrodynamics-system", name="gz::sim::systems::Hydrodynamics")
+
+        super().__init__(sdf_version=None, filename="gz-sim-hydrodynamics-system",
+                         name="gz::sim::systems::Hydrodynamics")
 
     @classmethod
     def _from_sdf(cls, el: ET.Element, version: str):
@@ -46,10 +48,11 @@ class HydrodynamicsPlugin(Plugin):
         lookup_current_x_el = el.find('lookup_current_x')
         lookup_current_y_el = el.find('lookup_current_y')
         lookup_current_z_el = el.find('lookup_current_z')
-        
+
         kwargs = {}
         for c in el:
-            if c.tag not in ['link_name', 'namespace', 'disable_coriolis', 'disable_added_mass', 'default_current', 'lookup_current_x', 'lookup_current_y', 'lookup_current_z', 'plugin']:
+            if c.tag not in ['link_name', 'namespace', 'disable_coriolis', 'disable_added_mass', 'default_current',
+                             'lookup_current_x', 'lookup_current_y', 'lookup_current_z', 'plugin']:
                 if c.text is not None:
                     kwargs[c.tag] = float(c.text)
 
@@ -73,7 +76,7 @@ class HydrodynamicsPlugin(Plugin):
 
     def to_sdf(self, version: str | None = None) -> ET.Element:
         el = ET.Element("plugin", name="gz::sim::systems::Hydrodynamics", filename="gz-sim-hydrodynamics-system")
-        
+
         def _add(k, v):
             if v is not None:
                 child = ET.Element(k)
@@ -84,7 +87,7 @@ class HydrodynamicsPlugin(Plugin):
                 else:
                     child.text = str(v)
                 el.append(child)
-                
+
         _add('link_name', self.link_name)
         _add('namespace', self.namespace)
         _add('disable_coriolis', self.disable_coriolis)
@@ -93,11 +96,11 @@ class HydrodynamicsPlugin(Plugin):
         _add('lookup_current_x', self.lookup_current_x)
         _add('lookup_current_y', self.lookup_current_y)
         _add('lookup_current_z', self.lookup_current_z)
-        
+
         if self.stability_derivatives:
             for k, v in self.stability_derivatives.items():
                 _add(k, v)
-            
+
         return el
 
     def to_version(self, target_version: str):

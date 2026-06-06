@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from xml.etree import ElementTree as ET
+
 from reignite.elements.plugin import Plugin
 from reignite.utils.model import BaseModel
 
@@ -241,7 +242,7 @@ class LedPlugin(Plugin):
         m_els = el.findall("mode")
         lgn_el = el.find("led_group_name")
         sm_el = el.find("startup_mode")
-        
+
         return cls(
             leds=[cls.Led._from_sdf(l, version) for l in l_els],
             modes=[cls.Mode._from_sdf(m, version) for m in m_els],

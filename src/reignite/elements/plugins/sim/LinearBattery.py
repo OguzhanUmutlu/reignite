@@ -1,4 +1,5 @@
 from xml.etree import ElementTree as ET
+
 from ...plugin import Plugin
 
 
@@ -47,7 +48,8 @@ class LinearBatteryPlugin(Plugin):
         self.start_draining = start_draining
         self.power_draining_topic = power_draining_topic
         self.stop_power_draining_topic = stop_power_draining_topic
-        super().__init__(sdf_version=None, filename="gz-sim-linearbatteryplugin-system", name="gz::sim::systems::LinearBatteryPlugin")
+        super().__init__(sdf_version=None, filename="gz-sim-linearbatteryplugin-system",
+                         name="gz::sim::systems::LinearBatteryPlugin")
 
     @classmethod
     def _from_sdf(cls, el: ET.Element, version: str):
@@ -67,24 +69,33 @@ class LinearBatteryPlugin(Plugin):
         recharge_by_topic_el = el.find('recharge_by_topic')
         start_draining_el = el.find('start_draining')
         power_draining_topic_els = el.findall('power_draining_topic')
-        power_draining_topic_vals = [e.text for e in power_draining_topic_els if e.text is not None] if power_draining_topic_els else None
+        power_draining_topic_vals = [e.text for e in power_draining_topic_els if
+                                     e.text is not None] if power_draining_topic_els else None
         stop_power_draining_topic_els = el.findall('stop_power_draining_topic')
-        stop_power_draining_topic_vals = [e.text for e in stop_power_draining_topic_els if e.text is not None] if stop_power_draining_topic_els else None
+        stop_power_draining_topic_vals = [e.text for e in stop_power_draining_topic_els if
+                                          e.text is not None] if stop_power_draining_topic_els else None
 
         return cls(
             battery_name=battery_name_el.text if battery_name_el is not None and battery_name_el.text is not None else None,
             voltage=float(voltage_el.text) if voltage_el is not None and voltage_el.text is not None else None,
             capacity=float(capacity_el.text) if capacity_el is not None and capacity_el.text is not None else None,
-            power_load=float(power_load_el.text) if power_load_el is not None and power_load_el.text is not None else None,
-            open_circuit_voltage_constant_coef=float(open_circuit_voltage_constant_coef_el.text) if open_circuit_voltage_constant_coef_el is not None and open_circuit_voltage_constant_coef_el.text is not None else None,
-            open_circuit_voltage_linear_coef=float(open_circuit_voltage_linear_coef_el.text) if open_circuit_voltage_linear_coef_el is not None and open_circuit_voltage_linear_coef_el.text is not None else None,
-            initial_charge=float(initial_charge_el.text) if initial_charge_el is not None and initial_charge_el.text is not None else None,
-            resistance=float(resistance_el.text) if resistance_el is not None and resistance_el.text is not None else None,
-            smooth_current_tau=float(smooth_current_tau_el.text) if smooth_current_tau_el is not None and smooth_current_tau_el.text is not None else None,
+            power_load=float(
+                power_load_el.text) if power_load_el is not None and power_load_el.text is not None else None,
+            open_circuit_voltage_constant_coef=float(
+                open_circuit_voltage_constant_coef_el.text) if open_circuit_voltage_constant_coef_el is not None and open_circuit_voltage_constant_coef_el.text is not None else None,
+            open_circuit_voltage_linear_coef=float(
+                open_circuit_voltage_linear_coef_el.text) if open_circuit_voltage_linear_coef_el is not None and open_circuit_voltage_linear_coef_el.text is not None else None,
+            initial_charge=float(
+                initial_charge_el.text) if initial_charge_el is not None and initial_charge_el.text is not None else None,
+            resistance=float(
+                resistance_el.text) if resistance_el is not None and resistance_el.text is not None else None,
+            smooth_current_tau=float(
+                smooth_current_tau_el.text) if smooth_current_tau_el is not None and smooth_current_tau_el.text is not None else None,
             fix_issue_225=fix_issue_225_el.text.lower() == 'true' if fix_issue_225_el is not None and fix_issue_225_el.text is not None else None,
             invert_current_sign=invert_current_sign_el.text.lower() == 'true' if invert_current_sign_el is not None and invert_current_sign_el.text is not None else None,
             enable_recharge=enable_recharge_el.text.lower() == 'true' if enable_recharge_el is not None and enable_recharge_el.text is not None else None,
-            charging_time=float(charging_time_el.text) if charging_time_el is not None and charging_time_el.text is not None else None,
+            charging_time=float(
+                charging_time_el.text) if charging_time_el is not None and charging_time_el.text is not None else None,
             recharge_by_topic=recharge_by_topic_el.text.lower() == 'true' if recharge_by_topic_el is not None and recharge_by_topic_el.text is not None else None,
             start_draining=start_draining_el.text.lower() == 'true' if start_draining_el is not None and start_draining_el.text is not None else None,
             power_draining_topic=power_draining_topic_vals,
@@ -92,8 +103,9 @@ class LinearBatteryPlugin(Plugin):
         )
 
     def to_sdf(self, version: str | None = None) -> ET.Element:
-        el = ET.Element("plugin", name=self.name if hasattr(self, 'name') else "gz::sim::systems::LinearBatteryPlugin", filename="gz-sim-linearbatteryplugin-system")
-        
+        el = ET.Element("plugin", name=self.name if hasattr(self, 'name') else "gz::sim::systems::LinearBatteryPlugin",
+                        filename="gz-sim-linearbatteryplugin-system")
+
         def _add(k, v):
             if v is not None:
                 child = ET.Element(k)
@@ -102,7 +114,7 @@ class LinearBatteryPlugin(Plugin):
                 else:
                     child.text = str(v)
                 el.append(child)
-                
+
         _add('battery_name', self.battery_name)
         _add('voltage', self.voltage)
         _add('capacity', self.capacity)
@@ -119,12 +131,14 @@ class LinearBatteryPlugin(Plugin):
         _add('recharge_by_topic', self.recharge_by_topic)
         _add('start_draining', self.start_draining)
         if self.power_draining_topic is not None:
-            for v in (self.power_draining_topic if isinstance(self.power_draining_topic, list) else [self.power_draining_topic]):
+            for v in (
+            self.power_draining_topic if isinstance(self.power_draining_topic, list) else [self.power_draining_topic]):
                 _add('power_draining_topic', v)
         if self.stop_power_draining_topic is not None:
-            for v in (self.stop_power_draining_topic if isinstance(self.stop_power_draining_topic, list) else [self.stop_power_draining_topic]):
+            for v in (self.stop_power_draining_topic if isinstance(self.stop_power_draining_topic, list) else [
+                self.stop_power_draining_topic]):
                 _add('stop_power_draining_topic', v)
-            
+
         return el
 
     def to_version(self, target_version: str):
@@ -148,24 +162,33 @@ class LinearBatteryPlugin(Plugin):
         recharge_by_topic_el = el.find('recharge_by_topic')
         start_draining_el = el.find('start_draining')
         power_draining_topic_els = el.findall('power_draining_topic')
-        power_draining_topic_vals = [e.text for e in power_draining_topic_els if e.text is not None] if power_draining_topic_els else None
+        power_draining_topic_vals = [e.text for e in power_draining_topic_els if
+                                     e.text is not None] if power_draining_topic_els else None
         stop_power_draining_topic_els = el.findall('stop_power_draining_topic')
-        stop_power_draining_topic_vals = [e.text for e in stop_power_draining_topic_els if e.text is not None] if stop_power_draining_topic_els else None
+        stop_power_draining_topic_vals = [e.text for e in stop_power_draining_topic_els if
+                                          e.text is not None] if stop_power_draining_topic_els else None
 
         return cls(
             battery_name=battery_name_el.text if battery_name_el is not None and battery_name_el.text is not None else None,
             voltage=float(voltage_el.text) if voltage_el is not None and voltage_el.text is not None else None,
             capacity=float(capacity_el.text) if capacity_el is not None and capacity_el.text is not None else None,
-            power_load=float(power_load_el.text) if power_load_el is not None and power_load_el.text is not None else None,
-            open_circuit_voltage_constant_coef=float(open_circuit_voltage_constant_coef_el.text) if open_circuit_voltage_constant_coef_el is not None and open_circuit_voltage_constant_coef_el.text is not None else None,
-            open_circuit_voltage_linear_coef=float(open_circuit_voltage_linear_coef_el.text) if open_circuit_voltage_linear_coef_el is not None and open_circuit_voltage_linear_coef_el.text is not None else None,
-            initial_charge=float(initial_charge_el.text) if initial_charge_el is not None and initial_charge_el.text is not None else None,
-            resistance=float(resistance_el.text) if resistance_el is not None and resistance_el.text is not None else None,
-            smooth_current_tau=float(smooth_current_tau_el.text) if smooth_current_tau_el is not None and smooth_current_tau_el.text is not None else None,
+            power_load=float(
+                power_load_el.text) if power_load_el is not None and power_load_el.text is not None else None,
+            open_circuit_voltage_constant_coef=float(
+                open_circuit_voltage_constant_coef_el.text) if open_circuit_voltage_constant_coef_el is not None and open_circuit_voltage_constant_coef_el.text is not None else None,
+            open_circuit_voltage_linear_coef=float(
+                open_circuit_voltage_linear_coef_el.text) if open_circuit_voltage_linear_coef_el is not None and open_circuit_voltage_linear_coef_el.text is not None else None,
+            initial_charge=float(
+                initial_charge_el.text) if initial_charge_el is not None and initial_charge_el.text is not None else None,
+            resistance=float(
+                resistance_el.text) if resistance_el is not None and resistance_el.text is not None else None,
+            smooth_current_tau=float(
+                smooth_current_tau_el.text) if smooth_current_tau_el is not None and smooth_current_tau_el.text is not None else None,
             fix_issue_225=fix_issue_225_el.text.lower() == 'true' if fix_issue_225_el is not None and fix_issue_225_el.text is not None else None,
             invert_current_sign=invert_current_sign_el.text.lower() == 'true' if invert_current_sign_el is not None and invert_current_sign_el.text is not None else None,
             enable_recharge=enable_recharge_el.text.lower() == 'true' if enable_recharge_el is not None and enable_recharge_el.text is not None else None,
-            charging_time=float(charging_time_el.text) if charging_time_el is not None and charging_time_el.text is not None else None,
+            charging_time=float(
+                charging_time_el.text) if charging_time_el is not None and charging_time_el.text is not None else None,
             recharge_by_topic=recharge_by_topic_el.text.lower() == 'true' if recharge_by_topic_el is not None and recharge_by_topic_el.text is not None else None,
             start_draining=start_draining_el.text.lower() == 'true' if start_draining_el is not None and start_draining_el.text is not None else None,
             power_draining_topic=power_draining_topic_vals,
@@ -173,8 +196,9 @@ class LinearBatteryPlugin(Plugin):
         )
 
     def to_sdf(self, version: str | None = None) -> ET.Element:
-        el = ET.Element("plugin", name=self.name if hasattr(self, 'name') else "gz::sim::systems::LinearBatteryPlugin", filename="gz-sim-linearbatteryplugin-system")
-        
+        el = ET.Element("plugin", name=self.name if hasattr(self, 'name') else "gz::sim::systems::LinearBatteryPlugin",
+                        filename="gz-sim-linearbatteryplugin-system")
+
         def _add(k, v):
             if v is not None:
                 child = ET.Element(k)
@@ -183,7 +207,7 @@ class LinearBatteryPlugin(Plugin):
                 else:
                     child.text = str(v)
                 el.append(child)
-                
+
         _add('battery_name', self.battery_name)
         _add('voltage', self.voltage)
         _add('capacity', self.capacity)
@@ -200,12 +224,14 @@ class LinearBatteryPlugin(Plugin):
         _add('recharge_by_topic', self.recharge_by_topic)
         _add('start_draining', self.start_draining)
         if self.power_draining_topic is not None:
-            for v in (self.power_draining_topic if isinstance(self.power_draining_topic, list) else [self.power_draining_topic]):
+            for v in (
+            self.power_draining_topic if isinstance(self.power_draining_topic, list) else [self.power_draining_topic]):
                 _add('power_draining_topic', v)
         if self.stop_power_draining_topic is not None:
-            for v in (self.stop_power_draining_topic if isinstance(self.stop_power_draining_topic, list) else [self.stop_power_draining_topic]):
+            for v in (self.stop_power_draining_topic if isinstance(self.stop_power_draining_topic, list) else [
+                self.stop_power_draining_topic]):
                 _add('stop_power_draining_topic', v)
-            
+
         return el
 
     def to_version(self, target_version: str):

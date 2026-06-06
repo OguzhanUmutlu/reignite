@@ -1,4 +1,5 @@
 from xml.etree import ElementTree as ET
+
 from .GzGui import GzGui
 from ...plugin import Plugin
 from ....utils.color import _ColorT, _color
@@ -15,7 +16,7 @@ class MinimalScenePlugin(Plugin):
                  far: float | None = 2000.0,
                  engine: str | None = "ogre2",
                  scene: str | None = "scene",
-                 name: str = "3D View", 
+                 name: str = "3D View",
                  **gui_kwargs):
         self.camera_pose = camera_pose
         self.ambient_light = ambient_light
@@ -25,11 +26,11 @@ class MinimalScenePlugin(Plugin):
         self.engine = engine
         self.scene = scene
         self.name = name
-        
+
         gui_params = {"title": "3D View", "show_title_bar": False, "state": "docked"}
         gui_params.update(gui_kwargs)
         self.gz_gui = GzGui(**gui_params)
-        
+
         super().__init__(name=name, filename="MinimalScene")
 
     @classmethod
@@ -38,18 +39,19 @@ class MinimalScenePlugin(Plugin):
         gui_kwargs = {}
         if gui_el is not None:
             gui = GzGui._from_sdf(gui_el, version)
-            for k in ["anchors", "anchor", "state", "z", "height", "width", "resizable", "show_title_bar", "delete_later", "title"]:
+            for k in ["anchors", "anchor", "state", "z", "height", "width", "resizable", "show_title_bar",
+                      "delete_later", "title"]:
                 if hasattr(gui, k) and getattr(gui, k) is not None:
                     gui_kwargs[k] = getattr(gui, k)
-                    
+
         name = el.get("name", "3D View")
-        
+
         camera_pose_el = el.find("camera_pose")
         ambient_light_el = el.find("ambient_light")
         background_color_el = el.find("background_color")
         engine_el = el.find("engine")
         scene_el = el.find("scene")
-        
+
         near = None
         far = None
         camera_clip_el = el.find("camera_clip")
@@ -75,10 +77,10 @@ class MinimalScenePlugin(Plugin):
 
     def to_sdf(self, version: str | None = None) -> ET.Element:
         el = ET.Element("plugin", name=self.name, filename="MinimalScene")
-        
+
         if self.gz_gui is not None:
             el.append(self.gz_gui.to_sdf(version))
-            
+
         def _add(k, v):
             if v is not None:
                 child = ET.Element(k)
@@ -87,7 +89,7 @@ class MinimalScenePlugin(Plugin):
                 else:
                     child.text = str(v)
                 el.append(child)
-                
+
         _add("engine", self.engine)
         _add("scene", self.scene)
         if self.ambient_light is not None:
@@ -96,7 +98,7 @@ class MinimalScenePlugin(Plugin):
             _add("background_color", _color(self.background_color).to_sdf())
         if self.camera_pose is not None:
             _add("camera_pose", _pose(self.camera_pose).to_sdf())
-            
+
         if self.near is not None or self.far is not None:
             clip_el = ET.Element("camera_clip")
             if self.near is not None:

@@ -1,6 +1,8 @@
 from xml.etree import ElementTree as ET
+
 from .GzGui import GzGui
 from ...plugin import Plugin
+
 
 @Plugin.register("Teleop", "Teleop")
 class TeleopPlugin(Plugin):
@@ -25,7 +27,8 @@ class TeleopPlugin(Plugin):
         gui_kwargs = {}
         if gui_el is not None:
             gui = GzGui._from_sdf(gui_el, version)
-            for k in ["anchors", "anchor", "state", "z", "height", "width", "resizable", "show_title_bar", "delete_later", "title"]:
+            for k in ["anchors", "anchor", "state", "z", "height", "width", "resizable", "show_title_bar",
+                      "delete_later", "title"]:
                 if hasattr(gui, k) and getattr(gui, k) is not None:
                     gui_kwargs[k] = getattr(gui, k)
 
@@ -40,7 +43,7 @@ class TeleopPlugin(Plugin):
 
     def to_sdf(self, version: str | None = None) -> ET.Element:
         el = ET.Element("plugin", name=self.name, filename="Teleop")
-        
+
         def _add(k, v):
             if v is not None:
                 child = ET.Element(k)
@@ -49,11 +52,11 @@ class TeleopPlugin(Plugin):
                 else:
                     child.text = str(v)
                 el.append(child)
-                
+
         _add('topic', self.topic)
         if self.gz_gui is not None:
             el.append(self.gz_gui.to_sdf(version))
-            
+
         return el
 
     def to_version(self, target_version: str):

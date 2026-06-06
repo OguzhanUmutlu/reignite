@@ -1,4 +1,5 @@
 from xml.etree import ElementTree as ET
+
 from ...joint import Joint
 from ...plugin import Plugin
 
@@ -21,7 +22,8 @@ class JointStatePublisherPlugin(Plugin):
         self.joint_name = _get_names(joint_name)
         self.topic = topic
         self.update_rate = update_rate
-        super().__init__(sdf_version=None, filename="gz-sim-joint-state-publisher-system", name="gz::sim::systems::JointStatePublisher")
+        super().__init__(sdf_version=None, filename="gz-sim-joint-state-publisher-system",
+                         name="gz::sim::systems::JointStatePublisher")
 
     @classmethod
     def _from_sdf(cls, el: ET.Element, version: str):
@@ -33,12 +35,14 @@ class JointStatePublisherPlugin(Plugin):
         return cls(
             joint_name=joint_name_vals,
             topic=topic_el.text if topic_el is not None and topic_el.text is not None else None,
-            update_rate=float(update_rate_el.text) if update_rate_el is not None and update_rate_el.text is not None else None,
+            update_rate=float(
+                update_rate_el.text) if update_rate_el is not None and update_rate_el.text is not None else None,
         )
 
     def to_sdf(self, version: str | None = None) -> ET.Element:
-        el = ET.Element("plugin", name=self.name if hasattr(self, 'name') else "gz::sim::systems::JointStatePublisher", filename="gz-sim-joint-state-publisher-system")
-        
+        el = ET.Element("plugin", name=self.name if hasattr(self, 'name') else "gz::sim::systems::JointStatePublisher",
+                        filename="gz-sim-joint-state-publisher-system")
+
         def _add(k, v):
             if v is not None:
                 child = ET.Element(k)
@@ -47,13 +51,13 @@ class JointStatePublisherPlugin(Plugin):
                 else:
                     child.text = str(v)
                 el.append(child)
-                
+
         if self.joint_name is not None:
             for v in (self.joint_name if isinstance(self.joint_name, list) else [self.joint_name]):
                 _add('joint_name', v)
         _add('topic', self.topic)
         _add('update_rate', self.update_rate)
-            
+
         return el
 
     def to_version(self, target_version: str):
@@ -69,12 +73,14 @@ class JointStatePublisherPlugin(Plugin):
         return cls(
             joint_name=joint_name_vals,
             topic=topic_el.text if topic_el is not None and topic_el.text is not None else None,
-            update_rate=float(update_rate_el.text) if update_rate_el is not None and update_rate_el.text is not None else None,
+            update_rate=float(
+                update_rate_el.text) if update_rate_el is not None and update_rate_el.text is not None else None,
         )
 
     def to_sdf(self, version: str | None = None) -> ET.Element:
-        el = ET.Element("plugin", name=self.name if hasattr(self, 'name') else "gz::sim::systems::JointStatePublisher", filename="gz-sim-joint-state-publisher-system")
-        
+        el = ET.Element("plugin", name=self.name if hasattr(self, 'name') else "gz::sim::systems::JointStatePublisher",
+                        filename="gz-sim-joint-state-publisher-system")
+
         def _add(k, v):
             if v is not None:
                 child = ET.Element(k)
@@ -83,13 +89,13 @@ class JointStatePublisherPlugin(Plugin):
                 else:
                     child.text = str(v)
                 el.append(child)
-                
+
         if self.joint_name is not None:
             for v in (self.joint_name if isinstance(self.joint_name, list) else [self.joint_name]):
                 _add('joint_name', v)
         _add('topic', self.topic)
         _add('update_rate', self.update_rate)
-            
+
         return el
 
     def to_version(self, target_version: str):

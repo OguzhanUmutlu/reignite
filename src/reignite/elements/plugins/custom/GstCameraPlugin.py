@@ -1,5 +1,7 @@
 from xml.etree import ElementTree as ET
+
 from ...plugin import Plugin
+
 
 @Plugin.register("GstCameraPlugin", "GstCameraPlugin")
 class GstCameraPlugin(Plugin):
@@ -50,7 +52,7 @@ class GstCameraPlugin(Plugin):
 
     def to_sdf(self, version: str | None = None) -> ET.Element:
         el = super().to_sdf(version)
-        
+
         def _add(k, v):
             if v is not None:
                 child = ET.Element(k)
@@ -59,7 +61,7 @@ class GstCameraPlugin(Plugin):
                 else:
                     child.text = str(v)
                 el.append(child)
-                
+
         _add("udp_host", self.udp_host)
         _add("udp_port", self.udp_port)
         _add("rtmp_location", self.rtmp_location)
@@ -67,7 +69,7 @@ class GstCameraPlugin(Plugin):
         _add("use_cuda", self.use_cuda)
         _add("image_topic", self.image_topic)
         _add("enable_topic", self.enable_topic)
-            
+
         return el
 
     def to_version(self, target_version: str):

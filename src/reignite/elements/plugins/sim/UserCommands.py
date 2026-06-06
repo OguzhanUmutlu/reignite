@@ -1,4 +1,5 @@
 from xml.etree import ElementTree as ET
+
 from ...plugin import Plugin
 
 
@@ -9,7 +10,8 @@ class UserCommandsPlugin(Plugin):
             set_all_light_entities: bool | None = None,
     ):
         self.set_all_light_entities = set_all_light_entities
-        super().__init__(sdf_version=None, filename="gz-sim-user-commands-system", name="gz::sim::systems::UserCommands")
+        super().__init__(sdf_version=None, filename="gz-sim-user-commands-system",
+                         name="gz::sim::systems::UserCommands")
 
     @classmethod
     def _from_sdf(cls, el: ET.Element, version: str):
@@ -20,8 +22,9 @@ class UserCommandsPlugin(Plugin):
         )
 
     def to_sdf(self, version: str | None = None) -> ET.Element:
-        el = ET.Element("plugin", name=self.name if hasattr(self, 'name') else "gz::sim::systems::UserCommands", filename="gz-sim-user-commands-system")
-        
+        el = ET.Element("plugin", name=self.name if hasattr(self, 'name') else "gz::sim::systems::UserCommands",
+                        filename="gz-sim-user-commands-system")
+
         def _add(k, v):
             if v is not None:
                 child = ET.Element(k)
@@ -30,9 +33,9 @@ class UserCommandsPlugin(Plugin):
                 else:
                     child.text = str(v)
                 el.append(child)
-                
+
         _add('set_all_light_entities', self.set_all_light_entities)
-            
+
         return el
 
     def to_version(self, target_version: str):
@@ -47,8 +50,9 @@ class UserCommandsPlugin(Plugin):
         )
 
     def to_sdf(self, version: str | None = None) -> ET.Element:
-        el = ET.Element("plugin", name=self.name if hasattr(self, 'name') else "gz::sim::systems::UserCommands", filename="gz-sim-user-commands-system")
-        
+        el = ET.Element("plugin", name=self.name if hasattr(self, 'name') else "gz::sim::systems::UserCommands",
+                        filename="gz-sim-user-commands-system")
+
         def _add(k, v):
             if v is not None:
                 child = ET.Element(k)
@@ -57,9 +61,9 @@ class UserCommandsPlugin(Plugin):
                 else:
                     child.text = str(v)
                 el.append(child)
-                
+
         _add('set_all_light_entities', self.set_all_light_entities)
-            
+
         return el
 
     def to_version(self, target_version: str):

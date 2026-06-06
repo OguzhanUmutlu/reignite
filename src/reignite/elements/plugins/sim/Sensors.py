@@ -1,4 +1,5 @@
 from xml.etree import ElementTree as ET
+
 from reignite.elements.plugin import Plugin
 from reignite.utils.model import BaseModel
 
@@ -34,7 +35,7 @@ class SensorsPlugin(Plugin):
         @classmethod
         def _from_sdf(cls, el: ET.Element, version: str):
             type_attr = el.get("type", "vct")
-            
+
             en_el = el.find("enabled")
             res_el = el.find("resolution")
             oc_el = el.find("octant_count")
@@ -78,7 +79,7 @@ class SensorsPlugin(Plugin):
             e = ET.Element("global_illumination")
             if self.type is not None:
                 e.set("type", str(self.type))
-                
+
             def _add(k, v):
                 if v is not None:
                     child = ET.Element(k)
@@ -89,7 +90,7 @@ class SensorsPlugin(Plugin):
                     else:
                         child.text = str(v)
                     e.append(child)
-                    
+
             _add("enabled", self.enabled)
             _add("resolution", self.resolution)
             _add("octant_count", self.octant_count)
@@ -99,7 +100,7 @@ class SensorsPlugin(Plugin):
             _add("thin_wall_counter", self.thin_wall_counter)
             _add("conserve_memory", self.conserve_memory)
             _add("debug_vis_mode", self.debug_vis_mode)
-            
+
             return e
 
         def to_version(self, target_version: str):
@@ -163,7 +164,7 @@ class SensorsPlugin(Plugin):
 
     def to_sdf(self, version: str | None = None) -> ET.Element:
         el = ET.Element("plugin", name="gz::sim::systems::Sensors", filename="gz-sim-sensors-system")
-        
+
         def _add(k, v):
             if v is not None:
                 child = ET.Element(k)
@@ -174,7 +175,7 @@ class SensorsPlugin(Plugin):
                 else:
                     child.text = str(v)
                 el.append(child)
-                
+
         _add("render_engine", self.render_engine)
         _add("render_engine_api_backend", self.render_engine_api_backend)
         _add("disable_on_drained_battery", self.disable_on_drained_battery)
@@ -182,7 +183,7 @@ class SensorsPlugin(Plugin):
         _add("ambient_light", self.ambient_light)
         if self.global_illumination is not None:
             el.append(self.global_illumination.to_sdf(version))
-            
+
         return el
 
     def to_version(self, target_version: str):

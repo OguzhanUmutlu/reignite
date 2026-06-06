@@ -1,4 +1,5 @@
 from xml.etree import ElementTree as ET
+
 from reignite.elements.plugin import Plugin
 from reignite.utils.model import BaseModel
 
@@ -50,7 +51,8 @@ class LogicalAudioSensorPlugin(Plugin):
                     pose_val = pose_el.text
 
             return cls(
-                id=int(id_el.text) if id_el is not None and id_el.text is not None and id_el.text.isdigit() else (id_el.text if id_el is not None else None),
+                id=int(id_el.text) if id_el is not None and id_el.text is not None and id_el.text.isdigit() else (
+                    id_el.text if id_el is not None else None),
                 pose=pose_val,
                 attenuation_function=af_el.text if af_el is not None else None,
                 attenuation_shape=ash_el.text if ash_el is not None else None,
@@ -63,7 +65,7 @@ class LogicalAudioSensorPlugin(Plugin):
 
         def to_sdf(self, version: str | None = None) -> ET.Element:
             e = ET.Element("source")
-            
+
             def _add(k, v):
                 if v is not None:
                     child = ET.Element(k)
@@ -74,7 +76,7 @@ class LogicalAudioSensorPlugin(Plugin):
                     else:
                         child.text = str(v)
                     e.append(child)
-                    
+
             _add("id", self.id)
             _add("pose", self.pose)
             _add("attenuation_function", self.attenuation_function)
@@ -116,7 +118,8 @@ class LogicalAudioSensorPlugin(Plugin):
                     pose_val = pose_el.text
 
             return cls(
-                id=int(id_el.text) if id_el is not None and id_el.text is not None and id_el.text.isdigit() else (id_el.text if id_el is not None else None),
+                id=int(id_el.text) if id_el is not None and id_el.text is not None and id_el.text.isdigit() else (
+                    id_el.text if id_el is not None else None),
                 pose=pose_val,
                 volume_threshold=float(vt_el.text) if vt_el is not None and vt_el.text is not None else None
             )
@@ -146,7 +149,8 @@ class LogicalAudioSensorPlugin(Plugin):
             microphone: list[Microphone] | Microphone | None = None,
     ):
         self.source = [source] if isinstance(source, LogicalAudioSensorPlugin.Source) else (source or [])
-        self.microphone = [microphone] if isinstance(microphone, LogicalAudioSensorPlugin.Microphone) else (microphone or [])
+        self.microphone = [microphone] if isinstance(microphone, LogicalAudioSensorPlugin.Microphone) else (
+                    microphone or [])
 
         super().__init__(
             sdf_version=None,
@@ -165,7 +169,8 @@ class LogicalAudioSensorPlugin(Plugin):
         )
 
     def to_sdf(self, version: str | None = None) -> ET.Element:
-        el = ET.Element("plugin", name="gz::sim::systems::LogicalAudioSensorPlugin", filename="gz-sim-logical-audio-sensor-plugin-system")
+        el = ET.Element("plugin", name="gz::sim::systems::LogicalAudioSensorPlugin",
+                        filename="gz-sim-logical-audio-sensor-plugin-system")
         if self.source:
             for s in self.source:
                 el.append(s.to_sdf(version))

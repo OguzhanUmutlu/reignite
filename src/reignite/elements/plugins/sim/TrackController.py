@@ -1,4 +1,5 @@
 from xml.etree import ElementTree as ET
+
 from reignite.elements.plugin import Plugin
 
 
@@ -36,7 +37,8 @@ class TrackControllerPlugin(Plugin):
         self.min_jerk = min_jerk
         self.max_jerk = max_jerk
         self.debug = debug
-        super().__init__(sdf_version=None, filename="gz-sim-track-controller-system", name="gz::sim::systems::TrackController")
+        super().__init__(sdf_version=None, filename="gz-sim-track-controller-system",
+                         name="gz::sim::systems::TrackController")
 
     @classmethod
     def _from_sdf(cls, el: ET.Element, version: str):
@@ -46,7 +48,8 @@ class TrackControllerPlugin(Plugin):
         odometry_topic_el = el.find('odometry_topic')
         odometry_publish_frequency_el = el.find('odometry_publish_frequency')
         track_orientation_els = el.findall('track_orientation')
-        track_orientation_vals = [e.text for e in track_orientation_els if e.text is not None] if track_orientation_els else None
+        track_orientation_vals = [e.text for e in track_orientation_els if
+                                  e.text is not None] if track_orientation_els else None
         max_command_age_el = el.find('max_command_age')
         min_velocity_el = el.find('min_velocity')
         max_velocity_el = el.find('max_velocity')
@@ -61,21 +64,28 @@ class TrackControllerPlugin(Plugin):
             velocity_topic=velocity_topic_el.text if velocity_topic_el is not None and velocity_topic_el.text is not None else None,
             center_of_rotation_topic=center_of_rotation_topic_el.text if center_of_rotation_topic_el is not None and center_of_rotation_topic_el.text is not None else None,
             odometry_topic=odometry_topic_el.text if odometry_topic_el is not None and odometry_topic_el.text is not None else None,
-            odometry_publish_frequency=float(odometry_publish_frequency_el.text) if odometry_publish_frequency_el is not None and odometry_publish_frequency_el.text is not None else None,
+            odometry_publish_frequency=float(
+                odometry_publish_frequency_el.text) if odometry_publish_frequency_el is not None and odometry_publish_frequency_el.text is not None else None,
             track_orientation=track_orientation_vals,
-            max_command_age=float(max_command_age_el.text) if max_command_age_el is not None and max_command_age_el.text is not None else None,
-            min_velocity=float(min_velocity_el.text) if min_velocity_el is not None and min_velocity_el.text is not None else None,
-            max_velocity=float(max_velocity_el.text) if max_velocity_el is not None and max_velocity_el.text is not None else None,
-            min_acceleration=float(min_acceleration_el.text) if min_acceleration_el is not None and min_acceleration_el.text is not None else None,
-            max_acceleration=float(max_acceleration_el.text) if max_acceleration_el is not None and max_acceleration_el.text is not None else None,
+            max_command_age=float(
+                max_command_age_el.text) if max_command_age_el is not None and max_command_age_el.text is not None else None,
+            min_velocity=float(
+                min_velocity_el.text) if min_velocity_el is not None and min_velocity_el.text is not None else None,
+            max_velocity=float(
+                max_velocity_el.text) if max_velocity_el is not None and max_velocity_el.text is not None else None,
+            min_acceleration=float(
+                min_acceleration_el.text) if min_acceleration_el is not None and min_acceleration_el.text is not None else None,
+            max_acceleration=float(
+                max_acceleration_el.text) if max_acceleration_el is not None and max_acceleration_el.text is not None else None,
             min_jerk=float(min_jerk_el.text) if min_jerk_el is not None and min_jerk_el.text is not None else None,
             max_jerk=float(max_jerk_el.text) if max_jerk_el is not None and max_jerk_el.text is not None else None,
             debug=debug_el.text.lower() == 'true' if debug_el is not None and debug_el.text is not None else None,
         )
 
     def to_sdf(self, version: str | None = None) -> ET.Element:
-        el = ET.Element("plugin", name=self.name if hasattr(self, 'name') else "gz::sim::systems::TrackController", filename="gz-sim-track-controller-system")
-        
+        el = ET.Element("plugin", name=self.name if hasattr(self, 'name') else "gz::sim::systems::TrackController",
+                        filename="gz-sim-track-controller-system")
+
         def _add(k, v):
             if v is not None:
                 child = ET.Element(k)
@@ -84,7 +94,7 @@ class TrackControllerPlugin(Plugin):
                 else:
                     child.text = str(v)
                 el.append(child)
-                
+
         _add('link', self.link)
         _add('velocity_topic', self.velocity_topic)
         _add('center_of_rotation_topic', self.center_of_rotation_topic)
@@ -101,7 +111,7 @@ class TrackControllerPlugin(Plugin):
         _add('min_jerk', self.min_jerk)
         _add('max_jerk', self.max_jerk)
         _add('debug', self.debug)
-            
+
         return el
 
     def to_version(self, target_version: str):
@@ -115,7 +125,8 @@ class TrackControllerPlugin(Plugin):
         odometry_topic_el = el.find('odometry_topic')
         odometry_publish_frequency_el = el.find('odometry_publish_frequency')
         track_orientation_els = el.findall('track_orientation')
-        track_orientation_vals = [e.text for e in track_orientation_els if e.text is not None] if track_orientation_els else None
+        track_orientation_vals = [e.text for e in track_orientation_els if
+                                  e.text is not None] if track_orientation_els else None
         max_command_age_el = el.find('max_command_age')
         min_velocity_el = el.find('min_velocity')
         max_velocity_el = el.find('max_velocity')
@@ -130,21 +141,28 @@ class TrackControllerPlugin(Plugin):
             velocity_topic=velocity_topic_el.text if velocity_topic_el is not None and velocity_topic_el.text is not None else None,
             center_of_rotation_topic=center_of_rotation_topic_el.text if center_of_rotation_topic_el is not None and center_of_rotation_topic_el.text is not None else None,
             odometry_topic=odometry_topic_el.text if odometry_topic_el is not None and odometry_topic_el.text is not None else None,
-            odometry_publish_frequency=float(odometry_publish_frequency_el.text) if odometry_publish_frequency_el is not None and odometry_publish_frequency_el.text is not None else None,
+            odometry_publish_frequency=float(
+                odometry_publish_frequency_el.text) if odometry_publish_frequency_el is not None and odometry_publish_frequency_el.text is not None else None,
             track_orientation=track_orientation_vals,
-            max_command_age=float(max_command_age_el.text) if max_command_age_el is not None and max_command_age_el.text is not None else None,
-            min_velocity=float(min_velocity_el.text) if min_velocity_el is not None and min_velocity_el.text is not None else None,
-            max_velocity=float(max_velocity_el.text) if max_velocity_el is not None and max_velocity_el.text is not None else None,
-            min_acceleration=float(min_acceleration_el.text) if min_acceleration_el is not None and min_acceleration_el.text is not None else None,
-            max_acceleration=float(max_acceleration_el.text) if max_acceleration_el is not None and max_acceleration_el.text is not None else None,
+            max_command_age=float(
+                max_command_age_el.text) if max_command_age_el is not None and max_command_age_el.text is not None else None,
+            min_velocity=float(
+                min_velocity_el.text) if min_velocity_el is not None and min_velocity_el.text is not None else None,
+            max_velocity=float(
+                max_velocity_el.text) if max_velocity_el is not None and max_velocity_el.text is not None else None,
+            min_acceleration=float(
+                min_acceleration_el.text) if min_acceleration_el is not None and min_acceleration_el.text is not None else None,
+            max_acceleration=float(
+                max_acceleration_el.text) if max_acceleration_el is not None and max_acceleration_el.text is not None else None,
             min_jerk=float(min_jerk_el.text) if min_jerk_el is not None and min_jerk_el.text is not None else None,
             max_jerk=float(max_jerk_el.text) if max_jerk_el is not None and max_jerk_el.text is not None else None,
             debug=debug_el.text.lower() == 'true' if debug_el is not None and debug_el.text is not None else None,
         )
 
     def to_sdf(self, version: str | None = None) -> ET.Element:
-        el = ET.Element("plugin", name=self.name if hasattr(self, 'name') else "gz::sim::systems::TrackController", filename="gz-sim-track-controller-system")
-        
+        el = ET.Element("plugin", name=self.name if hasattr(self, 'name') else "gz::sim::systems::TrackController",
+                        filename="gz-sim-track-controller-system")
+
         def _add(k, v):
             if v is not None:
                 child = ET.Element(k)
@@ -153,7 +171,7 @@ class TrackControllerPlugin(Plugin):
                 else:
                     child.text = str(v)
                 el.append(child)
-                
+
         _add('link', self.link)
         _add('velocity_topic', self.velocity_topic)
         _add('center_of_rotation_topic', self.center_of_rotation_topic)
@@ -170,7 +188,7 @@ class TrackControllerPlugin(Plugin):
         _add('min_jerk', self.min_jerk)
         _add('max_jerk', self.max_jerk)
         _add('debug', self.debug)
-            
+
         return el
 
     def to_version(self, target_version: str):

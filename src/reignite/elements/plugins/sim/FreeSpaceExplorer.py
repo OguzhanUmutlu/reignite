@@ -1,4 +1,5 @@
 from xml.etree import ElementTree as ET
+
 from ...plugin import Plugin
 
 
@@ -21,7 +22,8 @@ class FreeSpaceExplorerPlugin(Plugin):
         self.width = width
         self.height = height
         self.resolution = resolution
-        super().__init__(sdf_version=None, filename="gz-sim-free-space-explorer-system", name="gz::sim::systems::FreeSpaceExplorer")
+        super().__init__(sdf_version=None, filename="gz-sim-free-space-explorer-system",
+                         name="gz::sim::systems::FreeSpaceExplorer")
 
     @classmethod
     def _from_sdf(cls, el: ET.Element, version: str):
@@ -40,12 +42,14 @@ class FreeSpaceExplorerPlugin(Plugin):
             sensor_link=sensor_link_el.text if sensor_link_el is not None and sensor_link_el.text is not None else None,
             width=int(width_el.text) if width_el is not None and width_el.text is not None else None,
             height=int(height_el.text) if height_el is not None and height_el.text is not None else None,
-            resolution=float(resolution_el.text) if resolution_el is not None and resolution_el.text is not None else None,
+            resolution=float(
+                resolution_el.text) if resolution_el is not None and resolution_el.text is not None else None,
         )
 
     def to_sdf(self, version: str | None = None) -> ET.Element:
-        el = ET.Element("plugin", name=self.name if hasattr(self, 'name') else "gz::sim::systems::FreeSpaceExplorer", filename="gz-sim-free-space-explorer-system")
-        
+        el = ET.Element("plugin", name=self.name if hasattr(self, 'name') else "gz::sim::systems::FreeSpaceExplorer",
+                        filename="gz-sim-free-space-explorer-system")
+
         def _add(k, v):
             if v is not None:
                 child = ET.Element(k)
@@ -54,7 +58,7 @@ class FreeSpaceExplorerPlugin(Plugin):
                 else:
                     child.text = str(v)
                 el.append(child)
-                
+
         _add('lidar_topic', self.lidar_topic)
         _add('image_topic', self.image_topic)
         _add('start_topic', self.start_topic)
@@ -62,7 +66,7 @@ class FreeSpaceExplorerPlugin(Plugin):
         _add('width', self.width)
         _add('height', self.height)
         _add('resolution', self.resolution)
-            
+
         return el
 
     def to_version(self, target_version: str):
@@ -85,12 +89,14 @@ class FreeSpaceExplorerPlugin(Plugin):
             sensor_link=sensor_link_el.text if sensor_link_el is not None and sensor_link_el.text is not None else None,
             width=int(width_el.text) if width_el is not None and width_el.text is not None else None,
             height=int(height_el.text) if height_el is not None and height_el.text is not None else None,
-            resolution=float(resolution_el.text) if resolution_el is not None and resolution_el.text is not None else None,
+            resolution=float(
+                resolution_el.text) if resolution_el is not None and resolution_el.text is not None else None,
         )
 
     def to_sdf(self, version: str | None = None) -> ET.Element:
-        el = ET.Element("plugin", name=self.name if hasattr(self, 'name') else "gz::sim::systems::FreeSpaceExplorer", filename="gz-sim-free-space-explorer-system")
-        
+        el = ET.Element("plugin", name=self.name if hasattr(self, 'name') else "gz::sim::systems::FreeSpaceExplorer",
+                        filename="gz-sim-free-space-explorer-system")
+
         def _add(k, v):
             if v is not None:
                 child = ET.Element(k)
@@ -99,7 +105,7 @@ class FreeSpaceExplorerPlugin(Plugin):
                 else:
                     child.text = str(v)
                 el.append(child)
-                
+
         _add('lidar_topic', self.lidar_topic)
         _add('image_topic', self.image_topic)
         _add('start_topic', self.start_topic)
@@ -107,7 +113,7 @@ class FreeSpaceExplorerPlugin(Plugin):
         _add('width', self.width)
         _add('height', self.height)
         _add('resolution', self.resolution)
-            
+
         return el
 
     def to_version(self, target_version: str):

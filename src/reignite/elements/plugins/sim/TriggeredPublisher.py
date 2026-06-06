@@ -1,4 +1,5 @@
 from xml.etree import ElementTree as ET
+
 from reignite.elements.plugin import Plugin
 from reignite.utils.model import BaseModel
 
@@ -61,7 +62,8 @@ class TriggeredPublisherPlugin(Plugin):
             return self
 
     class Input(BaseModel):
-        def __init__(self, type: str | None = None, topic: str | None = None, matches: list["TriggeredPublisherPlugin.Match"] | None = None):
+        def __init__(self, type: str | None = None, topic: str | None = None,
+                     matches: list["TriggeredPublisherPlugin.Match"] | None = None):
             super().__init__(sdf_version=None)
             self.type = type
             self.topic = topic
@@ -125,7 +127,8 @@ class TriggeredPublisherPlugin(Plugin):
             return self
 
     class Service(BaseModel):
-        def __init__(self, name: str | None = None, reqType: str | None = None, repType: str | None = None, reqMsg: str | None = None, timeout: int | None = None):
+        def __init__(self, name: str | None = None, reqType: str | None = None, repType: str | None = None,
+                     reqMsg: str | None = None, timeout: int | None = None):
             super().__init__(sdf_version=None)
             self.name = name
             self.reqType = reqType
@@ -198,7 +201,8 @@ class TriggeredPublisherPlugin(Plugin):
         )
 
     def to_sdf(self, version: str | None = None) -> ET.Element:
-        el = ET.Element("plugin", name="gz::sim::systems::TriggeredPublisher", filename="gz-sim-triggered-publisher-system")
+        el = ET.Element("plugin", name="gz::sim::systems::TriggeredPublisher",
+                        filename="gz-sim-triggered-publisher-system")
         if self.input is not None:
             el.append(self.input.to_sdf(version))
         for o in self.outputs:

@@ -1,4 +1,5 @@
 from xml.etree import ElementTree as ET
+
 from reignite.elements.plugin import Plugin
 
 
@@ -73,28 +74,36 @@ class ThrusterPlugin(Plugin):
         return cls(
             joint_name=joint_name_el.text if joint_name_el is not None and joint_name_el.text is not None else None,
             namespace=namespace_el.text if namespace_el is not None and namespace_el.text is not None else None,
-            thrust_coefficient=float(thrust_coefficient_el.text) if thrust_coefficient_el is not None and thrust_coefficient_el.text is not None else None,
-            propeller_diameter=float(propeller_diameter_el.text) if propeller_diameter_el is not None and propeller_diameter_el.text is not None else None,
-            fluid_density=float(fluid_density_el.text) if fluid_density_el is not None and fluid_density_el.text is not None else None,
+            thrust_coefficient=float(
+                thrust_coefficient_el.text) if thrust_coefficient_el is not None and thrust_coefficient_el.text is not None else None,
+            propeller_diameter=float(
+                propeller_diameter_el.text) if propeller_diameter_el is not None and propeller_diameter_el.text is not None else None,
+            fluid_density=float(
+                fluid_density_el.text) if fluid_density_el is not None and fluid_density_el.text is not None else None,
             use_angvel_cmd=use_angvel_cmd_el.text.lower() == 'true' if use_angvel_cmd_el is not None and use_angvel_cmd_el.text is not None else None,
-            wake_fraction=float(wake_fraction_el.text) if wake_fraction_el is not None and wake_fraction_el.text is not None else None,
+            wake_fraction=float(
+                wake_fraction_el.text) if wake_fraction_el is not None and wake_fraction_el.text is not None else None,
             alpha_1=float(alpha_1_el.text) if alpha_1_el is not None and alpha_1_el.text is not None else None,
             alpha_2=float(alpha_2_el.text) if alpha_2_el is not None and alpha_2_el.text is not None else None,
             deadband=float(deadband_el.text) if deadband_el is not None and deadband_el.text is not None else None,
             topic=topic_el.text if topic_el is not None and topic_el.text is not None else None,
-            max_thrust_cmd=float(max_thrust_cmd_el.text) if max_thrust_cmd_el is not None and max_thrust_cmd_el.text is not None else None,
-            min_thrust_cmd=float(min_thrust_cmd_el.text) if min_thrust_cmd_el is not None and min_thrust_cmd_el.text is not None else None,
+            max_thrust_cmd=float(
+                max_thrust_cmd_el.text) if max_thrust_cmd_el is not None and max_thrust_cmd_el.text is not None else None,
+            min_thrust_cmd=float(
+                min_thrust_cmd_el.text) if min_thrust_cmd_el is not None and min_thrust_cmd_el.text is not None else None,
             velocity_control=velocity_control_el.text.lower() == 'true' if velocity_control_el is not None and velocity_control_el.text is not None else None,
             p_gain=float(p_gain_el.text) if p_gain_el is not None and p_gain_el.text is not None else None,
             i_gain=float(i_gain_el.text) if i_gain_el is not None and i_gain_el.text is not None else None,
             d_gain=float(d_gain_el.text) if d_gain_el is not None and d_gain_el.text is not None else None,
-            power_load=float(power_load_el.text) if power_load_el is not None and power_load_el.text is not None else None,
+            power_load=float(
+                power_load_el.text) if power_load_el is not None and power_load_el.text is not None else None,
             battery_name=battery_name_el.text if battery_name_el is not None and battery_name_el.text is not None else None,
         )
 
     def to_sdf(self, version: str | None = None) -> ET.Element:
-        el = ET.Element("plugin", name=self.name if hasattr(self, 'name') else "gz::sim::systems::Thruster", filename="gz-sim-thruster-system")
-        
+        el = ET.Element("plugin", name=self.name if hasattr(self, 'name') else "gz::sim::systems::Thruster",
+                        filename="gz-sim-thruster-system")
+
         def _add(k, v):
             if v is not None:
                 child = ET.Element(k)
@@ -103,7 +112,7 @@ class ThrusterPlugin(Plugin):
                 else:
                     child.text = str(v)
                 el.append(child)
-                
+
         _add('joint_name', self.joint_name)
         _add('namespace', self.namespace)
         _add('thrust_coefficient', self.thrust_coefficient)
@@ -123,7 +132,7 @@ class ThrusterPlugin(Plugin):
         _add('d_gain', self.d_gain)
         _add('power_load', self.power_load)
         _add('battery_name', self.battery_name)
-            
+
         return el
 
     def to_version(self, target_version: str):
@@ -154,28 +163,36 @@ class ThrusterPlugin(Plugin):
         return cls(
             joint_name=joint_name_el.text if joint_name_el is not None and joint_name_el.text is not None else None,
             namespace=namespace_el.text if namespace_el is not None and namespace_el.text is not None else None,
-            thrust_coefficient=float(thrust_coefficient_el.text) if thrust_coefficient_el is not None and thrust_coefficient_el.text is not None else None,
-            propeller_diameter=float(propeller_diameter_el.text) if propeller_diameter_el is not None and propeller_diameter_el.text is not None else None,
-            fluid_density=float(fluid_density_el.text) if fluid_density_el is not None and fluid_density_el.text is not None else None,
+            thrust_coefficient=float(
+                thrust_coefficient_el.text) if thrust_coefficient_el is not None and thrust_coefficient_el.text is not None else None,
+            propeller_diameter=float(
+                propeller_diameter_el.text) if propeller_diameter_el is not None and propeller_diameter_el.text is not None else None,
+            fluid_density=float(
+                fluid_density_el.text) if fluid_density_el is not None and fluid_density_el.text is not None else None,
             use_angvel_cmd=use_angvel_cmd_el.text.lower() == 'true' if use_angvel_cmd_el is not None and use_angvel_cmd_el.text is not None else None,
-            wake_fraction=float(wake_fraction_el.text) if wake_fraction_el is not None and wake_fraction_el.text is not None else None,
+            wake_fraction=float(
+                wake_fraction_el.text) if wake_fraction_el is not None and wake_fraction_el.text is not None else None,
             alpha_1=float(alpha_1_el.text) if alpha_1_el is not None and alpha_1_el.text is not None else None,
             alpha_2=float(alpha_2_el.text) if alpha_2_el is not None and alpha_2_el.text is not None else None,
             deadband=float(deadband_el.text) if deadband_el is not None and deadband_el.text is not None else None,
             topic=topic_el.text if topic_el is not None and topic_el.text is not None else None,
-            max_thrust_cmd=float(max_thrust_cmd_el.text) if max_thrust_cmd_el is not None and max_thrust_cmd_el.text is not None else None,
-            min_thrust_cmd=float(min_thrust_cmd_el.text) if min_thrust_cmd_el is not None and min_thrust_cmd_el.text is not None else None,
+            max_thrust_cmd=float(
+                max_thrust_cmd_el.text) if max_thrust_cmd_el is not None and max_thrust_cmd_el.text is not None else None,
+            min_thrust_cmd=float(
+                min_thrust_cmd_el.text) if min_thrust_cmd_el is not None and min_thrust_cmd_el.text is not None else None,
             velocity_control=velocity_control_el.text.lower() == 'true' if velocity_control_el is not None and velocity_control_el.text is not None else None,
             p_gain=float(p_gain_el.text) if p_gain_el is not None and p_gain_el.text is not None else None,
             i_gain=float(i_gain_el.text) if i_gain_el is not None and i_gain_el.text is not None else None,
             d_gain=float(d_gain_el.text) if d_gain_el is not None and d_gain_el.text is not None else None,
-            power_load=float(power_load_el.text) if power_load_el is not None and power_load_el.text is not None else None,
+            power_load=float(
+                power_load_el.text) if power_load_el is not None and power_load_el.text is not None else None,
             battery_name=battery_name_el.text if battery_name_el is not None and battery_name_el.text is not None else None,
         )
 
     def to_sdf(self, version: str | None = None) -> ET.Element:
-        el = ET.Element("plugin", name=self.name if hasattr(self, 'name') else "gz::sim::systems::Thruster", filename="gz-sim-thruster-system")
-        
+        el = ET.Element("plugin", name=self.name if hasattr(self, 'name') else "gz::sim::systems::Thruster",
+                        filename="gz-sim-thruster-system")
+
         def _add(k, v):
             if v is not None:
                 child = ET.Element(k)
@@ -184,7 +201,7 @@ class ThrusterPlugin(Plugin):
                 else:
                     child.text = str(v)
                 el.append(child)
-                
+
         _add('joint_name', self.joint_name)
         _add('namespace', self.namespace)
         _add('thrust_coefficient', self.thrust_coefficient)
@@ -204,7 +221,7 @@ class ThrusterPlugin(Plugin):
         _add('d_gain', self.d_gain)
         _add('power_load', self.power_load)
         _add('battery_name', self.battery_name)
-            
+
         return el
 
     def to_version(self, target_version: str):

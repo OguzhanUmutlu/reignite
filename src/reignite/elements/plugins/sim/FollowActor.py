@@ -1,4 +1,5 @@
 from xml.etree import ElementTree as ET
+
 from ...plugin import Plugin
 
 
@@ -42,15 +43,19 @@ class FollowActorPlugin(Plugin):
         return cls(
             target=target_el.text if target_el is not None and target_el.text is not None else None,
             velocity=float(velocity_el.text) if velocity_el is not None and velocity_el.text is not None else None,
-            min_distance=float(min_distance_el.text) if min_distance_el is not None and min_distance_el.text is not None else None,
-            max_distance=float(max_distance_el.text) if max_distance_el is not None and max_distance_el.text is not None else None,
-            animation_x_vel=float(animation_x_vel_el.text) if animation_x_vel_el is not None and animation_x_vel_el.text is not None else None,
+            min_distance=float(
+                min_distance_el.text) if min_distance_el is not None and min_distance_el.text is not None else None,
+            max_distance=float(
+                max_distance_el.text) if max_distance_el is not None and max_distance_el.text is not None else None,
+            animation_x_vel=float(
+                animation_x_vel_el.text) if animation_x_vel_el is not None and animation_x_vel_el.text is not None else None,
             animation=animation_el.text if animation_el is not None and animation_el.text is not None else None,
         )
 
     def to_sdf(self, version: str | None = None) -> ET.Element:
-        el = ET.Element("plugin", name=self.name if hasattr(self, 'name') else "gz::sim::systems::FollowActor", filename="gz-sim-follow-actor-system")
-        
+        el = ET.Element("plugin", name=self.name if hasattr(self, 'name') else "gz::sim::systems::FollowActor",
+                        filename="gz-sim-follow-actor-system")
+
         def _add(k, v):
             if v is not None:
                 child = ET.Element(k)
@@ -59,14 +64,14 @@ class FollowActorPlugin(Plugin):
                 else:
                     child.text = str(v)
                 el.append(child)
-                
+
         _add('target', self.target)
         _add('velocity', self.velocity)
         _add('min_distance', self.min_distance)
         _add('max_distance', self.max_distance)
         _add('animation_x_vel', self.animation_x_vel)
         _add('animation', self.animation)
-            
+
         return el
 
     def to_version(self, target_version: str):
@@ -84,15 +89,19 @@ class FollowActorPlugin(Plugin):
         return cls(
             target=target_el.text if target_el is not None and target_el.text is not None else None,
             velocity=float(velocity_el.text) if velocity_el is not None and velocity_el.text is not None else None,
-            min_distance=float(min_distance_el.text) if min_distance_el is not None and min_distance_el.text is not None else None,
-            max_distance=float(max_distance_el.text) if max_distance_el is not None and max_distance_el.text is not None else None,
-            animation_x_vel=float(animation_x_vel_el.text) if animation_x_vel_el is not None and animation_x_vel_el.text is not None else None,
+            min_distance=float(
+                min_distance_el.text) if min_distance_el is not None and min_distance_el.text is not None else None,
+            max_distance=float(
+                max_distance_el.text) if max_distance_el is not None and max_distance_el.text is not None else None,
+            animation_x_vel=float(
+                animation_x_vel_el.text) if animation_x_vel_el is not None and animation_x_vel_el.text is not None else None,
             animation=animation_el.text if animation_el is not None and animation_el.text is not None else None,
         )
 
     def to_sdf(self, version: str | None = None) -> ET.Element:
-        el = ET.Element("plugin", name=self.name if hasattr(self, 'name') else "gz::sim::systems::FollowActor", filename="gz-sim-follow-actor-system")
-        
+        el = ET.Element("plugin", name=self.name if hasattr(self, 'name') else "gz::sim::systems::FollowActor",
+                        filename="gz-sim-follow-actor-system")
+
         def _add(k, v):
             if v is not None:
                 child = ET.Element(k)
@@ -101,14 +110,14 @@ class FollowActorPlugin(Plugin):
                 else:
                     child.text = str(v)
                 el.append(child)
-                
+
         _add('target', self.target)
         _add('velocity', self.velocity)
         _add('min_distance', self.min_distance)
         _add('max_distance', self.max_distance)
         _add('animation_x_vel', self.animation_x_vel)
         _add('animation', self.animation)
-            
+
         return el
 
     def to_version(self, target_version: str):

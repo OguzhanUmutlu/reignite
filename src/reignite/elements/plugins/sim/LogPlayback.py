@@ -1,4 +1,5 @@
 from xml.etree import ElementTree as ET
+
 from ...plugin import Plugin
 
 
@@ -20,8 +21,9 @@ class LogPlaybackPlugin(Plugin):
         )
 
     def to_sdf(self, version: str | None = None) -> ET.Element:
-        el = ET.Element("plugin", name=self.name if hasattr(self, 'name') else "gz::sim::systems::LogPlayback", filename="gz-sim-log-playback-system")
-        
+        el = ET.Element("plugin", name=self.name if hasattr(self, 'name') else "gz::sim::systems::LogPlayback",
+                        filename="gz-sim-log-playback-system")
+
         def _add(k, v):
             if v is not None:
                 child = ET.Element(k)
@@ -30,9 +32,9 @@ class LogPlaybackPlugin(Plugin):
                 else:
                     child.text = str(v)
                 el.append(child)
-                
+
         _add('playback_path', self.playback_path)
-            
+
         return el
 
     def to_version(self, target_version: str):
@@ -47,8 +49,9 @@ class LogPlaybackPlugin(Plugin):
         )
 
     def to_sdf(self, version: str | None = None) -> ET.Element:
-        el = ET.Element("plugin", name=self.name if hasattr(self, 'name') else "gz::sim::systems::LogPlayback", filename="gz-sim-log-playback-system")
-        
+        el = ET.Element("plugin", name=self.name if hasattr(self, 'name') else "gz::sim::systems::LogPlayback",
+                        filename="gz-sim-log-playback-system")
+
         def _add(k, v):
             if v is not None:
                 child = ET.Element(k)
@@ -57,9 +60,9 @@ class LogPlaybackPlugin(Plugin):
                 else:
                     child.text = str(v)
                 el.append(child)
-                
+
         _add('playback_path', self.playback_path)
-            
+
         return el
 
     def to_version(self, target_version: str):

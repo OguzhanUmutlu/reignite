@@ -1,6 +1,8 @@
 from xml.etree import ElementTree as ET
+
 from .GzGui import GzGui
 from ...plugin import Plugin
+
 
 @Plugin.register("WorldStats", "World stats")
 class WorldStatsPlugin(Plugin):
@@ -10,7 +12,7 @@ class WorldStatsPlugin(Plugin):
                  real_time_factor: bool | None = True,
                  iterations: bool | None = True,
                  topic: str | None = None,
-                 name: str = "World stats", 
+                 name: str = "World stats",
                  **gui_kwargs
                  ):
         self.sim_time = sim_time
@@ -21,8 +23,8 @@ class WorldStatsPlugin(Plugin):
         self.name = name
 
         gui_params = {
-            "title": "World stats", "show_title_bar": False, "resizable": False, 
-            "height": 110.0, "width": 290.0, "z": 1.0, "state": "floating", 
+            "title": "World stats", "show_title_bar": False, "resizable": False,
+            "height": 110.0, "width": 290.0, "z": 1.0, "state": "floating",
             "anchor": "3D View", "anchors": [
                 GzGui.Anchor("right", "right"),
                 GzGui.Anchor("bottom", "bottom")
@@ -30,7 +32,7 @@ class WorldStatsPlugin(Plugin):
         }
         gui_params.update(gui_kwargs)
         self.gz_gui = GzGui(**gui_params)
-        
+
         super().__init__(
             sdf_version=None,
             filename="WorldStats",
@@ -43,7 +45,8 @@ class WorldStatsPlugin(Plugin):
         gui_kwargs = {}
         if gui_el is not None:
             gui = GzGui._from_sdf(gui_el, version)
-            for k in ["anchors", "anchor", "state", "z", "height", "width", "resizable", "show_title_bar", "delete_later", "title"]:
+            for k in ["anchors", "anchor", "state", "z", "height", "width", "resizable", "show_title_bar",
+                      "delete_later", "title"]:
                 if hasattr(gui, k) and getattr(gui, k) is not None:
                     gui_kwargs[k] = getattr(gui, k)
 
@@ -66,10 +69,10 @@ class WorldStatsPlugin(Plugin):
 
     def to_sdf(self, version: str | None = None) -> ET.Element:
         el = ET.Element("plugin", name=self.name, filename="WorldStats")
-        
+
         if self.gz_gui is not None:
             el.append(self.gz_gui.to_sdf(version))
-            
+
         def _add(k, v):
             if v is not None:
                 child = ET.Element(k)
@@ -78,7 +81,7 @@ class WorldStatsPlugin(Plugin):
                 else:
                     child.text = str(v)
                 el.append(child)
-                
+
         _add("sim_time", self.sim_time)
         _add("real_time", self.real_time)
         _add("real_time_factor", self.real_time_factor)

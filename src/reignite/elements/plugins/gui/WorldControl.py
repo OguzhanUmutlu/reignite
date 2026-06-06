@@ -1,6 +1,8 @@
 from xml.etree import ElementTree as ET
+
 from .GzGui import GzGui
 from ...plugin import Plugin
+
 
 @Plugin.register("WorldControl", "World control")
 class WorldControlPlugin(Plugin):
@@ -10,7 +12,7 @@ class WorldControlPlugin(Plugin):
                  start_paused: bool | None = False,
                  use_event: bool | None = True,
                  stats_topic: str | None = None,
-                 name: str = "World control", 
+                 name: str = "World control",
                  **gui_kwargs
                  ):
         self.play_pause = play_pause
@@ -29,7 +31,7 @@ class WorldControlPlugin(Plugin):
         }
         gui_params.update(gui_kwargs)
         self.gz_gui = GzGui(**gui_params)
-        
+
         super().__init__(
             sdf_version=None,
             filename="WorldControl",
@@ -42,7 +44,8 @@ class WorldControlPlugin(Plugin):
         gui_kwargs = {}
         if gui_el is not None:
             gui = GzGui._from_sdf(gui_el, version)
-            for k in ["anchors", "anchor", "state", "z", "height", "width", "resizable", "show_title_bar", "delete_later", "title"]:
+            for k in ["anchors", "anchor", "state", "z", "height", "width", "resizable", "show_title_bar",
+                      "delete_later", "title"]:
                 if hasattr(gui, k) and getattr(gui, k) is not None:
                     gui_kwargs[k] = getattr(gui, k)
 
@@ -65,10 +68,10 @@ class WorldControlPlugin(Plugin):
 
     def to_sdf(self, version: str | None = None) -> ET.Element:
         el = ET.Element("plugin", name=self.name, filename="WorldControl")
-        
+
         if self.gz_gui is not None:
             el.append(self.gz_gui.to_sdf(version))
-            
+
         def _add(k, v):
             if v is not None:
                 child = ET.Element(k)
@@ -77,7 +80,7 @@ class WorldControlPlugin(Plugin):
                 else:
                     child.text = str(v)
                 el.append(child)
-                
+
         _add("play_pause", self.play_pause)
         _add("step", self.step)
         _add("start_paused", self.start_paused)

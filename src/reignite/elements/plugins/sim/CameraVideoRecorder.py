@@ -1,4 +1,5 @@
 from xml.etree import ElementTree as ET
+
 from ...plugin import Plugin
 
 
@@ -15,7 +16,8 @@ class CameraVideoRecorderPlugin(Plugin):
         self.use_sim_time = use_sim_time
         self.bitrate = bitrate
         self.fps = fps
-        super().__init__(sdf_version=None, filename="gz-sim-camera-video-recorder-system", name="gz::sim::systems::CameraVideoRecorder")
+        super().__init__(sdf_version=None, filename="gz-sim-camera-video-recorder-system",
+                         name="gz::sim::systems::CameraVideoRecorder")
 
     @classmethod
     def _from_sdf(cls, el: ET.Element, version: str):
@@ -32,8 +34,9 @@ class CameraVideoRecorderPlugin(Plugin):
         )
 
     def to_sdf(self, version: str | None = None) -> ET.Element:
-        el = ET.Element("plugin", name=self.name if hasattr(self, 'name') else "gz::sim::systems::CameraVideoRecorder", filename="gz-sim-camera-video-recorder-system")
-        
+        el = ET.Element("plugin", name=self.name if hasattr(self, 'name') else "gz::sim::systems::CameraVideoRecorder",
+                        filename="gz-sim-camera-video-recorder-system")
+
         def _add(k, v):
             if v is not None:
                 child = ET.Element(k)
@@ -42,12 +45,12 @@ class CameraVideoRecorderPlugin(Plugin):
                 else:
                     child.text = str(v)
                 el.append(child)
-                
+
         _add('service', self.service)
         _add('use_sim_time', self.use_sim_time)
         _add('bitrate', self.bitrate)
         _add('fps', self.fps)
-            
+
         return el
 
     def to_version(self, target_version: str):
@@ -68,8 +71,9 @@ class CameraVideoRecorderPlugin(Plugin):
         )
 
     def to_sdf(self, version: str | None = None) -> ET.Element:
-        el = ET.Element("plugin", name=self.name if hasattr(self, 'name') else "gz::sim::systems::CameraVideoRecorder", filename="gz-sim-camera-video-recorder-system")
-        
+        el = ET.Element("plugin", name=self.name if hasattr(self, 'name') else "gz::sim::systems::CameraVideoRecorder",
+                        filename="gz-sim-camera-video-recorder-system")
+
         def _add(k, v):
             if v is not None:
                 child = ET.Element(k)
@@ -78,12 +82,12 @@ class CameraVideoRecorderPlugin(Plugin):
                 else:
                     child.text = str(v)
                 el.append(child)
-                
+
         _add('service', self.service)
         _add('use_sim_time', self.use_sim_time)
         _add('bitrate', self.bitrate)
         _add('fps', self.fps)
-            
+
         return el
 
     def to_version(self, target_version: str):

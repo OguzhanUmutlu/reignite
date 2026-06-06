@@ -1,4 +1,5 @@
 from xml.etree import ElementTree as ET
+
 from reignite.elements.plugin import Plugin
 from reignite.utils.model import BaseModel
 
@@ -16,7 +17,8 @@ class BuoyancyPlugin(Plugin):
             above_depth_el = el.find("above_depth")
             density_el = el.find("density")
             return cls(
-                above_depth=float(above_depth_el.text) if above_depth_el is not None and above_depth_el.text is not None else None,
+                above_depth=float(
+                    above_depth_el.text) if above_depth_el is not None and above_depth_el.text is not None else None,
                 density=float(density_el.text) if density_el is not None and density_el.text is not None else None
             )
 
@@ -48,7 +50,8 @@ class BuoyancyPlugin(Plugin):
             dc_els = el.findall("density_change")
             return cls(
                 default_density=float(dd_el.text) if dd_el is not None and dd_el.text is not None else None,
-                density_changes=[BuoyancyPlugin.DensityChange._from_sdf(dc, version) for dc in dc_els] if dc_els else None
+                density_changes=[BuoyancyPlugin.DensityChange._from_sdf(dc, version) for dc in
+                                 dc_els] if dc_els else None
             )
 
         def to_sdf(self, version: str | None = None) -> ET.Element:

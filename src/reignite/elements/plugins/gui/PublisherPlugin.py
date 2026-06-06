@@ -1,6 +1,8 @@
 from xml.etree import ElementTree as ET
+
 from .GzGui import GzGui
 from ...plugin import Plugin
+
 
 @Plugin.register("Publisher", "Publisher")
 class PublisherPlugin(Plugin):
@@ -31,7 +33,8 @@ class PublisherPlugin(Plugin):
         gui_kwargs = {}
         if gui_el is not None:
             gui = GzGui._from_sdf(gui_el, version)
-            for k in ["anchors", "anchor", "state", "z", "height", "width", "resizable", "show_title_bar", "delete_later", "title"]:
+            for k in ["anchors", "anchor", "state", "z", "height", "width", "resizable", "show_title_bar",
+                      "delete_later", "title"]:
                 if hasattr(gui, k) and getattr(gui, k) is not None:
                     gui_kwargs[k] = getattr(gui, k)
 
@@ -52,7 +55,7 @@ class PublisherPlugin(Plugin):
 
     def to_sdf(self, version: str | None = None) -> ET.Element:
         el = ET.Element("plugin", name=self.name, filename="Publisher")
-        
+
         def _add(k, v):
             if v is not None:
                 child = ET.Element(k)
@@ -61,14 +64,14 @@ class PublisherPlugin(Plugin):
                 else:
                     child.text = str(v)
                 el.append(child)
-                
+
         _add('frequency', self.frequency)
         _add('message', self.message)
         _add('message_type', self.message_type)
         _add('topic', self.topic)
         if self.gz_gui is not None:
             el.append(self.gz_gui.to_sdf(version))
-            
+
         return el
 
     def to_version(self, target_version: str):

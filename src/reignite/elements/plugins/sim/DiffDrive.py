@@ -1,4 +1,5 @@
 from xml.etree import ElementTree as ET
+
 from ...joint import Joint
 from ...plugin import Plugin
 
@@ -112,27 +113,46 @@ class DiffDrivePlugin(Plugin):
         return cls(
             left_joint=left_joint_vals,
             right_joint=right_joint_vals,
-            wheel_separation=float(wheel_separation_el.text) if wheel_separation_el is not None and wheel_separation_el.text is not None else None,
-            wheel_radius=float(wheel_radius_el.text) if wheel_radius_el is not None and wheel_radius_el.text is not None else None,
-            min_velocity=float(min_velocity_el.text) if min_velocity_el is not None and min_velocity_el.text is not None else None,
-            min_linear_velocity=float(min_linear_velocity_el.text) if min_linear_velocity_el is not None and min_linear_velocity_el.text is not None else None,
-            min_angular_velocity=float(min_angular_velocity_el.text) if min_angular_velocity_el is not None and min_angular_velocity_el.text is not None else None,
-            max_velocity=float(max_velocity_el.text) if max_velocity_el is not None and max_velocity_el.text is not None else None,
-            max_linear_velocity=float(max_linear_velocity_el.text) if max_linear_velocity_el is not None and max_linear_velocity_el.text is not None else None,
-            max_angular_velocity=float(max_angular_velocity_el.text) if max_angular_velocity_el is not None and max_angular_velocity_el.text is not None else None,
-            min_acceleration=float(min_acceleration_el.text) if min_acceleration_el is not None and min_acceleration_el.text is not None else None,
-            min_linear_acceleration=float(min_linear_acceleration_el.text) if min_linear_acceleration_el is not None and min_linear_acceleration_el.text is not None else None,
-            min_angular_acceleration=float(min_angular_acceleration_el.text) if min_angular_acceleration_el is not None and min_angular_acceleration_el.text is not None else None,
-            max_acceleration=float(max_acceleration_el.text) if max_acceleration_el is not None and max_acceleration_el.text is not None else None,
-            max_linear_acceleration=float(max_linear_acceleration_el.text) if max_linear_acceleration_el is not None and max_linear_acceleration_el.text is not None else None,
-            max_angular_acceleration=float(max_angular_acceleration_el.text) if max_angular_acceleration_el is not None and max_angular_acceleration_el.text is not None else None,
+            wheel_separation=float(
+                wheel_separation_el.text) if wheel_separation_el is not None and wheel_separation_el.text is not None else None,
+            wheel_radius=float(
+                wheel_radius_el.text) if wheel_radius_el is not None and wheel_radius_el.text is not None else None,
+            min_velocity=float(
+                min_velocity_el.text) if min_velocity_el is not None and min_velocity_el.text is not None else None,
+            min_linear_velocity=float(
+                min_linear_velocity_el.text) if min_linear_velocity_el is not None and min_linear_velocity_el.text is not None else None,
+            min_angular_velocity=float(
+                min_angular_velocity_el.text) if min_angular_velocity_el is not None and min_angular_velocity_el.text is not None else None,
+            max_velocity=float(
+                max_velocity_el.text) if max_velocity_el is not None and max_velocity_el.text is not None else None,
+            max_linear_velocity=float(
+                max_linear_velocity_el.text) if max_linear_velocity_el is not None and max_linear_velocity_el.text is not None else None,
+            max_angular_velocity=float(
+                max_angular_velocity_el.text) if max_angular_velocity_el is not None and max_angular_velocity_el.text is not None else None,
+            min_acceleration=float(
+                min_acceleration_el.text) if min_acceleration_el is not None and min_acceleration_el.text is not None else None,
+            min_linear_acceleration=float(
+                min_linear_acceleration_el.text) if min_linear_acceleration_el is not None and min_linear_acceleration_el.text is not None else None,
+            min_angular_acceleration=float(
+                min_angular_acceleration_el.text) if min_angular_acceleration_el is not None and min_angular_acceleration_el.text is not None else None,
+            max_acceleration=float(
+                max_acceleration_el.text) if max_acceleration_el is not None and max_acceleration_el.text is not None else None,
+            max_linear_acceleration=float(
+                max_linear_acceleration_el.text) if max_linear_acceleration_el is not None and max_linear_acceleration_el.text is not None else None,
+            max_angular_acceleration=float(
+                max_angular_acceleration_el.text) if max_angular_acceleration_el is not None and max_angular_acceleration_el.text is not None else None,
             min_jerk=float(min_jerk_el.text) if min_jerk_el is not None and min_jerk_el.text is not None else None,
-            min_linear_jerk=float(min_linear_jerk_el.text) if min_linear_jerk_el is not None and min_linear_jerk_el.text is not None else None,
-            min_angular_jerk=float(min_angular_jerk_el.text) if min_angular_jerk_el is not None and min_angular_jerk_el.text is not None else None,
+            min_linear_jerk=float(
+                min_linear_jerk_el.text) if min_linear_jerk_el is not None and min_linear_jerk_el.text is not None else None,
+            min_angular_jerk=float(
+                min_angular_jerk_el.text) if min_angular_jerk_el is not None and min_angular_jerk_el.text is not None else None,
             max_jerk=float(max_jerk_el.text) if max_jerk_el is not None and max_jerk_el.text is not None else None,
-            max_linear_jerk=float(max_linear_jerk_el.text) if max_linear_jerk_el is not None and max_linear_jerk_el.text is not None else None,
-            max_angular_jerk=float(max_angular_jerk_el.text) if max_angular_jerk_el is not None and max_angular_jerk_el.text is not None else None,
-            odom_publish_frequency=float(odom_publish_frequency_el.text) if odom_publish_frequency_el is not None and odom_publish_frequency_el.text is not None else None,
+            max_linear_jerk=float(
+                max_linear_jerk_el.text) if max_linear_jerk_el is not None and max_linear_jerk_el.text is not None else None,
+            max_angular_jerk=float(
+                max_angular_jerk_el.text) if max_angular_jerk_el is not None and max_angular_jerk_el.text is not None else None,
+            odom_publish_frequency=float(
+                odom_publish_frequency_el.text) if odom_publish_frequency_el is not None and odom_publish_frequency_el.text is not None else None,
             topic=topic_el.text if topic_el is not None and topic_el.text is not None else None,
             odom_topic=odom_topic_el.text if odom_topic_el is not None and odom_topic_el.text is not None else None,
             tf_topic=tf_topic_el.text if tf_topic_el is not None and tf_topic_el.text is not None else None,
@@ -141,8 +161,9 @@ class DiffDrivePlugin(Plugin):
         )
 
     def to_sdf(self, version: str | None = None) -> ET.Element:
-        el = ET.Element("plugin", name=self.name if hasattr(self, 'name') else "gz::sim::systems::DiffDrive", filename="gz-sim-diff-drive-system")
-        
+        el = ET.Element("plugin", name=self.name if hasattr(self, 'name') else "gz::sim::systems::DiffDrive",
+                        filename="gz-sim-diff-drive-system")
+
         def _add(k, v):
             if v is not None:
                 child = ET.Element(k)
@@ -151,7 +172,7 @@ class DiffDrivePlugin(Plugin):
                 else:
                     child.text = str(v)
                 el.append(child)
-                
+
         if self.left_joint is not None:
             for v in (self.left_joint if isinstance(self.left_joint, list) else [self.left_joint]):
                 _add('left_joint', v)
@@ -184,7 +205,7 @@ class DiffDrivePlugin(Plugin):
         _add('tf_topic', self.tf_topic)
         _add('frame_id', self.frame_id)
         _add('child_frame_id', self.child_frame_id)
-            
+
         return el
 
     def to_version(self, target_version: str):
@@ -226,27 +247,46 @@ class DiffDrivePlugin(Plugin):
         return cls(
             left_joint=left_joint_vals,
             right_joint=right_joint_vals,
-            wheel_separation=float(wheel_separation_el.text) if wheel_separation_el is not None and wheel_separation_el.text is not None else None,
-            wheel_radius=float(wheel_radius_el.text) if wheel_radius_el is not None and wheel_radius_el.text is not None else None,
-            min_velocity=float(min_velocity_el.text) if min_velocity_el is not None and min_velocity_el.text is not None else None,
-            min_linear_velocity=float(min_linear_velocity_el.text) if min_linear_velocity_el is not None and min_linear_velocity_el.text is not None else None,
-            min_angular_velocity=float(min_angular_velocity_el.text) if min_angular_velocity_el is not None and min_angular_velocity_el.text is not None else None,
-            max_velocity=float(max_velocity_el.text) if max_velocity_el is not None and max_velocity_el.text is not None else None,
-            max_linear_velocity=float(max_linear_velocity_el.text) if max_linear_velocity_el is not None and max_linear_velocity_el.text is not None else None,
-            max_angular_velocity=float(max_angular_velocity_el.text) if max_angular_velocity_el is not None and max_angular_velocity_el.text is not None else None,
-            min_acceleration=float(min_acceleration_el.text) if min_acceleration_el is not None and min_acceleration_el.text is not None else None,
-            min_linear_acceleration=float(min_linear_acceleration_el.text) if min_linear_acceleration_el is not None and min_linear_acceleration_el.text is not None else None,
-            min_angular_acceleration=float(min_angular_acceleration_el.text) if min_angular_acceleration_el is not None and min_angular_acceleration_el.text is not None else None,
-            max_acceleration=float(max_acceleration_el.text) if max_acceleration_el is not None and max_acceleration_el.text is not None else None,
-            max_linear_acceleration=float(max_linear_acceleration_el.text) if max_linear_acceleration_el is not None and max_linear_acceleration_el.text is not None else None,
-            max_angular_acceleration=float(max_angular_acceleration_el.text) if max_angular_acceleration_el is not None and max_angular_acceleration_el.text is not None else None,
+            wheel_separation=float(
+                wheel_separation_el.text) if wheel_separation_el is not None and wheel_separation_el.text is not None else None,
+            wheel_radius=float(
+                wheel_radius_el.text) if wheel_radius_el is not None and wheel_radius_el.text is not None else None,
+            min_velocity=float(
+                min_velocity_el.text) if min_velocity_el is not None and min_velocity_el.text is not None else None,
+            min_linear_velocity=float(
+                min_linear_velocity_el.text) if min_linear_velocity_el is not None and min_linear_velocity_el.text is not None else None,
+            min_angular_velocity=float(
+                min_angular_velocity_el.text) if min_angular_velocity_el is not None and min_angular_velocity_el.text is not None else None,
+            max_velocity=float(
+                max_velocity_el.text) if max_velocity_el is not None and max_velocity_el.text is not None else None,
+            max_linear_velocity=float(
+                max_linear_velocity_el.text) if max_linear_velocity_el is not None and max_linear_velocity_el.text is not None else None,
+            max_angular_velocity=float(
+                max_angular_velocity_el.text) if max_angular_velocity_el is not None and max_angular_velocity_el.text is not None else None,
+            min_acceleration=float(
+                min_acceleration_el.text) if min_acceleration_el is not None and min_acceleration_el.text is not None else None,
+            min_linear_acceleration=float(
+                min_linear_acceleration_el.text) if min_linear_acceleration_el is not None and min_linear_acceleration_el.text is not None else None,
+            min_angular_acceleration=float(
+                min_angular_acceleration_el.text) if min_angular_acceleration_el is not None and min_angular_acceleration_el.text is not None else None,
+            max_acceleration=float(
+                max_acceleration_el.text) if max_acceleration_el is not None and max_acceleration_el.text is not None else None,
+            max_linear_acceleration=float(
+                max_linear_acceleration_el.text) if max_linear_acceleration_el is not None and max_linear_acceleration_el.text is not None else None,
+            max_angular_acceleration=float(
+                max_angular_acceleration_el.text) if max_angular_acceleration_el is not None and max_angular_acceleration_el.text is not None else None,
             min_jerk=float(min_jerk_el.text) if min_jerk_el is not None and min_jerk_el.text is not None else None,
-            min_linear_jerk=float(min_linear_jerk_el.text) if min_linear_jerk_el is not None and min_linear_jerk_el.text is not None else None,
-            min_angular_jerk=float(min_angular_jerk_el.text) if min_angular_jerk_el is not None and min_angular_jerk_el.text is not None else None,
+            min_linear_jerk=float(
+                min_linear_jerk_el.text) if min_linear_jerk_el is not None and min_linear_jerk_el.text is not None else None,
+            min_angular_jerk=float(
+                min_angular_jerk_el.text) if min_angular_jerk_el is not None and min_angular_jerk_el.text is not None else None,
             max_jerk=float(max_jerk_el.text) if max_jerk_el is not None and max_jerk_el.text is not None else None,
-            max_linear_jerk=float(max_linear_jerk_el.text) if max_linear_jerk_el is not None and max_linear_jerk_el.text is not None else None,
-            max_angular_jerk=float(max_angular_jerk_el.text) if max_angular_jerk_el is not None and max_angular_jerk_el.text is not None else None,
-            odom_publish_frequency=float(odom_publish_frequency_el.text) if odom_publish_frequency_el is not None and odom_publish_frequency_el.text is not None else None,
+            max_linear_jerk=float(
+                max_linear_jerk_el.text) if max_linear_jerk_el is not None and max_linear_jerk_el.text is not None else None,
+            max_angular_jerk=float(
+                max_angular_jerk_el.text) if max_angular_jerk_el is not None and max_angular_jerk_el.text is not None else None,
+            odom_publish_frequency=float(
+                odom_publish_frequency_el.text) if odom_publish_frequency_el is not None and odom_publish_frequency_el.text is not None else None,
             topic=topic_el.text if topic_el is not None and topic_el.text is not None else None,
             odom_topic=odom_topic_el.text if odom_topic_el is not None and odom_topic_el.text is not None else None,
             tf_topic=tf_topic_el.text if tf_topic_el is not None and tf_topic_el.text is not None else None,
@@ -255,8 +295,9 @@ class DiffDrivePlugin(Plugin):
         )
 
     def to_sdf(self, version: str | None = None) -> ET.Element:
-        el = ET.Element("plugin", name=self.name if hasattr(self, 'name') else "gz::sim::systems::DiffDrive", filename="gz-sim-diff-drive-system")
-        
+        el = ET.Element("plugin", name=self.name if hasattr(self, 'name') else "gz::sim::systems::DiffDrive",
+                        filename="gz-sim-diff-drive-system")
+
         def _add(k, v):
             if v is not None:
                 child = ET.Element(k)
@@ -265,7 +306,7 @@ class DiffDrivePlugin(Plugin):
                 else:
                     child.text = str(v)
                 el.append(child)
-                
+
         if self.left_joint is not None:
             for v in (self.left_joint if isinstance(self.left_joint, list) else [self.left_joint]):
                 _add('left_joint', v)
@@ -298,7 +339,7 @@ class DiffDrivePlugin(Plugin):
         _add('tf_topic', self.tf_topic)
         _add('frame_id', self.frame_id)
         _add('child_frame_id', self.child_frame_id)
-            
+
         return el
 
     def to_version(self, target_version: str):

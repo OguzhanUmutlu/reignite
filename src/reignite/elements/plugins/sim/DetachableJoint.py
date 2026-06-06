@@ -1,4 +1,5 @@
 from xml.etree import ElementTree as ET
+
 from ...link import Link
 from ...model import Model
 from ...plugin import Plugin
@@ -25,7 +26,8 @@ class DetachableJointPlugin(Plugin):
         self.attach_topic = attach_topic
         self.output_topic = output_topic
         self.suppress_child_warning = suppress_child_warning
-        super().__init__(sdf_version=None, filename="gz-sim-detachable-joint-system", name="gz::sim:systems::DetachableJoint")
+        super().__init__(sdf_version=None, filename="gz-sim-detachable-joint-system",
+                         name="gz::sim:systems::DetachableJoint")
 
     @classmethod
     def _from_sdf(cls, el: ET.Element, version: str):
@@ -50,8 +52,9 @@ class DetachableJointPlugin(Plugin):
         )
 
     def to_sdf(self, version: str | None = None) -> ET.Element:
-        el = ET.Element("plugin", name=self.name if hasattr(self, 'name') else "gz::sim:systems::DetachableJoint", filename="gz-sim-detachable-joint-system")
-        
+        el = ET.Element("plugin", name=self.name if hasattr(self, 'name') else "gz::sim:systems::DetachableJoint",
+                        filename="gz-sim-detachable-joint-system")
+
         def _add(k, v):
             if v is not None:
                 child = ET.Element(k)
@@ -60,7 +63,7 @@ class DetachableJointPlugin(Plugin):
                 else:
                     child.text = str(v)
                 el.append(child)
-                
+
         _add('parent_link', self.parent_link)
         _add('child_model', self.child_model)
         _add('child_link', self.child_link)
@@ -69,7 +72,7 @@ class DetachableJointPlugin(Plugin):
         _add('attach_topic', self.attach_topic)
         _add('output_topic', self.output_topic)
         _add('suppress_child_warning', self.suppress_child_warning)
-            
+
         return el
 
     def to_version(self, target_version: str):
@@ -98,8 +101,9 @@ class DetachableJointPlugin(Plugin):
         )
 
     def to_sdf(self, version: str | None = None) -> ET.Element:
-        el = ET.Element("plugin", name=self.name if hasattr(self, 'name') else "gz::sim:systems::DetachableJoint", filename="gz-sim-detachable-joint-system")
-        
+        el = ET.Element("plugin", name=self.name if hasattr(self, 'name') else "gz::sim:systems::DetachableJoint",
+                        filename="gz-sim-detachable-joint-system")
+
         def _add(k, v):
             if v is not None:
                 child = ET.Element(k)
@@ -108,7 +112,7 @@ class DetachableJointPlugin(Plugin):
                 else:
                     child.text = str(v)
                 el.append(child)
-                
+
         _add('parent_link', self.parent_link)
         _add('child_model', self.child_model)
         _add('child_link', self.child_link)
@@ -117,7 +121,7 @@ class DetachableJointPlugin(Plugin):
         _add('attach_topic', self.attach_topic)
         _add('output_topic', self.output_topic)
         _add('suppress_child_warning', self.suppress_child_warning)
-            
+
         return el
 
     def to_version(self, target_version: str):

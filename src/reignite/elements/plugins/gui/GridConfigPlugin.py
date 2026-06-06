@@ -1,9 +1,11 @@
 from xml.etree import ElementTree as ET
+
 from reignite import BaseModel
 from reignite.elements.plugin import Plugin
 from .GzGui import GzGui
 from ....utils.color import _ColorT, _color
 from ....utils.pose import _PoseT, _pose
+
 
 @Plugin.register("GridConfig", "GridConfig")
 class GridConfigPlugin(Plugin):
@@ -35,23 +37,27 @@ class GridConfigPlugin(Plugin):
             vertical_cell_count_el = el.find("vertical_cell_count")
 
             return cls(
-                cell_count=int(cell_count_el.text) if cell_count_el is not None and cell_count_el.text is not None else None,
-                cell_length=float(cell_length_el.text) if cell_length_el is not None and cell_length_el.text is not None else None,
+                cell_count=int(
+                    cell_count_el.text) if cell_count_el is not None and cell_count_el.text is not None else None,
+                cell_length=float(
+                    cell_length_el.text) if cell_length_el is not None and cell_length_el.text is not None else None,
                 color=color_el.text if color_el is not None and color_el.text is not None else None,
-                horizontal_cell_count=int(horizontal_cell_count_el.text) if horizontal_cell_count_el is not None and horizontal_cell_count_el.text is not None else None,
+                horizontal_cell_count=int(
+                    horizontal_cell_count_el.text) if horizontal_cell_count_el is not None and horizontal_cell_count_el.text is not None else None,
                 pose=pose_el.text if pose_el is not None and pose_el.text is not None else None,
-                vertical_cell_count=int(vertical_cell_count_el.text) if vertical_cell_count_el is not None and vertical_cell_count_el.text is not None else None
+                vertical_cell_count=int(
+                    vertical_cell_count_el.text) if vertical_cell_count_el is not None and vertical_cell_count_el.text is not None else None
             )
 
         def to_sdf(self, version: str | None = None) -> ET.Element:
             el = ET.Element("insert")
-            
+
             def _add(k, v):
                 if v is not None:
                     child = ET.Element(k)
                     child.text = str(v)
                     el.append(child)
-                    
+
             _add("cell_count", self.cell_count)
             _add("cell_length", self.cell_length)
             if self.color is not None:
@@ -90,7 +96,7 @@ class GridConfigPlugin(Plugin):
         self.vertical_cell_count = vertical_cell_count
         self.name = name
         self.gz_gui = GzGui(**gui_kwargs)
-        
+
         super().__init__(
             sdf_version=None,
             filename="GridConfig",
@@ -103,7 +109,8 @@ class GridConfigPlugin(Plugin):
         gui_kwargs = {}
         if gui_el is not None:
             gui = GzGui._from_sdf(gui_el, version)
-            for k in ["anchors", "anchor", "state", "z", "height", "width", "resizable", "show_title_bar", "delete_later", "title"]:
+            for k in ["anchors", "anchor", "state", "z", "height", "width", "resizable", "show_title_bar",
+                      "delete_later", "title"]:
                 if hasattr(gui, k) and getattr(gui, k) is not None:
                     gui_kwargs[k] = getattr(gui, k)
 
@@ -114,35 +121,39 @@ class GridConfigPlugin(Plugin):
         horizontal_cell_count_el = el.find("horizontal_cell_count")
         pose_el = el.find("pose")
         vertical_cell_count_el = el.find("vertical_cell_count")
-        
+
         inserts = []
         for insert_el in el.findall("insert"):
             inserts.append(cls.Insert._from_sdf(insert_el, version))
 
         return cls(
             name=name if name is not None else "GridConfig",
-            cell_count=int(cell_count_el.text) if cell_count_el is not None and cell_count_el.text is not None else None,
-            cell_length=float(cell_length_el.text) if cell_length_el is not None and cell_length_el.text is not None else None,
+            cell_count=int(
+                cell_count_el.text) if cell_count_el is not None and cell_count_el.text is not None else None,
+            cell_length=float(
+                cell_length_el.text) if cell_length_el is not None and cell_length_el.text is not None else None,
             color=color_el.text if color_el is not None and color_el.text is not None else None,
-            horizontal_cell_count=int(horizontal_cell_count_el.text) if horizontal_cell_count_el is not None and horizontal_cell_count_el.text is not None else None,
+            horizontal_cell_count=int(
+                horizontal_cell_count_el.text) if horizontal_cell_count_el is not None and horizontal_cell_count_el.text is not None else None,
             pose=pose_el.text if pose_el is not None and pose_el.text is not None else None,
-            vertical_cell_count=int(vertical_cell_count_el.text) if vertical_cell_count_el is not None and vertical_cell_count_el.text is not None else None,
+            vertical_cell_count=int(
+                vertical_cell_count_el.text) if vertical_cell_count_el is not None and vertical_cell_count_el.text is not None else None,
             insert=inserts,
             **gui_kwargs
         )
 
     def to_sdf(self, version: str | None = None) -> ET.Element:
         el = ET.Element("plugin", name=self.name, filename="GridConfig")
-        
+
         if self.gz_gui is not None:
             el.append(self.gz_gui.to_sdf(version))
-            
+
         def _add(k, v):
             if v is not None:
                 child = ET.Element(k)
                 child.text = str(v)
                 el.append(child)
-                
+
         _add("cell_count", self.cell_count)
         _add("cell_length", self.cell_length)
         if self.color is not None:
@@ -154,7 +165,7 @@ class GridConfigPlugin(Plugin):
 
         for ins in self.insert:
             el.append(ins.to_sdf(version))
-            
+
         return el
 
     def to_version(self, target_version: str):

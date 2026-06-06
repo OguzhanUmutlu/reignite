@@ -1,4 +1,5 @@
 from xml.etree import ElementTree as ET
+
 from ...plugin import Plugin
 
 
@@ -26,8 +27,9 @@ class LabelPlugin(Plugin):
         )
 
     def to_sdf(self, version: str | None = None) -> ET.Element:
-        el = ET.Element("plugin", name=self.name if hasattr(self, 'name') else "gz::sim::systems::Label", filename="gz-sim-label-system")
-        
+        el = ET.Element("plugin", name=self.name if hasattr(self, 'name') else "gz::sim::systems::Label",
+                        filename="gz-sim-label-system")
+
         def _add(k, v):
             if v is not None:
                 child = ET.Element(k)
@@ -36,9 +38,9 @@ class LabelPlugin(Plugin):
                 else:
                     child.text = str(v)
                 el.append(child)
-                
+
         _add('label', self.label)
-            
+
         return el
 
     def to_version(self, target_version: str):
@@ -53,8 +55,9 @@ class LabelPlugin(Plugin):
         )
 
     def to_sdf(self, version: str | None = None) -> ET.Element:
-        el = ET.Element("plugin", name=self.name if hasattr(self, 'name') else "gz::sim::systems::Label", filename="gz-sim-label-system")
-        
+        el = ET.Element("plugin", name=self.name if hasattr(self, 'name') else "gz::sim::systems::Label",
+                        filename="gz-sim-label-system")
+
         def _add(k, v):
             if v is not None:
                 child = ET.Element(k)
@@ -63,9 +66,9 @@ class LabelPlugin(Plugin):
                 else:
                     child.text = str(v)
                 el.append(child)
-                
+
         _add('label', self.label)
-            
+
         return el
 
     def to_version(self, target_version: str):

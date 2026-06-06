@@ -1,4 +1,5 @@
 from xml.etree import ElementTree as ET
+
 from ...joint import Joint
 from ...plugin import Plugin
 
@@ -53,7 +54,8 @@ class JointPositionControllerPlugin(Plugin):
         self.actuator_number = actuator_number
         self.sub_topic = sub_topic
         self.topic = topic
-        super().__init__(sdf_version=None, filename="gz-sim-joint-position-controller-system", name="gz::sim::systems::JointPositionController")
+        super().__init__(sdf_version=None, filename="gz-sim-joint-position-controller-system",
+                         name="gz::sim::systems::JointPositionController")
 
     @classmethod
     def _from_sdf(cls, el: ET.Element, version: str):
@@ -77,7 +79,8 @@ class JointPositionControllerPlugin(Plugin):
 
         return cls(
             joint_name=joint_name_vals,
-            joint_index=int(joint_index_el.text) if joint_index_el is not None and joint_index_el.text is not None else None,
+            joint_index=int(
+                joint_index_el.text) if joint_index_el is not None and joint_index_el.text is not None else None,
             p_gain=float(p_gain_el.text) if p_gain_el is not None and p_gain_el.text is not None else None,
             i_gain=float(i_gain_el.text) if i_gain_el is not None and i_gain_el.text is not None else None,
             d_gain=float(d_gain_el.text) if d_gain_el is not None and d_gain_el.text is not None else None,
@@ -85,18 +88,23 @@ class JointPositionControllerPlugin(Plugin):
             i_min=float(i_min_el.text) if i_min_el is not None and i_min_el.text is not None else None,
             cmd_max=float(cmd_max_el.text) if cmd_max_el is not None and cmd_max_el.text is not None else None,
             cmd_min=float(cmd_min_el.text) if cmd_min_el is not None and cmd_min_el.text is not None else None,
-            cmd_offset=float(cmd_offset_el.text) if cmd_offset_el is not None and cmd_offset_el.text is not None else None,
+            cmd_offset=float(
+                cmd_offset_el.text) if cmd_offset_el is not None and cmd_offset_el.text is not None else None,
             use_velocity_commands=use_velocity_commands_el.text.lower() == 'true' if use_velocity_commands_el is not None and use_velocity_commands_el.text is not None else None,
-            initial_position=float(initial_position_el.text) if initial_position_el is not None and initial_position_el.text is not None else None,
+            initial_position=float(
+                initial_position_el.text) if initial_position_el is not None and initial_position_el.text is not None else None,
             use_actuator_msg=use_actuator_msg_el.text.lower() == 'true' if use_actuator_msg_el is not None and use_actuator_msg_el.text is not None else None,
-            actuator_number=int(actuator_number_el.text) if actuator_number_el is not None and actuator_number_el.text is not None else None,
+            actuator_number=int(
+                actuator_number_el.text) if actuator_number_el is not None and actuator_number_el.text is not None else None,
             sub_topic=sub_topic_el.text if sub_topic_el is not None and sub_topic_el.text is not None else None,
             topic=topic_el.text if topic_el is not None and topic_el.text is not None else None,
         )
 
     def to_sdf(self, version: str | None = None) -> ET.Element:
-        el = ET.Element("plugin", name=self.name if hasattr(self, 'name') else "gz::sim::systems::JointPositionController", filename="gz-sim-joint-position-controller-system")
-        
+        el = ET.Element("plugin",
+                        name=self.name if hasattr(self, 'name') else "gz::sim::systems::JointPositionController",
+                        filename="gz-sim-joint-position-controller-system")
+
         def _add(k, v):
             if v is not None:
                 child = ET.Element(k)
@@ -105,7 +113,7 @@ class JointPositionControllerPlugin(Plugin):
                 else:
                     child.text = str(v)
                 el.append(child)
-                
+
         if self.joint_name is not None:
             for v in (self.joint_name if isinstance(self.joint_name, list) else [self.joint_name]):
                 _add('joint_name', v)
@@ -124,7 +132,7 @@ class JointPositionControllerPlugin(Plugin):
         _add('actuator_number', self.actuator_number)
         _add('sub_topic', self.sub_topic)
         _add('topic', self.topic)
-            
+
         return el
 
     def to_version(self, target_version: str):
@@ -152,7 +160,8 @@ class JointPositionControllerPlugin(Plugin):
 
         return cls(
             joint_name=joint_name_vals,
-            joint_index=int(joint_index_el.text) if joint_index_el is not None and joint_index_el.text is not None else None,
+            joint_index=int(
+                joint_index_el.text) if joint_index_el is not None and joint_index_el.text is not None else None,
             p_gain=float(p_gain_el.text) if p_gain_el is not None and p_gain_el.text is not None else None,
             i_gain=float(i_gain_el.text) if i_gain_el is not None and i_gain_el.text is not None else None,
             d_gain=float(d_gain_el.text) if d_gain_el is not None and d_gain_el.text is not None else None,
@@ -160,18 +169,23 @@ class JointPositionControllerPlugin(Plugin):
             i_min=float(i_min_el.text) if i_min_el is not None and i_min_el.text is not None else None,
             cmd_max=float(cmd_max_el.text) if cmd_max_el is not None and cmd_max_el.text is not None else None,
             cmd_min=float(cmd_min_el.text) if cmd_min_el is not None and cmd_min_el.text is not None else None,
-            cmd_offset=float(cmd_offset_el.text) if cmd_offset_el is not None and cmd_offset_el.text is not None else None,
+            cmd_offset=float(
+                cmd_offset_el.text) if cmd_offset_el is not None and cmd_offset_el.text is not None else None,
             use_velocity_commands=use_velocity_commands_el.text.lower() == 'true' if use_velocity_commands_el is not None and use_velocity_commands_el.text is not None else None,
-            initial_position=float(initial_position_el.text) if initial_position_el is not None and initial_position_el.text is not None else None,
+            initial_position=float(
+                initial_position_el.text) if initial_position_el is not None and initial_position_el.text is not None else None,
             use_actuator_msg=use_actuator_msg_el.text.lower() == 'true' if use_actuator_msg_el is not None and use_actuator_msg_el.text is not None else None,
-            actuator_number=int(actuator_number_el.text) if actuator_number_el is not None and actuator_number_el.text is not None else None,
+            actuator_number=int(
+                actuator_number_el.text) if actuator_number_el is not None and actuator_number_el.text is not None else None,
             sub_topic=sub_topic_el.text if sub_topic_el is not None and sub_topic_el.text is not None else None,
             topic=topic_el.text if topic_el is not None and topic_el.text is not None else None,
         )
 
     def to_sdf(self, version: str | None = None) -> ET.Element:
-        el = ET.Element("plugin", name=self.name if hasattr(self, 'name') else "gz::sim::systems::JointPositionController", filename="gz-sim-joint-position-controller-system")
-        
+        el = ET.Element("plugin",
+                        name=self.name if hasattr(self, 'name') else "gz::sim::systems::JointPositionController",
+                        filename="gz-sim-joint-position-controller-system")
+
         def _add(k, v):
             if v is not None:
                 child = ET.Element(k)
@@ -180,7 +194,7 @@ class JointPositionControllerPlugin(Plugin):
                 else:
                     child.text = str(v)
                 el.append(child)
-                
+
         if self.joint_name is not None:
             for v in (self.joint_name if isinstance(self.joint_name, list) else [self.joint_name]):
                 _add('joint_name', v)
@@ -199,7 +213,7 @@ class JointPositionControllerPlugin(Plugin):
         _add('actuator_number', self.actuator_number)
         _add('sub_topic', self.sub_topic)
         _add('topic', self.topic)
-            
+
         return el
 
     def to_version(self, target_version: str):

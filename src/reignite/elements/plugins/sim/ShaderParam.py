@@ -1,4 +1,5 @@
 from xml.etree import ElementTree as ET
+
 from reignite.elements.plugin import Plugin
 from reignite.utils.model import BaseModel
 
@@ -6,7 +7,8 @@ from reignite.utils.model import BaseModel
 @Plugin.register("gz-sim-shader-param-system", "gz::sim::systems::ShaderParam")
 class ShaderParamPlugin(Plugin):
     class Param(BaseModel):
-        def __init__(self, name: str | None = None, shader: str | None = None, type: str | None = None, value: str | None = None,
+        def __init__(self, name: str | None = None, shader: str | None = None, type: str | None = None,
+                     value: str | None = None,
                      arg: str | None = None):
             super().__init__(sdf_version=None)
             self.name = name

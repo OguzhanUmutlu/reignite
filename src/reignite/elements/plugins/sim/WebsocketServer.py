@@ -1,4 +1,5 @@
 from xml.etree import ElementTree as ET
+
 from reignite.elements.plugin import Plugin
 from reignite.utils.model import BaseModel
 
@@ -44,7 +45,8 @@ class WebsocketServerPlugin(Plugin):
         def _from_sdf(cls, el: ET.Element, version: str):
             s_els = el.findall("subscription")
             return cls(
-                subscriptions=[WebsocketServerPlugin.Subscription._from_sdf(s, version) for s in s_els] if s_els else None
+                subscriptions=[WebsocketServerPlugin.Subscription._from_sdf(s, version) for s in
+                               s_els] if s_els else None
             )
 
         def to_sdf(self, version: str | None = None) -> ET.Element:
@@ -133,7 +135,8 @@ class WebsocketServerPlugin(Plugin):
             port=int(p_el.text) if p_el is not None and p_el.text is not None else None,
             max_connections=int(mc_el.text) if mc_el is not None and mc_el.text is not None else None,
             queue_size_per_connection=int(qspc_el.text) if qspc_el is not None and qspc_el.text is not None else None,
-            subscription_limit_per_connection=cls.SubscriptionLimitPerConnection._from_sdf(slpc_el, version) if slpc_el is not None else None,
+            subscription_limit_per_connection=cls.SubscriptionLimitPerConnection._from_sdf(slpc_el,
+                                                                                           version) if slpc_el is not None else None,
             ssl=cls.Ssl._from_sdf(s_el, version) if s_el is not None else None
         )
 
@@ -143,20 +146,20 @@ class WebsocketServerPlugin(Plugin):
             el.append(self.subscription_limit_per_connection.to_sdf(version))
         if self.ssl is not None:
             el.append(self.ssl.to_sdf(version))
-            
+
         def _add(k, v):
             if v is not None:
                 child = ET.Element(k)
                 child.text = str(v)
                 el.append(child)
-                
+
         _add("publication_hz", self.publication_hz)
         _add("authorization_key", self.authorization_key)
         _add("admin_authorization_key", self.admin_authorization_key)
         _add("port", self.port)
         _add("max_connections", self.max_connections)
         _add("queue_size_per_connection", self.queue_size_per_connection)
-        
+
         return el
 
     def to_version(self, target_version: str):

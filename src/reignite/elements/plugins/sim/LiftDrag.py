@@ -1,4 +1,5 @@
 from xml.etree import ElementTree as ET
+
 from ...link import Link
 from ...plugin import Plugin
 
@@ -82,26 +83,32 @@ class LiftDragPlugin(Plugin):
             cla=float(cla_el.text) if cla_el is not None and cla_el.text is not None else None,
             cda=float(cda_el.text) if cda_el is not None and cda_el.text is not None else None,
             cma=float(cma_el.text) if cma_el is not None and cma_el.text is not None else None,
-            alpha_stall=float(alpha_stall_el.text) if alpha_stall_el is not None and alpha_stall_el.text is not None else None,
+            alpha_stall=float(
+                alpha_stall_el.text) if alpha_stall_el is not None and alpha_stall_el.text is not None else None,
             cla_stall=float(cla_stall_el.text) if cla_stall_el is not None and cla_stall_el.text is not None else None,
             cda_stall=float(cda_stall_el.text) if cda_stall_el is not None and cda_stall_el.text is not None else None,
             cma_stall=float(cma_stall_el.text) if cma_stall_el is not None and cma_stall_el.text is not None else None,
-            air_density=float(air_density_el.text) if air_density_el is not None and air_density_el.text is not None else None,
-            radial_symmetry=radial_symmetry_el.text.lower() in ("true", "1", "yes", "t") if radial_symmetry_el is not None and radial_symmetry_el.text is not None else None,
-            reversible=reversible_el.text.lower() in ("true", "1", "yes", "t") if reversible_el is not None and reversible_el.text is not None else None,
+            air_density=float(
+                air_density_el.text) if air_density_el is not None and air_density_el.text is not None else None,
+            radial_symmetry=radial_symmetry_el.text.lower() in ("true", "1", "yes",
+                                                                "t") if radial_symmetry_el is not None and radial_symmetry_el.text is not None else None,
+            reversible=reversible_el.text.lower() in ("true", "1", "yes",
+                                                      "t") if reversible_el is not None and reversible_el.text is not None else None,
             area=float(area_el.text) if area_el is not None and area_el.text is not None else None,
             a0=float(a0_el.text) if a0_el is not None and a0_el.text is not None else None,
             cp=_parse_tuple(cp_el),
             cm_delta=float(cm_delta_el.text) if cm_delta_el is not None and cm_delta_el.text is not None else None,
             forward=_parse_tuple(forward_el),
             upward=_parse_tuple(upward_el),
-            control_joint_rad_to_cl=float(control_joint_rad_to_cl_el.text) if control_joint_rad_to_cl_el is not None and control_joint_rad_to_cl_el.text is not None else None,
+            control_joint_rad_to_cl=float(
+                control_joint_rad_to_cl_el.text) if control_joint_rad_to_cl_el is not None and control_joint_rad_to_cl_el.text is not None else None,
             control_joint_name=control_joint_name_el.text if control_joint_name_el is not None and control_joint_name_el.text is not None else None,
         )
 
     def to_sdf(self, version: str | None = None) -> ET.Element:
-        el = ET.Element("plugin", name=self.name if hasattr(self, 'name') else "gz::sim::systems::LiftDrag", filename="gz-sim-lift-drag-system")
-        
+        el = ET.Element("plugin", name=self.name if hasattr(self, 'name') else "gz::sim::systems::LiftDrag",
+                        filename="gz-sim-lift-drag-system")
+
         def _add(k, v):
             if v is not None:
                 child = ET.Element(k)
@@ -112,7 +119,7 @@ class LiftDragPlugin(Plugin):
                 else:
                     child.text = str(v)
                 el.append(child)
-                
+
         _add('link_name', self.link_name)
         _add('cla', self.cla)
         _add('cda', self.cda)
@@ -132,7 +139,7 @@ class LiftDragPlugin(Plugin):
         _add('upward', self.upward)
         _add('control_joint_rad_to_cl', self.control_joint_rad_to_cl)
         _add('control_joint_name', self.control_joint_name)
-            
+
         return el
 
     def to_version(self, target_version: str):
@@ -172,26 +179,32 @@ class LiftDragPlugin(Plugin):
             cla=float(cla_el.text) if cla_el is not None and cla_el.text is not None else None,
             cda=float(cda_el.text) if cda_el is not None and cda_el.text is not None else None,
             cma=float(cma_el.text) if cma_el is not None and cma_el.text is not None else None,
-            alpha_stall=float(alpha_stall_el.text) if alpha_stall_el is not None and alpha_stall_el.text is not None else None,
+            alpha_stall=float(
+                alpha_stall_el.text) if alpha_stall_el is not None and alpha_stall_el.text is not None else None,
             cla_stall=float(cla_stall_el.text) if cla_stall_el is not None and cla_stall_el.text is not None else None,
             cda_stall=float(cda_stall_el.text) if cda_stall_el is not None and cda_stall_el.text is not None else None,
             cma_stall=float(cma_stall_el.text) if cma_stall_el is not None and cma_stall_el.text is not None else None,
-            air_density=float(air_density_el.text) if air_density_el is not None and air_density_el.text is not None else None,
-            radial_symmetry=radial_symmetry_el.text.lower() in ("true", "1", "yes", "t") if radial_symmetry_el is not None and radial_symmetry_el.text is not None else None,
-            reversible=reversible_el.text.lower() in ("true", "1", "yes", "t") if reversible_el is not None and reversible_el.text is not None else None,
+            air_density=float(
+                air_density_el.text) if air_density_el is not None and air_density_el.text is not None else None,
+            radial_symmetry=radial_symmetry_el.text.lower() in ("true", "1", "yes",
+                                                                "t") if radial_symmetry_el is not None and radial_symmetry_el.text is not None else None,
+            reversible=reversible_el.text.lower() in ("true", "1", "yes",
+                                                      "t") if reversible_el is not None and reversible_el.text is not None else None,
             area=float(area_el.text) if area_el is not None and area_el.text is not None else None,
             a0=float(a0_el.text) if a0_el is not None and a0_el.text is not None else None,
             cp=_parse_tuple(cp_el),
             cm_delta=float(cm_delta_el.text) if cm_delta_el is not None and cm_delta_el.text is not None else None,
             forward=_parse_tuple(forward_el),
             upward=_parse_tuple(upward_el),
-            control_joint_rad_to_cl=float(control_joint_rad_to_cl_el.text) if control_joint_rad_to_cl_el is not None and control_joint_rad_to_cl_el.text is not None else None,
+            control_joint_rad_to_cl=float(
+                control_joint_rad_to_cl_el.text) if control_joint_rad_to_cl_el is not None and control_joint_rad_to_cl_el.text is not None else None,
             control_joint_name=control_joint_name_el.text if control_joint_name_el is not None and control_joint_name_el.text is not None else None,
         )
 
     def to_sdf(self, version: str | None = None) -> ET.Element:
-        el = ET.Element("plugin", name=self.name if hasattr(self, 'name') else "gz::sim::systems::LiftDrag", filename="gz-sim-lift-drag-system")
-        
+        el = ET.Element("plugin", name=self.name if hasattr(self, 'name') else "gz::sim::systems::LiftDrag",
+                        filename="gz-sim-lift-drag-system")
+
         def _add(k, v):
             if v is not None:
                 child = ET.Element(k)
@@ -202,7 +215,7 @@ class LiftDragPlugin(Plugin):
                 else:
                     child.text = str(v)
                 el.append(child)
-                
+
         _add('link_name', self.link_name)
         _add('cla', self.cla)
         _add('cda', self.cda)
@@ -222,7 +235,7 @@ class LiftDragPlugin(Plugin):
         _add('upward', self.upward)
         _add('control_joint_rad_to_cl', self.control_joint_rad_to_cl)
         _add('control_joint_name', self.control_joint_name)
-            
+
         return el
 
     def to_version(self, target_version: str):

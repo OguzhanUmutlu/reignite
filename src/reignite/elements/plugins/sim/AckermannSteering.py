@@ -1,4 +1,5 @@
 from xml.etree import ElementTree as ET
+
 from ...joint import Joint
 from ...plugin import Plugin
 
@@ -73,14 +74,17 @@ class AckermannSteeringPlugin(Plugin):
         self.tf_topic = tf_topic
         self.frame_id = frame_id
         self.child_frame_id = child_frame_id
-        super().__init__(sdf_version=None, filename="gz-sim-ackermann-steering-system", name="gz::sim::systems::AckermannSteering")
+        super().__init__(sdf_version=None, filename="gz-sim-ackermann-steering-system",
+                         name="gz::sim::systems::AckermannSteering")
 
     @classmethod
     def _from_sdf(cls, el: ET.Element, version: str):
         left_steering_joint_els = el.findall('left_steering_joint')
-        left_steering_joint_vals = [e.text for e in left_steering_joint_els if e.text is not None] if left_steering_joint_els else None
+        left_steering_joint_vals = [e.text for e in left_steering_joint_els if
+                                    e.text is not None] if left_steering_joint_els else None
         right_steering_joint_els = el.findall('right_steering_joint')
-        right_steering_joint_vals = [e.text for e in right_steering_joint_els if e.text is not None] if right_steering_joint_els else None
+        right_steering_joint_vals = [e.text for e in right_steering_joint_els if
+                                     e.text is not None] if right_steering_joint_els else None
         left_joint_els = el.findall('left_joint')
         left_joint_vals = [e.text for e in left_joint_els if e.text is not None] if left_joint_els else None
         right_joint_els = el.findall('right_joint')
@@ -115,20 +119,32 @@ class AckermannSteeringPlugin(Plugin):
             right_joint=right_joint_vals,
             steering_only=steering_only_el.text.lower() == 'true' if steering_only_el is not None and steering_only_el.text is not None else None,
             use_actuator_msg=use_actuator_msg_el.text.lower() == 'true' if use_actuator_msg_el is not None and use_actuator_msg_el.text is not None else None,
-            actuator_number=int(actuator_number_el.text) if actuator_number_el is not None and actuator_number_el.text is not None else None,
-            wheel_radius=float(wheel_radius_el.text) if wheel_radius_el is not None and wheel_radius_el.text is not None else None,
-            kingpin_width=float(kingpin_width_el.text) if kingpin_width_el is not None and kingpin_width_el.text is not None else None,
-            wheel_separation=float(wheel_separation_el.text) if wheel_separation_el is not None and wheel_separation_el.text is not None else None,
-            wheel_base=float(wheel_base_el.text) if wheel_base_el is not None and wheel_base_el.text is not None else None,
-            steering_limit=float(steering_limit_el.text) if steering_limit_el is not None and steering_limit_el.text is not None else None,
-            steer_p_gain=float(steer_p_gain_el.text) if steer_p_gain_el is not None and steer_p_gain_el.text is not None else None,
-            min_velocity=float(min_velocity_el.text) if min_velocity_el is not None and min_velocity_el.text is not None else None,
-            max_velocity=float(max_velocity_el.text) if max_velocity_el is not None and max_velocity_el.text is not None else None,
-            min_acceleration=float(min_acceleration_el.text) if min_acceleration_el is not None and min_acceleration_el.text is not None else None,
-            max_acceleration=float(max_acceleration_el.text) if max_acceleration_el is not None and max_acceleration_el.text is not None else None,
+            actuator_number=int(
+                actuator_number_el.text) if actuator_number_el is not None and actuator_number_el.text is not None else None,
+            wheel_radius=float(
+                wheel_radius_el.text) if wheel_radius_el is not None and wheel_radius_el.text is not None else None,
+            kingpin_width=float(
+                kingpin_width_el.text) if kingpin_width_el is not None and kingpin_width_el.text is not None else None,
+            wheel_separation=float(
+                wheel_separation_el.text) if wheel_separation_el is not None and wheel_separation_el.text is not None else None,
+            wheel_base=float(
+                wheel_base_el.text) if wheel_base_el is not None and wheel_base_el.text is not None else None,
+            steering_limit=float(
+                steering_limit_el.text) if steering_limit_el is not None and steering_limit_el.text is not None else None,
+            steer_p_gain=float(
+                steer_p_gain_el.text) if steer_p_gain_el is not None and steer_p_gain_el.text is not None else None,
+            min_velocity=float(
+                min_velocity_el.text) if min_velocity_el is not None and min_velocity_el.text is not None else None,
+            max_velocity=float(
+                max_velocity_el.text) if max_velocity_el is not None and max_velocity_el.text is not None else None,
+            min_acceleration=float(
+                min_acceleration_el.text) if min_acceleration_el is not None and min_acceleration_el.text is not None else None,
+            max_acceleration=float(
+                max_acceleration_el.text) if max_acceleration_el is not None and max_acceleration_el.text is not None else None,
             min_jerk=float(min_jerk_el.text) if min_jerk_el is not None and min_jerk_el.text is not None else None,
             max_jerk=float(max_jerk_el.text) if max_jerk_el is not None and max_jerk_el.text is not None else None,
-            odom_publish_frequency=float(odom_publish_frequency_el.text) if odom_publish_frequency_el is not None and odom_publish_frequency_el.text is not None else None,
+            odom_publish_frequency=float(
+                odom_publish_frequency_el.text) if odom_publish_frequency_el is not None and odom_publish_frequency_el.text is not None else None,
             topic=topic_el.text if topic_el is not None and topic_el.text is not None else None,
             sub_topic=sub_topic_el.text if sub_topic_el is not None and sub_topic_el.text is not None else None,
             odom_topic=odom_topic_el.text if odom_topic_el is not None and odom_topic_el.text is not None else None,
@@ -138,8 +154,9 @@ class AckermannSteeringPlugin(Plugin):
         )
 
     def to_sdf(self, version: str | None = None) -> ET.Element:
-        el = ET.Element("plugin", name=self.name if hasattr(self, 'name') else "gz::sim::systems::AckermannSteering", filename="gz-sim-ackermann-steering-system")
-        
+        el = ET.Element("plugin", name=self.name if hasattr(self, 'name') else "gz::sim::systems::AckermannSteering",
+                        filename="gz-sim-ackermann-steering-system")
+
         def _add(k, v):
             if v is not None:
                 child = ET.Element(k)
@@ -148,12 +165,14 @@ class AckermannSteeringPlugin(Plugin):
                 else:
                     child.text = str(v)
                 el.append(child)
-                
+
         if self.left_steering_joint is not None:
-            for v in (self.left_steering_joint if isinstance(self.left_steering_joint, list) else [self.left_steering_joint]):
+            for v in (
+            self.left_steering_joint if isinstance(self.left_steering_joint, list) else [self.left_steering_joint]):
                 _add('left_steering_joint', v)
         if self.right_steering_joint is not None:
-            for v in (self.right_steering_joint if isinstance(self.right_steering_joint, list) else [self.right_steering_joint]):
+            for v in (
+            self.right_steering_joint if isinstance(self.right_steering_joint, list) else [self.right_steering_joint]):
                 _add('right_steering_joint', v)
         if self.left_joint is not None:
             for v in (self.left_joint if isinstance(self.left_joint, list) else [self.left_joint]):
@@ -183,7 +202,7 @@ class AckermannSteeringPlugin(Plugin):
         _add('tf_topic', self.tf_topic)
         _add('frame_id', self.frame_id)
         _add('child_frame_id', self.child_frame_id)
-            
+
         return el
 
     def to_version(self, target_version: str):
@@ -192,9 +211,11 @@ class AckermannSteeringPlugin(Plugin):
     @classmethod
     def _from_sdf(cls, el: ET.Element, version: str):
         left_steering_joint_els = el.findall('left_steering_joint')
-        left_steering_joint_vals = [e.text for e in left_steering_joint_els if e.text is not None] if left_steering_joint_els else None
+        left_steering_joint_vals = [e.text for e in left_steering_joint_els if
+                                    e.text is not None] if left_steering_joint_els else None
         right_steering_joint_els = el.findall('right_steering_joint')
-        right_steering_joint_vals = [e.text for e in right_steering_joint_els if e.text is not None] if right_steering_joint_els else None
+        right_steering_joint_vals = [e.text for e in right_steering_joint_els if
+                                     e.text is not None] if right_steering_joint_els else None
         left_joint_els = el.findall('left_joint')
         left_joint_vals = [e.text for e in left_joint_els if e.text is not None] if left_joint_els else None
         right_joint_els = el.findall('right_joint')
@@ -229,20 +250,32 @@ class AckermannSteeringPlugin(Plugin):
             right_joint=right_joint_vals,
             steering_only=steering_only_el.text.lower() == 'true' if steering_only_el is not None and steering_only_el.text is not None else None,
             use_actuator_msg=use_actuator_msg_el.text.lower() == 'true' if use_actuator_msg_el is not None and use_actuator_msg_el.text is not None else None,
-            actuator_number=int(actuator_number_el.text) if actuator_number_el is not None and actuator_number_el.text is not None else None,
-            wheel_radius=float(wheel_radius_el.text) if wheel_radius_el is not None and wheel_radius_el.text is not None else None,
-            kingpin_width=float(kingpin_width_el.text) if kingpin_width_el is not None and kingpin_width_el.text is not None else None,
-            wheel_separation=float(wheel_separation_el.text) if wheel_separation_el is not None and wheel_separation_el.text is not None else None,
-            wheel_base=float(wheel_base_el.text) if wheel_base_el is not None and wheel_base_el.text is not None else None,
-            steering_limit=float(steering_limit_el.text) if steering_limit_el is not None and steering_limit_el.text is not None else None,
-            steer_p_gain=float(steer_p_gain_el.text) if steer_p_gain_el is not None and steer_p_gain_el.text is not None else None,
-            min_velocity=float(min_velocity_el.text) if min_velocity_el is not None and min_velocity_el.text is not None else None,
-            max_velocity=float(max_velocity_el.text) if max_velocity_el is not None and max_velocity_el.text is not None else None,
-            min_acceleration=float(min_acceleration_el.text) if min_acceleration_el is not None and min_acceleration_el.text is not None else None,
-            max_acceleration=float(max_acceleration_el.text) if max_acceleration_el is not None and max_acceleration_el.text is not None else None,
+            actuator_number=int(
+                actuator_number_el.text) if actuator_number_el is not None and actuator_number_el.text is not None else None,
+            wheel_radius=float(
+                wheel_radius_el.text) if wheel_radius_el is not None and wheel_radius_el.text is not None else None,
+            kingpin_width=float(
+                kingpin_width_el.text) if kingpin_width_el is not None and kingpin_width_el.text is not None else None,
+            wheel_separation=float(
+                wheel_separation_el.text) if wheel_separation_el is not None and wheel_separation_el.text is not None else None,
+            wheel_base=float(
+                wheel_base_el.text) if wheel_base_el is not None and wheel_base_el.text is not None else None,
+            steering_limit=float(
+                steering_limit_el.text) if steering_limit_el is not None and steering_limit_el.text is not None else None,
+            steer_p_gain=float(
+                steer_p_gain_el.text) if steer_p_gain_el is not None and steer_p_gain_el.text is not None else None,
+            min_velocity=float(
+                min_velocity_el.text) if min_velocity_el is not None and min_velocity_el.text is not None else None,
+            max_velocity=float(
+                max_velocity_el.text) if max_velocity_el is not None and max_velocity_el.text is not None else None,
+            min_acceleration=float(
+                min_acceleration_el.text) if min_acceleration_el is not None and min_acceleration_el.text is not None else None,
+            max_acceleration=float(
+                max_acceleration_el.text) if max_acceleration_el is not None and max_acceleration_el.text is not None else None,
             min_jerk=float(min_jerk_el.text) if min_jerk_el is not None and min_jerk_el.text is not None else None,
             max_jerk=float(max_jerk_el.text) if max_jerk_el is not None and max_jerk_el.text is not None else None,
-            odom_publish_frequency=float(odom_publish_frequency_el.text) if odom_publish_frequency_el is not None and odom_publish_frequency_el.text is not None else None,
+            odom_publish_frequency=float(
+                odom_publish_frequency_el.text) if odom_publish_frequency_el is not None and odom_publish_frequency_el.text is not None else None,
             topic=topic_el.text if topic_el is not None and topic_el.text is not None else None,
             sub_topic=sub_topic_el.text if sub_topic_el is not None and sub_topic_el.text is not None else None,
             odom_topic=odom_topic_el.text if odom_topic_el is not None and odom_topic_el.text is not None else None,
@@ -252,8 +285,9 @@ class AckermannSteeringPlugin(Plugin):
         )
 
     def to_sdf(self, version: str | None = None) -> ET.Element:
-        el = ET.Element("plugin", name=self.name if hasattr(self, 'name') else "gz::sim::systems::AckermannSteering", filename="gz-sim-ackermann-steering-system")
-        
+        el = ET.Element("plugin", name=self.name if hasattr(self, 'name') else "gz::sim::systems::AckermannSteering",
+                        filename="gz-sim-ackermann-steering-system")
+
         def _add(k, v):
             if v is not None:
                 child = ET.Element(k)
@@ -262,12 +296,14 @@ class AckermannSteeringPlugin(Plugin):
                 else:
                     child.text = str(v)
                 el.append(child)
-                
+
         if self.left_steering_joint is not None:
-            for v in (self.left_steering_joint if isinstance(self.left_steering_joint, list) else [self.left_steering_joint]):
+            for v in (
+            self.left_steering_joint if isinstance(self.left_steering_joint, list) else [self.left_steering_joint]):
                 _add('left_steering_joint', v)
         if self.right_steering_joint is not None:
-            for v in (self.right_steering_joint if isinstance(self.right_steering_joint, list) else [self.right_steering_joint]):
+            for v in (
+            self.right_steering_joint if isinstance(self.right_steering_joint, list) else [self.right_steering_joint]):
                 _add('right_steering_joint', v)
         if self.left_joint is not None:
             for v in (self.left_joint if isinstance(self.left_joint, list) else [self.left_joint]):
@@ -297,7 +333,7 @@ class AckermannSteeringPlugin(Plugin):
         _add('tf_topic', self.tf_topic)
         _add('frame_id', self.frame_id)
         _add('child_frame_id', self.child_frame_id)
-            
+
         return el
 
     def to_version(self, target_version: str):

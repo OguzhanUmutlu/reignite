@@ -1,4 +1,5 @@
 from xml.etree import ElementTree as ET
+
 from reignite.elements.plugin import Plugin
 
 
@@ -56,11 +57,13 @@ class VelocityControlPlugin(Plugin):
         el = ET.Element("plugin", name="gz::sim::systems::VelocityControl", filename="gz-sim-velocity-control-system")
         if self.initial_linear is not None:
             child = ET.Element("initial_linear")
-            child.text = " ".join(map(str, self.initial_linear)) if isinstance(self.initial_linear, list) else str(self.initial_linear)
+            child.text = " ".join(map(str, self.initial_linear)) if isinstance(self.initial_linear, list) else str(
+                self.initial_linear)
             el.append(child)
         if self.initial_angular is not None:
             child = ET.Element("initial_angular")
-            child.text = " ".join(map(str, self.initial_angular)) if isinstance(self.initial_angular, list) else str(self.initial_angular)
+            child.text = " ".join(map(str, self.initial_angular)) if isinstance(self.initial_angular, list) else str(
+                self.initial_angular)
             el.append(child)
         if self.topic is not None:
             child = ET.Element("topic")

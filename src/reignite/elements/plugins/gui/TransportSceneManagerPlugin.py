@@ -1,6 +1,8 @@
 from xml.etree import ElementTree as ET
+
 from .GzGui import GzGui
 from ...plugin import Plugin
+
 
 @Plugin.register("TransportSceneManager", "TransportSceneManager")
 class TransportSceneManagerPlugin(Plugin):
@@ -19,7 +21,7 @@ class TransportSceneManagerPlugin(Plugin):
         self.service = service
         self.name = name
         self.gz_gui = GzGui(**gui_kwargs)
-        
+
         super().__init__(
             sdf_version=None,
             filename="TransportSceneManager",
@@ -32,7 +34,8 @@ class TransportSceneManagerPlugin(Plugin):
         gui_kwargs = {}
         if gui_el is not None:
             gui = GzGui._from_sdf(gui_el, version)
-            for k in ["anchors", "anchor", "state", "z", "height", "width", "resizable", "show_title_bar", "delete_later", "title"]:
+            for k in ["anchors", "anchor", "state", "z", "height", "width", "resizable", "show_title_bar",
+                      "delete_later", "title"]:
                 if hasattr(gui, k) and getattr(gui, k) is not None:
                     gui_kwargs[k] = getattr(gui, k)
 
@@ -53,16 +56,16 @@ class TransportSceneManagerPlugin(Plugin):
 
     def to_sdf(self, version: str | None = None) -> ET.Element:
         el = ET.Element("plugin", name=self.name, filename="TransportSceneManager")
-        
+
         if self.gz_gui is not None:
             el.append(self.gz_gui.to_sdf(version))
-            
+
         def _add(k, v):
             if v is not None:
                 child = ET.Element(k)
                 child.text = str(v)
                 el.append(child)
-                
+
         _add("deletion_topic", self.deletion_topic)
         _add("pose_topic", self.pose_topic)
         _add("scene_topic", self.scene_topic)

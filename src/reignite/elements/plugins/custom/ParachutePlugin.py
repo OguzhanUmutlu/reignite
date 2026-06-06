@@ -1,4 +1,5 @@
 from xml.etree import ElementTree as ET
+
 from ...plugin import Plugin
 from ....utils.pose import _PoseT, _pose
 
@@ -51,7 +52,7 @@ class ParachutePlugin(Plugin):
 
     def to_sdf(self, version: str | None = None) -> ET.Element:
         el = super().to_sdf(version)
-        
+
         def _add(k, v):
             if v is not None:
                 child = ET.Element(k)
@@ -60,19 +61,19 @@ class ParachutePlugin(Plugin):
                 else:
                     child.text = str(v)
                 el.append(child)
-                
+
         _add("parent_link", self.parent_link)
         _add("child_model", self.child_model)
         _add("child_link", self.child_link)
         if self.child_pose is not None:
             _add("child_pose", _pose(self.child_pose).to_sdf())
-            
+
         if isinstance(self.cmd_topic, list):
             for t in self.cmd_topic:
                 _add("cmd_topic", t)
         else:
             _add("cmd_topic", self.cmd_topic)
-            
+
         return el
 
     def to_version(self, target_version: str):

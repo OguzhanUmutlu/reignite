@@ -1,12 +1,14 @@
 from xml.etree import ElementTree as ET
+
 from .GzGui import GzGui
 from ...plugin import Plugin
+
 
 @Plugin.register("InteractiveViewControl", "Interactive view control")
 class InteractiveViewControlPlugin(Plugin):
     def __init__(
             self,
-            name = "Interactive view control",
+            name="Interactive view control",
             **gui_kwargs
     ):
         self.name = name
@@ -25,7 +27,8 @@ class InteractiveViewControlPlugin(Plugin):
         gui_kwargs = {}
         if gui_el is not None:
             gui = GzGui._from_sdf(gui_el, version)
-            for k in ["anchors", "anchor", "state", "z", "height", "width", "resizable", "show_title_bar", "delete_later", "title"]:
+            for k in ["anchors", "anchor", "state", "z", "height", "width", "resizable", "show_title_bar",
+                      "delete_later", "title"]:
                 if hasattr(gui, k) and getattr(gui, k) is not None:
                     gui_kwargs[k] = getattr(gui, k)
 
@@ -41,7 +44,7 @@ class InteractiveViewControlPlugin(Plugin):
 
         if self.gz_gui is not None:
             el.append(self.gz_gui.to_sdf(version))
-            
+
         return el
 
     def to_version(self, target_version: str):
