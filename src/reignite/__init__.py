@@ -50,7 +50,46 @@ def _select_root_element(root: ET.Element) -> tuple[str, ET.Element]:
     return children[0].tag, children[0]
 
 
-def read_sdf_from_element(root: ET.Element, assert_class: type[T] | None = None) -> T | Any:
+def _process_includes(parent: ET.Element, allow_include: bool):
+    for i, child in enumerate(list(parent)):
+        if child.tag == "include":
+            if not allow_include:
+                raise ValueError("Include tags are not allowed when allow_include=False")
+            
+            uri_el = child.find("uri")
+            if uri_el is None or not uri_el.text:
+                raise ValueError("<include> must have a <uri> child")
+                
+            uri = uri_el.text
+            resolved = resolve_path(uri)
+            try:
+                included_tree = ET.parse(resolved).getroot()
+            except Exception as e:
+                raise ValueError(f"Failed to parse included file {resolved}: {e}")
+            
+            _, included_el = _select_root_element(included_tree)
+            
+            for override_el in list(child):
+                if override_el.tag == "uri":
+                    continue
+                elif override_el.tag == "name":
+                    if override_el.text:
+                        included_el.set("name", override_el.text)
+                else:
+                    if override_el.tag not in ("plugin", "model_state"):
+                        existing = included_el.findall(override_el.tag)
+                        for ex in existing:
+                            included_el.remove(ex)
+                    included_el.append(override_el)
+                    
+            _process_includes(included_el, allow_include)
+            parent[i] = included_el
+        else:
+            _process_includes(child, allow_include)
+
+
+def read_sdf_from_element(root: ET.Element, assert_class: type[T] | None = None, allow_include: bool = False) -> T | Any:
+    _process_includes(root, allow_include)
     if root.tag != "sdf":
         raise ValueError(f"Expected root element to be <sdf>, got <{root.tag}>.")
     version = root.get("version")
@@ -70,12 +109,12 @@ def read_sdf_from_element(root: ET.Element, assert_class: type[T] | None = None)
     return el
 
 
-def read_sdf(source: str | Path, assert_class: type[T] | None = None) -> T | Any:
-    return read_sdf_from_element(ET.parse(resolve_path(source)).getroot(), assert_class)
+def read_sdf(source: str | Path, assert_class: type[T] | None = None, allow_include: bool = False) -> T | Any:
+    return read_sdf_from_element(ET.parse(resolve_path(source)).getroot(), assert_class, allow_include)
 
 
-def read_sdf_string(xml_text: str, assert_class: type[T] | None = None) -> T | Any:
-    return read_sdf_from_element(ET.fromstring(xml_text), assert_class)
+def read_sdf_string(xml_text: str, assert_class: type[T] | None = None, allow_include: bool = False) -> T | Any:
+    return read_sdf_from_element(ET.fromstring(xml_text), assert_class, allow_include)
 
 
 def sdf_to_root(el: ET.Element, version: str) -> ET.ElementTree:
