@@ -1,8 +1,8 @@
 from typing import List
 
-import reignite
 from reignite.utils import Pose
-
+from .frame import Frame
+from .sensor import Sensor
 from .._sdf.joint import Joint as _Joint
 
 
@@ -12,19 +12,19 @@ class Joint(_Joint):
             sdf_version: str | None = None,
             axis: "Joint.Axis | None" = None,
             axis2: "Joint.Axis2 | None" = None,
-            child: "Joint.Child | str | None" = None,
-            frames: List["reignite.elements.Frame"] | None = None,
-            gearbox_ratio: float | None = 1.0,
-            gearbox_reference_body: str | None = "__default__",
-            name: str | None = "__default__",
+            child: "Joint.Child | None" = None,
+            frames: List["Frame"] | None = None,
+            gearbox_ratio: float | None = None,
+            gearbox_reference_body: str | None = None,
+            name: str | None = None,
             origin: "Joint.Origin | None" = None,
-            parent: "Joint.Parent | str | None" = None,
+            parent: "Joint.Parent | None" = None,
             physics: "Joint.Physics | None" = None,
             pose: "Pose | None" = None,
-            screw_thread_pitch: float | None = 1.0,
-            sensor: "reignite.elements.Sensor | None" = None,
-            thread_pitch: float | None = 1.0,
-            type: str | None = "__default__"
+            screw_thread_pitch: float | None = None,
+            sensor: "Sensor | None" = None,
+            thread_pitch: float | None = None,
+            type: str | None = None
     ):
         if isinstance(parent, str):
             parent = Joint.Parent(parent=parent)

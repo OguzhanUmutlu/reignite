@@ -1,5 +1,4 @@
 from .._sdf.model import Model as _Model
-from ..utils.model import BaseModel
 
 
 class Model(_Model):
