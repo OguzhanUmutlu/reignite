@@ -225,7 +225,7 @@ class Pose:
     def __getattr__(self, item):
         if item == "mercator_pos":
             x = (self.lon + 180.0) / 360.0
-            y = (1.0 - asinh(tan(radians(self.lat))) / self.pi) / 2.0
+            y = (1.0 - asinh(tan(radians(self.lat))) / pi) / 2.0
             return x, y
         if item == "yaw_deg":
             return degrees(self.yaw)
