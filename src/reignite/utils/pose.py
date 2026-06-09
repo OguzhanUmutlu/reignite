@@ -95,7 +95,7 @@ class Pose:
                  lat: float | None = None, lon: float | None = None,
                  rel_alt: float | None = None, alt: float | None = None,
                  inertial_frame: str | None = None, body_frame: str | None = None,
-                 mercator_pos: tuple[float, float] | None = None):
+                 mercator_pos: tuple[int, int] | None = None):
         self.yaw = radians(yaw_deg) if yaw_deg is not None else yaw or 0.0
         self.pitch = radians(pitch_deg) if pitch_deg is not None else pitch or 0.0
         self.roll = radians(roll_deg) if roll_deg is not None else roll or 0.0
