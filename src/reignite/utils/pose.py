@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from math import radians, cos, sin, degrees, inf, sqrt, atan2, pi
+from math import radians, cos, sin, degrees, inf, sqrt, atan2, pi, tan, asinh, atan, sinh
 from typing import Sequence
 
 _PoseT = Sequence[float] | str | "Pose"
@@ -94,7 +94,8 @@ class Pose:
                  roll_deg: float | None = None, pitch_deg: float | None = None, yaw_deg: float | None = None,
                  lat: float | None = None, lon: float | None = None,
                  rel_alt: float | None = None, alt: float | None = None,
-                 inertial_frame: str | None = None, body_frame: str | None = None):
+                 inertial_frame: str | None = None, body_frame: str | None = None,
+                 mercator_pos: tuple[float, float] | None = None):
         self.yaw = radians(yaw_deg) if yaw_deg is not None else yaw or 0.0
         self.pitch = radians(pitch_deg) if pitch_deg is not None else pitch or 0.0
         self.roll = radians(roll_deg) if roll_deg is not None else roll or 0.0
@@ -104,6 +105,11 @@ class Pose:
         if isinstance(x, Pose):
             self.set(x)
             return
+
+        if mercator_pos is not None:
+            lon = mercator_pos[0] * 360.0 - 180.0
+            n = pi * (1.0 - 2.0 * mercator_pos[1])
+            lat = degrees(atan(sinh(n)))
 
         if z is not None:
             rel_alt = z
@@ -149,6 +155,7 @@ class Pose:
             self.yaw_deg: float = 0.0
             self.pitch_deg: float = 0.0
             self.roll_deg: float = 0.0
+            self.mercator_pos: tuple[int, int] = (0, 0)
 
         self.ensure_float()
 
@@ -216,6 +223,10 @@ class Pose:
         self.roll = float(self.roll)
 
     def __getattr__(self, item):
+        if item == "mercator_pos":
+            x = (self.lon + 180.0) / 360.0
+            y = (1.0 - asinh(tan(radians(self.lat))) / self.pi) / 2.0
+            return x, y
         if item == "yaw_deg":
             return degrees(self.yaw)
         if item == "pitch_deg":
