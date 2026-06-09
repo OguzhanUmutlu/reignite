@@ -15,6 +15,14 @@ def _to_classname(s: str) -> str:
     return "".join(p.capitalize() for p in s.replace("-", "_").split("_"))
 
 
+def get_all_valid_models():
+    for resource_path in os.getenv("GZ_SIM_RESOURCE_PATH", "").split(":"):
+        for root, dirs, files in os.walk(resource_path):
+            if "model.sdf" in files:
+                yield Path(root).name
+                dirs.clear()
+
+
 def resolve_path(path: str | Path):
     if isinstance(path, Path):
         return path
