@@ -8,7 +8,7 @@ from typing import List
 
 from ..utils.model import BaseModel
 from ..utils.errors import SDFError
-from ..utils.pose import _PoseT, _pose
+from ..utils.pose import _PoseT, _pose, Pose
 from ..utils.vector3 import _Vector3T, _vector3
 from ..utils.version import cmp_version
 from ..utils.migration import apply_migrations
@@ -39,11 +39,11 @@ def _parse_pose(raw: str, el: ET.Element | None = None) -> _PoseT | SDFError:
 
 def _pose_to_sdf(val: _PoseT, el: ET.Element | None = None) -> str:
     if el is not None:
-        el.set('degrees', 'true')
-    if isinstance(val, _Pose):
-        return f'{val.x} {val.y} {val.z} {val.roll_deg} {val.pitch_deg} {val.yaw_deg}'
+        el.attrib.pop('degrees', None)
+    if isinstance(val, Pose):
+        return val.to_sdf()
     p = _pose(val)
-    return f'{p.x} {p.y} {p.z} {p.roll_deg} {p.pitch_deg} {p.yaw_deg}'
+    return p.to_sdf()
 
 def _parse_vector3(raw: str) -> _Vector3T | SDFError:
     try:

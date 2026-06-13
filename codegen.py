@@ -1572,7 +1572,10 @@ def generate_element_file(
 
     for mod, cls in sorted(all_type_imports.items()):
         class_name = _to_classname(mod)
-        lines.append(f"from ..utils.{mod} import _{class_name}T, _{mod}")
+        if mod == "pose":
+            lines.append(f"from ..utils.{mod} import _{class_name}T, _{mod}, {class_name}")
+        else:
+            lines.append(f"from ..utils.{mod} import _{class_name}T, _{mod}")
 
     if needs_version_cmp:
         lines.append("from ..utils.version import cmp_version")
@@ -1604,11 +1607,11 @@ def generate_element_file(
             lines.append("")
             lines.append(f"def _pose_to_sdf(val: _{class_name}T, el: ET.Element | None = None) -> str:")
             lines.append(f"    if el is not None:")
-            lines.append(f"        el.set('degrees', 'true')")
-            lines.append(f"    if isinstance(val, _{class_name}):")
-            lines.append(f"        return f'{{val.x}} {{val.y}} {{val.z}} {{val.roll_deg}} {{val.pitch_deg}} {{val.yaw_deg}}'")
+            lines.append(f"        el.attrib.pop('degrees', None)")
+            lines.append(f"    if isinstance(val, {class_name}):")
+            lines.append(f"        return val.to_sdf()")
             lines.append(f"    p = _{mod}(val)")
-            lines.append(f"    return f'{{p.x}} {{p.y}} {{p.z}} {{p.roll_deg}} {{p.pitch_deg}} {{p.yaw_deg}}'")
+            lines.append(f"    return p.to_sdf()")
             lines.append("")
         else:
             lines.append(f"def _parse_{mod}(raw: str) -> _{class_name}T | SDFError:")
