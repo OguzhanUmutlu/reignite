@@ -14,7 +14,6 @@ from ..utils.version import cmp_version
 
 if typing.TYPE_CHECKING:
     from ..elements.frame import Frame
-    from ..elements.pose import Pose
 
 def _parse_pose(raw: str) -> _PoseT | SDFError:
     try:
@@ -569,7 +568,7 @@ class Inertial(BaseModel):
         inertia: "Inertial.Inertia" = None,
         mass: float | None = None,
         origin: "Inertial.Origin" = None,
-        pose: "Pose" = None
+        pose: _PoseT | None = None
     ):
         super().__init__(sdf_version)
         self.auto = auto
@@ -580,7 +579,7 @@ class Inertial(BaseModel):
         self.inertia = inertia
         self.mass = mass
         self.origin = origin
-        self.pose = pose
+        self.pose = _pose(pose) if pose is not None else None
         if self.fluid_added_mass is not None and hasattr(self.fluid_added_mass, 'to_version'):
             if getattr(self.fluid_added_mass, 'sdfversion', None) is None:
                 self.fluid_added_mass.sdfversion = self.sdfversion
@@ -602,11 +601,6 @@ class Inertial(BaseModel):
                 self.origin.sdfversion = self.sdfversion
             elif getattr(self.origin, 'sdfversion', None) != self.sdfversion and self.sdfversion is not None:
                 self.origin = self.origin.to_version(self.sdfversion)
-        if self.pose is not None and hasattr(self.pose, 'to_version'):
-            if getattr(self.pose, 'sdfversion', None) is None:
-                self.pose.sdfversion = self.sdfversion
-            elif getattr(self.pose, 'sdfversion', None) != self.sdfversion and self.sdfversion is not None:
-                self.pose = self.pose.to_version(self.sdfversion)
 
     def add_frame(self, *items: "Frame"):
         if self.frames is None:
@@ -615,7 +609,6 @@ class Inertial(BaseModel):
 
     def to_version(self, target_version: str) -> "Inertial":
         from ..elements.frame import Frame
-        from ..elements.pose import Pose
         if self.auto is not None and cmp_version(target_version, "1.11") < 0:
             raise ValueError(f"'auto' is not supported in SDF version {target_version} (added in 1.11)")
         if self.auto_inertia_params is not None and cmp_version(target_version, "1.11") < 0:
@@ -630,12 +623,11 @@ class Inertial(BaseModel):
             raise ValueError(f"'origin' is not supported in SDF version {target_version} (removed in 1.2)")
         if self.pose is not None and cmp_version(target_version, "1.2") < 0:
             raise ValueError(f"'pose' is not supported in SDF version {target_version} (added in 1.2)")
-        kwargs: dict = {"sdf_version": target_version, "auto": self.auto, "auto_inertia_params": self.auto_inertia_params, "density": self.density, "fluid_added_mass": self.fluid_added_mass.to_version(target_version) if self.fluid_added_mass is not None and hasattr(self.fluid_added_mass, "to_version") else self.fluid_added_mass, "frames": [c.to_version(target_version) if hasattr(c, "to_version") else c for c in (self.frames or [])], "inertia": self.inertia.to_version(target_version) if self.inertia is not None and hasattr(self.inertia, "to_version") else self.inertia, "mass": self.mass, "origin": self.origin.to_version(target_version) if self.origin is not None and hasattr(self.origin, "to_version") else self.origin, "pose": self.pose.to_version(target_version) if self.pose is not None and hasattr(self.pose, "to_version") else self.pose}
+        kwargs: dict = {"sdf_version": target_version, "auto": self.auto, "auto_inertia_params": self.auto_inertia_params, "density": self.density, "fluid_added_mass": self.fluid_added_mass.to_version(target_version) if self.fluid_added_mass is not None and hasattr(self.fluid_added_mass, "to_version") else self.fluid_added_mass, "frames": [c.to_version(target_version) if hasattr(c, "to_version") else c for c in (self.frames or [])], "inertia": self.inertia.to_version(target_version) if self.inertia is not None and hasattr(self.inertia, "to_version") else self.inertia, "mass": self.mass, "origin": self.origin.to_version(target_version) if self.origin is not None and hasattr(self.origin, "to_version") else self.origin, "pose": self.pose}
         return Inertial(**kwargs)
 
     def to_sdf(self, version: str | None = None) -> ET.Element:
         from ..elements.frame import Frame
-        from ..elements.pose import Pose
         if self.sdfversion is None and version is not None:
             self.sdfversion = version
         elif version is not None and version != self.sdfversion:
@@ -696,19 +688,14 @@ class Inertial(BaseModel):
                 _item_el = _child_res
             el.append(_item_el)
         if self.pose is not None:
-            _child_res = self.pose.to_sdf(version)
-            if isinstance(_child_res, str):
-                _item_el = ET.Element('pose')
-                _item_el.text = _child_res
-            else:
-                _item_el = _child_res
-            el.append(_item_el)
+            _c_tmp = ET.Element("pose")
+            _c_tmp.text = str(self.pose)
+            el.append(_c_tmp)
         return el
 
     @classmethod
     def _from_sdf(cls, el: ET.Element, version: str) -> "Inertial | SDFError":
         from ..elements.frame import Frame
-        from ..elements.pose import Pose
         _raw_auto = el.get("auto")
         if _raw_auto is not None:
             _auto = str(_raw_auto).strip().lower() == 'true'
@@ -788,12 +775,13 @@ class Inertial(BaseModel):
             _origin = _res
         else:
             _origin = None
-        _c_pose = el.find("pose")
-        if _c_pose is not None:
-            _res = Pose._from_sdf(_c_pose, version)
-            if isinstance(_res, SDFError):
-                return _res.extend("pose")
-            _pose = _res
+        _c_tmp = el.find("pose")
+        if _c_tmp is not None:
+            _text = _c_tmp.text if _c_tmp.text is not None else "0 0 0 0 0 0"
+            _val = _parse_pose(_text)
+            if isinstance(_val, SDFError):
+                return _val.extend("pose")
+            _pose = _val
         else:
             _pose = None
         if _pose is not None and cmp_version(version, "1.2") < 0:

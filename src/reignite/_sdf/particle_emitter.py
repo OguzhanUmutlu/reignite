@@ -8,15 +8,21 @@ import typing
 from ..utils.model import BaseModel
 from ..utils.errors import SDFError
 from ..utils.color import _ColorT, _color
+from ..utils.pose import _PoseT, _pose
 from ..utils.vector3 import _Vector3T, _vector3
 
 if typing.TYPE_CHECKING:
     from ..elements.material import Material
-    from ..elements.pose import Pose
 
 def _parse_color(raw: str) -> _ColorT | SDFError:
     try:
         return _color(raw)
+    except ValueError as e:
+        return SDFError(str(e))
+
+def _parse_pose(raw: str) -> _PoseT | SDFError:
+    try:
+        return _pose(raw)
     except ValueError as e:
         return SDFError(str(e))
 
@@ -44,7 +50,7 @@ class ParticleEmitter(BaseModel):
         name: str | None = None,
         particle_scatter_ratio: float | None = None,
         particle_size: _Vector3T | None = None,
-        pose: "Pose" = None,
+        pose: _PoseT | None = None,
         rate: float | None = None,
         scale_rate: float | None = None,
         size: _Vector3T | None = None,
@@ -64,7 +70,7 @@ class ParticleEmitter(BaseModel):
         self.name = name
         self.particle_scatter_ratio = particle_scatter_ratio
         self.particle_size = _vector3(particle_size) if particle_size is not None else None
-        self.pose = pose
+        self.pose = _pose(pose) if pose is not None else None
         self.rate = rate
         self.scale_rate = scale_rate
         self.size = _vector3(size) if size is not None else None
@@ -75,21 +81,14 @@ class ParticleEmitter(BaseModel):
                 self.material.sdfversion = self.sdfversion
             elif getattr(self.material, 'sdfversion', None) != self.sdfversion and self.sdfversion is not None:
                 self.material = self.material.to_version(self.sdfversion)
-        if self.pose is not None and hasattr(self.pose, 'to_version'):
-            if getattr(self.pose, 'sdfversion', None) is None:
-                self.pose.sdfversion = self.sdfversion
-            elif getattr(self.pose, 'sdfversion', None) != self.sdfversion and self.sdfversion is not None:
-                self.pose = self.pose.to_version(self.sdfversion)
 
     def to_version(self, target_version: str) -> "ParticleEmitter":
         from ..elements.material import Material
-        from ..elements.pose import Pose
-        kwargs: dict = {"sdf_version": target_version, "color_end": self.color_end, "color_range_image": self.color_range_image, "color_start": self.color_start, "duration": self.duration, "emitting": self.emitting, "lifetime": self.lifetime, "material": self.material.to_version(target_version) if self.material is not None and hasattr(self.material, "to_version") else self.material, "max_velocity": self.max_velocity, "min_velocity": self.min_velocity, "name": self.name, "particle_scatter_ratio": self.particle_scatter_ratio, "particle_size": self.particle_size, "pose": self.pose.to_version(target_version) if self.pose is not None and hasattr(self.pose, "to_version") else self.pose, "rate": self.rate, "scale_rate": self.scale_rate, "size": self.size, "topic": self.topic, "type": self.type}
+        kwargs: dict = {"sdf_version": target_version, "color_end": self.color_end, "color_range_image": self.color_range_image, "color_start": self.color_start, "duration": self.duration, "emitting": self.emitting, "lifetime": self.lifetime, "material": self.material.to_version(target_version) if self.material is not None and hasattr(self.material, "to_version") else self.material, "max_velocity": self.max_velocity, "min_velocity": self.min_velocity, "name": self.name, "particle_scatter_ratio": self.particle_scatter_ratio, "particle_size": self.particle_size, "pose": self.pose, "rate": self.rate, "scale_rate": self.scale_rate, "size": self.size, "topic": self.topic, "type": self.type}
         return ParticleEmitter(**kwargs)
 
     def to_sdf(self, version: str | None = None) -> ET.Element:
         from ..elements.material import Material
-        from ..elements.pose import Pose
         if self.sdfversion is None and version is not None:
             self.sdfversion = version
         elif version is not None and version != self.sdfversion:
@@ -148,13 +147,9 @@ class ParticleEmitter(BaseModel):
             _c_tmp.text = str(self.particle_size)
             el.append(_c_tmp)
         if self.pose is not None:
-            _child_res = self.pose.to_sdf(version)
-            if isinstance(_child_res, str):
-                _item_el = ET.Element('pose')
-                _item_el.text = _child_res
-            else:
-                _item_el = _child_res
-            el.append(_item_el)
+            _c_tmp = ET.Element("pose")
+            _c_tmp.text = str(self.pose)
+            el.append(_c_tmp)
         if self.rate is not None:
             _c_tmp = ET.Element("rate")
             _c_tmp.text = str(self.rate)
@@ -178,7 +173,6 @@ class ParticleEmitter(BaseModel):
     @classmethod
     def _from_sdf(cls, el: ET.Element, version: str) -> "ParticleEmitter | SDFError":
         from ..elements.material import Material
-        from ..elements.pose import Pose
         _c_tmp = el.find("color_end")
         if _c_tmp is not None:
             _text = _c_tmp.text if _c_tmp.text is not None else "1 1 1 1"
@@ -284,12 +278,13 @@ class ParticleEmitter(BaseModel):
             _particle_size = _val
         else:
             _particle_size = None
-        _c_pose = el.find("pose")
-        if _c_pose is not None:
-            _res = Pose._from_sdf(_c_pose, version)
-            if isinstance(_res, SDFError):
-                return _res.extend("pose")
-            _pose = _res
+        _c_tmp = el.find("pose")
+        if _c_tmp is not None:
+            _text = _c_tmp.text if _c_tmp.text is not None else "0 0 0 0 0 0"
+            _val = _parse_pose(_text)
+            if isinstance(_val, SDFError):
+                return _val.extend("pose")
+            _pose = _val
         else:
             _pose = None
         _c_tmp = el.find("rate")

@@ -17,7 +17,6 @@ from ..utils.migration import apply_migrations
 if typing.TYPE_CHECKING:
     from ..elements.frame import Frame
     from ..elements.mimic import Mimic
-    from ..elements.pose import Pose
     from ..elements.sensor import Sensor
 
 def _parse_pose(raw: str) -> _PoseT | SDFError:
@@ -1482,7 +1481,7 @@ class Joint(BaseModel):
         origin: "Joint.Origin" = None,
         parent: "Joint.Parent" = None,
         physics: "Joint.Physics" = None,
-        pose: "Pose" = None,
+        pose: _PoseT | None = None,
         screw_thread_pitch: float | None = None,
         sensor: "Sensor" = None,
         thread_pitch: float | None = None,
@@ -1499,7 +1498,7 @@ class Joint(BaseModel):
         self.origin = origin
         self.parent = parent
         self.physics = physics
-        self.pose = pose
+        self.pose = _pose(pose) if pose is not None else None
         self.screw_thread_pitch = screw_thread_pitch
         self.sensor = sensor
         self.thread_pitch = thread_pitch
@@ -1540,11 +1539,6 @@ class Joint(BaseModel):
                 self.physics.sdfversion = self.sdfversion
             elif getattr(self.physics, 'sdfversion', None) != self.sdfversion and self.sdfversion is not None:
                 self.physics = self.physics.to_version(self.sdfversion)
-        if self.pose is not None and hasattr(self.pose, 'to_version'):
-            if getattr(self.pose, 'sdfversion', None) is None:
-                self.pose.sdfversion = self.sdfversion
-            elif getattr(self.pose, 'sdfversion', None) != self.sdfversion and self.sdfversion is not None:
-                self.pose = self.pose.to_version(self.sdfversion)
         if self.sensor is not None and hasattr(self.sensor, 'to_version'):
             if getattr(self.sensor, 'sdfversion', None) is None:
                 self.sensor.sdfversion = self.sdfversion
@@ -1558,7 +1552,6 @@ class Joint(BaseModel):
 
     def to_version(self, target_version: str) -> "Joint":
         from ..elements.frame import Frame
-        from ..elements.pose import Pose
         from ..elements.sensor import Sensor
         if self.frames and cmp_version(target_version, "1.5") < 0:
             raise ValueError(f"'frames' is not supported in SDF version {target_version} (added in 1.5)")
@@ -1576,12 +1569,11 @@ class Joint(BaseModel):
             raise ValueError(f"'screw_thread_pitch' is not supported in SDF version {target_version} (added in 1.10)")
         if self.sensor is not None and cmp_version(target_version, "1.4") < 0:
             raise ValueError(f"'sensor' is not supported in SDF version {target_version} (added in 1.4)")
-        kwargs: dict = {"sdf_version": target_version, "axis": self.axis.to_version(target_version) if self.axis is not None and hasattr(self.axis, "to_version") else self.axis, "axis2": self.axis2.to_version(target_version) if self.axis2 is not None and hasattr(self.axis2, "to_version") else self.axis2, "child": self.child.to_version(target_version) if self.child is not None and hasattr(self.child, "to_version") else self.child, "frames": [c.to_version(target_version) if hasattr(c, "to_version") else c for c in (self.frames or [])], "gearbox_ratio": self.gearbox_ratio, "gearbox_reference_body": self.gearbox_reference_body, "name": self.name, "origin": self.origin.to_version(target_version) if self.origin is not None and hasattr(self.origin, "to_version") else self.origin, "parent": self.parent.to_version(target_version) if self.parent is not None and hasattr(self.parent, "to_version") else self.parent, "physics": self.physics.to_version(target_version) if self.physics is not None and hasattr(self.physics, "to_version") else self.physics, "pose": self.pose.to_version(target_version) if self.pose is not None and hasattr(self.pose, "to_version") else self.pose, "screw_thread_pitch": self.screw_thread_pitch, "sensor": self.sensor.to_version(target_version) if self.sensor is not None and hasattr(self.sensor, "to_version") else self.sensor, "thread_pitch": self.thread_pitch, "type": self.type}
+        kwargs: dict = {"sdf_version": target_version, "axis": self.axis.to_version(target_version) if self.axis is not None and hasattr(self.axis, "to_version") else self.axis, "axis2": self.axis2.to_version(target_version) if self.axis2 is not None and hasattr(self.axis2, "to_version") else self.axis2, "child": self.child.to_version(target_version) if self.child is not None and hasattr(self.child, "to_version") else self.child, "frames": [c.to_version(target_version) if hasattr(c, "to_version") else c for c in (self.frames or [])], "gearbox_ratio": self.gearbox_ratio, "gearbox_reference_body": self.gearbox_reference_body, "name": self.name, "origin": self.origin.to_version(target_version) if self.origin is not None and hasattr(self.origin, "to_version") else self.origin, "parent": self.parent.to_version(target_version) if self.parent is not None and hasattr(self.parent, "to_version") else self.parent, "physics": self.physics.to_version(target_version) if self.physics is not None and hasattr(self.physics, "to_version") else self.physics, "pose": self.pose, "screw_thread_pitch": self.screw_thread_pitch, "sensor": self.sensor.to_version(target_version) if self.sensor is not None and hasattr(self.sensor, "to_version") else self.sensor, "thread_pitch": self.thread_pitch, "type": self.type}
         return Joint(**kwargs)
 
     def to_sdf(self, version: str | None = None) -> ET.Element:
         from ..elements.frame import Frame
-        from ..elements.pose import Pose
         from ..elements.sensor import Sensor
         if self.sdfversion is None and version is not None:
             self.sdfversion = version
@@ -1657,13 +1649,9 @@ class Joint(BaseModel):
                 _item_el = _child_res
             el.append(_item_el)
         if self.pose is not None:
-            _child_res = self.pose.to_sdf(version)
-            if isinstance(_child_res, str):
-                _item_el = ET.Element('pose')
-                _item_el.text = _child_res
-            else:
-                _item_el = _child_res
-            el.append(_item_el)
+            _c_tmp = ET.Element("pose")
+            _c_tmp.text = str(self.pose)
+            el.append(_c_tmp)
         if self.screw_thread_pitch is not None:
             _c_tmp = ET.Element("screw_thread_pitch")
             _c_tmp.text = str(self.screw_thread_pitch)
@@ -1687,7 +1675,6 @@ class Joint(BaseModel):
     @classmethod
     def _from_sdf(cls, el: ET.Element, version: str) -> "Joint | SDFError":
         from ..elements.frame import Frame
-        from ..elements.pose import Pose
         from ..elements.sensor import Sensor
         _c_axis = el.find("axis")
         if _c_axis is not None:
@@ -1774,12 +1761,13 @@ class Joint(BaseModel):
             _physics = _res
         else:
             _physics = None
-        _c_pose = el.find("pose")
-        if _c_pose is not None:
-            _res = Pose._from_sdf(_c_pose, version)
-            if isinstance(_res, SDFError):
-                return _res.extend("pose")
-            _pose = _res
+        _c_tmp = el.find("pose")
+        if _c_tmp is not None:
+            _text = _c_tmp.text if _c_tmp.text is not None else "0 0 0 0 0 0"
+            _val = _parse_pose(_text)
+            if isinstance(_val, SDFError):
+                return _val.extend("pose")
+            _pose = _val
         else:
             _pose = None
         if _pose is not None and cmp_version(version, "1.2") < 0:

@@ -9,12 +9,18 @@ from typing import List
 
 from ..utils.model import BaseModel
 from ..utils.errors import SDFError
+from ..utils.pose import _PoseT, _pose
 from ..utils.vector2d import _Vector2dT, _vector2d
 from ..utils.version import cmp_version
 
 if typing.TYPE_CHECKING:
     from ..elements.frame import Frame
-    from ..elements.pose import Pose
+
+def _parse_pose(raw: str) -> _PoseT | SDFError:
+    try:
+        return _pose(raw)
+    except ValueError as e:
+        return SDFError(str(e))
 
 def _parse_vector2d(raw: str) -> _Vector2dT | SDFError:
     try:
@@ -1107,7 +1113,7 @@ class Camera(BaseModel):
         name: str | None = None,
         noise: "Camera.Noise" = None,
         optical_frame_id: str | None = None,
-        pose: "Pose" = None,
+        pose: _PoseT | None = None,
         save: "Camera.Save" = None,
         segmentation_type: str | None = None,
         trigger_topic: str | None = None,
@@ -1127,7 +1133,7 @@ class Camera(BaseModel):
         self.name = name
         self.noise = noise
         self.optical_frame_id = optical_frame_id
-        self.pose = pose
+        self.pose = _pose(pose) if pose is not None else None
         self.save = save
         self.segmentation_type = segmentation_type
         self.trigger_topic = trigger_topic
@@ -1174,11 +1180,6 @@ class Camera(BaseModel):
                 self.noise.sdfversion = self.sdfversion
             elif getattr(self.noise, 'sdfversion', None) != self.sdfversion and self.sdfversion is not None:
                 self.noise = self.noise.to_version(self.sdfversion)
-        if self.pose is not None and hasattr(self.pose, 'to_version'):
-            if getattr(self.pose, 'sdfversion', None) is None:
-                self.pose.sdfversion = self.sdfversion
-            elif getattr(self.pose, 'sdfversion', None) != self.sdfversion and self.sdfversion is not None:
-                self.pose = self.pose.to_version(self.sdfversion)
         if self.save is not None and hasattr(self.save, 'to_version'):
             if getattr(self.save, 'sdfversion', None) is None:
                 self.save.sdfversion = self.sdfversion
@@ -1192,7 +1193,6 @@ class Camera(BaseModel):
 
     def to_version(self, target_version: str) -> "Camera":
         from ..elements.frame import Frame
-        from ..elements.pose import Pose
         if self.box_type is not None and cmp_version(target_version, "1.9") < 0:
             raise ValueError(f"'box_type' is not supported in SDF version {target_version} (added in 1.9)")
         if self.camera_info_topic is not None and cmp_version(target_version, "1.7") < 0:
@@ -1221,12 +1221,11 @@ class Camera(BaseModel):
             raise ValueError(f"'triggered' is not supported in SDF version {target_version} (added in 1.9)")
         if self.visibility_mask is not None and cmp_version(target_version, "1.7") < 0:
             raise ValueError(f"'visibility_mask' is not supported in SDF version {target_version} (added in 1.7)")
-        kwargs: dict = {"sdf_version": target_version, "box_type": self.box_type, "camera_info_topic": self.camera_info_topic, "clip": self.clip.to_version(target_version) if self.clip is not None and hasattr(self.clip, "to_version") else self.clip, "depth_camera": self.depth_camera.to_version(target_version) if self.depth_camera is not None and hasattr(self.depth_camera, "to_version") else self.depth_camera, "distortion": self.distortion.to_version(target_version) if self.distortion is not None and hasattr(self.distortion, "to_version") else self.distortion, "frames": [c.to_version(target_version) if hasattr(c, "to_version") else c for c in (self.frames or [])], "horizontal_fov": self.horizontal_fov.to_version(target_version) if self.horizontal_fov is not None and hasattr(self.horizontal_fov, "to_version") else self.horizontal_fov, "image": self.image.to_version(target_version) if self.image is not None and hasattr(self.image, "to_version") else self.image, "lens": self.lens.to_version(target_version) if self.lens is not None and hasattr(self.lens, "to_version") else self.lens, "name": self.name, "noise": self.noise.to_version(target_version) if self.noise is not None and hasattr(self.noise, "to_version") else self.noise, "optical_frame_id": self.optical_frame_id, "pose": self.pose.to_version(target_version) if self.pose is not None and hasattr(self.pose, "to_version") else self.pose, "save": self.save.to_version(target_version) if self.save is not None and hasattr(self.save, "to_version") else self.save, "segmentation_type": self.segmentation_type, "trigger_topic": self.trigger_topic, "triggered": self.triggered, "visibility_mask": self.visibility_mask}
+        kwargs: dict = {"sdf_version": target_version, "box_type": self.box_type, "camera_info_topic": self.camera_info_topic, "clip": self.clip.to_version(target_version) if self.clip is not None and hasattr(self.clip, "to_version") else self.clip, "depth_camera": self.depth_camera.to_version(target_version) if self.depth_camera is not None and hasattr(self.depth_camera, "to_version") else self.depth_camera, "distortion": self.distortion.to_version(target_version) if self.distortion is not None and hasattr(self.distortion, "to_version") else self.distortion, "frames": [c.to_version(target_version) if hasattr(c, "to_version") else c for c in (self.frames or [])], "horizontal_fov": self.horizontal_fov.to_version(target_version) if self.horizontal_fov is not None and hasattr(self.horizontal_fov, "to_version") else self.horizontal_fov, "image": self.image.to_version(target_version) if self.image is not None and hasattr(self.image, "to_version") else self.image, "lens": self.lens.to_version(target_version) if self.lens is not None and hasattr(self.lens, "to_version") else self.lens, "name": self.name, "noise": self.noise.to_version(target_version) if self.noise is not None and hasattr(self.noise, "to_version") else self.noise, "optical_frame_id": self.optical_frame_id, "pose": self.pose, "save": self.save.to_version(target_version) if self.save is not None and hasattr(self.save, "to_version") else self.save, "segmentation_type": self.segmentation_type, "trigger_topic": self.trigger_topic, "triggered": self.triggered, "visibility_mask": self.visibility_mask}
         return Camera(**kwargs)
 
     def to_sdf(self, version: str | None = None) -> ET.Element:
         from ..elements.frame import Frame
-        from ..elements.pose import Pose
         if self.sdfversion is None and version is not None:
             self.sdfversion = version
         elif version is not None and version != self.sdfversion:
@@ -1313,13 +1312,9 @@ class Camera(BaseModel):
             _c_tmp.text = self.optical_frame_id
             el.append(_c_tmp)
         if self.pose is not None:
-            _child_res = self.pose.to_sdf(version)
-            if isinstance(_child_res, str):
-                _item_el = ET.Element('pose')
-                _item_el.text = _child_res
-            else:
-                _item_el = _child_res
-            el.append(_item_el)
+            _c_tmp = ET.Element("pose")
+            _c_tmp.text = str(self.pose)
+            el.append(_c_tmp)
         if self.save is not None:
             _child_res = self.save.to_sdf(version)
             if isinstance(_child_res, str):
@@ -1349,7 +1344,6 @@ class Camera(BaseModel):
     @classmethod
     def _from_sdf(cls, el: ET.Element, version: str) -> "Camera | SDFError":
         from ..elements.frame import Frame
-        from ..elements.pose import Pose
         _c_tmp = el.find("box_type")
         if _c_tmp is not None:
             _text = _c_tmp.text if _c_tmp.text is not None else "2d"
@@ -1463,12 +1457,13 @@ class Camera(BaseModel):
             _optical_frame_id = None
         if _optical_frame_id is not None and cmp_version(version, "1.7") < 0:
             return SDFError(f"'optical_frame_id' is not supported in SDF version {version} (added in 1.7)")
-        _c_pose = el.find("pose")
-        if _c_pose is not None:
-            _res = Pose._from_sdf(_c_pose, version)
-            if isinstance(_res, SDFError):
-                return _res.extend("pose")
-            _pose = _res
+        _c_tmp = el.find("pose")
+        if _c_tmp is not None:
+            _text = _c_tmp.text if _c_tmp.text is not None else "0 0 0 0 0 0"
+            _val = _parse_pose(_text)
+            if isinstance(_val, SDFError):
+                return _val.extend("pose")
+            _pose = _val
         else:
             _pose = None
         if _pose is not None and cmp_version(version, "1.3") < 0:

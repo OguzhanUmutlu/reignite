@@ -16,7 +16,6 @@ from ..utils.version import cmp_version
 
 if typing.TYPE_CHECKING:
     from ..elements.frame import Frame
-    from ..elements.pose import Pose
 
 def _parse_color(raw: str) -> _ColorT | SDFError:
     try:
@@ -452,7 +451,7 @@ class Light(BaseModel):
         light_on: bool | None = None,
         name: str | None = None,
         origin: "Light.Origin" = None,
-        pose: "Pose" = None,
+        pose: _PoseT | None = None,
         specular: "Light.Specular" = None,
         spot: "Light.Spot" = None,
         type: str | None = None,
@@ -468,7 +467,7 @@ class Light(BaseModel):
         self.light_on = light_on
         self.name = name
         self.origin = origin
-        self.pose = pose
+        self.pose = _pose(pose) if pose is not None else None
         self.specular = specular
         self.spot = spot
         self.type = type
@@ -499,11 +498,6 @@ class Light(BaseModel):
                 self.origin.sdfversion = self.sdfversion
             elif getattr(self.origin, 'sdfversion', None) != self.sdfversion and self.sdfversion is not None:
                 self.origin = self.origin.to_version(self.sdfversion)
-        if self.pose is not None and hasattr(self.pose, 'to_version'):
-            if getattr(self.pose, 'sdfversion', None) is None:
-                self.pose.sdfversion = self.sdfversion
-            elif getattr(self.pose, 'sdfversion', None) != self.sdfversion and self.sdfversion is not None:
-                self.pose = self.pose.to_version(self.sdfversion)
         if self.specular is not None and hasattr(self.specular, 'to_version'):
             if getattr(self.specular, 'sdfversion', None) is None:
                 self.specular.sdfversion = self.sdfversion
@@ -522,7 +516,6 @@ class Light(BaseModel):
 
     def to_version(self, target_version: str) -> "Light":
         from ..elements.frame import Frame
-        from ..elements.pose import Pose
         if self.frames and cmp_version(target_version, "1.5") < 0:
             raise ValueError(f"'frames' is not supported in SDF version {target_version} (added in 1.5)")
         if self.frames and cmp_version(target_version, "1.7") >= 0:
@@ -537,12 +530,11 @@ class Light(BaseModel):
             raise ValueError(f"'pose' is not supported in SDF version {target_version} (added in 1.2)")
         if self.visualize is not None and cmp_version(target_version, "1.8") < 0:
             raise ValueError(f"'visualize' is not supported in SDF version {target_version} (added in 1.8)")
-        kwargs: dict = {"sdf_version": target_version, "attenuation": self.attenuation.to_version(target_version) if self.attenuation is not None and hasattr(self.attenuation, "to_version") else self.attenuation, "cast_shadows": self.cast_shadows, "diffuse": self.diffuse.to_version(target_version) if self.diffuse is not None and hasattr(self.diffuse, "to_version") else self.diffuse, "direction": self.direction.to_version(target_version) if self.direction is not None and hasattr(self.direction, "to_version") else self.direction, "frames": [c.to_version(target_version) if hasattr(c, "to_version") else c for c in (self.frames or [])], "intensity": self.intensity, "light_on": self.light_on, "name": self.name, "origin": self.origin.to_version(target_version) if self.origin is not None and hasattr(self.origin, "to_version") else self.origin, "pose": self.pose.to_version(target_version) if self.pose is not None and hasattr(self.pose, "to_version") else self.pose, "specular": self.specular.to_version(target_version) if self.specular is not None and hasattr(self.specular, "to_version") else self.specular, "spot": self.spot.to_version(target_version) if self.spot is not None and hasattr(self.spot, "to_version") else self.spot, "type": self.type, "visualize": self.visualize}
+        kwargs: dict = {"sdf_version": target_version, "attenuation": self.attenuation.to_version(target_version) if self.attenuation is not None and hasattr(self.attenuation, "to_version") else self.attenuation, "cast_shadows": self.cast_shadows, "diffuse": self.diffuse.to_version(target_version) if self.diffuse is not None and hasattr(self.diffuse, "to_version") else self.diffuse, "direction": self.direction.to_version(target_version) if self.direction is not None and hasattr(self.direction, "to_version") else self.direction, "frames": [c.to_version(target_version) if hasattr(c, "to_version") else c for c in (self.frames or [])], "intensity": self.intensity, "light_on": self.light_on, "name": self.name, "origin": self.origin.to_version(target_version) if self.origin is not None and hasattr(self.origin, "to_version") else self.origin, "pose": self.pose, "specular": self.specular.to_version(target_version) if self.specular is not None and hasattr(self.specular, "to_version") else self.specular, "spot": self.spot.to_version(target_version) if self.spot is not None and hasattr(self.spot, "to_version") else self.spot, "type": self.type, "visualize": self.visualize}
         return Light(**kwargs)
 
     def to_sdf(self, version: str | None = None) -> ET.Element:
         from ..elements.frame import Frame
-        from ..elements.pose import Pose
         if self.sdfversion is None and version is not None:
             self.sdfversion = version
         elif version is not None and version != self.sdfversion:
@@ -608,13 +600,9 @@ class Light(BaseModel):
                 _item_el = _child_res
             el.append(_item_el)
         if self.pose is not None:
-            _child_res = self.pose.to_sdf(version)
-            if isinstance(_child_res, str):
-                _item_el = ET.Element('pose')
-                _item_el.text = _child_res
-            else:
-                _item_el = _child_res
-            el.append(_item_el)
+            _c_tmp = ET.Element("pose")
+            _c_tmp.text = str(self.pose)
+            el.append(_c_tmp)
         if self.specular is not None:
             _child_res = self.specular.to_sdf(version)
             if isinstance(_child_res, str):
@@ -642,7 +630,6 @@ class Light(BaseModel):
     @classmethod
     def _from_sdf(cls, el: ET.Element, version: str) -> "Light | SDFError":
         from ..elements.frame import Frame
-        from ..elements.pose import Pose
         _c_attenuation = el.find("attenuation")
         if _c_attenuation is not None:
             _res = cls.Attenuation._from_sdf(_c_attenuation, version)
@@ -724,12 +711,13 @@ class Light(BaseModel):
             _origin = _res
         else:
             _origin = None
-        _c_pose = el.find("pose")
-        if _c_pose is not None:
-            _res = Pose._from_sdf(_c_pose, version)
-            if isinstance(_res, SDFError):
-                return _res.extend("pose")
-            _pose = _res
+        _c_tmp = el.find("pose")
+        if _c_tmp is not None:
+            _text = _c_tmp.text if _c_tmp.text is not None else "0 0 0 0 0 0"
+            _val = _parse_pose(_text)
+            if isinstance(_val, SDFError):
+                return _val.extend("pose")
+            _pose = _val
         else:
             _pose = None
         if _pose is not None and cmp_version(version, "1.2") < 0:

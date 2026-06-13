@@ -21,7 +21,6 @@ if typing.TYPE_CHECKING:
     from ..elements.inertial import Inertial
     from ..elements.light import Light
     from ..elements.particle_emitter import ParticleEmitter
-    from ..elements.pose import Pose
     from ..elements.projector import Projector
     from ..elements.sensor import Sensor
     from ..elements.visual import Visual
@@ -205,7 +204,7 @@ class Link(BaseModel):
         name: str | None = None,
         origin: "Link.Origin" = None,
         particle_emitters: List["ParticleEmitter"] = None,
-        pose: "Pose" = None,
+        pose: _PoseT | None = None,
         projector: "Projector" = None,
         self_collide: bool | None = None,
         sensor: "Sensor" = None,
@@ -228,7 +227,7 @@ class Link(BaseModel):
         self.name = name
         self.origin = origin
         self.particle_emitters = particle_emitters or []
-        self.pose = pose
+        self.pose = _pose(pose) if pose is not None else None
         self.projector = projector
         self.self_collide = self_collide
         self.sensor = sensor
@@ -291,11 +290,6 @@ class Link(BaseModel):
                 _c.sdfversion = self.sdfversion
             elif getattr(_c, 'sdfversion', None) != self.sdfversion and self.sdfversion is not None:
                 self.particle_emitters[_i] = _c.to_version(self.sdfversion)
-        if self.pose is not None and hasattr(self.pose, 'to_version'):
-            if getattr(self.pose, 'sdfversion', None) is None:
-                self.pose.sdfversion = self.sdfversion
-            elif getattr(self.pose, 'sdfversion', None) != self.sdfversion and self.sdfversion is not None:
-                self.pose = self.pose.to_version(self.sdfversion)
         if self.projector is not None and hasattr(self.projector, 'to_version'):
             if getattr(self.projector, 'sdfversion', None) is None:
                 self.projector.sdfversion = self.sdfversion
@@ -367,7 +361,6 @@ class Link(BaseModel):
         from ..elements.inertial import Inertial
         from ..elements.light import Light
         from ..elements.particle_emitter import ParticleEmitter
-        from ..elements.pose import Pose
         from ..elements.projector import Projector
         from ..elements.sensor import Sensor
         from ..elements.visual import Visual
@@ -395,7 +388,7 @@ class Link(BaseModel):
             raise ValueError(f"'pose' is not supported in SDF version {target_version} (added in 1.2)")
         if self.velocity_decay is not None and cmp_version(target_version, "1.2") < 0:
             raise ValueError(f"'velocity_decay' is not supported in SDF version {target_version} (added in 1.2)")
-        kwargs: dict = {"sdf_version": target_version, "audio_sinks": [c.to_version(target_version) if hasattr(c, "to_version") else c for c in (self.audio_sinks or [])], "audio_sources": [c.to_version(target_version) if hasattr(c, "to_version") else c for c in (self.audio_sources or [])], "batteries": [c.to_version(target_version) if hasattr(c, "to_version") else c for c in (self.batteries or [])], "collisions": [c.to_version(target_version) if hasattr(c, "to_version") else c for c in (self.collisions or [])], "damping": self.damping.to_version(target_version) if self.damping is not None and hasattr(self.damping, "to_version") else self.damping, "enable_wind": self.enable_wind, "frames": [c.to_version(target_version) if hasattr(c, "to_version") else c for c in (self.frames or [])], "gravity": self.gravity, "inertial": self.inertial.to_version(target_version) if self.inertial is not None and hasattr(self.inertial, "to_version") else self.inertial, "kinematic": self.kinematic, "lights": [c.to_version(target_version) if hasattr(c, "to_version") else c for c in (self.lights or [])], "must_be_base_link": self.must_be_base_link, "name": self.name, "origin": self.origin.to_version(target_version) if self.origin is not None and hasattr(self.origin, "to_version") else self.origin, "particle_emitters": [c.to_version(target_version) if hasattr(c, "to_version") else c for c in (self.particle_emitters or [])], "pose": self.pose.to_version(target_version) if self.pose is not None and hasattr(self.pose, "to_version") else self.pose, "projector": self.projector.to_version(target_version) if self.projector is not None and hasattr(self.projector, "to_version") else self.projector, "self_collide": self.self_collide, "sensor": self.sensor.to_version(target_version) if self.sensor is not None and hasattr(self.sensor, "to_version") else self.sensor, "velocity_decay": self.velocity_decay.to_version(target_version) if self.velocity_decay is not None and hasattr(self.velocity_decay, "to_version") else self.velocity_decay, "visuals": [c.to_version(target_version) if hasattr(c, "to_version") else c for c in (self.visuals or [])]}
+        kwargs: dict = {"sdf_version": target_version, "audio_sinks": [c.to_version(target_version) if hasattr(c, "to_version") else c for c in (self.audio_sinks or [])], "audio_sources": [c.to_version(target_version) if hasattr(c, "to_version") else c for c in (self.audio_sources or [])], "batteries": [c.to_version(target_version) if hasattr(c, "to_version") else c for c in (self.batteries or [])], "collisions": [c.to_version(target_version) if hasattr(c, "to_version") else c for c in (self.collisions or [])], "damping": self.damping.to_version(target_version) if self.damping is not None and hasattr(self.damping, "to_version") else self.damping, "enable_wind": self.enable_wind, "frames": [c.to_version(target_version) if hasattr(c, "to_version") else c for c in (self.frames or [])], "gravity": self.gravity, "inertial": self.inertial.to_version(target_version) if self.inertial is not None and hasattr(self.inertial, "to_version") else self.inertial, "kinematic": self.kinematic, "lights": [c.to_version(target_version) if hasattr(c, "to_version") else c for c in (self.lights or [])], "must_be_base_link": self.must_be_base_link, "name": self.name, "origin": self.origin.to_version(target_version) if self.origin is not None and hasattr(self.origin, "to_version") else self.origin, "particle_emitters": [c.to_version(target_version) if hasattr(c, "to_version") else c for c in (self.particle_emitters or [])], "pose": self.pose, "projector": self.projector.to_version(target_version) if self.projector is not None and hasattr(self.projector, "to_version") else self.projector, "self_collide": self.self_collide, "sensor": self.sensor.to_version(target_version) if self.sensor is not None and hasattr(self.sensor, "to_version") else self.sensor, "velocity_decay": self.velocity_decay.to_version(target_version) if self.velocity_decay is not None and hasattr(self.velocity_decay, "to_version") else self.velocity_decay, "visuals": [c.to_version(target_version) if hasattr(c, "to_version") else c for c in (self.visuals or [])]}
         return Link(**kwargs)
 
     def to_sdf(self, version: str | None = None) -> ET.Element:
@@ -407,7 +400,6 @@ class Link(BaseModel):
         from ..elements.inertial import Inertial
         from ..elements.light import Light
         from ..elements.particle_emitter import ParticleEmitter
-        from ..elements.pose import Pose
         from ..elements.projector import Projector
         from ..elements.sensor import Sensor
         from ..elements.visual import Visual
@@ -527,13 +519,9 @@ class Link(BaseModel):
                 _item_el = _child_res
             el.append(_item_el)
         if self.pose is not None:
-            _child_res = self.pose.to_sdf(version)
-            if isinstance(_child_res, str):
-                _item_el = ET.Element('pose')
-                _item_el.text = _child_res
-            else:
-                _item_el = _child_res
-            el.append(_item_el)
+            _c_tmp = ET.Element("pose")
+            _c_tmp.text = str(self.pose)
+            el.append(_c_tmp)
         if self.projector is not None:
             _child_res = self.projector.to_sdf(version)
             if isinstance(_child_res, str):
@@ -585,7 +573,6 @@ class Link(BaseModel):
         from ..elements.inertial import Inertial
         from ..elements.light import Light
         from ..elements.particle_emitter import ParticleEmitter
-        from ..elements.pose import Pose
         from ..elements.projector import Projector
         from ..elements.sensor import Sensor
         from ..elements.visual import Visual
@@ -724,12 +711,13 @@ class Link(BaseModel):
             _particle_emitters.append(_res)
         if _particle_emitters and cmp_version(version, "1.6") < 0:
             return SDFError(f"'particle_emitters' is not supported in SDF version {version} (added in 1.6)")
-        _c_pose = el.find("pose")
-        if _c_pose is not None:
-            _res = Pose._from_sdf(_c_pose, version)
-            if isinstance(_res, SDFError):
-                return _res.extend("pose")
-            _pose = _res
+        _c_tmp = el.find("pose")
+        if _c_tmp is not None:
+            _text = _c_tmp.text if _c_tmp.text is not None else "0 0 0 0 0 0"
+            _val = _parse_pose(_text)
+            if isinstance(_val, SDFError):
+                return _val.extend("pose")
+            _pose = _val
         else:
             _pose = None
         if _pose is not None and cmp_version(version, "1.2") < 0:

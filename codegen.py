@@ -307,6 +307,8 @@ def parse_all_versions() -> dict:
                         schema[name] = parse_element(child, files)
         union_schema(base_schema, schema, version if version != BASE_VERSION else None)
     _fixup_include_refs(base_schema, set(base_schema.keys()))
+    if "pose" in base_schema:
+        del base_schema["pose"]
     return base_schema
 
 
@@ -542,7 +544,10 @@ def _collect_class_spec(
             has_attrs = bool(v.get("_attributes"))
             is_include = v.get("_is_include")
             is_ref = bool(v.get("_ref"))
-            if not has_children and not has_attrs and not is_include and not is_ref:
+            if k == "pose":
+                v["_type"] = "pose"
+                leaf_items[k] = v
+            elif not has_children and not has_attrs and not is_include and not is_ref:
                 leaf_items[k] = v
             else:
                 child_items[k] = v

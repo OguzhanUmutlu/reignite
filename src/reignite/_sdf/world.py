@@ -8,6 +8,7 @@ from typing import List
 
 from ..utils.model import BaseModel
 from ..utils.errors import SDFError
+from ..utils.pose import _PoseT, _pose
 from ..utils.vector3 import _Vector3T, _vector3
 from ..utils.version import cmp_version
 from ..utils.migration import apply_migrations
@@ -24,11 +25,16 @@ if typing.TYPE_CHECKING:
     from ..elements.physics import Physics
     from ..elements.plugin import Plugin
     from ..elements.population import Population
-    from ..elements.pose import Pose
     from ..elements.road import Road
     from ..elements.scene import Scene
     from ..elements.spherical_coordinates import SphericalCoordinates
     from ..elements.state import State
+
+def _parse_pose(raw: str) -> _PoseT | SDFError:
+    try:
+        return _pose(raw)
+    except ValueError as e:
+        return SDFError(str(e))
 
 def _parse_vector3(raw: str) -> _Vector3T | SDFError:
     try:
@@ -84,7 +90,7 @@ class World(BaseModel):
             name: str | None = None,
             placement_frame: str | None = None,
             plugins: List["Plugin"] = None,
-            pose: "Pose" = None,
+            pose: _PoseT | None = None,
             static: bool | None = None,
             uri: str | None = None
         ):
@@ -94,7 +100,7 @@ class World(BaseModel):
             self.name = name
             self.placement_frame = placement_frame
             self.plugins = plugins or []
-            self.pose = pose
+            self.pose = _pose(pose) if pose is not None else None
             self.static = static
             self.uri = uri
             for _i, _c in enumerate(self.model_states):
@@ -109,11 +115,6 @@ class World(BaseModel):
                     _c.sdfversion = self.sdfversion
                 elif getattr(_c, 'sdfversion', None) != self.sdfversion and self.sdfversion is not None:
                     self.plugins[_i] = _c.to_version(self.sdfversion)
-            if self.pose is not None and hasattr(self.pose, 'to_version'):
-                if getattr(self.pose, 'sdfversion', None) is None:
-                    self.pose.sdfversion = self.sdfversion
-                elif getattr(self.pose, 'sdfversion', None) != self.sdfversion and self.sdfversion is not None:
-                    self.pose = self.pose.to_version(self.sdfversion)
 
         def add_model_state(self, *items: "ModelState"):
             if self.model_states is None:
@@ -128,7 +129,6 @@ class World(BaseModel):
         def to_version(self, target_version: str) -> "World.Include":
             from ..elements.model_state import ModelState
             from ..elements.plugin import Plugin
-            from ..elements.pose import Pose
             if self.merge is not None and cmp_version(target_version, "1.10") < 0:
                 raise ValueError(f"'merge' is not supported in SDF version {target_version} (added in 1.10)")
             if self.model_states and cmp_version(target_version, "1.12") < 0:
@@ -143,13 +143,12 @@ class World(BaseModel):
                 raise ValueError(f"'pose' is not supported in SDF version {target_version} (added in 1.5)")
             if self.static is not None and cmp_version(target_version, "1.5") < 0:
                 raise ValueError(f"'static' is not supported in SDF version {target_version} (added in 1.5)")
-            kwargs: dict = {"sdf_version": target_version, "merge": self.merge, "model_states": [c.to_version(target_version) if hasattr(c, "to_version") else c for c in (self.model_states or [])], "name": self.name, "placement_frame": self.placement_frame, "plugins": [c.to_version(target_version) if hasattr(c, "to_version") else c for c in (self.plugins or [])], "pose": self.pose.to_version(target_version) if self.pose is not None and hasattr(self.pose, "to_version") else self.pose, "static": self.static, "uri": self.uri}
+            kwargs: dict = {"sdf_version": target_version, "merge": self.merge, "model_states": [c.to_version(target_version) if hasattr(c, "to_version") else c for c in (self.model_states or [])], "name": self.name, "placement_frame": self.placement_frame, "plugins": [c.to_version(target_version) if hasattr(c, "to_version") else c for c in (self.plugins or [])], "pose": self.pose, "static": self.static, "uri": self.uri}
             return World.Include(**kwargs)
 
         def to_sdf(self, version: str | None = None) -> ET.Element:
             from ..elements.model_state import ModelState
             from ..elements.plugin import Plugin
-            from ..elements.pose import Pose
             if self.sdfversion is None and version is not None:
                 self.sdfversion = version
             elif version is not None and version != self.sdfversion:
@@ -184,13 +183,9 @@ class World(BaseModel):
                     _item_el = _child_res
                 el.append(_item_el)
             if self.pose is not None:
-                _child_res = self.pose.to_sdf(version)
-                if isinstance(_child_res, str):
-                    _item_el = ET.Element('pose')
-                    _item_el.text = _child_res
-                else:
-                    _item_el = _child_res
-                el.append(_item_el)
+                _c_tmp = ET.Element("pose")
+                _c_tmp.text = str(self.pose)
+                el.append(_c_tmp)
             if self.static is not None:
                 _c_tmp = ET.Element("static")
                 _c_tmp.text = str(self.static).lower()
@@ -205,7 +200,6 @@ class World(BaseModel):
         def _from_sdf(cls, el: ET.Element, version: str) -> "World.Include | SDFError":
             from ..elements.model_state import ModelState
             from ..elements.plugin import Plugin
-            from ..elements.pose import Pose
             _raw_merge = el.get("merge")
             if _raw_merge is not None:
                 _merge = str(_raw_merge).strip().lower() == 'true'
@@ -254,12 +248,13 @@ class World(BaseModel):
                 _plugins.append(_res)
             if _plugins and cmp_version(version, "1.5") < 0:
                 return SDFError(f"'plugins' is not supported in SDF version {version} (added in 1.5)")
-            _c_pose = el.find("pose")
-            if _c_pose is not None:
-                _res = Pose._from_sdf(_c_pose, version)
-                if isinstance(_res, SDFError):
-                    return _res.extend("pose")
-                _pose = _res
+            _c_tmp = el.find("pose")
+            if _c_tmp is not None:
+                _text = _c_tmp.text if _c_tmp.text is not None else "0 0 0 0 0 0"
+                _val = _parse_pose(_text)
+                if isinstance(_val, SDFError):
+                    return _val.extend("pose")
+                _pose = _val
             else:
                 _pose = None
             if _pose is not None and cmp_version(version, "1.5") < 0:

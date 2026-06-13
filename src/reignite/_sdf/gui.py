@@ -16,7 +16,6 @@ from ..utils.version import cmp_version
 if typing.TYPE_CHECKING:
     from ..elements.frame import Frame
     from ..elements.plugin import Plugin
-    from ..elements.pose import Pose
 
 def _parse_pose(raw: str) -> _PoseT | SDFError:
     try:
@@ -228,7 +227,7 @@ class Gui(BaseModel):
             frames: List["Frame"] = None,
             name: str | None = None,
             origin: "Gui.Camera.Origin" = None,
-            pose: "Pose" = None,
+            pose: _PoseT | None = None,
             projection_type: str | None = None,
             track_visual: "Gui.Camera.TrackVisual" = None,
             view_controller: str | None = None
@@ -237,7 +236,7 @@ class Gui(BaseModel):
             self.frames = frames or []
             self.name = name
             self.origin = origin
-            self.pose = pose
+            self.pose = _pose(pose) if pose is not None else None
             self.projection_type = projection_type
             self.track_visual = track_visual
             self.view_controller = view_controller
@@ -252,11 +251,6 @@ class Gui(BaseModel):
                     self.origin.sdfversion = self.sdfversion
                 elif getattr(self.origin, 'sdfversion', None) != self.sdfversion and self.sdfversion is not None:
                     self.origin = self.origin.to_version(self.sdfversion)
-            if self.pose is not None and hasattr(self.pose, 'to_version'):
-                if getattr(self.pose, 'sdfversion', None) is None:
-                    self.pose.sdfversion = self.sdfversion
-                elif getattr(self.pose, 'sdfversion', None) != self.sdfversion and self.sdfversion is not None:
-                    self.pose = self.pose.to_version(self.sdfversion)
             if self.track_visual is not None and hasattr(self.track_visual, 'to_version'):
                 if getattr(self.track_visual, 'sdfversion', None) is None:
                     self.track_visual.sdfversion = self.sdfversion
@@ -270,7 +264,6 @@ class Gui(BaseModel):
 
         def to_version(self, target_version: str) -> "Gui.Camera":
             from ..elements.frame import Frame
-            from ..elements.pose import Pose
             if self.frames and cmp_version(target_version, "1.5") < 0:
                 raise ValueError(f"'frames' is not supported in SDF version {target_version} (added in 1.5)")
             if self.frames and cmp_version(target_version, "1.7") >= 0:
@@ -281,12 +274,11 @@ class Gui(BaseModel):
                 raise ValueError(f"'pose' is not supported in SDF version {target_version} (added in 1.2)")
             if self.projection_type is not None and cmp_version(target_version, "1.5") < 0:
                 raise ValueError(f"'projection_type' is not supported in SDF version {target_version} (added in 1.5)")
-            kwargs: dict = {"sdf_version": target_version, "frames": [c.to_version(target_version) if hasattr(c, "to_version") else c for c in (self.frames or [])], "name": self.name, "origin": self.origin.to_version(target_version) if self.origin is not None and hasattr(self.origin, "to_version") else self.origin, "pose": self.pose.to_version(target_version) if self.pose is not None and hasattr(self.pose, "to_version") else self.pose, "projection_type": self.projection_type, "track_visual": self.track_visual.to_version(target_version) if self.track_visual is not None and hasattr(self.track_visual, "to_version") else self.track_visual, "view_controller": self.view_controller}
+            kwargs: dict = {"sdf_version": target_version, "frames": [c.to_version(target_version) if hasattr(c, "to_version") else c for c in (self.frames or [])], "name": self.name, "origin": self.origin.to_version(target_version) if self.origin is not None and hasattr(self.origin, "to_version") else self.origin, "pose": self.pose, "projection_type": self.projection_type, "track_visual": self.track_visual.to_version(target_version) if self.track_visual is not None and hasattr(self.track_visual, "to_version") else self.track_visual, "view_controller": self.view_controller}
             return Gui.Camera(**kwargs)
 
         def to_sdf(self, version: str | None = None) -> ET.Element:
             from ..elements.frame import Frame
-            from ..elements.pose import Pose
             if self.sdfversion is None and version is not None:
                 self.sdfversion = version
             elif version is not None and version != self.sdfversion:
@@ -313,13 +305,9 @@ class Gui(BaseModel):
                     _item_el = _child_res
                 el.append(_item_el)
             if self.pose is not None:
-                _child_res = self.pose.to_sdf(version)
-                if isinstance(_child_res, str):
-                    _item_el = ET.Element('pose')
-                    _item_el.text = _child_res
-                else:
-                    _item_el = _child_res
-                el.append(_item_el)
+                _c_tmp = ET.Element("pose")
+                _c_tmp.text = str(self.pose)
+                el.append(_c_tmp)
             if self.projection_type is not None:
                 _c_tmp = ET.Element("projection_type")
                 _c_tmp.text = self.projection_type
@@ -341,7 +329,6 @@ class Gui(BaseModel):
         @classmethod
         def _from_sdf(cls, el: ET.Element, version: str) -> "Gui.Camera | SDFError":
             from ..elements.frame import Frame
-            from ..elements.pose import Pose
             _frames = []
             for c in el.findall("frame"):
                 _res = Frame._from_sdf(c, version)
@@ -365,12 +352,13 @@ class Gui(BaseModel):
                 _origin = _res
             else:
                 _origin = None
-            _c_pose = el.find("pose")
-            if _c_pose is not None:
-                _res = Pose._from_sdf(_c_pose, version)
-                if isinstance(_res, SDFError):
-                    return _res.extend("pose")
-                _pose = _res
+            _c_tmp = el.find("pose")
+            if _c_tmp is not None:
+                _text = _c_tmp.text if _c_tmp.text is not None else "0 0 0 0 0 0"
+                _val = _parse_pose(_text)
+                if isinstance(_val, SDFError):
+                    return _val.extend("pose")
+                _pose = _val
             else:
                 _pose = None
             if _pose is not None and cmp_version(version, "1.2") < 0:

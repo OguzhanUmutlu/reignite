@@ -14,7 +14,6 @@ from ..utils.version import cmp_version
 
 if typing.TYPE_CHECKING:
     from ..elements.frame import Frame
-    from ..elements.pose import Pose
 
 def _parse_pose(raw: str) -> _PoseT | SDFError:
     try:
@@ -212,7 +211,7 @@ class LinkState(BaseModel):
         linear_acceleration: _Vector3T | None = None,
         linear_velocity: _Vector3T | None = None,
         name: str | None = None,
-        pose: "Pose" = None,
+        pose: _PoseT | None = None,
         torque: _Vector3T | None = None,
         velocity: _PoseT | None = None,
         wrench: _PoseT | None = None
@@ -228,7 +227,7 @@ class LinkState(BaseModel):
         self.linear_acceleration = _vector3(linear_acceleration) if linear_acceleration is not None else None
         self.linear_velocity = _vector3(linear_velocity) if linear_velocity is not None else None
         self.name = name
-        self.pose = pose
+        self.pose = _pose(pose) if pose is not None else None
         self.torque = _vector3(torque) if torque is not None else None
         self.velocity = _pose(velocity) if velocity is not None else None
         self.wrench = _pose(wrench) if wrench is not None else None
@@ -260,11 +259,6 @@ class LinkState(BaseModel):
                 _c.sdfversion = self.sdfversion
             elif getattr(_c, 'sdfversion', None) != self.sdfversion and self.sdfversion is not None:
                 self.frames[_i] = _c.to_version(self.sdfversion)
-        if self.pose is not None and hasattr(self.pose, 'to_version'):
-            if getattr(self.pose, 'sdfversion', None) is None:
-                self.pose.sdfversion = self.sdfversion
-            elif getattr(self.pose, 'sdfversion', None) != self.sdfversion and self.sdfversion is not None:
-                self.pose = self.pose.to_version(self.sdfversion)
 
     def add_collision_state(self, *items: "LinkState.CollisionState"):
         if self.collision_states is None:
@@ -283,7 +277,6 @@ class LinkState(BaseModel):
 
     def to_version(self, target_version: str) -> "LinkState":
         from ..elements.frame import Frame
-        from ..elements.pose import Pose
         if self.angular_acceleration is not None and cmp_version(target_version, "1.12") < 0:
             raise ValueError(f"'angular_acceleration' is not supported in SDF version {target_version} (added in 1.12)")
         if self.angular_velocity is not None and cmp_version(target_version, "1.12") < 0:
@@ -302,12 +295,11 @@ class LinkState(BaseModel):
             raise ValueError(f"'linear_velocity' is not supported in SDF version {target_version} (added in 1.12)")
         if self.torque is not None and cmp_version(target_version, "1.12") < 0:
             raise ValueError(f"'torque' is not supported in SDF version {target_version} (added in 1.12)")
-        kwargs: dict = {"sdf_version": target_version, "acceleration": self.acceleration, "angular_acceleration": self.angular_acceleration.to_version(target_version) if self.angular_acceleration is not None and hasattr(self.angular_acceleration, "to_version") else self.angular_acceleration, "angular_velocity": self.angular_velocity.to_version(target_version) if self.angular_velocity is not None and hasattr(self.angular_velocity, "to_version") else self.angular_velocity, "collision_states": [c.to_version(target_version) if hasattr(c, "to_version") else c for c in (self.collision_states or [])], "collisions": [c.to_version(target_version) if hasattr(c, "to_version") else c for c in (self.collisions or [])], "force": self.force, "frames": [c.to_version(target_version) if hasattr(c, "to_version") else c for c in (self.frames or [])], "linear_acceleration": self.linear_acceleration, "linear_velocity": self.linear_velocity, "name": self.name, "pose": self.pose.to_version(target_version) if self.pose is not None and hasattr(self.pose, "to_version") else self.pose, "torque": self.torque, "velocity": self.velocity, "wrench": self.wrench}
+        kwargs: dict = {"sdf_version": target_version, "acceleration": self.acceleration, "angular_acceleration": self.angular_acceleration.to_version(target_version) if self.angular_acceleration is not None and hasattr(self.angular_acceleration, "to_version") else self.angular_acceleration, "angular_velocity": self.angular_velocity.to_version(target_version) if self.angular_velocity is not None and hasattr(self.angular_velocity, "to_version") else self.angular_velocity, "collision_states": [c.to_version(target_version) if hasattr(c, "to_version") else c for c in (self.collision_states or [])], "collisions": [c.to_version(target_version) if hasattr(c, "to_version") else c for c in (self.collisions or [])], "force": self.force, "frames": [c.to_version(target_version) if hasattr(c, "to_version") else c for c in (self.frames or [])], "linear_acceleration": self.linear_acceleration, "linear_velocity": self.linear_velocity, "name": self.name, "pose": self.pose, "torque": self.torque, "velocity": self.velocity, "wrench": self.wrench}
         return LinkState(**kwargs)
 
     def to_sdf(self, version: str | None = None) -> ET.Element:
         from ..elements.frame import Frame
-        from ..elements.pose import Pose
         if self.sdfversion is None and version is not None:
             self.sdfversion = version
         elif version is not None and version != self.sdfversion:
@@ -374,13 +366,9 @@ class LinkState(BaseModel):
         if self.name is not None:
             el.set("name", self.name)
         if self.pose is not None:
-            _child_res = self.pose.to_sdf(version)
-            if isinstance(_child_res, str):
-                _item_el = ET.Element('pose')
-                _item_el.text = _child_res
-            else:
-                _item_el = _child_res
-            el.append(_item_el)
+            _c_tmp = ET.Element("pose")
+            _c_tmp.text = str(self.pose)
+            el.append(_c_tmp)
         if self.torque is not None:
             _c_tmp = ET.Element("torque")
             _c_tmp.text = str(self.torque)
@@ -398,7 +386,6 @@ class LinkState(BaseModel):
     @classmethod
     def _from_sdf(cls, el: ET.Element, version: str) -> "LinkState | SDFError":
         from ..elements.frame import Frame
-        from ..elements.pose import Pose
         _c_tmp = el.find("acceleration")
         if _c_tmp is not None:
             _text = _c_tmp.text if _c_tmp.text is not None else "0 0 0 0 0 0"
@@ -488,12 +475,13 @@ class LinkState(BaseModel):
                 return _name.extend("@name")
         else:
             _name = None
-        _c_pose = el.find("pose")
-        if _c_pose is not None:
-            _res = Pose._from_sdf(_c_pose, version)
-            if isinstance(_res, SDFError):
-                return _res.extend("pose")
-            _pose = _res
+        _c_tmp = el.find("pose")
+        if _c_tmp is not None:
+            _text = _c_tmp.text if _c_tmp.text is not None else "0 0 0 0 0 0"
+            _val = _parse_pose(_text)
+            if isinstance(_val, SDFError):
+                return _val.extend("pose")
+            _pose = _val
         else:
             _pose = None
         _c_tmp = el.find("torque")

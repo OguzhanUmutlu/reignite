@@ -9,6 +9,7 @@ from typing import List
 
 from ..utils.model import BaseModel
 from ..utils.errors import SDFError
+from ..utils.pose import _PoseT, _pose
 from ..utils.vector3 import _Vector3T, _vector3
 from ..utils.version import cmp_version
 
@@ -17,7 +18,12 @@ if typing.TYPE_CHECKING:
     from ..elements.cylinder import Cylinder
     from ..elements.frame import Frame
     from ..elements.model import Model
-    from ..elements.pose import Pose
+
+def _parse_pose(raw: str) -> _PoseT | SDFError:
+    try:
+        return _pose(raw)
+    except ValueError as e:
+        return SDFError(str(e))
 
 def _parse_vector3(raw: str) -> _Vector3T | SDFError:
     try:
@@ -123,7 +129,7 @@ class Population(BaseModel):
         model_count: int | None = None,
         models: List["Model"] = None,
         name: str | None = None,
-        pose: "Pose" = None
+        pose: _PoseT | None = None
     ):
         super().__init__(sdf_version)
         self.box = box
@@ -133,7 +139,7 @@ class Population(BaseModel):
         self.model_count = model_count
         self.models = models or []
         self.name = name
-        self.pose = pose
+        self.pose = _pose(pose) if pose is not None else None
         if self.box is not None and hasattr(self.box, 'to_version'):
             if getattr(self.box, 'sdfversion', None) is None:
                 self.box.sdfversion = self.sdfversion
@@ -161,11 +167,6 @@ class Population(BaseModel):
                 _c.sdfversion = self.sdfversion
             elif getattr(_c, 'sdfversion', None) != self.sdfversion and self.sdfversion is not None:
                 self.models[_i] = _c.to_version(self.sdfversion)
-        if self.pose is not None and hasattr(self.pose, 'to_version'):
-            if getattr(self.pose, 'sdfversion', None) is None:
-                self.pose.sdfversion = self.sdfversion
-            elif getattr(self.pose, 'sdfversion', None) != self.sdfversion and self.sdfversion is not None:
-                self.pose = self.pose.to_version(self.sdfversion)
 
     def add_frame(self, *items: "Frame"):
         if self.frames is None:
@@ -182,10 +183,9 @@ class Population(BaseModel):
         from ..elements.cylinder import Cylinder
         from ..elements.frame import Frame
         from ..elements.model import Model
-        from ..elements.pose import Pose
         if self.frames and cmp_version(target_version, "1.7") >= 0:
             raise ValueError(f"'frames' is not supported in SDF version {target_version} (removed in 1.7)")
-        kwargs: dict = {"sdf_version": target_version, "box": self.box.to_version(target_version) if self.box is not None and hasattr(self.box, "to_version") else self.box, "cylinder": self.cylinder.to_version(target_version) if self.cylinder is not None and hasattr(self.cylinder, "to_version") else self.cylinder, "distribution": self.distribution.to_version(target_version) if self.distribution is not None and hasattr(self.distribution, "to_version") else self.distribution, "frames": [c.to_version(target_version) if hasattr(c, "to_version") else c for c in (self.frames or [])], "model_count": self.model_count, "models": [c.to_version(target_version) if hasattr(c, "to_version") else c for c in (self.models or [])], "name": self.name, "pose": self.pose.to_version(target_version) if self.pose is not None and hasattr(self.pose, "to_version") else self.pose}
+        kwargs: dict = {"sdf_version": target_version, "box": self.box.to_version(target_version) if self.box is not None and hasattr(self.box, "to_version") else self.box, "cylinder": self.cylinder.to_version(target_version) if self.cylinder is not None and hasattr(self.cylinder, "to_version") else self.cylinder, "distribution": self.distribution.to_version(target_version) if self.distribution is not None and hasattr(self.distribution, "to_version") else self.distribution, "frames": [c.to_version(target_version) if hasattr(c, "to_version") else c for c in (self.frames or [])], "model_count": self.model_count, "models": [c.to_version(target_version) if hasattr(c, "to_version") else c for c in (self.models or [])], "name": self.name, "pose": self.pose}
         return Population(**kwargs)
 
     def to_sdf(self, version: str | None = None) -> ET.Element:
@@ -193,7 +193,6 @@ class Population(BaseModel):
         from ..elements.cylinder import Cylinder
         from ..elements.frame import Frame
         from ..elements.model import Model
-        from ..elements.pose import Pose
         if self.sdfversion is None and version is not None:
             self.sdfversion = version
         elif version is not None and version != self.sdfversion:
@@ -248,13 +247,9 @@ class Population(BaseModel):
         if self.name is not None:
             el.set("name", self.name)
         if self.pose is not None:
-            _child_res = self.pose.to_sdf(version)
-            if isinstance(_child_res, str):
-                _item_el = ET.Element('pose')
-                _item_el.text = _child_res
-            else:
-                _item_el = _child_res
-            el.append(_item_el)
+            _c_tmp = ET.Element("pose")
+            _c_tmp.text = str(self.pose)
+            el.append(_c_tmp)
         return el
 
     @classmethod
@@ -263,7 +258,6 @@ class Population(BaseModel):
         from ..elements.cylinder import Cylinder
         from ..elements.frame import Frame
         from ..elements.model import Model
-        from ..elements.pose import Pose
         _c_box = el.find("box")
         if _c_box is not None:
             _res = Box._from_sdf(_c_box, version)
@@ -316,12 +310,13 @@ class Population(BaseModel):
                 return _name.extend("@name")
         else:
             _name = None
-        _c_pose = el.find("pose")
-        if _c_pose is not None:
-            _res = Pose._from_sdf(_c_pose, version)
-            if isinstance(_res, SDFError):
-                return _res.extend("pose")
-            _pose = _res
+        _c_tmp = el.find("pose")
+        if _c_tmp is not None:
+            _text = _c_tmp.text if _c_tmp.text is not None else "0 0 0 0 0 0"
+            _val = _parse_pose(_text)
+            if isinstance(_val, SDFError):
+                return _val.extend("pose")
+            _pose = _val
         else:
             _pose = None
         return cls(sdf_version=version, box=_box, cylinder=_cylinder, distribution=_distribution, frames=_frames, model_count=_model_count, models=_models, name=_name, pose=_pose)

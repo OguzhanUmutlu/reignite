@@ -17,7 +17,6 @@ if typing.TYPE_CHECKING:
     from ..elements.joint import Joint
     from ..elements.link import Link
     from ..elements.plugin import Plugin
-    from ..elements.pose import Pose
 
 def _parse_pose(raw: str) -> _PoseT | SDFError:
     try:
@@ -518,7 +517,7 @@ class Actor(BaseModel):
         name: str | None = None,
         origin: "Actor.Origin" = None,
         plugins: List["Plugin"] = None,
-        pose: "Pose" = None,
+        pose: _PoseT | None = None,
         script: "Actor.Script" = None,
         skin: "Actor.Skin" = None,
         static: bool | None = None
@@ -531,7 +530,7 @@ class Actor(BaseModel):
         self.name = name
         self.origin = origin
         self.plugins = plugins or []
-        self.pose = pose
+        self.pose = _pose(pose) if pose is not None else None
         self.script = script
         self.skin = skin
         self.static = static
@@ -570,11 +569,6 @@ class Actor(BaseModel):
                 _c.sdfversion = self.sdfversion
             elif getattr(_c, 'sdfversion', None) != self.sdfversion and self.sdfversion is not None:
                 self.plugins[_i] = _c.to_version(self.sdfversion)
-        if self.pose is not None and hasattr(self.pose, 'to_version'):
-            if getattr(self.pose, 'sdfversion', None) is None:
-                self.pose.sdfversion = self.sdfversion
-            elif getattr(self.pose, 'sdfversion', None) != self.sdfversion and self.sdfversion is not None:
-                self.pose = self.pose.to_version(self.sdfversion)
         if self.script is not None and hasattr(self.script, 'to_version'):
             if getattr(self.script, 'sdfversion', None) is None:
                 self.script.sdfversion = self.sdfversion
@@ -616,7 +610,6 @@ class Actor(BaseModel):
         from ..elements.joint import Joint
         from ..elements.link import Link
         from ..elements.plugin import Plugin
-        from ..elements.pose import Pose
         if self.frames and cmp_version(target_version, "1.5") < 0:
             raise ValueError(f"'frames' is not supported in SDF version {target_version} (added in 1.5)")
         if self.frames and cmp_version(target_version, "1.7") >= 0:
@@ -625,7 +618,7 @@ class Actor(BaseModel):
             raise ValueError(f"'origin' is not supported in SDF version {target_version} (removed in 1.2)")
         if self.pose is not None and cmp_version(target_version, "1.2") < 0:
             raise ValueError(f"'pose' is not supported in SDF version {target_version} (added in 1.2)")
-        kwargs: dict = {"sdf_version": target_version, "animations": [c.to_version(target_version) if hasattr(c, "to_version") else c for c in (self.animations or [])], "frames": [c.to_version(target_version) if hasattr(c, "to_version") else c for c in (self.frames or [])], "joints": [c.to_version(target_version) if hasattr(c, "to_version") else c for c in (self.joints or [])], "links": [c.to_version(target_version) if hasattr(c, "to_version") else c for c in (self.links or [])], "name": self.name, "origin": self.origin.to_version(target_version) if self.origin is not None and hasattr(self.origin, "to_version") else self.origin, "plugins": [c.to_version(target_version) if hasattr(c, "to_version") else c for c in (self.plugins or [])], "pose": self.pose.to_version(target_version) if self.pose is not None and hasattr(self.pose, "to_version") else self.pose, "script": self.script.to_version(target_version) if self.script is not None and hasattr(self.script, "to_version") else self.script, "skin": self.skin.to_version(target_version) if self.skin is not None and hasattr(self.skin, "to_version") else self.skin, "static": self.static}
+        kwargs: dict = {"sdf_version": target_version, "animations": [c.to_version(target_version) if hasattr(c, "to_version") else c for c in (self.animations or [])], "frames": [c.to_version(target_version) if hasattr(c, "to_version") else c for c in (self.frames or [])], "joints": [c.to_version(target_version) if hasattr(c, "to_version") else c for c in (self.joints or [])], "links": [c.to_version(target_version) if hasattr(c, "to_version") else c for c in (self.links or [])], "name": self.name, "origin": self.origin.to_version(target_version) if self.origin is not None and hasattr(self.origin, "to_version") else self.origin, "plugins": [c.to_version(target_version) if hasattr(c, "to_version") else c for c in (self.plugins or [])], "pose": self.pose, "script": self.script.to_version(target_version) if self.script is not None and hasattr(self.script, "to_version") else self.script, "skin": self.skin.to_version(target_version) if self.skin is not None and hasattr(self.skin, "to_version") else self.skin, "static": self.static}
         return Actor(**kwargs)
 
     def to_sdf(self, version: str | None = None) -> ET.Element:
@@ -633,7 +626,6 @@ class Actor(BaseModel):
         from ..elements.joint import Joint
         from ..elements.link import Link
         from ..elements.plugin import Plugin
-        from ..elements.pose import Pose
         if self.sdfversion is None and version is not None:
             self.sdfversion = version
         elif version is not None and version != self.sdfversion:
@@ -692,13 +684,9 @@ class Actor(BaseModel):
                 _item_el = _child_res
             el.append(_item_el)
         if self.pose is not None:
-            _child_res = self.pose.to_sdf(version)
-            if isinstance(_child_res, str):
-                _item_el = ET.Element('pose')
-                _item_el.text = _child_res
-            else:
-                _item_el = _child_res
-            el.append(_item_el)
+            _c_tmp = ET.Element("pose")
+            _c_tmp.text = str(self.pose)
+            el.append(_c_tmp)
         if self.script is not None:
             _child_res = self.script.to_sdf(version)
             if isinstance(_child_res, str):
@@ -730,7 +718,6 @@ class Actor(BaseModel):
         from ..elements.joint import Joint
         from ..elements.link import Link
         from ..elements.plugin import Plugin
-        from ..elements.pose import Pose
         _animations = []
         for c in el.findall("animation"):
             _res = cls.Animation._from_sdf(c, version)
@@ -778,12 +765,13 @@ class Actor(BaseModel):
             if isinstance(_res, SDFError):
                 return _res.extend("plugin")
             _plugins.append(_res)
-        _c_pose = el.find("pose")
-        if _c_pose is not None:
-            _res = Pose._from_sdf(_c_pose, version)
-            if isinstance(_res, SDFError):
-                return _res.extend("pose")
-            _pose = _res
+        _c_tmp = el.find("pose")
+        if _c_tmp is not None:
+            _text = _c_tmp.text if _c_tmp.text is not None else "0 0 0 0 0 0"
+            _val = _parse_pose(_text)
+            if isinstance(_val, SDFError):
+                return _val.extend("pose")
+            _pose = _val
         else:
             _pose = None
         if _pose is not None and cmp_version(version, "1.2") < 0:
