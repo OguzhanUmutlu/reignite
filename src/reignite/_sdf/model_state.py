@@ -18,11 +18,20 @@ if typing.TYPE_CHECKING:
     from ..elements.joint_state import JointState
     from ..elements.link_state import LinkState
 
-def _parse_pose(raw: str) -> _PoseT | SDFError:
+def _parse_pose(raw: str, el: ET.Element | None = None) -> _PoseT | SDFError:
     try:
-        return _pose(raw)
+        is_degrees = el is not None and str(el.get('degrees')).lower() == 'true'
+        return _pose(raw, degrees=is_degrees)
     except ValueError as e:
         return SDFError(str(e))
+
+def _pose_to_sdf(val: _PoseT, el: ET.Element | None = None) -> str:
+    if el is not None:
+        el.set('degrees', 'true')
+    if isinstance(val, _Pose):
+        return f'{val.x} {val.y} {val.z} {val.roll_deg} {val.pitch_deg} {val.yaw_deg}'
+    p = _pose(val)
+    return f'{p.x} {p.y} {p.z} {p.roll_deg} {p.pitch_deg} {p.yaw_deg}'
 
 def _parse_vector3(raw: str) -> _Vector3T | SDFError:
     try:
@@ -338,7 +347,7 @@ class ModelState(BaseModel):
             el.set("name", self.name)
         if self.pose is not None:
             _c_tmp = ET.Element("pose")
-            _c_tmp.text = str(self.pose)
+            _c_tmp.text = _pose_to_sdf(self.pose, _c_tmp)
             el.append(_c_tmp)
         if self.scale is not None:
             _c_tmp = ET.Element("scale")
@@ -409,7 +418,7 @@ class ModelState(BaseModel):
         _c_tmp = el.find("pose")
         if _c_tmp is not None:
             _text = _c_tmp.text if _c_tmp.text is not None else "0 0 0 0 0 0"
-            _val = _parse_pose(_text)
+            _val = _parse_pose(_text, _c_tmp)
             if isinstance(_val, SDFError):
                 return _val.extend("pose")
             _pose = _val

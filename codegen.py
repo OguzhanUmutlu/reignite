@@ -59,6 +59,9 @@ def resolve_type(sdf_type: Optional[str]) -> tuple[str, str, str, str, Optional[
 
     t = sdf_type.strip().lower()
 
+    if t == "pose":
+        return "_PoseT", "None", "_pose_to_sdf({val}, {el})", "_parse_pose({raw}, {el})", "pose"
+
     if t in PRIMITIVE_TYPES:
         hint, default, to_expr, from_expr = PRIMITIVE_TYPES[t]
         return hint, default, to_expr, from_expr, None
@@ -1052,7 +1055,7 @@ def _render_class(spec: dict, file_external_imports: set[str], indent: int = 0,
                     f'{indent_}    raise ValueError(f"\'{p.py_name}\' is required in SDF version {{version}}")')
 
         if p.kind in ("attr", "leaf"):
-            expr = p.to_expr.replace("{val}", val_ref)
+            expr = p.to_expr.replace("{val}", val_ref).replace("{el}", "el")
             if not p.renames:
                 block.append(f"        if self.{p.py_name} is not None:")
                 if p.kind == "attr":
@@ -1072,18 +1075,18 @@ def _render_class(spec: dict, file_external_imports: set[str], indent: int = 0,
                     else:
                         block.append(f'            elif cmp_version(version, "{v}") >= 0:')
                     if loc["kind"] == "attr":
-                        block.append(f'                el.set("{loc["name"]}", {expr})')
+                        block.append(f'                el.set("{loc["name"]}", {expr.replace("{el}", "el")})')
                     elif loc["kind"] == "text":
-                        block.append(f'                el.text = {expr}')
+                        block.append(f'                el.text = {expr.replace("{el}", "el")}')
                     else:
                         block.append(f'                _c_tmp = ET.Element("{loc["name"]}")')
-                        block.append(f'                _c_tmp.text = {expr}')
+                        block.append(f'                _c_tmp.text = {expr.replace("{el}", "_c_tmp")}')
                         block.append(f'                el.append(_c_tmp)')
                 block.append(f'            else:')
                 if p.kind == "attr":
-                    block.append(f'                el.set("{p.original_name}", {expr})')
+                    block.append(f'                el.set("{p.original_name}", {expr.replace("{el}", "el")})')
                 else:
-                    block.append(f"                el.text = {expr}")
+                    block.append(f"                el.text = {expr.replace("{el}", "el")}")
 
         elif p.kind == "child_leaf":
             if p.is_list:
@@ -1097,7 +1100,7 @@ def _render_class(spec: dict, file_external_imports: set[str], indent: int = 0,
 
             if not p.renames:
                 block.append(f'{indent2}_c_tmp = ET.Element("{p.original_name}")')
-                block.append(f'{indent2}_c_tmp.text = {expr}')
+                block.append(f'{indent2}_c_tmp.text = {expr.replace("{el}", "_c_tmp")}')
                 block.append(f'{indent2}el.append(_c_tmp)')
             else:
                 sorted_versions = sorted(p.renames.keys(), key=lambda v: tuple(int(x) for x in v.split(".")),
@@ -1112,14 +1115,14 @@ def _render_class(spec: dict, file_external_imports: set[str], indent: int = 0,
                         block.append(f'{indent2}elif cmp_version(version, "{v}") >= 0:')
 
                     if loc["kind"] == "attr":
-                        block.append(f'{indent2}    el.set("{loc["name"]}", {expr})')
+                        block.append(f'{indent2}    el.set("{loc["name"]}", {expr.replace("{el}", "el")})')
                     else:
                         block.append(f'{indent2}    _c_tmp = ET.Element("{loc["name"]}")')
-                        block.append(f'{indent2}    _c_tmp.text = {expr}')
+                        block.append(f'{indent2}    _c_tmp.text = {expr.replace("{el}", "_c_tmp")}')
                         block.append(f'{indent2}    el.append(_c_tmp)')
                 block.append(f'{indent2}else:')
                 block.append(f'{indent2}    _c_tmp = ET.Element("{p.original_name}")')
-                block.append(f'{indent2}    _c_tmp.text = {expr}')
+                block.append(f'{indent2}    _c_tmp.text = {expr.replace("{el}", "_c_tmp")}')
                 block.append(f'{indent2}    el.append(_c_tmp)')
         elif p.kind == "child":
             if p.is_list:
@@ -1202,7 +1205,7 @@ def _render_class(spec: dict, file_external_imports: set[str], indent: int = 0,
                 if p.kind == "attr":
                     block.append(f'        _raw_{p.py_name} = el.get("{p.original_name}")')
                     block.append(f'        if _raw_{p.py_name} is not None:')
-                    val_expr = p.from_expr.replace("{raw}", f"_raw_{p.py_name}")
+                    val_expr = p.from_expr.replace("{raw}", f"_raw_{p.py_name}").replace("{el}", "el")
                     block.append(f"            _{p.py_name} = {val_expr}")
                     block.append(f"            if isinstance(_{p.py_name}, SDFError):")
                     block.append(f'                return _{p.py_name}.extend("@{p.original_name}")')
@@ -1211,7 +1214,7 @@ def _render_class(spec: dict, file_external_imports: set[str], indent: int = 0,
                 else:
                     block.append(f'        _raw_{p.py_name} = el.text')
                     block.append(f'        if _raw_{p.py_name} is not None:')
-                    val_expr = p.from_expr.replace("{raw}", f"_raw_{p.py_name}")
+                    val_expr = p.from_expr.replace("{raw}", f"_raw_{p.py_name}").replace("{el}", "el")
                     block.append(f"            _{p.py_name} = {val_expr}")
                     block.append(f"            if isinstance(_{p.py_name}, SDFError):")
                     block.append(f'                return _{p.py_name}')
@@ -1244,7 +1247,7 @@ def _render_class(spec: dict, file_external_imports: set[str], indent: int = 0,
                     block.append(f'            if _c_tmp is not None: _raw_{p.py_name} = _c_tmp.text')
                 
                 block.append(f'        if _raw_{p.py_name} is not None:')
-                val_expr = p.from_expr.replace("{raw}", f"_raw_{p.py_name}")
+                val_expr = p.from_expr.replace("{raw}", f"_raw_{p.py_name}").replace("{el}", "el")
                 block.append(f"            _{p.py_name} = {val_expr}")
                 block.append(f"            if isinstance(_{p.py_name}, SDFError):")
                 if p.kind == "attr":
@@ -1292,7 +1295,7 @@ def _render_class(spec: dict, file_external_imports: set[str], indent: int = 0,
                     block.append(f'        _{p.py_name} = []')
                     block.append(f'        for c in el.findall("{p.original_name}"):')
                     block.append(f'            _text = c.text if c.text is not None else {p.item_default}')
-                    block.append(f'            _val = {p.from_expr.replace("{raw}", "_text")}')
+                    block.append(f'            _val = {p.from_expr.replace("{raw}", "_text").replace("{el}", "c")}')
                     block.append(f'            if isinstance(_val, SDFError):')
                     block.append(f'                return _val.extend("{p.original_name}")')
                     block.append(f'            _{p.py_name}.append(_val)')
@@ -1300,7 +1303,7 @@ def _render_class(spec: dict, file_external_imports: set[str], indent: int = 0,
                     block.append(f'        _c_tmp = el.find("{p.original_name}")')
                     block.append(f'        if _c_tmp is not None:')
                     block.append(f'            _text = _c_tmp.text if _c_tmp.text is not None else {p.item_default}')
-                    block.append(f'            _val = {p.from_expr.replace("{raw}", "_text")}')
+                    block.append(f'            _val = {p.from_expr.replace("{raw}", "_text").replace("{el}", "_c_tmp")}')
                     block.append(f'            if isinstance(_val, SDFError):')
                     block.append(f'                return _val.extend("{p.original_name}")')
                     block.append(f'            _{p.py_name} = _val')
@@ -1354,7 +1357,7 @@ def _render_class(spec: dict, file_external_imports: set[str], indent: int = 0,
                     block.append(f'        _{p.py_name} = []')
                     block.append(f'        for _text, _is_attr in _els_{p.py_name}:')
                     block.append(f'            if _text is None: _text = {p.raw_default}')
-                    block.append(f'            _val = {p.from_expr.replace("{raw}", "_text")}')
+                    block.append(f'            _val = {p.from_expr.replace("{raw}", "_text").replace("{el}", "None")}')
                     block.append(f'            if isinstance(_val, SDFError):')
                     block.append(
                         f'                return _val.extend("@attribute" if _is_attr else "{p.original_name}")')
@@ -1362,7 +1365,7 @@ def _render_class(spec: dict, file_external_imports: set[str], indent: int = 0,
                 else:
                     block.append(f'        if _is_present:')
                     block.append(f'            if _raw_{p.py_name} is None: _raw_{p.py_name} = {p.raw_default}')
-                    block.append(f'            _{p.py_name} = {p.from_expr.replace("{raw}", f"_raw_{p.py_name}")}')
+                    block.append(f'            _{p.py_name} = {p.from_expr.replace("{raw}", f"_raw_{p.py_name}").replace("{el}", "_c_tmp")}')
                     block.append(f'            if isinstance(_{p.py_name}, SDFError):')
                     block.append(f'                return _{p.py_name}.extend("{p.original_name}")')
                     block.append(f'        else:')
@@ -1591,12 +1594,29 @@ def generate_element_file(
 
     for mod in sorted(all_custom_helpers):
         class_name = _to_classname(mod)
-        lines.append(f"def _parse_{mod}(raw: str) -> _{class_name}T | SDFError:")
-        lines.append(f"    try:")
-        lines.append(f"        return _{mod}(raw)")
-        lines.append(f"    except ValueError as e:")
-        lines.append(f"        return SDFError(str(e))")
-        lines.append("")
+        if mod == "pose":
+            lines.append(f"def _parse_{mod}(raw: str, el: ET.Element | None = None) -> _{class_name}T | SDFError:")
+            lines.append(f"    try:")
+            lines.append(f"        is_degrees = el is not None and str(el.get('degrees')).lower() == 'true'")
+            lines.append(f"        return _{mod}(raw, degrees=is_degrees)")
+            lines.append(f"    except ValueError as e:")
+            lines.append(f"        return SDFError(str(e))")
+            lines.append("")
+            lines.append(f"def _pose_to_sdf(val: _{class_name}T, el: ET.Element | None = None) -> str:")
+            lines.append(f"    if el is not None:")
+            lines.append(f"        el.set('degrees', 'true')")
+            lines.append(f"    if isinstance(val, _{class_name}):")
+            lines.append(f"        return f'{{val.x}} {{val.y}} {{val.z}} {{val.roll_deg}} {{val.pitch_deg}} {{val.yaw_deg}}'")
+            lines.append(f"    p = _{mod}(val)")
+            lines.append(f"    return f'{{p.x}} {{p.y}} {{p.z}} {{p.roll_deg}} {{p.pitch_deg}} {{p.yaw_deg}}'")
+            lines.append("")
+        else:
+            lines.append(f"def _parse_{mod}(raw: str) -> _{class_name}T | SDFError:")
+            lines.append(f"    try:")
+            lines.append(f"        return _{mod}(raw)")
+            lines.append(f"    except ValueError as e:")
+            lines.append(f"        return SDFError(str(e))")
+            lines.append("")
 
     lines.append("")
 

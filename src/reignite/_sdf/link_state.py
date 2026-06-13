@@ -15,11 +15,20 @@ from ..utils.version import cmp_version
 if typing.TYPE_CHECKING:
     from ..elements.frame import Frame
 
-def _parse_pose(raw: str) -> _PoseT | SDFError:
+def _parse_pose(raw: str, el: ET.Element | None = None) -> _PoseT | SDFError:
     try:
-        return _pose(raw)
+        is_degrees = el is not None and str(el.get('degrees')).lower() == 'true'
+        return _pose(raw, degrees=is_degrees)
     except ValueError as e:
         return SDFError(str(e))
+
+def _pose_to_sdf(val: _PoseT, el: ET.Element | None = None) -> str:
+    if el is not None:
+        el.set('degrees', 'true')
+    if isinstance(val, _Pose):
+        return f'{val.x} {val.y} {val.z} {val.roll_deg} {val.pitch_deg} {val.yaw_deg}'
+    p = _pose(val)
+    return f'{p.x} {p.y} {p.z} {p.roll_deg} {p.pitch_deg} {p.yaw_deg}'
 
 def _parse_vector3(raw: str) -> _Vector3T | SDFError:
     try:
@@ -309,7 +318,7 @@ class LinkState(BaseModel):
         el = ET.Element("link_state")
         if self.acceleration is not None:
             _c_tmp = ET.Element("acceleration")
-            _c_tmp.text = str(self.acceleration)
+            _c_tmp.text = _pose_to_sdf(self.acceleration, _c_tmp)
             el.append(_c_tmp)
         if self.angular_acceleration is not None:
             _child_res = self.angular_acceleration.to_sdf(version)
@@ -367,7 +376,7 @@ class LinkState(BaseModel):
             el.set("name", self.name)
         if self.pose is not None:
             _c_tmp = ET.Element("pose")
-            _c_tmp.text = str(self.pose)
+            _c_tmp.text = _pose_to_sdf(self.pose, _c_tmp)
             el.append(_c_tmp)
         if self.torque is not None:
             _c_tmp = ET.Element("torque")
@@ -375,11 +384,11 @@ class LinkState(BaseModel):
             el.append(_c_tmp)
         if self.velocity is not None:
             _c_tmp = ET.Element("velocity")
-            _c_tmp.text = str(self.velocity)
+            _c_tmp.text = _pose_to_sdf(self.velocity, _c_tmp)
             el.append(_c_tmp)
         if self.wrench is not None:
             _c_tmp = ET.Element("wrench")
-            _c_tmp.text = str(self.wrench)
+            _c_tmp.text = _pose_to_sdf(self.wrench, _c_tmp)
             el.append(_c_tmp)
         return el
 
@@ -389,7 +398,7 @@ class LinkState(BaseModel):
         _c_tmp = el.find("acceleration")
         if _c_tmp is not None:
             _text = _c_tmp.text if _c_tmp.text is not None else "0 0 0 0 0 0"
-            _val = _parse_pose(_text)
+            _val = _parse_pose(_text, _c_tmp)
             if isinstance(_val, SDFError):
                 return _val.extend("acceleration")
             _acceleration = _val
@@ -478,7 +487,7 @@ class LinkState(BaseModel):
         _c_tmp = el.find("pose")
         if _c_tmp is not None:
             _text = _c_tmp.text if _c_tmp.text is not None else "0 0 0 0 0 0"
-            _val = _parse_pose(_text)
+            _val = _parse_pose(_text, _c_tmp)
             if isinstance(_val, SDFError):
                 return _val.extend("pose")
             _pose = _val
@@ -498,7 +507,7 @@ class LinkState(BaseModel):
         _c_tmp = el.find("velocity")
         if _c_tmp is not None:
             _text = _c_tmp.text if _c_tmp.text is not None else "0 0 0 0 0 0"
-            _val = _parse_pose(_text)
+            _val = _parse_pose(_text, _c_tmp)
             if isinstance(_val, SDFError):
                 return _val.extend("velocity")
             _velocity = _val
@@ -507,7 +516,7 @@ class LinkState(BaseModel):
         _c_tmp = el.find("wrench")
         if _c_tmp is not None:
             _text = _c_tmp.text if _c_tmp.text is not None else "0 0 0 0 0 0"
-            _val = _parse_pose(_text)
+            _val = _parse_pose(_text, _c_tmp)
             if isinstance(_val, SDFError):
                 return _val.extend("wrench")
             _wrench = _val

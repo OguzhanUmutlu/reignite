@@ -60,7 +60,7 @@ def _frd_to_xyz(f: float, r: float, d: float, frame: str) -> tuple[float, float,
     raise ValueError(f"Unsupported body frame: {frame!r}")
 
 
-def _pose(value: Pose | Sequence[float] | str) -> Pose:
+def _pose(value: Pose | Sequence[float] | str, degrees: bool = False) -> Pose:
     if isinstance(value, Pose):
         return value
     if isinstance(value, str):
@@ -68,6 +68,8 @@ def _pose(value: Pose | Sequence[float] | str) -> Pose:
         if len(parts) == 6:
             try:
                 x, y, z, r, p, yw = (float(v) for v in parts)
+                if degrees:
+                    return Pose(x, y, z, roll_deg=r, pitch_deg=p, yaw_deg=yw)
                 return Pose(x, y, z, r, p, yw)
             except ValueError:
                 pass
@@ -76,6 +78,8 @@ def _pose(value: Pose | Sequence[float] | str) -> Pose:
     value = list(value) if not isinstance(value, str) else []
     if len(value) != 6:
         value += [0.0] * (6 - len(value))
+    if degrees:
+        return Pose(*value[:3], roll_deg=value[3], pitch_deg=value[4], yaw_deg=value[5])
     return Pose(*value[:6])
 
 
