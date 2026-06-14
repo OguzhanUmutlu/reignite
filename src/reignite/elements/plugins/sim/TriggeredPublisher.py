@@ -83,7 +83,8 @@ class TriggeredPublisherPlugin(Plugin):
         def to_sdf(self, version: str | None = None) -> ET.Element:
             e = ET.Element("input")
             if self.type is not None:
-                e.set("type", str(self.type))
+                msg_type = _messages.get(self.type.lower(), self.type)
+                e.set("type", msg_type)
             if self.topic is not None:
                 e.set("topic", str(self.topic))
             for m in self.matches:
