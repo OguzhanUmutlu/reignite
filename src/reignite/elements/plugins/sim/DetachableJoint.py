@@ -5,7 +5,7 @@ from ...model import Model
 from ...plugin import Plugin
 
 
-@Plugin.register("gz-sim-detachable-joint-system", "gz::sim:systems::DetachableJoint")
+@Plugin.register("gz-sim-detachable-joint-system", "gz::sim::systems::DetachableJoint")
 class DetachableJointPlugin(Plugin):
     def __init__(
             self,
@@ -27,7 +27,7 @@ class DetachableJointPlugin(Plugin):
         self.output_topic = output_topic
         self.suppress_child_warning = suppress_child_warning
         super().__init__(sdf_version=None, filename="gz-sim-detachable-joint-system",
-                         name="gz::sim:systems::DetachableJoint")
+                         name="gz::sim::systems::DetachableJoint")
 
     @classmethod
     def _from_sdf(cls, el: ET.Element, version: str):
@@ -52,7 +52,7 @@ class DetachableJointPlugin(Plugin):
         )
 
     def to_sdf(self, version: str | None = None) -> ET.Element:
-        el = ET.Element("plugin", name=self.name if hasattr(self, 'name') else "gz::sim:systems::DetachableJoint",
+        el = ET.Element("plugin", name=self.name if hasattr(self, 'name') else "gz::sim::systems::DetachableJoint",
                         filename="gz-sim-detachable-joint-system")
 
         def _add(k, v):
@@ -101,7 +101,7 @@ class DetachableJointPlugin(Plugin):
         )
 
     def to_sdf(self, version: str | None = None) -> ET.Element:
-        el = ET.Element("plugin", name=self.name if hasattr(self, 'name') else "gz::sim:systems::DetachableJoint",
+        el = ET.Element("plugin", name=self.name if hasattr(self, 'name') else "gz::sim::systems::DetachableJoint",
                         filename="gz-sim-detachable-joint-system")
 
         def _add(k, v):
